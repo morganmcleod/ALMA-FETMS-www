@@ -4,8 +4,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
     <title><?php echo $title; ?></title>
 
-    <script type="text/javascript" src="../../ext4_1beta3/ext-all.js"></script>
-    <link type="text/css" href="../../ext4_1beta3/resources/css/ext-all.css" rel="Stylesheet" />
+    <script type="text/javascript" src="../../ext4/ext-all.js"></script>
+    <link type="text/css" href="../../ext4/resources/css/ext-all.css" rel="Stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../Cartstyle.css">
     <link rel="stylesheet" type="text/css" href="../buttons.css">
