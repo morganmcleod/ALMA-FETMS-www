@@ -21,6 +21,11 @@ switch ($site_hostname){
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         break;
 
+    case "fetms.osf.alma.cl":
+        $rootdir_url = "http://fetms.osf.alma.cl/php/";
+        $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
+        break;
+
     case "webtest.cv.nrao.edu":
         $rootdir_url = "http://webtest.cv.nrao.edu/php/ntc/ws-mtm/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
