@@ -1,0 +1,22 @@
+@CHARSET "ISO-8859-1";
+
+.x-btn{
+ font:normal 16px tahoma, verdana, helvetica;
+ 
+	color:#F0FCF4 !important;
+	border-style: solid;
+	border-width: 0.5px;
+	border-color: #496591;
+	border-radius:5px;
+	background: #ed1c24;
+	background: -webkit-gradient(linear, left top, left bottom, from(#ed1c24), to(#800505));
+	background: -moz-linear-gradient(top,  #ed1c24,  #800505);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#ed1c24', endColorstr='#800505');
+}
+
+.x-btn:hover {
+	background: #FA91AB;
+	background: -webkit-gradient(linear, left top, left bottom, from(#FA91AB), to(#a11115));
+	background: -moz-linear-gradient(top,  #FA91AB,  #a11115);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#FA91AB', endColorstr='#a11115');
+}

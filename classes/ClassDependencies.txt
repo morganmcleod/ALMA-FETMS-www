@@ -1,0 +1,422 @@
+iniParser - class.iniparser.php
+
+GenericTable - class.generictable.php
+- dbConnect
+
+Loggger - class.logger.php
+-- config_main
+
+SLN - class.sln.php
+- GenericTable
+
+FEComponent - class.fecomponent.php
+- GenericTable
+- SLN
+- Logger
+- FEConfig/HelperFunctions.php
+-- TestData_header
+-- CCA (used in one function only)
+
+Cryostat - class.cryostat.php
+- GenericTable
+- dbConnect
+-- config_main
+
+Cryostat_tempsensor - class.tempsensor.php
+- GenericTable
+- dbConnect
+
+MixerParams - class.mixerparams.php
+- GenericTable
+- dbConnect
+-- config_main
+
+CCA - class.cca.php
+- FEComponent
+- GenericTable
+- DBOperations
+- MixerParams
+- FrontEnd
+- classes/zip/pclzip.lib.php
+-- config_main
+
+CCAPAS - class.ccapas.php
+- CCA
+- TestData_header
+
+WCA - class.wca.php
+- FEComponent
+- GenericTable
+- DBOperations
+- FrontEnd
+-- TestData_header
+-- config_main
+
+FrontEnd - class.frontend.php
+- GenericTable
+- FEComponent
+- CCA
+- WCA
+- SLN
+- TestDataHeader
+- FEConfig/HelperFunctions.php
+
+TestData_header - class.testdata_header.php
+- GenericTable
+- dbConnect
+- FEComponent
+- FrontEnd
+- Cryostat
+- DataPlotter
+-- WCA
+-- FineLOSweep
+-- NoiseTemperature
+-- cca_image_rejection
+
+TestData_Component - class.testdata_component.php
+- GenericTable
+
+DataPlotter - class.dataplotter.php
+- GenericTable
+- dbConnect
+- TestDataHeader
+- CCA
+- FEComponent
+- TestData_Component
+- FrontEnd
+- Logger
+-- config_main
+
+CIDL_PDF - class.cidl_tcpdf.php
+- TCPDF
+- GenericTable
+- FEComponent
+-- dbConnect
+-- config_main
+
+DBOperations - class.dboperations.php
+- dbConnect
+- FrontEnd
+- FEComponent
+- GenericTable
+- Logger
+- FEConfig/HelperFunctions.php
+
+cca_image_rejection - class.cca_image_rejection.php
+- TestData_header
+- config_main
+
+class.noisetemp.php
+- TestData_header
+- GenericTable
+- Logger
+- FEConfig/testdata/spec_functions.php
+-- FEConfig/testdata/pas_tables.php
+-- config_main
+
+ScanDetails - class.scandetails.php
+- GenericTable
+
+ScanSetDetails - class.scansetdetails.php
+- GenericTable
+- ScanDetails
+- TestData_header
+
+eff - class.eff.php
+- GenericTable
+- ScanSetDetails
+- ScanDetails
+-- dbConnect
+-- config_main
+
+FineLOSweep - class.finelosweep.php
+- TestData_header
+- GenericTable
+- Logger
+- FEConfig/testdata/spec_functions.php
+-- config_main
+
+IFSpectrumPlotter - class.ifspectrumplotter.php
+- TestData_header
+- GenericTable
+- PwrSpecTool
+- Logger
+- FEConfig/HelperFunctions.php
+-- FrontEnd
+-- dbConnect
+-- config_main
+
+PwrSpecTool - class.pwrspectools.php
+- GenericTable
+- Logger
+-- config_main
+
+----------
+Files in FEConfig:
+
+AddDocument.php:
+- FrontEnd
+- FEComponent
+- DBOperations
+- dbConnect
+
+AddFrontEnd.php:
+- HelperFunctions.php
+- dbConnect
+
+CreateComponents.php:
+- FEComponent
+- dbOperations
+- dbUpdateQueries
+
+EditCCAConfig.php:
+- CCA
+- xlreader/reader.php
+
+EditComponent.php:
+- CCA
+- WCA
+- FEComponent
+- DBOperations
+- GenericTable
+- dbConnect
+
+EditFrontEnd.php:
+- FrontEnd
+- DBOperations
+- dbConnect
+
+export_to_ini_cryostat.php:
+- Cryostat
+
+export_to_ini.php:
+- FrontEnd
+
+export_cca_tempsensors.php:
+- CCA
+
+GenerateCIDL.php:
+- CIDL_PDF
+- FrontEnd
+- config_main
+
+getCCAEditData.php:
+- CCA
+- FEComponent
+
+getComponentData.php:
+- CCA
+- Cryostat
+- FEComponent
+- WCA
+- dbGetQueries
+
+getCryostatData.php:
+- FEComponent
+
+GetFEData.php:  main home page grid
+- FrontEnd
+- FEComponent
+- dbConnect
+
+GetRecentTestList.php:
+- dbConnect
+
+ImportCIDL.php:
+- DBOperations
+- FEComponent
+- FrontEnd
+- Logger
+- PHPExcel/PHPExcel.php
+- HelperFunctions.php
+- config_main
+- dbConnect
+
+ShowComponents.php:
+- CCA
+- Cryostat
+- FEComponent
+- dbGetQueries
+
+ShowFEConfig.php:  main FE page
+- FrontEnd
+- dbConnect
+- config_main
+
+getFrontEndData.php:  populate FE page tabs
+- FrontEnd
+- dbConnect
+
+GetConfigHistory.php:  populate FE configuration history
+- FrontEnd
+
+UpdateComponents.php:
+    MupdateComponents.php:
+    - FEComponent
+    - dbGetQueries
+
+    VupdateComponents.php:
+    - FEComponent
+
+    CupdateComponents.php:
+    - dbOperations
+    - FEComponent
+    - dbUpdateQueries
+
+UpdateFE.php:
+- FrontEnd
+- dbGetQueries
+
+UpdateSLN_Component.php:
+- DBOperations
+- FEComponent
+
+UpdateSLN_FE.php:
+- FrontEnd
+- Logger
+
+----
+
+bp/bp.php:  beam pattern test data
+- TestData_header
+- ScanSetDetails
+- eff
+- FrontEnd
+- dbConnect
+
+bp/header_bp.php:  beam pattern data page header
+- dbConnect
+
+bp/getBPdata.php:  render beam pattern data tabs
+- TestData_header
+- eff
+- dbConnect
+
+bp/export_to_csv.php:  export beam pattern data
+- TestData_header
+- GenericTable
+- dbConnect
+
+----
+
+cca/EditCCAConfig.php:
+- CCA
+- FEConfig/HelperFunctions.php
+- FEConfig/jsFunctions.php
+
+cca/export_cca_tempsensors.php:
+- CCA
+
+cca/export_to_ini_cca.php
+- CCA
+- Logger
+
+cca/getCCAEditData.php
+- CCA
+- FEComponent
+
+cca/getCCAPASData.php
+- CCAPAS
+- Logger
+
+cca/UpdateFromIniFile.php
+- CCA
+
+----
+
+cidl/CIDLactions.php:
+- dbConnect
+- GenericTable
+- Logger
+
+cidl/cidlRevEdit.php:
+- FrontEnd
+
+----
+
+confighistory/GetConfigHistory.php:
+- FrontEnd
+
+confighistory/GetConfigHistoryComp.php:
+- FEComponent
+
+----
+
+datasets/datasets.php
+- FrontEnd
+
+
+datasets/TreeGridJSON.php
+- GenericTable
+- dbConnect
+
+----
+
+ifspectrum/getIFspectrumplotdata.php:
+- IFSpectrumPlotter
+
+ifspectrum/ifspectrumplots.php:
+- IFSpectrumPlotter
+- dbConnect
+
+----
+
+pbar/statuscidl.pdf:
+- FrontEnd
+- Logger
+- config_main
+
+----
+
+recordform/AddStatLocAndNotes.php:
+- DBOperations
+- FEComponent
+- Logger
+
+recordform/GetLocationAndStatus.php:
+
+recordform/process-comps.php:
+- config_main
+- dbConnect
+
+recordform/process-request.php:
+- config_main
+- dbConnect
+- FrontEnd
+- DBOperations
+
+----
+
+testdata/export_to_csv.php:
+- GenericTable
+- TestData_header
+- dbConnect
+
+testdata/GetRecentTestList.php:
+- FEComponent
+- dbConnect
+
+testdata/pas_results.php:
+- dbConnect
+
+testdata/pas_tables.php:
+- TestData_header
+
+testdata/RecentTestList.php:
+- dbConnect
+
+testdata/spec_functions.php:
+-- dbConnect
+
+testdata/testdata_cryostat.php:
+- TestData_header
+- Cryostat
+
+testdata/testdata.php
+- dbConnect
+- TestData_header
+
+----
+
+wca/UpdateFromIniFile.php:
+- WCA

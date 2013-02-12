@@ -1,0 +1,150 @@
+.ux-panel-header-btns-ct
+{
+	float: right;
+}
+
+.ux-panel-header-btns .x-btn
+{
+	margin-right: 800px;
+}
+
+.ext-ie .ux-panel-header-btns .x-btn button
+{
+    padding-top: 1px;
+}
+
+.ux-panel-header-btns .x-btn-icon .x-btn-center .x-btn-text
+{
+	background-position: 0 2px;
+	height: 12px;
+	width: 9px;
+}
+
+.ux-panel-header-btns .x-btn-text-icon .x-btn-center .x-btn-text
+{
+	background-position: 1px 3px;
+	padding: 0 0 0 11px;
+}
+
+.ext-ie .ux-panel-header-btns .x-btn-text-icon .x-btn-center .x-btn-text
+{
+	padding: 1px 0 0 13px;
+}
+
+.ext-ie .ux-panel-header-btns .x-btn-text-icon .x-btn-center
+{
+	padding-right: 4px;
+}
+
+.ux-panel-header-btns .x-btn-left
+{
+	width: 2px;
+	height: 15px;
+	background: url(hd-btn-sprite.gif) no-repeat 0 0;
+}
+
+.ux-panel-header-btns .x-btn-right
+{
+	width: 2px;
+	height: 15px;
+	background: url(hd-btn-sprite.gif) no-repeat 0 -15px;
+}
+
+.ux-panel-header-btns .x-btn-center
+{
+	background: url(hd-btn-sprite.gif) repeat-x 0 -30px;
+	padding: 0 1px;
+}
+
+.ux-panel-header-btns .x-btn-left i, .ux-panel-header-btns .x-btn-right i
+{
+	width: 2px;
+}
+
+.ux-panel-header-btns .x-btn-text
+{
+	color: #3255B2;
+}
+
+.ux-panel-header-btns .x-btn-over .x-btn-text
+{
+	color: #264390;
+}
+
+.ux-panel-header-btns .x-btn-pressed .x-btn-text
+{
+	color: #264390;
+}
+
+.ux-panel-header-btns .x-btn-over .x-btn-left
+{
+	background-position: 0 -45px;
+}
+
+.ux-panel-header-btns .x-btn-over .x-btn-right
+{
+	background-position: 0 -60px;
+}
+
+.ux-panel-header-btns .x-btn-over .x-btn-center
+{
+	background-position: 0 -75px;
+}
+
+.ux-panel-header-btns .x-btn-pressed .x-btn-left
+{
+	background-position: 0 -90px;
+}
+
+.ux-panel-header-btns .x-btn-pressed .x-btn-right
+{
+	background-position: 0 -105px;
+}
+.ux-panel-header-btns .x-btn-pressed .x-btn-center
+{
+	background-position: 0 -120px;
+}
+
+.ux-panel-header-btns .x-btn-click .x-btn-left
+{
+	background-position: 0 -90px;
+}
+
+.ux-panel-header-btns .x-btn-click .x-btn-right
+{
+	background-position: 0 -105px;
+}
+.ux-panel-header-btns .x-btn-click .x-btn-center
+{
+	background-position: 0 -120px;
+}
+
+.ux-panel-header-btns .x-btn-menu-active .x-btn-left
+{
+	background-position: 0 -90px;
+}
+
+.ux-panel-header-btns .x-btn-menu-active .x-btn-right
+{
+	background-position: 0 -105px;
+}
+.ux-panel-header-btns .x-btn-menu-active .x-btn-center
+{
+	background-position: 0 -120px;
+}
+
+
+
+.icon-save
+{
+	background-image: url(../../images/icons/silk/disk.png) ! important;
+}
+.icon-save2
+{
+	background-image: url(icons/silk/disk.png) ! important;
+}
+.ux-panel-header-btns .icon-save
+{
+	background-image: url(icons/add.png) ! important;
+	background-repeat: no-repeat;
+}

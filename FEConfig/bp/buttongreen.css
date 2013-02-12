@@ -1,0 +1,22 @@
+@CHARSET "ISO-8859-1";
+
+.x-btn{
+ font:normal 16px tahoma, verdana, helvetica;
+ 
+	color:#F0FCF4 !important;
+	border-style: solid;
+	border-width: 0.5px;
+	border-color: #496591;
+	border-radius:5px;
+	background: #00D612;
+	background: -webkit-gradient(linear, left top, left bottom, from(#00D612), to(#2F6133));
+	background: -moz-linear-gradient(top,  #00D612,  #2F6133);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#00D612', endColorstr='#2F6133');
+}
+
+.x-btn:hover {
+	background: #00ff00;
+	background: -webkit-gradient(linear, left top, left bottom, from(#00ff00), to(#436b0c));
+	background: -moz-linear-gradient(top,  #00ff00,  #436b0c);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#00ff00', endColorstr='#436b0c');
+}

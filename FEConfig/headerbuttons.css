@@ -1,0 +1,171 @@
+
+
+
+
+
+
+/*
+This section is used to change toolbar button appearance (FEConfig/FEHome.php)
+*/
+.x-btn{
+ font:normal 16px tahoma, verdana, helvetica;
+ 
+	color:#F0FCF4 !important;
+	border-style: solid;
+	border-width: 0.5px;
+	border-color: #496591;
+	border-radius:5px;
+	background: -webkit-gradient(linear, left top, left bottom, from(#9EC2E8), to(#0051A8));
+	background: -moz-linear-gradient(top,  #9BB2C2,  #2D6B96);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#9EC2E8', endColorstr='#0051A8');
+}
+
+.x-btn button{
+    font:normal 16px arial,tahoma,verdana,helvetica;
+    color:#F0FCF4;
+    font-weight:bold;
+}
+
+.x-btn em {
+    font-style:normal;
+    font-weight:normal;
+    margin-bottom: 2px;
+    color:#F0FCF4;
+    border: none;
+}
+
+
+button:hover {
+    color:#F0FCF4;
+}
+
+.x-btn-default-small .x-btn-inner {
+    font-size: 20px;
+}
+
+.x-combo-list-item {
+	font-size:12px;
+    padding:1px;
+    border:1px solid;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+}
+
+.x-combo-list .x-combo-selected{
+	font-size:12px;
+	border:1px dotted !important;
+    cursor:pointer;
+}
+
+
+/*
+Taken from ext-all.css
+*/
+
+/*
+commented this out because btn.gif is not at the given path, causing an error.
+.x-btn-tl, .x-btn-tr, .x-btn-tc, .x-btn-ml, .x-btn-mr, .x-btn-mc, .x-btn-bl, .x-btn-br, .x-btn-bc{
+	background-image:url(../images/default/button/btn.gif);
+}
+*/
+
+.x-btn-click .x-btn-text, .x-btn-menu-active .x-btn-text, .x-btn-pressed .x-btn-text{
+    color:#000000;
+}
+
+.x-btn-disabled *{
+	color:gray !important;
+}
+
+.x-btn-mc em.x-btn-arrow {
+    background-image:url(../images/default/button/arrow.gif);
+}
+
+.x-btn-mc em.x-btn-split {
+    background-image:url(../images/default/button/s-arrow.gif);
+}
+
+.x-btn-over .x-btn-mc em.x-btn-split, .x-btn-click .x-btn-mc em.x-btn-split, .x-btn-menu-active .x-btn-mc em.x-btn-split, .x-btn-pressed .x-btn-mc em.x-btn-split {
+    background-image:url(../images/default/button/s-arrow-o.gif);
+}
+
+.x-btn-mc em.x-btn-arrow-bottom {
+    background-image:url(../images/default/button/s-arrow-b-noline.gif);
+}
+
+.x-btn-mc em.x-btn-split-bottom {
+    background-image:url(../images/default/button/s-arrow-b.gif);
+}
+
+.x-btn-over .x-btn-mc em.x-btn-split-bottom, .x-btn-click .x-btn-mc em.x-btn-split-bottom, .x-btn-menu-active .x-btn-mc em.x-btn-split-bottom, .x-btn-pressed .x-btn-mc em.x-btn-split-bottom {
+    background-image:url(../images/default/button/s-arrow-bo.gif);
+}
+
+.x-btn-group-header {
+    color: #3e6aaa;
+}
+
+.x-btn-group-tc {
+	background-image: url(../images/default/button/group-tb.gif);
+}
+
+.x-btn-group-tl {
+	background-image: url(../images/default/button/group-cs.gif);
+}
+
+.x-btn-group-tr {
+	background-image: url(../images/default/button/group-cs.gif);
+}
+
+.x-btn-group-bc {
+	background-image: url(../images/default/button/group-tb.gif);
+}
+
+.x-btn-group-bl {
+	background-image: url(../images/default/button/group-cs.gif);
+}
+
+.x-btn-group-br {
+	background-image: url(../images/default/button/group-cs.gif);
+}
+
+.x-btn-group-ml {
+	background-image: url(../images/default/button/group-lr.gif);
+}
+.x-btn-group-mr {
+	background-image: url(../images/default/button/group-lr.gif);
+}
+
+.x-btn-group-notitle .x-btn-group-tc {
+	background-image: url(../images/default/button/group-tb.gif);
+}
+button:hover {
+
+    color:#ffffff;
+ 	
+    background: -webkit-gradient(linear, left top, left bottom, from(#D7E8FA), to(#2D6B96));
+	background: -moz-linear-gradient(top,  #D7E8FA,  #2D6B96);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#D7E8FA', endColorstr='#2D6B96');
+}
+.x-btn:hover {
+
+    color:#ffffff;
+ 	
+ 	/*
+    background: -webkit-gradient(linear, left top, left bottom, from(#D7E8FA), to(#A1C7ED));
+	background: -moz-linear-gradient(top,  #D7E8FA,  #A1C7ED);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#D7E8FA', endColorstr='#A1C7ED');
+	*/
+	
+	background: -webkit-gradient(linear, left top, left bottom, from(#D7E8FA), to(#2D6B96));
+	background: -moz-linear-gradient(top,  #D7E8FA,  #2D6B96);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#D7E8FA', endColorstr='#2D6B96');
+    /*
+    border-width:5px;
+*/
+}
+
+
+
+.x-btn-text { color: #F0FCF4 !important; } 

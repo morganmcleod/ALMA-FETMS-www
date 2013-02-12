@@ -1,0 +1,128 @@
+/*
+
+Darko Bunic
+http://www.redips.net/
+Nov, 2010.
+
+*/
+
+body {
+	font-family: arial;
+}
+
+/* green button - start */
+.green {
+	color: white;
+	background-color: #41A128;
+	border-width: 1px;
+}
+
+/* red button - stop */
+.red {
+	color: white;
+	background-color: #ff0000;
+	border-width: 1px;
+	font-size: 22px;
+	
+	background: -webkit-gradient(linear, left top, left bottom, from(#ed1c24), to(#ff0000));
+	background: -moz-linear-gradient(top,  #ff0000,  #6E0909);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#0000ff', endColorstr='#ff0000');
+}
+
+.red:hover {
+	color: white;
+	background-color: #ff0000;
+	border-width: 1px;
+	font-size: 22px;
+	
+	background: -webkit-gradient(linear, left top, left bottom, from(#ed1c24), to(#ff0000));
+	background: -moz-linear-gradient(top,  #FC8B8B,  #FF0808);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#0000ff', endColorstr='#ff0000');
+}
+
+/* progress container */
+div#progress_container {
+	border-style:solid;
+	border-width:1px;
+	border-color:#52809E;
+
+	width: 500px; 
+	margin: 0px;
+	padding: 0px;
+	text-align: left;
+}
+
+div#message_container {
+	color: "#00ff00";
+
+	width: 500px; 
+	margin: 0px;
+	padding-left: 0px;
+	text-align: left;
+}
+
+div#pimage_container {
+	width: 600px; 
+	margin: 0px;
+	padding-left: 0px;
+	text-align: left;
+}
+
+div#progressbar_container {
+	margin: 2px;
+	padding: 10px;
+	border-style:solid;
+	border-width:3px;
+	border-color:#9797B0;
+	border-radius:5px;
+	/*
+	height:200px;
+	
+	*/
+	text-decoration:none;
+	width:520px;
+	background: #0000ff;
+	background: -webkit-gradient(linear, left top, left bottom, from(#ed1c24), to(#0000ff));
+	background: -moz-linear-gradient(top,  #000000,  #020269);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#0000ff', endColorstr='#00ff00');
+}
+
+/* progress bar */
+div#progress {
+	color: white;
+	background-color: #00ff00; 
+	height: 32px;
+	padding-bottom: 2px;
+	font-size: 22px;
+	text-align: left;
+	/* overflow: hidden; */
+	
+	
+
+	
+	
+	background: #00ff00;
+	background: -webkit-gradient(linear, left top, left bottom, from(#00ff00), to(#00ff00));
+	background: -moz-linear-gradient(top,  #00ff00,  #025E17);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#00ff00', endColorstr='#00ff00');
+}
+
+div#pmessage {
+	color: #00ff00;
+
+	height: 32px;
+	padding-bottom: 2px;
+	font-size: 22px;
+	text-align: left;
+	/* overflow: hidden; */
+}
+
+
+div#pimage {
+	color: #00ff00;
+	height: 32px;
+	padding-bottom: 0px;
+	font-size: 22px;
+	text-align: left;
+	/* overflow: hidden; */
+}
