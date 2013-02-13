@@ -15,7 +15,6 @@ $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff_64";
 // set up some variables specific to particular hosts:
 $site_hostname = $_SERVER['SERVER_NAME'];
 
-
 switch ($site_hostname){
     case "safe.nrao.edu":
         $rootdir_url = "https://safe.nrao.edu/php/ntc/";

@@ -1,9 +1,9 @@
 <?php
 
-switch ($site_hostname){
+switch ($_SERVER['SERVER_NAME']) {
     case "fetms.osf.alma.cl":
         $dbname     = 'fetms';
-        $dbserver   = 'fetms.osf.alma.cl';
+        $dbserver   = 'localhost';
         $dbusername = 'fetms';
         $dbpassword = '!fetms';
         break;
