@@ -38,23 +38,52 @@ void SCANDATA_free(SCANDATA *data) {
 
 int SCANDATA_allocateArrays(SCANDATA *data) {
     // farfield arrays:
-    data -> ff_az = malloc(sizeof(float) * data -> ff_pts);
-    data -> ff_el = malloc(sizeof(float) * data -> ff_pts);
-    data -> ff_amp_db = malloc(sizeof(float) * data -> ff_pts);
-    data -> ff_phase_deg = malloc(sizeof(float) * data -> ff_pts);
-    data -> ff_phase_rad = malloc(sizeof(float) * data -> ff_pts);
-    data -> x = malloc(sizeof(float) * data -> ff_pts);
-    data -> y = malloc(sizeof(float) * data -> ff_pts);
-    data -> radius = malloc(sizeof(float) * data -> ff_pts);
-    data -> radius_squared = malloc(sizeof(float) * data -> ff_pts);
-    data -> mask = malloc(sizeof(float) * data -> ff_pts);
-    data -> E = malloc(sizeof(float) * data -> ff_pts);
-    // nearfield arrays:
-    data -> nf_x = malloc(sizeof(float) * data -> nf_pts);
-    data -> nf_y = malloc(sizeof(float) * data -> nf_pts);
-    data -> nf_amp_db = malloc(sizeof(float) * data -> nf_pts);
-    data -> nf_phase_deg = malloc(sizeof(float) * data -> nf_pts);
-    return 0;
+	if (data != NULL) {
+		data -> ff_az = malloc(sizeof(float) * data -> ff_pts);
+		data -> ff_el = malloc(sizeof(float) * data -> ff_pts);
+		data -> ff_amp_db = malloc(sizeof(float) * data -> ff_pts);
+		data -> ff_phase_deg = malloc(sizeof(float) * data -> ff_pts);
+		data -> ff_phase_rad = malloc(sizeof(float) * data -> ff_pts);
+		data -> x = malloc(sizeof(float) * data -> ff_pts);
+		data -> y = malloc(sizeof(float) * data -> ff_pts);
+		data -> radius = malloc(sizeof(float) * data -> ff_pts);
+		data -> radius_squared = malloc(sizeof(float) * data -> ff_pts);
+		data -> mask = malloc(sizeof(float) * data -> ff_pts);
+		data -> E = malloc(sizeof(float) * data -> ff_pts);
+		// nearfield arrays:
+		data -> nf_x = malloc(sizeof(float) * data -> nf_pts);
+		data -> nf_y = malloc(sizeof(float) * data -> nf_pts);
+		data -> nf_amp_db = malloc(sizeof(float) * data -> nf_pts);
+		data -> nf_phase_deg = malloc(sizeof(float) * data -> nf_pts);
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+int SCANDATA_allocateArraysXpol(SCANDATA *data) {
+    // reallocate farfield arrays for xpol:
+	if (data != NULL) {
+		WHACK(data -> ff_az);
+		WHACK(data -> ff_el);
+		WHACK(data -> ff_amp_db);
+		WHACK(data -> ff_phase_deg);
+		data -> ff_az = malloc(sizeof(float) * data -> ff_pts);
+		data -> ff_el = malloc(sizeof(float) * data -> ff_pts);
+		data -> ff_amp_db = malloc(sizeof(float) * data -> ff_pts);
+		data -> ff_phase_deg = malloc(sizeof(float) * data -> ff_pts);
+        WHACK(data -> nf_x);
+        WHACK(data -> nf_y);
+        WHACK(data -> nf_amp_db);
+        WHACK(data -> nf_phase_deg);
+		data -> nf_x = malloc(sizeof(float) * data -> nf_pts);
+		data -> nf_y = malloc(sizeof(float) * data -> nf_pts);
+		data -> nf_amp_db = malloc(sizeof(float) * data -> nf_pts);
+		data -> nf_phase_deg = malloc(sizeof(float) * data -> nf_pts);
+	    return 0;
+	} else {
+		return -1;
+	}
 }
 
 int SCANDATA_computeSums(SCANDATA *data, float maskRadius) {

@@ -10,13 +10,12 @@ char printmessage[MESSAGE_LENGTH];  //* this is global, so rename if conflict */
 
 extern int DEBUGGING;
 
+#define OUTPUT_DIR "../../test_datafiles"
 
 void warn(void) {
   static FILE *warnfile = NULL;
   if (warnfile == NULL) {
-    //warnfile = fopen("/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/test_datafiles/eff/stderr.txt","a");
-    //warnfile = fopen("../test_datafiles/eff/stderr.txt","a");
-    warnfile = fopen("../../test_datafiles/stderr.txt","a");
+    warnfile = fopen(OUTPUT_DIR "/stderr.txt","a");
   }
   printf(warning); /* to the stdout, i.e. to the screen */
   fprintf(warnfile,warning);  /* and now to the file */
@@ -24,22 +23,14 @@ void warn(void) {
 } 
 
 void print_stdout(void) {
-
-     
   static FILE *stdout_file = NULL;
   if (stdout_file == NULL) {
-    //stdout_file = fopen("/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/test_datafiles/eff/stdoutput.txt","a");
-
-    //stdout_file = fopen("../test_datafiles/eff/stdoutput.txt","a");
-    stdout_file = fopen("../../test_datafiles/stdoutput.txt","a");
-
+    stdout_file = fopen(OUTPUT_DIR "/stdoutput.txt","a");
   }
   printf(printmessage); /* to the stdout, i.e. to the screen */
   fprintf(stdout_file,printmessage);  /* and now to the file */
   fflush(stdout_file);  /* make sure the file gets updated */
-  //fclose(stdout_file);
 } 
-
 
 
 #ifdef LINUX

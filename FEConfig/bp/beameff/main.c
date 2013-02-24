@@ -23,7 +23,7 @@
 #include "plotcircles.h"
 #include "nsi.h"
 
-int DEBUGGING = 1;
+int DEBUGGING = 0;
 
 int main(int argc, char *argv[])
 {

@@ -174,6 +174,9 @@ extern void SCANDATA_free(SCANDATA *data);
 extern int SCANDATA_allocateArrays(SCANDATA *data);
 ///< allocate memory in the dynamic arrays.   Returns zero if successful.
 
+extern int SCANDATA_allocateArraysXpol(SCANDATA *data);
+///< allocate memory in the dynamic arrays.   Returns zero if successful.
+
 extern int SCANDATA_computeSums(SCANDATA *data, float maskRadius);
 ///< compute sums, sums of squares, and other metrics on the ff copol data, using the provided maskRadius
 

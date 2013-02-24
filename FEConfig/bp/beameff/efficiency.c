@@ -27,9 +27,19 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     char tempseckey[200];
     char centers[10];
     float lambda;
+
+    if (DEBUGGING) {
+        fprintf(stderr,"Enter GetEfficiencies.\n");
+    }
     
-    for (i=0; i <= 5; i++) {
-        SCANDATA_init(scans + i);
+    SCANDATA_init(scans + 0);
+    SCANDATA_init(scans + 1);
+    SCANDATA_init(scans + 2);
+    SCANDATA_init(scans + 3);
+    SCANDATA_init(scans + 4);
+
+    if (DEBUGGING) {
+        fprintf(stderr,"Enter GetNumberOfScans.\n");
     }
 
     num_scans_in_file = GetNumberOfScans(scan_file_dict);
@@ -39,6 +49,10 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     //what is in input file
     if(strcmp(delimiter,",")) {
         strcpy(delimiter,"\t");
+    }
+
+    if (DEBUGGING) {
+        fprintf(stderr,"Enter first loop.\n");
     }
 
     for(i=0; i<iniparser_getnsec(scan_file_dict); i++) {
@@ -91,6 +105,10 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
         } //end if
     } //end for
 
+    if (DEBUGGING) {
+        fprintf(stderr,"Past first loop.\n");
+    }
+
     //Crosspol sideband is same as copol
     scans[2].sideband_flipped = scans[1].sideband_flipped;
     scans[4].sideband_flipped = scans[3].sideband_flipped;
@@ -107,16 +125,37 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     scans[2].el_nominal = scans[1].el_nominal;  
     scans[4].az_nominal = scans[3].az_nominal;
     scans[4].el_nominal = scans[3].el_nominal; 
+    if (DEBUGGING) {
+        fprintf(stderr,"Calling ReadCopolFile()\n");
+    }
     ReadCopolFile(&scans[1],scan_file_dict);
+    if (DEBUGGING) {
+        fprintf(stderr,"Calling FitPhase(&scans[1])\n");
+    }
     FitPhase(&scans[1]);
     if (DEBUGGING) {
         fprintf(stderr,"Calling FitAmplitude(&scans[1])\n");
     }
     FitAmplitude(&scans[1]);
+    if (DEBUGGING) {
+		fprintf(stderr,"Calling ReadCrosspolFile(&scans[2],&scans[1],scan_file_dict)\n");
+	}
     ReadCrosspolFile(&scans[2],&scans[1],scan_file_dict); 
-    ReadCopolFile(&scans[3],scan_file_dict);
+    if (DEBUGGING) {
+		fprintf(stderr,"Calling ReadCopolFile(&scans[3],scan_file_dict)\n");
+	}
+	ReadCopolFile(&scans[3],scan_file_dict);
+    if (DEBUGGING) {
+        fprintf(stderr,"Calling FitPhase(&scans[3])\n");
+    }
     FitPhase(&scans[3]);
+    if (DEBUGGING) {
+        fprintf(stderr,"Calling FitAmplitude(&scans[3])\n");
+    }
     FitAmplitude(&scans[3]);
+    if (DEBUGGING) {
+		fprintf(stderr,"Calling ReadCrosspolFile(&scans[4],&scans[3],scan_file_dict)\n");
+	}
     ReadCrosspolFile(&scans[4],&scans[3],scan_file_dict); 
 
 /*
@@ -129,6 +168,10 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
 
     scans[3].squint = (100.0 * scans[3].squint_arcseconds) / (1.15 * lambda * 57.3 * 60 * 60 /12000.0 );
 */
+
+    if (DEBUGGING) {
+        fprintf(stderr,"Calling GetAdditionalEff()\n");
+    }
 
     GetAdditionalEfficiencies(&scans[1],&scans[2],&scans[3],&scans[4]);
     if (DEBUGGING) {
@@ -163,9 +206,12 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
         fprintf(stderr,"Done PlotCrosspol(4)\n");
     }
 
-    for (i=0; i <= 5; i++) {
-        SCANDATA_free(scans + i);
-    }
+    SCANDATA_free(scans + 0);
+    SCANDATA_free(scans + 1);
+    SCANDATA_free(scans + 2);
+    SCANDATA_free(scans + 3);
+    SCANDATA_free(scans + 4);
+
     return 1;   
 }
 

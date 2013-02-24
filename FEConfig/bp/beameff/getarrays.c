@@ -157,11 +157,13 @@ int ReadCrosspolFile(SCANDATA *crosspolscan, SCANDATA *copolscan, dictionary *sc
         exit(ERR_COULD_NOT_OPEN_FILE);
         return(-1);
     }
-    //Assume space for the arrays has already been allocated by SCANDATA_allocateArrays in ReadCopolFile():
-    // crosspolscan -> ff_az = malloc(sizeof(float) * crosspolscan -> ff_pts);
-    // crosspolscan -> ff_el = malloc(sizeof(float) * crosspolscan -> ff_pts);
-    // crosspolscan -> ff_amp_db = malloc(sizeof(float) * crosspolscan -> ff_pts);
-    // crosspolscan -> ff_phase_deg = malloc(sizeof(float) * crosspolscan -> ff_pts);
+
+    // reallocate the crosspol farfield arrays with the correct size, from copolscan above:
+    SCANDATA_allocateArraysXpol(crosspolscan);
+
+    if (DEBUGGING) {
+        printf("skip the header\n");
+    }
 
     // skip the header 
     for (i = 1;  i < crosspolscan -> ff_startrow; i++) {
@@ -170,6 +172,10 @@ int ReadCrosspolFile(SCANDATA *crosspolscan, SCANDATA *copolscan, dictionary *sc
             // TODO:  What's this?
             sprintf(crosspolscan -> notes,"'%s'",buf);
         }
+    }
+
+    if (DEBUGGING) {
+        printf("Fill up the arrays\n");
     }
 
     //Fill up the arrays
@@ -216,12 +222,24 @@ int ReadCrosspolFile(SCANDATA *crosspolscan, SCANDATA *copolscan, dictionary *sc
     
     fclose(fileptr);
 
+    if(DEBUGGING) {
+        printf("SCANDATA_computeCrosspolSums(crosspolscan, copolscan)\n");
+    }
+
     SCANDATA_computeCrosspolSums(crosspolscan, copolscan);
+
+    if(DEBUGGING) {
+        printf("ReadFile_NF(crosspolscan, scan_file_dict, \"xpol\", delimiter)\n");
+    }
 
     ReadFile_NF(crosspolscan, scan_file_dict, "xpol", delimiter);
 
     crosspolscan -> max_dbdifference = fabs(crosspolscan -> max_ff_amp_db - copolscan -> max_ff_amp_db);
     crosspolscan -> max_dbdifference_nf = fabs(crosspolscan -> max_nf_amp_db - copolscan -> max_nf_amp_db);
+
+    if(DEBUGGING) {
+        printf("Exiting ReadCrosspolFile() \n");
+    }
 
     return 1;
 }
@@ -250,13 +268,10 @@ int ReadFile_NF(SCANDATA *currentscan, dictionary *scan_file_dict, char *scantyp
         return(-1);
     }
 
-    //Allocate space for arrays, if file has opened
-
     // skip the header 
     for (i=1; i<currentscan -> nf_startrow; i++) {
         ptr = fgets(buf,sizeof(buf),fileptrnf);
     }
-    
     
     maxamp=-300.0;
     //Fill up the arrays
