@@ -1,0 +1,7 @@
+.buildpath
+.project
+.settings
+Export to *
+.o
+.a
+.exe
