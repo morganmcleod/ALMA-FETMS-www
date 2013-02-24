@@ -22,7 +22,7 @@ switch ($site_hostname){
         break;
 
     case "fetms.osf.alma.cl":
-        $rootdir_url = "http://fetms.osf.alma.cl/php/";
+        $rootdir_url = "http://fetms.osf.alma.cl/fetms/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         break;
 
