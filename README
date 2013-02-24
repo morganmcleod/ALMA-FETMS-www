@@ -1,5 +1,5 @@
 PHP web software for the ALMA Front End Test and Measurement system
-Install in /var/www/html/php on the OSF web server.
+Install in /var/www/html/fetms on the OSF web server.
 Install in \active\php\ntc or \active\php\ntc\<ws> for at NRAO servers.
 
 
