@@ -5,3 +5,7 @@ Export to *
 .o
 .a
 .exe
+cca_datafiles
+test_datafiles
+mmcl_datafiles
+

@@ -46,12 +46,17 @@ int main(int argc, char *argv[])
   sprintf(printmsg,"********************************************<br>\n<br>\n",VersionNumber);
   PRINT_STDOUT(printmsg);
     
-
-  //Temporary, so I can run the program either from my IDE or a command prompt  
-  inputfile = "C:\\beameff\\band369_input.txt";
+  //Temporary input file name can be put here for debugging:
+  inputfile = "";
   if (argc > 1){  
      inputfile = argv[1];
   }
+
+  if (!strlen(inputfile)) {
+	  PRINT_STDOUT("Must provide input file as command line parameter.  Stopping.\n");
+	  return -1;
+  }
+
   //Create dictionary from the input text file
   scan_file_dict = iniparser_load(inputfile);
   num_scansets=GetScanSetNumberArray(scan_file_dict,&scanset_array,200);
@@ -60,8 +65,6 @@ int main(int argc, char *argv[])
   PRINT_STDOUT(printmsg);
   sprintf(printmsg,"Number of scans: %d<br>\n",GetNumberOfScans(scan_file_dict));
   PRINT_STDOUT(printmsg);
-  
-  
   
   GetNSIValues(scan_file_dict);
   GetZ(scan_file_dict);
