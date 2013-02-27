@@ -190,6 +190,8 @@ switch ($td->GetValue('fkTestData_Type')) {
 
 </table>
 </div>
+</div>
+</form>
 
 <div id="maincontent" style="height:6000px">
 <div id = "wrap">
@@ -403,6 +405,8 @@ unset($td);
 
 ?>
 
-</div></body>
+</div>
+</div>
+</body>
 </html>
 
