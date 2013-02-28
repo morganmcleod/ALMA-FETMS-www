@@ -553,12 +553,11 @@ class IFSpectrumPlotter extends TestData_header{
     }
 
     public function CreateTemporaryTables(){
-        require(site_get_config_main());
+    	//$this->logger->WriteLogFile('entering CreateTemporaryTables()');    	
 
-        $db2 = mysql_connect($dbserver, $dbusername, $dbpassword)
-        OR die ('Could not connect to MySQL: ' . mysql_connect_error() );
-        mysql_select_db($dbname, $db2);
-        $this->dbConnection2 = $db2;
+    	$this->dbConnection2 = site_getDbConnection();
+        //$this->logger->WriteLogFile("got site_getDbConnection()");
+        
         //IF Spectrum
         $q = "DROP TABLE IF EXISTS TEMP_IFSpectrum ;";
         $r = @mysql_query($q,$this->dbConnection2) ; //or die("Query failed on class.testdata_header line " . __LINE__);
