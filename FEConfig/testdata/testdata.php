@@ -17,6 +17,10 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
 require_once($site_classes . '/class.testdata_header.php');
+require_once($site_classes . '/class.cca_image_rejection.php');
+require_once($site_classes . '/class.finelosweep.php');
+require_once($site_classes . '/class.noisetemp.php');
+
 
 $fc = $_REQUEST['fc'];
 
