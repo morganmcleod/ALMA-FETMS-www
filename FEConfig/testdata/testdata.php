@@ -112,7 +112,7 @@ switch ($td->GetValue('fkTestData_Type')) {
         //LO Lock test or noise temperature
         $drawurl = "testdata.php?keyheader=$td->keyId&drawplot=1&fc=". $td->GetValue('keyFacility');
         $datasetsurl = "testdata.php?keyheader=$td->keyId&sd=1&fc=". $td->GetValue('keyFacility');
-        $gridurl = "../datasets/datasets.php?fc=". $td->GetValue('keyFacility');
+        $gridurl = "../datasets/datasets.php?fc=". $td->GetValue('keyFacility') . "&id=" . $td->keyId;
         $gridurl .= "&fe=". $td->FrontEnd->keyId . "&b=". $td->GetValue('Band') . "&d=".$td->GetValue('fkTestData_Type');
         echo "
             <tr><td>

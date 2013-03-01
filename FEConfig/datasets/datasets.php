@@ -27,7 +27,7 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.frontend.php');
 
-
+$id	      = $_REQUEST['id'];
 $FEid     = $_REQUEST['fe'];
 $fc       = $_REQUEST['fc'];
 $Band     = $_REQUEST['b'];
@@ -47,12 +47,15 @@ $title="$test_desc FE-". $fe->GetValue('SN');
 
 switch ($datatype){
 	case 7:
+		// IF spectrum
 		$link = "../ifspectrum/ifspectrumplots.php?fc=40&fe=$FEid&b=$Band&id=";
 		break;
 	case 57:
+		// LO Lock test
 		$link = "../testdata/testdata.php?fc=40&keyheader=";
 		break;
 	case 58:
+		// Noise temperature
 		$link = "../testdata/testdata.php?fc=40&keyheader=";
 		break;
 }
@@ -63,8 +66,8 @@ $fesn = $fe->GetValue('SN');
 include('datasets_header.php');
 ?>
 
-<body onload="javascript:CreateTree(<?php echo "$FEid,$Band,'$datatype','$test_desc','$link'"; ?>)" style="background-color: #19475E; ">
-    <div style= 'padding-left: 2em; padding-top: 1em; width:1100px; background-color: #19475E;'>
+<body onload="javascript:CreateTree(<?php echo "$FEid,$Band,'$datatype','$test_desc','$link', '$id' "; ?>)" style="background-color: #19475E; ">
+	<div style= 'padding-left: 2em; padding-top: 1em; width:1100px; background-color: #19475E;'>
         <div id="tree-div"></div>
     </div>
 </body>

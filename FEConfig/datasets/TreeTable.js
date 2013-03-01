@@ -1,5 +1,3 @@
-var gridId = Ext.id();
-
 Ext.require([
     'Ext.tree.*',
     'Ext.data.*',
@@ -7,9 +5,9 @@ Ext.require([
     'Ext.window.MessageBox'
 ]);
 
-function CreateTree(FEid, band, datatype, dtype_desc, link){
-    
-    Ext.define('TDH', {
+function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
+
+	Ext.define('TDH', {
         extend: 'Ext.data.Model',
         fields: [
             {name: 'id',          type: 'string'},
@@ -21,212 +19,234 @@ function CreateTree(FEid, band, datatype, dtype_desc, link){
         ]
     });
 
-    var store = Ext.create('Ext.data.TreeStore', {
-        model:'TDH'       
-        ,proxy: {
-            type: 'rest',
-            reader: {
-                type: 'json'            
-            },
-            writer: {
-                type: 'json'
-            },
+    var TDHStore = Ext.create('Ext.data.TreeStore', {
+    	model:'TDH',       
+        proxy: {
+            type: 'ajax',
+//            reader: {
+//                type: 'json'            
+//            },
+//            writer: {
+//                type: 'json'
+//            },
             actionMethods: {
                 create : 'POST',
                 read   : 'POST',
                 update : 'POST',
                 destroy: 'POST'
-            },
-     
+            },     
             api: {
                  create: 'TreeGridJSON.php?action=create&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype, // Called when saving new records
                    read: 'TreeGridJSON.php?action=read&FEid='   + FEid + '&band=' + band + '&datatype=' + datatype, // Called when reading existing records
-                 update: 'TreeGridJSON.php?action=update&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype // Called when updating existing records
+                 update: 'TreeGridJSON.php?action=update&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype  // Called when updating existing records
             }
     
-        },
-        
-        sorters: [{
-            property: 'ts',
-            direction: 'ASC'
-        }]        
+        }
+//        ,        
+//        sorters: [{
+//            property: 'ts',
+//            direction: 'ASC'
+//        }]        
     });
     
-    var cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
-        clicksToEdit: 1
-    });
+    //var cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
+      //  clicksToEdit: 1
+    //});
     
     
-    Ext.define('DSG', {
-        extend: 'Ext.data.Model',
-        fields: [
-            {name: 'datasetgroup',     type: 'string'},
-            {name: 'TDHkeyId',         type: 'string'}
-        ]
-    });
-
-
-    var DataSetGroupStore = Ext.create('Ext.data.Store', {
-        id: 'dsgstore',
-        model: 'DSG',
-        proxy: {
-           type: 'ajax',
-           url: "TreeGridJSON.php?action=combobox&FEid=" + FEid  + '&datatype=' + datatype + '&band=' + band,
-
-           reader: {
-              type: 'json',
-              root: 'data'
-           },
-           autoload:true
-       }
-    });
+//    Ext.define('DSG', {
+//        extend: 'Ext.data.Model',
+//        fields: [
+//            {name: 'datasetgroup',     type: 'string'},
+//            {name: 'TDHkeyId',         type: 'string'}
+//        ]
+//    });
+//
+//    var DataSetGroupStore = Ext.create('Ext.data.Store', {
+//        id: 'dsgstore',
+//        model: 'DSG',
+//        proxy: {
+//           type: 'ajax',
+//           url: "TreeGridJSON.php?action=combobox&FEid=" + FEid  + '&datatype=' + datatype + '&band=' + band,
+//           reader: {
+//              type: 'json',
+//              root: 'data'
+//           },
+//           autoload:true
+//       }
+//    });
     
     var tree = Ext.create('Ext.tree.Panel', {
-        //model:'TDH',
-        plugins: [cellEditing],
-        enableKeyEvents: true,
-        store: store,
+    	title: dtype_desc + ' Data Sets Band ' + band,
+    	store: TDHStore,
+    	enableKeyEvents: true,
         rootVisible: false,
         useArrows: true,
         frame: true,
-        title: dtype_desc + ' Data Sets Band ' + band,
         renderTo: 'tree-div',
         width: 800,
         height: 550,
-        
-        onSync: function(){
-            alert('onSync()');
-            //this.store.sync();            
-        },
+       
+//        onSync: function(){
+//            alert('onSync()');
+//            //this.store.sync();            
+//        },
       
         columns: [
-                  {
-                      xtype: 'treecolumn', //this is so we know which column will show the tree
-                      text: 'Measurement Sets',
-                      width: 200,
-                      flex: 2,
-                      sortable: true,
-                      dataIndex: 'text',
-                      sm:true
-                  },{
-                      header: 'Data Set Group',
-                      width: 100,
-                      sortable: true,
-                      dataIndex: 'groupnumber',
-                      editor: {
-                          xtype:'textfield',
-                          allowBlank:false,
-                          enableKeyEvents:true
-                      }
-                  },{
-                      header: 'TS',
-                      width: 130,
-                      sortable: true,
-                      dataIndex: 'ts'
-                  },{
-                      header: 'FE Config',
-                      width: 60,
-                      sortable: true,
-                      dataIndex: 'feconfig'
-                  },{
-                      header: 'Notes',
-                      width: 330,
-                      sortable: true,
-                      dataIndex: 'notes',
-                      editor: {
-                          xtype:'textfield',
-                          allowBlank:true,
-                          enableKeyEvents:true
-                      }
-                  }
-                  
+              {
+                  xtype: 'treecolumn', //this is so we know which column will show the tree
+                  text: 'Measurement Sets',
+                  dataIndex: 'text',
+                  width: 200,
+                  sortable: true,
+                  flex: 2,
+                  sm:true
+              },{
+                  header: 'Data Set Group',
+                  dataIndex: 'groupnumber',
+                  editor: 'textfield', 
+                  width: 100,
+                  sortable: true
+              },{
+                  header: 'TS',
+                  dataIndex: 'ts',
+                  width: 130,
+                  sortable: true
+              },{
+                  header: 'FE Config',
+                  dataIndex: 'feconfig',
+                  width: 60,
+                  sortable: true
+              },{
+                  header: 'Notes',
+                  dataIndex: 'notes',
+                  editor: {
+                      xtype:'textfield',
+                      allowBlank:true,
+                      enableKeyEvents:true
+                  },
+                  width: 330,
+                  sortable: true
+              }
         ],
+
+        selType: 'cellmodel',
+
+        plugins: [
+            Ext.create('Ext.grid.plugin.CellEditing', {clicksToEdit:1})
+        ]
         
-        selType: 'cellmodel',     
-              plugins: [
-                        Ext.create('Ext.grid.plugin.CellEditing', {clicksToEdit:2})
-            ],
+//        dockedItems: [{ 
+//        	xtype: 'button',
+//            text: 'SAVE',
+//            id: 'update',
+//            name: 'update',
+//            icon:'../icons/disk.png'
+//        },{
+//            xtype : "combo",
+//            name : "GroupSelector",
+//            hiddenName : "datasetgroup",
+//            displayField: 'datasetgroup',
+//            valueField: 'TDHkeyId',
+//            fieldLabel : "Goto Group",
+//            id : "dsgcombo",
+//            store: DataSetGroupStore,
+//            listeners: {
+//                'select': function (combo,record) { 
+//                    window.location = link + combo.getValue();          
+//                }
+//            }
+//        }]
+
+});
+    
+    tree.addDocked({
+        dock: 'top',
+        xtype: 'toolbar',
+        items: [{
+	    	xtype: 'button',
+	        text: 'SAVE',
+	        id: 'update',
+	        name: 'update',
+	        icon:'../icons/disk.png',
+	        scope: this,
+            handler: function() {
+               var IsChecked;
+               var counter = 0;
+               var JSONObjectArray = new Array();
+           
+               tree.getView().node.cascadeBy(function(rec) {
+                   //Since ExtJS4 doesn't send updated child node values from client to server,
+                   //we must iterate through the child nodes and send them one by one.
+                   //This loop populates a JSON object.                                        
+                   JSONObjectArray[counter]          = new Object;
+                   JSONObjectArray[counter].subid    = rec.get('id');
+                   JSONObjectArray[counter].FEid     = FEid;
+                   JSONObjectArray[counter].datatype = datatype;
+           
+                   IsChecked = rec.get('checked');                                        
+                   if (IsChecked == true){
+                       JSONObjectArray[counter].checked  = '1';
+                   } else {
+                       JSONObjectArray[counter].checked  = '0';
+                   }
+                   counter+=1;
+               });  
+           
+               var received = function (response) {
+                   //Reload the combobox DataSet values.
+//                   DataSetGroupStore.load();
+                   // repopulate table
+                   TDHStore.read();
+                   Ext.MessageBox.hide();
+               };
+           
+               Ext.Ajax.request({
+                   //Send the JSON object
+                   url: 'TreeGridJSON.php?action=update_children&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype, // Called when saving new records                   
+                   success: received,
+                   jsonData:  JSON.stringify(JSONObjectArray)
+               });
+           
+               //Send the top level json records to the server.
+               TDHStore.update();
+               Ext.MessageBox.wait('updating...');
+           }
+        }
         
-        dockedItems: [
-                      {
-                        xtype: 'toolbar',
-                        items: [
-                                {
-                                    text: 'SAVE',
-                                    id:'update',
-                                    name:'update',
-                                    icon:'../icons/disk.png',
-                                    scope: this,
-                                    handler: function() {
-                                        var IsChecked;
-                                        var counter = 0;
-                                        var JSONObjectArray = new Array();
-                                    
-                                        tree.getView().node.cascadeBy(function(rec) { 
-                                            //Since ExtJS4 doesn't send updated child node values from client to server,
-                                            //we must iterate through the child nodes and send them one by one.
-                                            //This loop populates a JSON object.                                        
-                                            JSONObjectArray[counter]          = new Object;
-                                            JSONObjectArray[counter].subid    = rec.get('id');
-                                            JSONObjectArray[counter].FEid     = FEid;
-                                            JSONObjectArray[counter].datatype = datatype;
-                                    
-                                            IsChecked = rec.get('checked');                                        
-                                            if (IsChecked == true){
-                                                JSONObjectArray[counter].checked  = '1';
-                                            } else {
-                                                JSONObjectArray[counter].checked  = '0';
-                                            }
-                                            counter+=1;
-                                        });  
-                                    
-                                        var received = function (response) {
-                                            //Reload the combobox DataSet values.
-                                            DataSetGroupStore.load();
-                                            // repopulate table
-                                            store.read();
-                                            Ext.MessageBox.hide();
-                                        };
-                                    
-                                        Ext.Ajax.request({
-                                            //Send the JSON object
-                                            url: 'TreeGridJSON.php?action=update_children&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype, // Called when saving new records                   
-                                            success: received,
-                                            jsonData:  JSON.stringify(JSONObjectArray)
-                                        });
-                                    
-                                        //Send the top level json records to the server.
-                                        store.update();
-                                        Ext.MessageBox.wait('updating...');
-                                    }
-                                },{
-                                    xtype : "combo",
-                                    name : "GroupSelector",
-                                    hiddenName : "datasetgroup",
-                                    displayField: 'datasetgroup',
-                                    valueField: 'TDHkeyId',
-                                    fieldLabel : "Goto Group",
-                                    id : "dsgcombo",
-                                    store: DataSetGroupStore,
-                                    listeners: {
-                                        'select': function (combo,record) { 
-                                            window.location = link + combo.getValue();          
-                                        }
-                                    }
-                                }
-                        ]
-        }]
+        , { 
+        	xtype: 'button',
+	        text: 'DONE',
+	        id: 'done',
+	        name: 'done',
+	        icon:'../icons/door_out.png',
+	        scope: this,
+            handler: function() {
+            	window.location = link + idBack;
+            }
+        }
+        
+//        ,{
+//        	xtype : "combo",
+//        	fieldLabel : "Goto Group",        	
+//        	store: DataSetGroupStore,
+//        	queryMode: 'remote',        	
+//        	valueField: 'TDHkeyId',
+//        	name : "GroupSelector",
+//        	hiddenName : "datasetgroup",
+//        	displayField: 'datasetgroup',
+//        	id : "dsgcombo",
+//
+//        	listeners: {
+//        		scope: this,
+//        		'select': function(combo,record) {
+//        			window.location = link + combo.getValue();
+//        		}
+//        	}
+//        }
+                
+        ]
     });
+    
 };
 
-
-/*
-
-function pausecomp(millis) {
-    var date = new Date();
-    var curDate = null;
-    do { curDate = new Date(); }
-    while(curDate-date < millis);
-}
-
-*/

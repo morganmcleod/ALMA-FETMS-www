@@ -34,7 +34,7 @@ function createIFSpectrumTabs(fc,id,fe,datasetgroup,band){
                 style: 'margin: 1px;',
                 handler: function() {
                 //When this button is pressed, open datasets.php for data type 7.
-                 window.location = '../datasets/datasets.php?d=7&fc=' + fc + '&fe=' + fe + '&b=' + band;
+                    window.location = '../datasets/datasets.php?d=7&fc=' + fc + '&id=' + id + '&fe=' + fe + '&b=' + band;
              	}
             }
             ]
