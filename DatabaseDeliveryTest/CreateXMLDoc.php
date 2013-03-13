@@ -1545,8 +1545,10 @@ function createfiles($frontend_sn,$warmconf_sn)
 */
 
 		$logger->WriteLogFile('Save XML...');
+		
+		include(site_get_config_main());
 
-		$dom->save("PASData/PASData.xml");
+		$dom->save("$main_write_directory/PASData/PASData.xml");
 
 		$logger->WriteLogFile('done.');
 
