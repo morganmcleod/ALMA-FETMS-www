@@ -234,6 +234,7 @@ int ReadCrosspolFile(SCANDATA *crosspolscan, SCANDATA *copolscan, dictionary *sc
 
     ReadFile_NF(crosspolscan, scan_file_dict, "xpol", delimiter);
 
+    crosspolscan -> max_ff_amp_db = maxamp_xpol;
     crosspolscan -> max_dbdifference = fabs(crosspolscan -> max_ff_amp_db - copolscan -> max_ff_amp_db);
     crosspolscan -> max_dbdifference_nf = fabs(crosspolscan -> max_nf_amp_db - copolscan -> max_nf_amp_db);
 
