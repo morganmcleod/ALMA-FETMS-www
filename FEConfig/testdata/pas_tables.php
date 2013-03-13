@@ -1050,6 +1050,8 @@ function Band3_CCA_NT_results($td_keyID){
     // read sort and average Noise Temperature Data
     $last_FREQ_LO = 0;
 
+    $AVG_NT_FREQ_LO = array();
+    
     while ($row = @mysql_fetch_array($r)){
         if ($last_FREQ_LO != $row[2] && $last_FREQ_LO!= 0){
             $index=array_search($last_FREQ_LO,$AVG_NT_FREQ_LO);
