@@ -125,37 +125,15 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     scans[2].el_nominal = scans[1].el_nominal;  
     scans[4].az_nominal = scans[3].az_nominal;
     scans[4].el_nominal = scans[3].el_nominal; 
-    if (DEBUGGING) {
-        fprintf(stderr,"Calling ReadCopolFile()\n");
-    }
+
     ReadCopolFile(&scans[1],scan_file_dict);
-    if (DEBUGGING) {
-        fprintf(stderr,"Calling FitPhase(&scans[1])\n");
-    }
     FitPhase(&scans[1]);
-    if (DEBUGGING) {
-        fprintf(stderr,"Calling FitAmplitude(&scans[1])\n");
-    }
     FitAmplitude(&scans[1]);
-    if (DEBUGGING) {
-		fprintf(stderr,"Calling ReadCrosspolFile(&scans[2],&scans[1],scan_file_dict)\n");
-	}
     ReadCrosspolFile(&scans[2],&scans[1],scan_file_dict); 
-    if (DEBUGGING) {
-		fprintf(stderr,"Calling ReadCopolFile(&scans[3],scan_file_dict)\n");
-	}
+
 	ReadCopolFile(&scans[3],scan_file_dict);
-    if (DEBUGGING) {
-        fprintf(stderr,"Calling FitPhase(&scans[3])\n");
-    }
     FitPhase(&scans[3]);
-    if (DEBUGGING) {
-        fprintf(stderr,"Calling FitAmplitude(&scans[3])\n");
-    }
     FitAmplitude(&scans[3]);
-    if (DEBUGGING) {
-		fprintf(stderr,"Calling ReadCrosspolFile(&scans[4],&scans[3],scan_file_dict)\n");
-	}
     ReadCrosspolFile(&scans[4],&scans[3],scan_file_dict); 
 
 /*
@@ -169,42 +147,19 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     scans[3].squint = (100.0 * scans[3].squint_arcseconds) / (1.15 * lambda * 57.3 * 60 * 60 /12000.0 );
 */
 
-    if (DEBUGGING) {
-        fprintf(stderr,"Calling GetAdditionalEff()\n");
-    }
-
     GetAdditionalEfficiencies(&scans[1],&scans[2],&scans[3],&scans[4]);
-    if (DEBUGGING) {
-        fprintf(stderr,"Done GetAdditionalEff()\n");
-    }
 
     WriteCopolData(scan_file_dict, &scans[1], outputfilename);
     PlotCopol(&scans[1],scan_file_dict);
-    if (DEBUGGING) {
-        fprintf(stderr,"Done PlotCopol(1)\n");
-    }
 
     WriteCrosspolData(scan_file_dict, &scans[2],outputfilename);
-    if (DEBUGGING) {
-        fprintf(stderr,"Done WriteCrosspolData(2)\n");
-    }
-
     PlotCrosspol(&scans[2],scan_file_dict);
-    if (DEBUGGING) {
-        fprintf(stderr,"Done PlotCrosspol(2)\n");
-    }
 
     WriteCopolData(scan_file_dict, &scans[3],outputfilename);
     PlotCopol(&scans[3],scan_file_dict);
-    if (DEBUGGING) {
-        fprintf(stderr,"Done PlotCopol(3)\n");
-    }
 
     WriteCrosspolData(scan_file_dict, &scans[4],outputfilename);
     PlotCrosspol(&scans[4],scan_file_dict);
-    if (DEBUGGING) {
-        fprintf(stderr,"Done PlotCrosspol(4)\n");
-    }
 
     SCANDATA_free(scans + 0);
     SCANDATA_free(scans + 1);
