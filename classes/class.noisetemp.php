@@ -45,7 +45,7 @@ class NoiseTemperature extends TestData_header{
         }
 
         // set Plot Software Version
-        $Plot_SWVer = "1.0.15";
+        $Plot_SWVer = "1.0.16";
         $this->SetValue('Plot_SWVer',$Plot_SWVer);
         $this->Update();
 
@@ -810,8 +810,12 @@ class NoiseTemperature extends TestData_header{
         $imagename = "Tssb_vs_IF_NoiseTemp " . date('Y_m_d_H_i_s') . ".png";
         $imagepath = $plotdir . $imagename;
         $l->WriteLogFile("image path: $imagepath");
-        $plot_title = "Receiver Noise Temperature Tssb Corrected, FE SN" . $this->FrontEnd->GetValue('SN') .
-        ", CCA" . $this->GetValue('Band') . "-$CCA_SN WCA" . $this->GetValue('Band') . "-$WCA_SN";
+        $plot_title = "Receiver Noise Temperature ";
+        if ($IR_Data == 1)
+            $plot_title .= "Tssb corrected";
+        else
+            $plot_title .= "T_rec uncorrected";
+        $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN') . ", CCA" . $this->GetValue('Band') . "-$CCA_SN WCA" . $this->GetValue('Band') . "-$WCA_SN";
         $y_lim = 1.1 * $TSSB_spec;  // upper limit to y axis
 
         // Create GNU plot command file for Tssb vs IF plot command
@@ -822,7 +826,10 @@ class NoiseTemperature extends TestData_header{
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'IF(GHz)'\r\n");
-        fwrite($f, "set ylabel 'TSSB (K)'\r\n");
+        if ($IR_Data == 1)
+            fwrite($f, "set ylabel 'Tssb (K)'\r\n");
+        else
+            fwrite($f, "set ylabel 'T_Rec (K)'\r\n");
         fwrite($f, "set yrange [0:$y_lim]\r\n");
         fwrite($f, "set key outside\r\n");
         fwrite($f, "set bmargin 6\r\n");
@@ -856,8 +863,13 @@ class NoiseTemperature extends TestData_header{
         $imagename = "Avg_Tssb_vs_LO_NoiseTemp " . date('Y_m_d_H_i_s') . ".png";
         $imagepath = $plotdir . $imagename;
         $l->WriteLogFile("image path: $imagepath");
-        $plot_title = "Receiver Noise Temperature Tssb Corrected, FE SN" . $this->FrontEnd->GetValue('SN') .
-        ", CCA" . $this->GetValue('Band') . "-$CCA_SN WCA" . $this->GetValue('Band') . "-$WCA_SN";
+
+        $plot_title = "Receiver Noise Temperature ";
+        if ($IR_Data == 1)
+            $plot_title .= "Tssb corrected";
+        else
+            $plot_title .= "T_Rec uncorrected";
+        $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN') . ", CCA" . $this->GetValue('Band') . "-$CCA_SN WCA" . $this->GetValue('Band') . "-$WCA_SN";
 
         // Create GNU plot command file for Tssb vs IF plot command
         $commandfile = $plotdir . "Avg_Tssb_vs_LO_plotcommands.txt";
@@ -867,7 +879,10 @@ class NoiseTemperature extends TestData_header{
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'LO(GHz)'\r\n");
-        fwrite($f, "set ylabel 'Average TSSB (K)'\r\n");
+        if ($IR_Data == 1)
+            fwrite($f, "set ylabel 'Average Tssb (K)'\r\n");
+        else
+            fwrite($f, "set ylabel 'Average T_Rec (K)'\r\n");
         fwrite($f, "set yrange [0:$y_lim]\r\n");
         fwrite($f, "set key outside\r\n");
         fwrite($f, "set bmargin 6\r\n");
@@ -925,7 +940,7 @@ class NoiseTemperature extends TestData_header{
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set xlabel 'RF (GHz)'\r\n");
         if ( $IR_Data == 1 ){
-            fwrite($f, "set ylabel 'Tssb Corrected (K)'\r\n");
+            fwrite($f, "set ylabel 'Tssb corrected (K)'\r\n");
         } else {
             fwrite($f, "set ylabel 'T_Rec uncorrected (K)'\r\n");
             if ( $this->GetValue('Band') != 9 && $this->GetValue('Band') != 10){
