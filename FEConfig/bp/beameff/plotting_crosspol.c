@@ -227,11 +227,11 @@ int WriteCrosspolNF_CommandFile(SCANDATA *currentscan, char *outfilename,
         fputs("set cbrange [-50:0]\r\n",fileptr);
         //DB keys and additional info
         		sprintf(linebuffer,"set label 'MeasDate: %s"
-        				", BeamEff v%s' at screen 0, screen 0.04\r\n",currentscan->ts,VersionNumber);
+        				", BeamEff v%s' at screen 0.01, 0.04\r\n",currentscan->ts,VersionNumber);
         		fputs(linebuffer,fileptr);
         		sprintf(linebuffer,"set label 'ScanSetDetails=%s,"
         				" ScanDetails=%s, FEConfig=%s' "
-        				"at screen 0, screen 0.07\r\n",
+        				"at screen 0.01, 0.07\r\n",
         				currentscan->scanset_id, currentscan->scan_id, currentscan->fecfg);
         		fputs(linebuffer,fileptr);
         
@@ -251,11 +251,11 @@ int WriteCrosspolNF_CommandFile(SCANDATA *currentscan, char *outfilename,
         fputs("set cbrange [-180:180]\r\n",fileptr);
         //DB keys and additional info
         		sprintf(linebuffer,"set label 'MeasDate: %s"
-        				", BeamEff v%s' at screen 0, screen 0.04\r\n",currentscan->ts,VersionNumber);
+        				", BeamEff v%s' at screen 0.01, 0.04\r\n",currentscan->ts,VersionNumber);
         		fputs(linebuffer,fileptr);
         		sprintf(linebuffer,"set label 'ScanSetDetails=%s,"
         				" ScanDetails=%s, FEConfig=%s' "
-        				"at screen 0, screen 0.07\r\n",
+        				"at screen 0.01, 0.07\r\n",
         				currentscan->scanset_id, currentscan->scan_id, currentscan->fecfg);
         		fputs(linebuffer,fileptr);
 
@@ -324,11 +324,11 @@ int WriteCrosspolFF_CommandFile(SCANDATA *currentscan, char *outfilename,
         fputs("set isosamples 13,11\r\n",fileptr);
         //DB keys and additional info
         		sprintf(linebuffer,"set label 'MeasDate: %s"
-        				", BeamEff v%s' at screen 0, screen 0.04\r\n",currentscan->ts,VersionNumber);
+        				", BeamEff v%s' at screen 0.01, 0.04\r\n",currentscan->ts,VersionNumber);
         		fputs(linebuffer,fileptr);
         		sprintf(linebuffer,"set label 'ScanSetDetails=%s,"
         				" ScanDetails=%s, FEConfig=%s' "
-        				"at screen 0, screen 0.07\r\n",
+        				"at screen 0.01, 0.07\r\n",
         				currentscan->scanset_id, currentscan->scan_id, currentscan->fecfg);
         		fputs(linebuffer,fileptr);
         
@@ -359,11 +359,11 @@ int WriteCrosspolFF_CommandFile(SCANDATA *currentscan, char *outfilename,
         fputs("set isosamples 13,11\r\n",fileptr);
         //DB keys and additional info
         		sprintf(linebuffer,"set label 'MeasDate: %s"
-        				", BeamEff v%s' at screen 0, screen 0.04\r\n",currentscan->ts,VersionNumber);
+        				", BeamEff v%s' at screen 0.01, 0.04\r\n",currentscan->ts,VersionNumber);
         		fputs(linebuffer,fileptr);
         		sprintf(linebuffer,"set label 'ScanSetDetails=%s,"
         				" ScanDetails=%s, FEConfig=%s' "
-        				"at screen 0, screen 0.07\r\n",
+        				"at screen 0.01, 0.07\r\n",
         				currentscan->scanset_id, currentscan->scan_id, currentscan->fecfg);
         		fputs(linebuffer,fileptr);
         

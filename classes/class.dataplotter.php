@@ -32,7 +32,12 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.0.28";
+        $this->swversion = "1.0.29";
+
+        /*
+         * version 1.0.29:  MTM fixed "set...screen" commands to gnuplot
+         */
+
         $this->logfile = $this->writedirectory . "log_" . date("Y_m_d__H_i_s") . ".txt";
         $this->logging = 0;
    }
@@ -808,8 +813,8 @@ class DataPlotter extends GenericTable{
                         }
 
                         $plot_title = "IV Curve, $CurrentLO GHz, CCA$band-$this->CCASN";
-                        $plot_label_1 =" set label 'TestData_header.keyId: ".$this->TestDataHeader->keyId.", Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0, screen 0.01\r\n";
-                        $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0, screen 0.04\r\n";
+                        $plot_label_1 =" set label 'TestData_header.keyId: ".$this->TestDataHeader->keyId.", Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+                        $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
 
                         $imagepath = $imagedirectory . $imagename;
                         $fh = fopen($plot_command_file, 'w');
@@ -1115,8 +1120,8 @@ class DataPlotter extends GenericTable{
         //fwrite($fh, "set y3range[-181:181]\r\n");
         //fwrite($fh, "set y4range[-1:2]\r\n");
         fwrite($fh, "set bmargin 6\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter Ver. $this->swversion' at screen 0, screen 0.01\r\n");
-        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0, screen 0.04\r\n");
+        fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter Ver. $this->swversion' at screen 0.01, 0.01\r\n");
+        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
 
         //fwrite($fh, "set linestyle 1 lt 1 lw 1\r\n");
 
@@ -1272,8 +1277,8 @@ public function Plot_WorkmanshipPhase(){
     //fwrite($fh, "set y3range[-181:181]\r\n");
     //fwrite($fh, "set y4range[-1:2]\r\n");
     fwrite($fh, "set bmargin 6\r\n");
-    fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter Ver. $this->swversion' at screen 0, screen 0.01\r\n");
-    fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0, screen 0.04\r\n");
+    fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter Ver. $this->swversion' at screen 0.01, 0.01\r\n");
+    fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
 
     //fwrite($fh, "set linestyle 1 lt 1 lw 1\r\n");
 
@@ -1378,8 +1383,8 @@ public function Plot_PolAngles(){
         fwrite($fh, "set xlabel 'Source Rotation Angle (deg)'\r\n");
         fwrite($fh, "set ylabel 'Amplitude (dB)'\r\n");
         fwrite($fh, "set bmargin 6\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: $td_header, Dataplotter Ver. $this->swversion' at screen 0, screen 0.01\r\n");
-        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0, screen 0.04\r\n");
+        fwrite($fh, "set label 'TestData_header.keyId: $td_header, Dataplotter Ver. $this->swversion' at screen 0.01, 0.01\r\n");
+        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
         fwrite($fh, "set key right outside\r\n");
         fwrite($fh, "set grid xtics ytics\r\n");
         fwrite($fh, "plot '$data_file' using 1:2 title 'Pol 0 Amplitude' with lines ");
@@ -1609,8 +1614,8 @@ public function Plot_LOLockTest(){
 
         // set up plot labels
         if ($this->TestDataHeader->GetValue('DataSetGroup') == 0){
-            $plot_label_1 =" set label 'TestData_header.keyId: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0, screen 0.01\r\n";
-            $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0, screen 0.04\r\n";
+            $plot_label_1 =" set label 'TestData_header.keyId: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+            $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
         } else {
             $q = "SELECT `TestData_header`.keyID, `TestData_header`.TS,`TestData_header`.`fkFE_Config`,`TestData_header`.Meas_SWVer
                 FROM FE_Config
@@ -1658,8 +1663,8 @@ public function Plot_LOLockTest(){
                 $FE_Config = "($max_FE_Config)";
             }
 
-            $plot_label_1 =" set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0, screen 0.01\r\n";
-            $plot_label_2 ="set label 'Dataset: ".$this->TestDataHeader->GetValue('DataSetGroup').", TS: $TS, FE Configuration: $FE_Config' at screen 0, screen 0.04\r\n";
+            $plot_label_1 =" set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
+            $plot_label_2 ="set label 'Dataset: ".$this->TestDataHeader->GetValue('DataSetGroup').", TS: $TS, FE Configuration: $FE_Config' at screen 0.01, 0.04\r\n";
         }
 
         $fh = fopen($plot_command_file, 'w');
@@ -1678,8 +1683,6 @@ public function Plot_LOLockTest(){
         fwrite($fh, "set bmargin 6\r\n");
         fwrite($fh, $plot_label_1);
         fwrite($fh, $plot_label_2);
-//        fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter Ver. $this->swversion' at screen 0, screen 0.01\r\n");
-//        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0, screen 0.04\r\n");
 
         if ($UnlocksFound == 1){
             //Plot points where lock failed

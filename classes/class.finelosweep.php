@@ -29,9 +29,10 @@ class FineLOSweep extends TestData_header {
 
     public function DrawPlot(){
     // set Plot Software Version
-        $Plot_SWVer = "1.0.6";
+        $Plot_SWVer = "1.0.7";
     /*
      *  version 1.0.6:  MTM updated plotting to show measured TS rather than TS from the TestDataHeader
+     *  version 1.0.7:  MTM fixed "set...screen" commands to gnuplot
      */
         $this->SetValue('Plot_SWVer',$Plot_SWVer);
         $this->Update();
@@ -157,8 +158,8 @@ class FineLOSweep extends TestData_header {
         fwrite($fh, "set y2range [0:5]\r\n");
         fwrite($fh, "set key outside\r\n");
         fwrite($fh, "set bmargin 6\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $Plot_SWVer, Meas SWVer: ".$this->GetValue('Meas_SWVer')."' at screen 0, screen 0.01\r\n");
-        fwrite($fh, "set label '".$this->FLOSweepSubHeader[$cnt]->GetValue('TS').", FE Configuration ".$this->GetValue('fkFE_Config')."' at screen 0, screen 0.04\r\n");
+        fwrite($fh, "set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $Plot_SWVer, Meas SWVer: ".$this->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n");
+        fwrite($fh, "set label '".$this->FLOSweepSubHeader[$cnt]->GetValue('TS').", FE Configuration ".$this->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n");
         fwrite($fh, "set pointsize 2\r\n");
         fwrite($fh, "plot  '$datafile' using 1:2 with lines lt 1 title 'IJ1 uA',");
         fwrite($fh, "'$datafile' using 1:3 with lines lt 2 title 'IJ2 uA',");

@@ -1,9 +1,10 @@
 #include "constants.h"
 
-char *VersionNumber = "1.1.1";
-/* Version 1.0.8:  MM fixed nominal pointing angle for band 10.
- * Version 1.0.9:  MM code cleanup and adjustments to phase fit and squint algorithms.
- * Version 1.1.1:  MM refactoring and commenting the code, cleaning up unused code and data.
+char *VersionNumber = "1.1.2";
+/* 1.0.8:  MM fixed nominal pointing angle for band 10.
+ * 1.0.9:  MM code cleanup and adjustments to phase fit and squint algorithms.
+ * 1.1.1:  MM refactoring and commenting the code, cleaning up unused code and data.
+ * 1.1.2:  MM fixed "set label...screen" commands to gnuplot.
  *
  */
 

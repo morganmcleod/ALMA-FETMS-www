@@ -34,10 +34,10 @@ class IFSpectrumPlotter extends TestData_header{
     var $TS;                      //Timestamp string
 
     public function __construct(){
-        $this->plotswversion = "1.0.21";
+        $this->plotswversion = "1.0.22";
         /* 1.0.21 MTM: fix font color for Total and In-band power table.
          *        Fix using/displaying wrong noise floor profile for total and inband.
-         *
+         * 1.0.22 MTM: fix "set...screen" commands to gnuplot
          */
         require(site_get_config_main());
         $this->logger = new Logger('IFSpectrumPlotter.php.txt', 'w');
@@ -553,11 +553,11 @@ class IFSpectrumPlotter extends TestData_header{
     }
 
     public function CreateTemporaryTables(){
-    	//$this->logger->WriteLogFile('entering CreateTemporaryTables()');    	
+    	//$this->logger->WriteLogFile('entering CreateTemporaryTables()');
 
     	$this->dbConnection2 = site_getDbConnection();
         //$this->logger->WriteLogFile("got site_getDbConnection()");
-        
+
         //IF Spectrum
         $q = "DROP TABLE IF EXISTS TEMP_IFSpectrum ;";
         $r = @mysql_query($q,$this->dbConnection2) ; //or die("Query failed on class.testdata_header line " . __LINE__);
@@ -936,12 +936,9 @@ class IFSpectrumPlotter extends TestData_header{
         }
         $label2_ht = $label1_ht / 2;
 
-        //fwrite($fh, "set label 'TestData_header.keyId: $this->keyId, IFSpectrum Ver. $this->plotswversion' at screen 0, screen 0.07\r\n");
-        //fwrite($fh, "set label '".$this->GetValue('TS').", FE Configuration ".$this->FrontEnd->feconfig_latest."' at screen 0, screen 0.04\r\n");
-
-        $setstring = "set label 'TestData_header.keyId: $this->TDHkeyString' at screen 0, screen $label1_ht\r\n";
+        $setstring = "set label 'TestData_header.keyId: $this->TDHkeyString' at screen 0.01, $label1_ht\r\n";
         fwrite($fh, $setstring);
-        fwrite($fh, "set label '".$this->TS .", FE Configuration ".$this->FrontEnd->feconfig_latest."; TestData_header.DataSetGroup: $this->DataSetGroup; IFSpectrum Ver. $this->plotswversion' at screen 0, screen $label2_ht\r\n");
+        fwrite($fh, "set label '".$this->TS .", FE Configuration ".$this->FrontEnd->feconfig_latest."; TestData_header.DataSetGroup: $this->DataSetGroup; IFSpectrum Ver. $this->plotswversion' at screen 0.01, $label2_ht\r\n");
 
         fwrite($fh, "set key reverse outside\r\n");
         fwrite($fh, "set nokey\r\n");
@@ -1283,10 +1280,10 @@ class IFSpectrumPlotter extends TestData_header{
         fwrite($fh, "set xlabel 'Center of Window (GHz)'\r\n");
         fwrite($fh, "set ylabel 'Power Variation in Window (dB)'\r\n");
         fwrite($fh, "set bmargin 7\r\n");
-        fwrite($fh, "set label 'Max Power Variation: $maxpowervar dB' at screen 0, screen 0.07\r\n");
-        $setstring = "set label 'TestData_header.keyId: $this->TDHkeyString' at screen 0, screen 0.04\r\n";
+        fwrite($fh, "set label 'Max Power Variation: $maxpowervar dB' at screen 0.01, 0.07\r\n");
+        $setstring = "set label 'TestData_header.keyId: $this->TDHkeyString' at screen 0.01, 0.04\r\n";
         fwrite($fh, $setstring);
-        fwrite($fh, "set label '".$this->TS .", FE Config ".$this->FrontEnd->feconfig_latest."; DataSetGroup: $this->DataSetGroup; IFSpectrum Ver. $this->plotswversion' at screen 0, screen 0.01\r\n");
+        fwrite($fh, "set label '".$this->TS .", FE Config ".$this->FrontEnd->feconfig_latest."; DataSetGroup: $this->DataSetGroup; IFSpectrum Ver. $this->plotswversion' at screen 0.01, 0.01\r\n");
 
 
 

@@ -10,7 +10,12 @@ class cca_image_rejection extends TestData_header{
 
     public function DrawPlot(){
     // set Plot Software Version
-        $Plot_SWVer = "1.0.1";
+        $Plot_SWVer = "1.0.2";
+
+        /*
+         * version 1.0.2:  MTM fixed "set...screen" commands to gnuplot
+         */
+
         $this->SetValue('Plot_SWVer',$Plot_SWVer);
         $this->Update();
 
@@ -200,8 +205,8 @@ class cca_image_rejection extends TestData_header{
         fclose($fc12);
 
         //common plotting code
-            $plot_label_1 ="set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $Plot_SWVer, Meas SWVer: ".$this->GetValue('Meas_SWVer')."' at screen 0, screen 0.01\r\n";
-            $plot_label_2 ="set label '".$this->GetValue('TS').", FE Component ".$this->GetValue('fkFE_Components')."' at screen 0, screen 0.04\r\n";
+            $plot_label_1 ="set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $Plot_SWVer, Meas SWVer: ".$this->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+            $plot_label_2 ="set label '".$this->GetValue('TS').", FE Component ".$this->GetValue('fkFE_Components')."' at screen 0.01, 0.04\r\n";
 
         // start loop for both plots
         for ($cnt = 0; $cnt < 2; $cnt++){

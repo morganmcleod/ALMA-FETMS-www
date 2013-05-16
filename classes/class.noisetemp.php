@@ -45,7 +45,13 @@ class NoiseTemperature extends TestData_header{
         }
 
         // set Plot Software Version
-        $Plot_SWVer = "1.0.16";
+        $Plot_SWVer = "1.0.17";
+        /*
+         * 1.0.16  MTM: fix plot axis labels for Tssb and "corrected"
+         * 1.0.17  MTM: fix "set label...screen" commands to gnuplot
+         */
+
+
         $this->SetValue('Plot_SWVer',$Plot_SWVer);
         $this->Update();
 
@@ -752,8 +758,8 @@ class NoiseTemperature extends TestData_header{
         //***************************************************
         //common plotting code
         if ($this->GetValue('DataSetGroup') == 0){
-            $plot_label_1 =" set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $Plot_SWVer, Meas SWVer: ".$this->GetValue('Meas_SWVer')."' at screen 0, screen 0.01\r\n";
-            $plot_label_2 ="set label '".$this->GetValue('TS').", FE Configuration ".$this->GetValue('fkFE_Config')."' at screen 0, screen 0.04\r\n";
+            $plot_label_1 =" set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $Plot_SWVer, Meas SWVer: ".$this->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+            $plot_label_2 ="set label '".$this->GetValue('TS').", FE Configuration ".$this->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
         } else {
 
             $q = "SELECT `TestData_header`.keyID, `TestData_header`.TS,`TestData_header`.`fkFE_Config`,`TestData_header`.Meas_SWVer
@@ -801,8 +807,8 @@ class NoiseTemperature extends TestData_header{
                 $TS = "($maxTS)";
                 $FE_Config = "($max_FE_Config)";
             }
-            $plot_label_1 =" set label 'TestData_header.keyId: ($keyId), Plot SWVer: $Plot_SWVer, Meas SWVer: $meas_ver' at screen 0, screen 0.01\r\n";
-            $plot_label_2 ="set label 'Dataset: ".$this->GetValue('DataSetGroup').", TS: $TS, FE Configuration: $FE_Config' at screen 0, screen 0.04\r\n";
+            $plot_label_1 =" set label 'TestData_header.keyId: ($keyId), Plot SWVer: $Plot_SWVer, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
+            $plot_label_2 ="set label 'Dataset: ".$this->GetValue('DataSetGroup').", TS: $TS, FE Configuration: $FE_Config' at screen 0.01, 0.04\r\n";
 
         }
 
@@ -944,8 +950,8 @@ class NoiseTemperature extends TestData_header{
         } else {
             fwrite($f, "set ylabel 'T_Rec uncorrected (K)'\r\n");
             if ( $this->GetValue('Band') != 9 && $this->GetValue('Band') != 10){
-                fwrite($f,  " ".'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, screen .16'."\r\n");
-                fwrite($f,  " ".'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, screen .9'."\r\n");
+                fwrite($f,  " ".'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .16'."\r\n");
+                fwrite($f,  " ".'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .9'."\r\n");
             }
         }
         fwrite($f, "set y2label 'Difference from Spec(%)'\r\n");

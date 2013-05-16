@@ -42,9 +42,12 @@ class WCA extends FEComponent{
         $this->logging = 0;
         $this->fc = $in_fc;
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.1";
-        //$this->dbconnection = $in_dbconnection;
-        //parent::Initialize("FE_Components",$in_keyId,"keyId",$this->fc,'keyFacility');
+        $this->swversion = "1.0.2";
+        /*
+         * 1.0.2  MTM:  fix "set label...screen" commands to gnuplot
+         */
+
+
         parent::Initialize_FEComponent($in_keyId, $in_fc);
 
         $this->writedirectory = $this->writedirectory . "wca"
@@ -1066,7 +1069,7 @@ class WCA extends FEComponent{
         fwrite($fh, "set terminal png size 900,500\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
-        //fwrite($fhc, "set label '$TS' at screen 0.5, screen 0.95\r\n");
+        //fwrite($fhc, "set label '$TS' at screen 0.5, 0.95\r\n");
         fwrite($fh, "set grid\r\n");
         fwrite($fh, "set log xy\r\n");
         fwrite($fh, "set key outside\r\n");
@@ -1357,9 +1360,9 @@ class WCA extends FEComponent{
 
             fwrite($fhc, "set output '$imagepath'\r\n");
             //fwrite($fh, "set title '$plot_title'\r\n");
-            fwrite($fhc, "set label '$plot_title' at screen 0.5, screen 0.95\r\n");
-            fwrite($fhc, "set label 'IF Frequency (GHz)' at screen 0.5, screen 0.24 \r\n");
-            fwrite($fhc, "set label 'LO Frequency (GHz)' at screen 1, screen 0.5 rotate by 90 \r\n");
+            fwrite($fhc, "set label '$plot_title' at screen 0.5, 0.95\r\n");
+            fwrite($fhc, "set label 'IF Frequency (GHz)' at screen 0.5, 0.24 \r\n");
+            fwrite($fhc, "set label 'LO Frequency (GHz)' at screen 1, 0.5 rotate by 90 \r\n");
             fwrite($fhc, "set pm3d map\r\n");
             fwrite($fhc, "set palette model RGB defined (0 'black', 2 'blue', 4 'green', 6 'yellow', 8 'orange', 10 'red')\r\n");
             fwrite($fhc, "set terminal png crop \r\n");

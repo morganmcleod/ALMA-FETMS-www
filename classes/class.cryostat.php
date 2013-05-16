@@ -31,7 +31,12 @@ class Cryostat extends GenericTable{
 
     function __construct() {
         require(site_get_config_main());
-        $this->swversioncryo = '1.0.3';
+        $this->swversioncryo = '1.0.4';
+
+        /*
+         * version 1.0.4:  MTM fixed "set...screen" commands to gnuplot
+        */
+
         $this->fc = $fc;
         $this->datadir = $main_write_directory;
         $this->urldir = $main_url_directory;
@@ -1050,8 +1055,8 @@ class Cryostat extends GenericTable{
         fwrite($fh, "set ylabel 'Presure (mbar)'\r\n");
 
         fwrite($fh, "set bmargin 7\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " .$this->tdheaders[$datatype]->keyId.", Cryostat Ver. $this->swversioncryo' at screen 0, screen 0.07\r\n");
-        fwrite($fh, "set label '".$this->tdheaders[$datatype]->GetValue('TS').", FE Configuration ".$this->FEConfig."' at screen 0, screen 0.04\r\n");
+        fwrite($fh, "set label 'TestData_header.keyId: " .$this->tdheaders[$datatype]->keyId.", Cryostat Ver. $this->swversioncryo' at screen 0.01, 0.07\r\n");
+        fwrite($fh, "set label '".$this->tdheaders[$datatype]->GetValue('TS').", FE Configuration ".$this->FEConfig."' at screen 0.01, 0.04\r\n");
 
 
 
@@ -1175,8 +1180,8 @@ class Cryostat extends GenericTable{
         fwrite($fh, "set ylabel 'Presure (mbar)'\r\n");
 
         fwrite($fh, "set bmargin 7\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " .$this->tdheaders[$datatype]->keyId.", Cryostat Ver. $this->swversioncryo' at screen 0, screen 0.07\r\n");
-        fwrite($fh, "set label '".$this->tdheaders[$datatype]->GetValue('TS').", FE Configuration ".$this->FEConfig."' at screen 0, screen 0.04\r\n");
+        fwrite($fh, "set label 'TestData_header.keyId: " .$this->tdheaders[$datatype]->keyId.", Cryostat Ver. $this->swversioncryo' at screen 0.01, 0.07\r\n");
+        fwrite($fh, "set label '".$this->tdheaders[$datatype]->GetValue('TS').", FE Configuration ".$this->FEConfig."' at screen 0.01, 0.04\r\n");
 
 
         $f_x = str_replace("x","*x",$LinearEquation);
@@ -1308,8 +1313,8 @@ class Cryostat extends GenericTable{
         fwrite($fh, "set ylabel 'Temperature (K)'\r\n");
 
         fwrite($fh, "set bmargin 7\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " .$this->tdheaders[$datatype]->keyId.", Cryostat Ver. $this->swversioncryo' at screen 0, screen 0.07\r\n");
-        fwrite($fh, "set label '".$this->tdheaders[$datatype]->GetValue('TS').", FE Configuration ".$this->FEConfig."' at screen 0, screen 0.04\r\n");
+        fwrite($fh, "set label 'TestData_header.keyId: " .$this->tdheaders[$datatype]->keyId.", Cryostat Ver. $this->swversioncryo' at screen 0.01, 0.07\r\n");
+        fwrite($fh, "set label '".$this->tdheaders[$datatype]->GetValue('TS').", FE Configuration ".$this->FEConfig."' at screen 0.01, 0.04\r\n");
 
 
         $title1 = $this->tempsensors[1]->GetValue('location');
