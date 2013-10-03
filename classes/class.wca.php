@@ -622,23 +622,27 @@ class WCA extends FEComponent{
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
             <!-- Name of input element determines name in $_FILES array -->
             <br>
-            <table id="table1"><tr class="alt"><th>CSV Data files</th></tr>
-                <tr><td align = "right">WCAs file:           </b><input name="file_wcas" type="file" /></td></tr>
-                <tr class = "alt"><td align = "right">Max Safe Power:      </b><input name="file_maxsafepower" type="file" /></td></tr>
-                <tr><td align = "right">Amplitude Stability: </b><input name="file_amplitudestability" type="file" /></td></tr>
-                <tr><td align = "right">AM Noise:            </b><input name="file_amnoise" type="file" /></td></tr>
-                <tr><td align = "right">Output Power:        </b><input name="file_outputpower" type="file" /></td></tr>
-                <tr><td align = "right">Phase Noise:         </b><input name="file_phasenoise" type="file" /></td></tr>';
-
+            <table id="table1"><tr class="alt"><th>CSV Data files</th><th></th></tr>
+                <tr><td align = "right">WCAs file:           </b><input name="file_wcas" type="file" /></td><td></td></tr>
+                <tr class = "alt"><td align = "right">Max Safe Power:      </b><input name="file_maxsafepower" type="file" /><td></td></tr>
+                <tr><td align = "right">Amplitude Stability: </b><input name="file_amplitudestability" type="file" /></td>
+                    <td align = "center"><input type="submit" name="draw_amplitudestability" value="Redraw Amp. Stability"></td></tr>
+                <tr><td align = "right">AM Noise:            </b><input name="file_amnoise" type="file" /></td>
+                    <td align = "center"><input type="submit" name="draw_amnoise" value="Redraw AM Noise"></td></tr>
+                <tr><td align = "right">Output Power:        </b><input name="file_outputpower" type="file" /></td>
+                    <td align = "center"><input type="submit" name="draw_outputpower" value="Redraw Output Power"></td></tr>
+                <tr><td align = "right">Phase Noise:         </b><input name="file_phasenoise" type="file" /></td>
+                    <td align = "center"><input type="submit" name="draw_phasenoise" value="Redraw Phase Noise"></td></tr>';
             echo "<tr><td align = 'right'>PASSWORD: <input type='text' name='password' size='10' maxlength='200' value = ''>";
             echo "<input type='hidden' name= 'fc' value='$this->fc' />";
-            echo '<input type="submit" name= "submit_datafile" value="Submit" /></td></tr>
-
+            echo '<input type="submit" name= "submit_datafile" value="Submit" /></td>
+                    <td align = "center"><input type="submit" name="draw_all" value="REDRAW ALL PLOTS"></td></tr>
             </table>
         </form>
         </div>';
+        echo "<br>";
+        echo "<br>";
     }
-
     public function RequestValues_WCA(){
         $this->password = $_REQUEST['password'];
         parent::RequestValues();
@@ -722,6 +726,23 @@ class WCA extends FEComponent{
                 echo "<font color = '#ff0000'><b>Incorrect password. Files NOT uploaded.</b></font><br>";
             }
         }
+        if (isset($_REQUEST['draw_all'])){
+            $this->RedrawAllPlots();
+        } else {
+            if (isset($_REQUEST['draw_amnoise'])){
+                $this->Plot_AMNoise();
+            }
+            if (isset($_REQUEST['draw_outputpower'])){
+                $this->Plot_OutputPower();
+            }
+            if (isset($_REQUEST['draw_amplitudestability'])){
+                $this->Plot_AmplitudeStability();
+            }
+            if (isset($_REQUEST['draw_phasenoise'])){
+                $this->Plot_PhaseNoise();
+            }
+        }
+
         $this->Update_WCA();
         $this->AddNewLOParams();
         if (isset($_REQUEST['exportcsv_amplitudestability'])){
@@ -1174,6 +1195,14 @@ class WCA extends FEComponent{
             $FreqHI=10;
         }
 
+        If ($Band=='10'){
+            $FreqLOW=4;
+            $FreqHI=12;
+        }
+
+        // Note, using 4-8 GHz for band 9 intentionally since it may become 2SB in the future and the worst noise
+        //     contribution is in the lower half.
+
         $imagedirectory = $this->writedirectory;
         //$imagedirectory .= $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
         if (!file_exists($imagedirectory)){
@@ -1359,24 +1388,23 @@ class WCA extends FEComponent{
             $fhc = fopen($plot_command_file, 'w');
 
             fwrite($fhc, "set output '$imagepath'\r\n");
-            //fwrite($fh, "set title '$plot_title'\r\n");
-            fwrite($fhc, "set label '$plot_title' at screen 0.5, 0.95\r\n");
-            fwrite($fhc, "set label 'IF Frequency (GHz)' at screen 0.5, 0.24 \r\n");
-            fwrite($fhc, "set label 'LO Frequency (GHz)' at screen 1, 0.5 rotate by 90 \r\n");
+            //fwrite($fhc, "set label '$plot_title' at screen 0.3, 0.95\r\n");
+            //fwrite($fhc, "set label 'IF (GHz)' at screen 0.5, 0.24 \r\n");
+            //fwrite($fhc, "set label 'LO Frequency (GHz)' at screen 1, 0.5 rotate by 90 \r\n");
             fwrite($fhc, "set pm3d map\r\n");
             fwrite($fhc, "set palette model RGB defined (0 'black', 2 'blue', 4 'green', 6 'yellow', 8 'orange', 10 'red')\r\n");
-            fwrite($fhc, "set terminal png crop \r\n");
-            fwrite($fhc, "set size 1.2,1.2\r\n");
-
-
-
+            fwrite($fhc, "set terminal png crop\r\n");
+            //fwrite($fhc, "set size 1.2,1.2\r\n");
+            fwrite($fhc, "set title '$plot_title'\r\n");
+            fwrite($fhc, "set xlabel 'IF (GHz)'\r\n");
+            fwrite($fhc, "set ylabel 'LO Frequency (GHz)'\r\n");
             fwrite($fhc, "set cblabel 'NSR (K/uW)' \r\n");
-            fwrite($fhc, "set key off\r\n");
-            fwrite($fhc, "set view 0,0\r\n");
+            //fwrite($fhc, "set key off\r\n");
+            fwrite($fhc, "set view map\r\n");
 
             fwrite($fhc, "set cbrange[0:]\r\n");
 
-            $plot_string = "splot '$data_file[$pol]' using 1:2:3 title 'Pol $pol'\r\n";
+            $plot_string = "splot '$data_file[$pol]' using 1:2:3 title ''\r\n";
             fwrite($fhc, $plot_string);
             fclose($fhc);
 
@@ -1730,7 +1758,6 @@ class WCA extends FEComponent{
 
         $imagedirectory .= $this->writedirectory;
 
-
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
@@ -1778,10 +1805,7 @@ class WCA extends FEComponent{
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
 
-
         fwrite($fh, "set yrange[0:]\r\n");
-
-
 
         //set xrange
         $qx = "SELECT MAX(FreqLO) FROM WCA_OutputPower
@@ -1792,6 +1816,8 @@ class WCA extends FEComponent{
         fwrite($fh, "set xrange[:$xMAX]\r\n");
 
         fwrite($fh, "set xlabel 'LO Frequency (GHz)'\r\n");
+        fwrite($fh, "set ylabel 'Output Power (mW)'\r\n");
+
         fwrite($fh, "set key outside\r\n");
 
 
@@ -1828,12 +1854,8 @@ class WCA extends FEComponent{
                 $plot_string .= ", f5(x) title 'Max Safe Operation' with lines lw 3 ";
                 break;
             case 8:
-
                 fwrite($fh, "f4(x)=((x>65.5) && (x<70)) ? 90 : 1/0\r\n");//max spec 1
                 fwrite($fh, "f5(x)=((x>70) && (x<82)) ? 80 : 1/0\r\n");//max spec 2
-
-
-
                 fwrite($fh, "f6(x)=((x>65.5) && (x<82)) ? 90 : 1/0\r\n");//max safe
 
                 $plot_string = "plot f6(x) with lines lt 2 lw 3.2 title 'Max Safe Operation'";
@@ -1847,6 +1869,14 @@ class WCA extends FEComponent{
                 fwrite($fh, "f3(x)=((x>67.3) && (x<79.1)) ? 125 : 1/0\r\n");
                 $plot_string = "plot f2(x) title 'Spec' with lines lw 3";
                 $plot_string .= ", f3(x) title 'Max Safe Operation' with lines lw 3 ";
+                break;
+
+            case 10:
+                fwrite($fh, "f2(x)=((x>88) && (x<98)) ? 60 : 1/0\r\n");//max spec
+                fwrite($fh, "f3(x)=((x>98) && (x<105)) ? 80 : 1/0\r\n");//max spec
+
+                $plot_string = "plot f2(x) title 'Spec' with lines lw 4 lt 1";
+                $plot_string .= ", f3(x) title 'Spec' with lines lw 4 lt 1";
                 break;
 
             default:
@@ -1872,41 +1902,45 @@ class WCA extends FEComponent{
         $TS = $this->tdh_outputpower->GetValue('TS') ;
 
         //write data files from database
-        $spec_value_hi = 100;
-        $spec_value_low = 25;
+        $spec_value_1 = 100;
+        $spec_description_1 = 'Spec';
+
+        $spec_value_2 = 0;
+        $spec_description_2 = '';
+        $enable_spec_2 = false;
+
         $Band = $this->GetValue('Band');
         switch ($Band) {
             case 3:
-                $spec_value_low = 0.4;
-                $spec_value_hi = 1.6;
+                $spec_value_1 = 1.6;
                 break;
             case 4:
-                //$spec_value_low = 2;
-                //$spec_value_hi = 7;
-                $spec_value_low = 3.75;
-                $spec_value_hi = 15;
-                $spec_value_low2 = 7;
-                $spec_value_hi2 = 30;
+                $spec_value_1 = 15;
+                $spec_value_2 = 30;
+                $spec_description_1 = 'Spec < 75 GHz';
+                $spec_description_2 = 'Spec >= 75 GHz)';
+                $enable_spec_2 = true;
                 break;
             case 6:
-                $spec_value_low = 5;
-                $spec_value_hi = 20;
+                $spec_value_1 = 20;
                 break;
             case 7:
-                $spec_value_low = 1;
-                $spec_value_hi = 8;
+                $spec_value_1 = 8;
                 break;
             case 8:
-                $spec_value_low = 20;
-                $spec_value_hi = 80;
+                $spec_value_1 = 80;
                 break;
             case 9:
-                $spec_value_low = 25;
-                $spec_value_hi = 100;
+                $spec_value_1 = 100;
+                break;
+            case 10:
+                $spec_value_1 = 60;
+                $spec_value_2 = 80;
+                $spec_description_1 = 'Spec < 98 GHz';
+                $spec_description_2 = 'Spec >= 98 GHz';
+                $enable_spec_2 = true;
                 break;
         }
-
-
 
         $datafile_count=0;
         $qFindLO = "SELECT DISTINCT(FreqLO) FROM WCA_OutputPower
@@ -1916,13 +1950,13 @@ class WCA extends FEComponent{
         AND fkFacility = $this->fc
         ORDER BY FreqLO ASC;";
 
-
         $rFindLO = @mysql_query($qFindLO,$this->dbconnection);
         $rowLO=@mysql_fetch_array($rFindLO);
         $i=0;
         while ($rowLO = mysql_fetch_array($rFindLO)){
             $CurrentLO = @mysql_result($rFindLO,$i);
 
+            // TODO:   special meaining of keyDataSet for band 3?   Hmmm...
             if ($Band != 3){
                 $q = "SELECT VD$pol,Power FROM WCA_OutputPower
                 WHERE Pol = $pol
@@ -1952,25 +1986,11 @@ class WCA extends FEComponent{
                 }
 
                 $fh = fopen($data_file[$datafile_count], 'w');
-
-
                 $row=@mysql_fetch_array($r);
-
-                if ($datafile_count == 0){
-                    while($row=@mysql_fetch_array($r)){
-                        $stringData = "$row[0]\t$row[1]\t$spec_value_hi\t$spec_value_low\r\n";
-                        fwrite($fh, $stringData);
-                    }
+                while($row=@mysql_fetch_array($r)){
+                    $stringData = "$row[0]\t$row[1]\r\n";
+                    fwrite($fh, $stringData);
                 }
-
-
-                if ($datafile_count != 0){
-                    while($row=@mysql_fetch_array($r)){
-                        $stringData = "$row[0]\t$row[1]\r\n";
-                        fwrite($fh, $stringData);
-                    }
-                }
-
                 fclose($fh);
                 $datafile_count++;
             }
@@ -1989,8 +2009,6 @@ class WCA extends FEComponent{
         $this->_WCAs->Update();
         $imagepath = $imagedirectory . $imagename;
 
-
-
         //Write command file for gnuplot
         $plot_title = "WCA Band" . $this->GetValue('Band') . " SN" . $this->GetValue('SN') . " Output Power Vs. Drain Voltage Pol $pol ($TS)";
         $plot_command_file = $this->writedirectory . "wca_op_vd_command.txt";
@@ -2004,41 +2022,16 @@ class WCA extends FEComponent{
         fwrite($fh, "set grid\r\n");
         fwrite($fh, "set xlabel 'VD$pol (V)'\r\n");
         fwrite($fh, "set ylabel 'Output Power (mW)'\r\n");
-
-        if ($Band == 4)
-            fwrite($fh, "f1(x) = 3.75\r\n");
-        fwrite($fh, "f2(x) = 15\r\n");
-        fwrite($fh, "f3(x) = 7\r\n");
-        fwrite($fh, "f4(x) = 30\r\n");
-
         fwrite($fh, "set key outside\r\n");
 
-        if ($Band != 4){
-            //$plot_string = "plot '$data_file[0]' using 1:3 title 'Spec' with lines lw 3 lt 1 ";
-            //$plot_string .= ", '$data_file[0]' using 1:4 title 'Spec' with lines lw 3 lt 1 ";
-            $plot_string = "plot '$data_file[0]' using 1:3 title 'Spec' with lines lw 3 lt 1 ";
-            //$plot_string .= ", '$data_file[0]' using 1:4 title 'Spec' with lines lw 3 lt 1 ";
-
-
-            $plot_string .= ", '$data_file[0]' using 1:2 title '$plottitle[0]' with lines lw 3 ";
-        }
-        if ($Band == 4){
-            //$plot_string = "plot 3.75 title 'Spec (66.5-75 GHz)' with lines lw 3 lt 9 ";
-            //$plot_string .= ", 15 notitle with lines lw 3 lt 9 ";
-            //$plot_string .= ", 7.5 title 'Spec (75-77.5 GHz)' with lines lw 3 lt 1 ";
-            //$plot_string .= ", 30 notitle with lines lw 3 lt 1 ";
-
-            $plot_string = "plot 15 title 'Spec (66.5-75 GHz)' with lines lw 3 lt 9 ";
-            $plot_string .= ", 30 title 'Spec (75-77.5 GHz)' with lines lw 3 lt 1 ";
-
-
-
-            $plot_string .= ", '$data_file[0]' using 1:2 title '$plottitle[0]' with lines lw 3 ";
+        // plot the spec lines:
+        $plot_string = "plot $spec_value_1 title '$spec_description_1' with lines lw 4 lt 1 ";
+        if ($enable_spec_2) {
+            $plot_string .= ", $spec_value_2 title '$spec_description_2' with lines lw 4 lt 9 ";
         }
 
-
-
-        for ($i=1;$i<sizeof($data_file);$i++){
+        // plot each trace:
+        for ($i=0;$i<sizeof($data_file);$i++){
             if ($i%2 == 0){
                 $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines lw 3";
             }
@@ -2049,15 +2042,13 @@ class WCA extends FEComponent{
         }
         $plot_string .= "\r\n";
         fwrite($fh, $plot_string);
+
         fclose($fh);
 
         //Make the plot
         $GNUPLOT = $this->GNUplot;
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
-
-
-
     }
 
     public function Plot_OutputPower_vs_stepsize($pol){
@@ -2196,9 +2187,6 @@ class WCA extends FEComponent{
                 $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
                 break;
 
-
-
-
             case 6:
                 fwrite($fh, "set xrange[0:20]\r\n");
                 fwrite($fh, "f1(x)=((x>=5) && (x<=20)) ? 0.5 : 1/0\r\n");
@@ -2218,6 +2206,11 @@ class WCA extends FEComponent{
                 fwrite($fh, "set xrange[0:100]\r\n");
                 fwrite($fh, "f1(x)=((x>=25) && (x<=100)) ? 0.3 : 1/0\r\n");
                 $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
+                break;
+            case 10:
+                fwrite($fh, "set xrange[0:140]\r\n");
+                fwrite($fh, "f1(x)=((x>=20) && (x<=80)) ? 0.5 : 1/0\r\n");
+                $plot_string = "plot f1(x) title 'Spec' with lines lw 4";
                 break;
             default:
                 fwrite($fh, "f1(x)=((x>=25) && (x<=25.01)) ? 0 : 1/0\r\n");
@@ -2256,8 +2249,7 @@ class WCA extends FEComponent{
         $this->Plot_AmplitudeStability();
         $this->Plot_AMNoise();
         $this->Plot_OutputPower();
-        //$this->Plot_PhaseNoise();
-        //Don't do phase noize until jitter formula is tested
+        $this->Plot_PhaseNoise();
     }
 
     public function IsPlotNeeded($tableName, $ImageURL){
