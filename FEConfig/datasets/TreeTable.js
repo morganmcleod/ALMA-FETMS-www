@@ -37,6 +37,10 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
     
         }
     });
+
+    // A place to cache the original child node data we were sent so we can detect changes on SAVE:
+    var ODArray = new Array();
+    var ODSize = 0;
     
     var tree = Ext.create('Ext.tree.Panel', {
     	title: dtype_desc + ' Data Sets Band ' + band,
@@ -48,7 +52,7 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
         renderTo: 'tree-div',
         width: 800,
         height: 550,
-      
+        
         columns: [
               {
                   xtype: 'treecolumn', //this is so we know which column will show the tree
@@ -91,9 +95,23 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
 
         plugins: [
             Ext.create('Ext.grid.plugin.CellEditing', {clicksToEdit:1})
-        ]
-});
-    
+        ],
+        
+        listeners: {
+        	'load': function () {
+        		this.getView().node.cascadeBy(function(rec) {
+        			// cache the data in each child node so we can only send the ones which have changed on SAVE:
+        			ODArray[ODSize]          = new Object;
+        			ODArray[ODSize].subid    = rec.get('id');
+        			ODArray[ODSize].FEid     = FEid;
+        			ODArray[ODSize].datatype = datatype;
+        			ODArray[ODSize].checked  = (rec.get('checked')) ? '1' : '0';
+        			ODSize++;
+        		});
+        	}
+        }
+    });
+
     tree.addDocked({
         dock: 'top',
         xtype: 'toolbar',
@@ -106,25 +124,26 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
 	        scope: this,
             handler: function() {
                var IsChecked;
-               var counter = 0;
+               var ODChecked;
+               var ODCount = 0;
+               var outputSize = 0;
                var JSONObjectArray = new Array();
            
                tree.getView().node.cascadeBy(function(rec) {
                    //Since ExtJS4 doesn't send updated child node values from client to server,
                    //we must iterate through the child nodes and send them one by one.
-                   //This loop populates a JSON object.                                        
-                   JSONObjectArray[counter]          = new Object;
-                   JSONObjectArray[counter].subid    = rec.get('id');
-                   JSONObjectArray[counter].FEid     = FEid;
-                   JSONObjectArray[counter].datatype = datatype;
-           
-                   IsChecked = rec.get('checked');                                        
-                   if (IsChecked == true){
-                       JSONObjectArray[counter].checked  = '1';
-                   } else {
-                       JSONObjectArray[counter].checked  = '0';
+                   //This loop populates a JSON object.
+            	   IsChecked = rec.get('checked');
+            	   ODChecked = (ODArray[ODCount].checked == '1');
+                   if (IsChecked != ODChecked) {
+	                   JSONObjectArray[outputSize]          = new Object;
+	                   JSONObjectArray[outputSize].subid    = rec.get('id');
+	                   JSONObjectArray[outputSize].FEid     = FEid;
+	                   JSONObjectArray[outputSize].datatype = datatype;
+	                   JSONObjectArray[outputSize].checked  = (IsChecked) ? '1' : '0';
+	                   outputSize++;
                    }
-                   counter+=1;
+                   ODCount++;
                });  
            
                var received = function (response) {
@@ -137,8 +156,8 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
                    //Send the JSON object
                    url: 'TreeGridJSON.php?action=update_children&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype, // Called when saving new records                   
                    success: received,
-                   jsonData:  JSON.stringify(JSONObjectArray),
-                   timeout: 60000
+                   jsonData:  JSON.stringify(JSONObjectArray)
+                   //timeout: 60000
                });
            
                //Send the top level json records to the server.
