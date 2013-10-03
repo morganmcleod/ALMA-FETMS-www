@@ -1288,18 +1288,14 @@ class WCA extends FEComponent{
         fwrite($fh, "set grid\r\n");
         fwrite($fh, "set xlabel 'LO Frequency (GHz)'\r\n");
         fwrite($fh, "set ylabel 'Average DSB NSR (K/uW)'\r\n");
-        //fwrite($fh, "set yrange[0:$plotmax]\r\n");
-        //fwrite($fh, "set yrange[:]\r\n");
         fwrite($fh, "set key outside\r\n");
 
         //Spec line
         fwrite($fh, "f1(x)= 10\r\n");
 
-        //$plot_string = "plot '$data_file[0]' using 1:3 title 'Spec' with lines";
-        //$plot_string .= ", '$data_file[0]' using 1:2 title 'Pol 0' with lines";
         $plot_string = "plot '$data_file[0]' using 1:2 title 'Pol 0' with lines lt 6";
         $plot_string .= ", '$data_file[1]' using 1:2 title 'Pol 1' with lines lt 3\r\n";
-        //$plot_string .= ", f1(x) title 'Spec' with lines lt 1\r\n";
+
         fwrite($fh, $plot_string);
         fclose($fh);
 
@@ -1326,9 +1322,6 @@ class WCA extends FEComponent{
     public function Plot_AMNoise_Pol0_1(){
         $TS = $this->tdh_amnoise->GetValue('TS');
         for($pol=0;$pol<=1;$pol++){
-
-            //$imagedirectory = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/wca_datafiles/";
-            //$imagedirectory .= $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
 
             $imagedirectory = $this->writedirectory;
             if (!file_exists($imagedirectory)){
@@ -1378,7 +1371,6 @@ class WCA extends FEComponent{
             }
             fclose($fh);
 
-
             $amtitle = "AMNoise Pol $pol";
             //Command file
             $plot_command_file = $this->writedirectory . "wca_as_command.txt";
@@ -1388,20 +1380,14 @@ class WCA extends FEComponent{
             $fhc = fopen($plot_command_file, 'w');
 
             fwrite($fhc, "set output '$imagepath'\r\n");
-            //fwrite($fhc, "set label '$plot_title' at screen 0.3, 0.95\r\n");
-            //fwrite($fhc, "set label 'IF (GHz)' at screen 0.5, 0.24 \r\n");
-            //fwrite($fhc, "set label 'LO Frequency (GHz)' at screen 1, 0.5 rotate by 90 \r\n");
             fwrite($fhc, "set pm3d map\r\n");
             fwrite($fhc, "set palette model RGB defined (0 'black', 2 'blue', 4 'green', 6 'yellow', 8 'orange', 10 'red')\r\n");
             fwrite($fhc, "set terminal png crop\r\n");
-            //fwrite($fhc, "set size 1.2,1.2\r\n");
             fwrite($fhc, "set title '$plot_title'\r\n");
             fwrite($fhc, "set xlabel 'IF (GHz)'\r\n");
             fwrite($fhc, "set ylabel 'LO Frequency (GHz)'\r\n");
             fwrite($fhc, "set cblabel 'NSR (K/uW)' \r\n");
-            //fwrite($fhc, "set key off\r\n");
             fwrite($fhc, "set view map\r\n");
-
             fwrite($fhc, "set cbrange[0:]\r\n");
 
             $plot_string = "splot '$data_file[$pol]' using 1:2:3 title ''\r\n";
@@ -1836,7 +1822,12 @@ class WCA extends FEComponent{
                 $plot_string .= ", f2(x) title 'Max Safe Operation' with lines lw 3 lt 2 ";
                 break;
 
-
+            case 5:
+                fwrite($fh, "f2(x)=((x>83) && (x<101.5)) ? 12 : 1/0\r\n"); //max spec
+                fwrite($fh, "f3(x)=((x>83) && (x<101.5)) ? 40 : 1/0\r\n");//max safe
+                $plot_string = "plot f2(x) title 'Spec' with lines lw 3";
+                $plot_string .= ", f3(x) title 'Max Safe Operation' with lines lw 3 ";
+                break;
 
             case 6:
                 fwrite($fh, "f2(x)=((x>73.7) && (x<88.3)) ? 20 : 1/0\r\n");//max spec
@@ -1920,6 +1911,9 @@ class WCA extends FEComponent{
                 $spec_description_1 = 'Spec < 75 GHz';
                 $spec_description_2 = 'Spec >= 75 GHz)';
                 $enable_spec_2 = true;
+                break;
+            case 5:
+                $spec_value_1 = 12;
                 break;
             case 6:
                 $spec_value_1 = 20;
@@ -2186,7 +2180,13 @@ class WCA extends FEComponent{
                 fwrite($fh, "f1(x)=((x>=3.75) && (x<=30)) ? 0.25 : 1/0\r\n");
                 $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
                 break;
-
+            case 5:
+                fwrite($fh, "set xrange[0:12]\r\n");
+                fwrite($fh, "f1(x)=((x>=1) && (x<3)) ? 0.5 : 1/0\r\n");
+                fwrite($fh, "f2(x)=((x>=3) && (x<=12)) ? 0.3 : 1/0\r\n");
+                $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
+                $plot_string .= ", f2(x) title 'Spec' with lines lw 3 lt 1";
+                break;
             case 6:
                 fwrite($fh, "set xrange[0:20]\r\n");
                 fwrite($fh, "f1(x)=((x>=5) && (x<=20)) ? 0.5 : 1/0\r\n");
