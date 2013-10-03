@@ -224,6 +224,8 @@ if ($action == 'update_children'){
             }
             break;
     }
+    // echo server call back
+    echo "{'success':'1'}";
 }
 
 
@@ -254,7 +256,10 @@ if ($action == 'update'){
     }
 
     $rows = count($array,0);
-    $cols = (count($array,1)/count($array,0))-1;
+    if ($rows > 0)
+        $cols = (count($array,1)/count($array,0))-1;
+    else
+        $cols = 0;
     if ($array[0]['id'] != ''){
 
     //2d array (i.e., more than one TestData_header record is being affected)
@@ -267,8 +272,6 @@ if ($action == 'update'){
         }
     }
 
-    //Echo the json data back so the store will update and the "dirty record" markers
-//    echo json_encode($json);
     // echo server call back
     echo "{'success':'1'}";
 }

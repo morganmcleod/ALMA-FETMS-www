@@ -1407,325 +1407,289 @@ public function Plot_PolAngles(){
 
 
 public function Plot_LOLockTest(){
-        require(site_get_config_main());
+    require(site_get_config_main());
 
     $td_header = $this->TestDataHeader->keyId;
-        $this->writedirectory = $main_write_directory  . "FE_" . $this->FESN . "/";
-        $this->writedirectory = $main_write_directory;
-        if (!file_exists($this->writedirectory)){
-            mkdir($this->writedirectory);
+    $this->writedirectory = $main_write_directory  . "FE_" . $this->FESN . "/";
+    $this->writedirectory = $main_write_directory;
+    if (!file_exists($this->writedirectory)){
+        mkdir($this->writedirectory);
+    }
+
+    $this->url_directory = $main_url_directory  . "FE_" . $this->FESN . "/";
+    $this->url_directory = $main_url_directory;
+    if (!file_exists($this->url_directory)){
+        mkdir($this->url_directory);
+    }
+
+    //Get CCA Serial Number
+    $qcca ="SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
+    WHERE FE_ConfigLink.fkFE_Config = $this->FEcfg
+    AND FE_Components.fkFE_ComponentType = 20
+    AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
+    AND FE_Components.Band = " . $this->TestDataHeader->GetValue('Band') . "
+    AND FE_Components.keyFacility = $this->fc
+    AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
+    ORDER BY Band ASC;";
+    $r = @mysql_query($qcca,$this->dbconnection);
+
+    $CCA_SN = @mysql_result($r,0,0);
+
+    //Get WCA info
+    $qwca = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
+    WHERE FE_ConfigLink.fkFE_Config = $this->FEcfg
+    AND FE_Components.fkFE_ComponentType = 11
+    AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
+    AND FE_Components.Band = " . $this->TestDataHeader->GetValue('Band') . "
+    AND FE_Components.keyFacility = $this->fc
+    AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
+    GROUP BY Band ASC;";
+    $rwca = @mysql_query($qwca,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+    $WCA_SN = @mysql_result($rwca,0,0);
+
+    $data_file = $this->writedirectory . "lolocktest_data" . $this->TestDataHeader->keyId . ".txt";
+    $fh = fopen($data_file, 'w');
+
+    $t = new Logger('CLASSDATAPLOTTER.txt');
+
+    //Get Subheader key
+    $qsub = "SELECT MAX(keyId) FROM TEST_LOLockTest_SubHeader
+    WHERE fkHeader = ".$this->TestDataHeader->keyId."
+    AND TEST_LOLockTest_SubHeader.keyFacility = " . $this->TestDataHeader->getValue('keyFacility') . ";";
+    $rsub = @mysql_query($qsub,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+
+    $t->WriteLogFile($qsub);
+    $subheader_id = @mysql_result($rsub,0,0);
+
+    //Array of LO frequencies where lock was lost
+    $UnlockedLO = '';
+    //Array of PLLRefTotalPower where lock was lost
+    $UnlockedPwr = '';
+    $UnlockedCount = 0;
+
+    $lpr = new GenericTable();
+    $lpr->Initialize('TEST_LOLockTest_SubHeader',$subheader_id,'keyId',$this->fc,'keyFacility');
+
+    // data query depending on dataset
+    if ($this->TestDataHeader->GetValue('DataSetGroup') == 0){
+        $qdata= "SELECT TEST_LOLockTest.LOFreq,
+        TEST_LOLockTest.PhotomixerCurrent,
+        TEST_LOLockTest.PLLRefTotalPower
+        FROM TEST_LOLockTest, TEST_LOLockTest_SubHeader, TestData_header
+        WHERE TEST_LOLockTest.fkHeader = TEST_LOLockTest_SubHeader.keyId
+        AND TEST_LOLockTest_SubHeader.fkHeader = TestData_header.keyId
+        AND TestData_header.keyId = $td_header
+        AND TEST_LOLockTest.IsIncluded = 1
+        GROUP BY TEST_LOLockTest.LOFreq ASC;";
+    } else {
+        // query to get front end key of the FEConfig of the TDH.
+        $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ". $this->TestDataHeader->GetValue('fkFE_Config');
+
+        // query to get data
+        $qdata = "SELECT TEST_LOLockTest.LOFreq,
+        TEST_LOLockTest.PhotomixerCurrent,
+        TEST_LOLockTest.PLLRefTotalPower
+        FROM FE_Config
+        LEFT JOIN TestData_header ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
+        LEFT JOIN TEST_LOLockTest_SubHeader ON TEST_LOLockTest_SubHeader.`fkHeader` = `TestData_header`.`keyId`
+        LEFT JOIN TEST_LOLockTest ON TEST_LOLockTest_SubHeader.`keyId` = TEST_LOLockTest.fkHeader
+        WHERE TestData_header.Band = " . $this->TestDataHeader->GetValue('Band')."
+        AND TestData_header.fkTestData_Type= 57
+        AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup')."
+        AND TEST_LOLockTest.IsIncluded = 1
+        AND FE_Config.fkFront_Ends = ($qfe)
+        GROUP BY TEST_LOLockTest.LOFreq ASC;";
+    }
+
+    $t->WriteLogFile($qdata);
+
+    $rdata = @mysql_query($qdata,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+    $UnlocksFound = 0;
+    $count = 0;
+    while ($rowdata = @mysql_fetch_array($rdata)){
+        if ($counted == 1){
+            $FreqStepSize = abs($previousLO - $rowdata[LOFreq]);
         }
-
-        $this->url_directory = $main_url_directory  . "FE_" . $this->FESN . "/";
-        $this->url_directory = $main_url_directory;
-        if (!file_exists($this->url_directory)){
-            mkdir($this->url_directory);
+        //If even one unlock is found, set $UnlocksFound = 1.
+        //If any unlocked points are found, they will be plotted on the graph.
+        if (($rowdata[LOLocked] == 0) || ($rowdata[LORTMLocked] == 0)){
+            $UnlocksFound = 1;
         }
+        $stringData = $rowdata[LOFreq] . "\t" . $rowdata[PhotomixerCurrent] . "\t" . $rowdata[PLLRefTotalPower] . "\r\n";
+        fwrite($fh, $stringData);
 
-        //Get CCA Serial Number
-        $qcca ="SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-             WHERE FE_ConfigLink.fkFE_Config = $this->FEcfg
-             AND FE_Components.fkFE_ComponentType = 20
-             AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-             AND FE_Components.Band = " . $this->TestDataHeader->GetValue('Band') . "
-             AND FE_Components.keyFacility = $this->fc
-             AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-             ORDER BY Band ASC;";
-            $r = @mysql_query($qcca,$this->dbconnection);
-
-        $CCA_SN = @mysql_result($r,0,0);
-
-        //Get WCA info
-        $qwca = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-         WHERE FE_ConfigLink.fkFE_Config = $this->FEcfg
-         AND FE_Components.fkFE_ComponentType = 11
-         AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-         AND FE_Components.Band = " . $this->TestDataHeader->GetValue('Band') . "
-         AND FE_Components.keyFacility = $this->fc
-         AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-         GROUP BY Band ASC;";
-        $rwca = @mysql_query($qwca,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-        $WCA_SN = @mysql_result($rwca,0,0);
-
-            $data_file = $this->writedirectory . "lolocktest_data" . $this->TestDataHeader->keyId . ".txt";
-            $fh = fopen($data_file, 'w');
-
-
-            $tdh = new GenericTable();
-            $tdh->Initialize('TestData_header',$td_header,'keyId',$this->fc,'keyFacility');
-
-        $t = new Logger('CLASSDATAPLOTTER.txt');
-
-
-        //Get Subheader key
-        $qsub = "SELECT MAX(keyId) FROM TEST_LOLockTest_SubHeader
-                 WHERE fkHeader = ".$this->TestDataHeader->keyId."
-                 AND TEST_LOLockTest_SubHeader.keyFacility = " . $this->TestDataHeader->getValue('keyFacility') . ";";
-        $rsub = @mysql_query($qsub,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-
-
-/*
-        //Get all TestData_header.keyId values for records with the same DataSetGroup as this one
-        $qtdh = "SELECT keyId FROM TestData_header WHERE
-                Band = " . $tdh->GetValue('Band') . " AND fkTestData_Type= " . $tdh->GetValue('fkTestData_Type') .
-                " AND DataSetGroup= " . $tdh->GetValue('DataSetGroup') . " AND fkFE_Config= ". $tdh->GetValue('fkFE_Config') . ";";
-        */
-
-        $t->WriteLogFile($qsub);
-
-//        $rtdh = @mysql_query($qtdh,$this->dbconnection);
-
-//        $t->WriteLogFile($qtdh);
-/*        $tdharray = '';
-        $tdhcount = 0;
-        while ($rowtdh = @mysql_fetch_array($rtdh)){
-            $tdharray[$tdhcount] = $rowtdh[keyId];
-            $tdhcount += 1;
+        //Record any points at which TEST_LOLockTest.LOLocked=0 or TEST_LOLockTest.LORTMLocked=0
+        if (($rowdata[LOLocked] == '0') || ($rowdata[LORTMLocked] == '0')){
+            $UnlockedLO[$UnlockedCount]  = $rowdata[LOFreq];
+            $UnlockedPwr[$UnlockedCount] = $rowdata[PhotomixerCurrent];
+            $UnlockedCount += 1;
         }
-*/
+        $previousLO = $rowdata[LOFreq];
+        $counted += 1;
+    }
+    //Put empty line after each series for gnuplot
+    fwrite($fh, "\r\n");
 
-        $subheader_id = @mysql_result($rsub,0,0);
+    unset($ifsub);
+    fclose($fh);
 
-        //Array of LO frequencies where lock was lost
-        $UnlockedLO = '';
-        //Array of PLLRefTotalPower where lock was lost
-        $UnlockedPwr = '';
-        $UnlockedCount = 0;
+    //Get the test data header notes in case we wish to substitute them for the title:
+    $notes = $this->TestDataHeader->getValue('Notes');
 
-        $lpr = new GenericTable();
-        $lpr->Initialize('TEST_LOLockTest_SubHeader',$subheader_id,'keyId',$this->fc,'keyFacility');
+    $t->WriteLogFile("Notes = '$notes'");
 
-        // data query depending on dataset
-        if ($this->TestDataHeader->GetValue('DataSetGroup') == 0){
-            $qdata= "SELECT TEST_LOLockTest.LOFreq,
-                        TEST_LOLockTest.PhotomixerCurrent,
-                        TEST_LOLockTest.PLLRefTotalPower
-                        FROM TEST_LOLockTest, TEST_LOLockTest_SubHeader, TestData_header
-                        WHERE TEST_LOLockTest.fkHeader = TEST_LOLockTest_SubHeader.keyId
-                        AND TEST_LOLockTest_SubHeader.fkHeader = TestData_header.keyId
-                        AND TestData_header.keyId = $td_header
-                        AND TEST_LOLockTest.IsIncluded = 1
-                        GROUP BY TEST_LOLockTest.LOFreq ASC;";
-        } else {
-            // query to get front end key of the FEConfig of the TDH.
-            $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ". $this->TestDataHeader->GetValue('fkFE_Config');
-
-            // query to get data
-            $qdata = "SELECT TEST_LOLockTest.LOFreq,
-                    TEST_LOLockTest.PhotomixerCurrent,
-                    TEST_LOLockTest.PLLRefTotalPower
-                    FROM FE_Config
-                    LEFT JOIN TestData_header ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
-                    LEFT JOIN TEST_LOLockTest_SubHeader ON TEST_LOLockTest_SubHeader.`fkHeader` = `TestData_header`.`keyId`
-                    LEFT JOIN TEST_LOLockTest ON TEST_LOLockTest_SubHeader.`keyId` = TEST_LOLockTest.fkHeader
-                    WHERE TestData_header.Band = " . $this->TestDataHeader->GetValue('Band')."
-                    AND TestData_header.fkTestData_Type= 57
-                    AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup')."
-                    AND TEST_LOLockTest.IsIncluded = 1
-                    AND FE_Config.fkFront_Ends = ($qfe)
-                    GROUP BY TEST_LOLockTest.LOFreq ASC;";
-        }
-
-            $t->WriteLogFile($qdata);
-
-            $rdata = @mysql_query($qdata,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-            $UnlocksFound = 0;
-            $count = 0;
-            while ($rowdata = @mysql_fetch_array($rdata)){
-                if ($counted == 1){
-                    $FreqStepSize = abs($previousLO - $rowdata[LOFreq]);
-                }
-
-
-                //If even one unlock is found, set $UnlocksFound = 1.
-                //If any unlocked points are found, they will be plotted on the graph.
-                if (($rowdata[LOLocked] == 0) || ($rowdata[LORTMLocked] == 0)){
-                    $UnlocksFound = 1;
-                }
-
-
-                $stringData = $rowdata[LOFreq] . "\t" . $rowdata[PhotomixerCurrent] . "\t" . $rowdata[PLLRefTotalPower] . "\r\n";
-                fwrite($fh, $stringData);
-
-                //Record any points at which TEST_LOLockTest.LOLocked=0 or TEST_LOLockTest.LORTMLocked=0
-                if (($rowdata[LOLocked] == '0') || ($rowdata[LORTMLocked] == '0')){
-                    $UnlockedLO[$UnlockedCount]  = $rowdata[LOFreq];
-                    $UnlockedPwr[$UnlockedCount] = $rowdata[PhotomixerCurrent];
-                    $UnlockedCount += 1;
-                }
-                $previousLO = $rowdata[LOFreq];
-                $counted += 1;
-
-
-            }
-            //Put empty line after each series for gnuplot
-            fwrite($fh, "\r\n");
-
-
-
-            unset($ifsub);
-            fclose($fh);
-
-
+    $showFEConfig = true;
+    if (substr($notes, 0, 7) == '{title}') {
+        $plot_title = substr($notes, 7);
+        $showFEConfig = false;    // remove the 'feconfig' portion of the caption at the bottom.
+    } else {
         $plot_title = "LO Lock Test FE SN" . $this->FESN;
         $plot_title .= ", CCA". $this->TestDataHeader->GetValue('Band'). "-$CCA_SN ";
         $plot_title .= "WCA". $this->TestDataHeader->GetValue('Band'). "-$WCA_SN, ";
         $plot_title .= "LPR EDFA Modulation ". $lpr->GetValue('LPRModulation')."V ";
-/*        if ($this->TestDataHeader->GetValue('DataSetGroup') != 0){
-            $plot_title .= ", Data Set Group " . $tdh->GetValue('DataSetGroup');
-        }    */
-        $t->WriteLogFile($plot_title);
+    }
 
-        //Create directories if necesary
-        $imagedirectory .= $this->writedirectory . "FE_" . $this->FESN . "/";
+    $t->WriteLogFile($plot_title);
 
-        if (!file_exists($imagedirectory)){
-            mkdir($imagedirectory);
-        }
-        $imagename = "LOLockTest_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/$imagename";
-        $plot_command_file = $this->writedirectory . "lolocktest_command_tdh$TestData_Id.txt";
-        $image_url = $this->url_directory . "FE_" . $this->FESN . "/$imagename";
+    //Create directories if necesary
+    $imagedirectory .= $this->writedirectory . "FE_" . $this->FESN . "/";
 
-        //Update plot url. Set the same value for all TestData_header records in this group.
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
-        $this->TestDataHeader->Update();
+    if (!file_exists($imagedirectory)){
+        mkdir($imagedirectory);
+    }
+    $imagename = "LOLockTest_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
+    $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/$imagename";
+    $plot_command_file = $this->writedirectory . "lolocktest_command_tdh$TestData_Id.txt";
+    $image_url = $this->url_directory . "FE_" . $this->FESN . "/$imagename";
 
-
-//        for ($i=0;$i<count($tdharray);$i++){
-//            $qURL = "UPDATE TestData_header SET PlotURL = '$image_url' WHERE keyId = $tdharray[$i];";
-        $qURL = "UPDATE TestData_header SET PlotURL = '$image_url' WHERE keyId = $td_header;";
-        $rURL = @mysql_query($qURL,$this->dbconnection);
+    //Update plot url. Set the same value for all TestData_header records in this group.
+    $this->TestDataHeader->SetValue('PlotURL',$image_url);
+    $this->TestDataHeader->Update();
 
 
-        $t->WriteLogFile($qURL);
-//        }
+    $qURL = "UPDATE TestData_header SET PlotURL = '$image_url' WHERE keyId = $td_header;";
+    $rURL = @mysql_query($qURL,$this->dbconnection);
 
 
+    $t->WriteLogFile($qURL);
 
-        //$t->WriteLogFile($qURL);
-
-
-
-        $imagepath = $imagedirectory . $imagename;
+    $imagepath = $imagedirectory . $imagename;
 
 
-        $t->WriteLogFile("Plot command file= " . $plot_command_file);
+    $t->WriteLogFile("Plot command file= " . $plot_command_file);
 
-        // set up plot labels
-        if ($this->TestDataHeader->GetValue('DataSetGroup') == 0){
-            $plot_label_1 =" set label 'TestData_header.keyId: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
-            $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
-        } else {
-            $q = "SELECT `TestData_header`.keyID, `TestData_header`.TS,`TestData_header`.`fkFE_Config`,`TestData_header`.Meas_SWVer
-                FROM FE_Config
-                LEFT JOIN `TestData_header` ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
-                WHERE TestData_header.Band = " . $this->TestDataHeader->GetValue('Band')."
-                AND TestData_header.fkTestData_Type= " . $this->TestDataHeader->GetValue('fkTestData_Type')."
-                AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup')."
-                AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ".$this->TestDataHeader->GetValue('fkFE_Config').")
-                ORDER BY `TestData_header`.keyID DESC";
+    // set up plot labels
+    if ($this->TestDataHeader->GetValue('DataSetGroup') == 0){
+        $plot_label_1 =" set label 'TestData_header.keyId: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+        $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
+    } else {
+        $q = "SELECT `TestData_header`.keyID, `TestData_header`.TS,`TestData_header`.`fkFE_Config`,`TestData_header`.Meas_SWVer
+        FROM FE_Config
+        LEFT JOIN `TestData_header` ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
+        WHERE TestData_header.Band = " . $this->TestDataHeader->GetValue('Band')."
+        AND TestData_header.fkTestData_Type= " . $this->TestDataHeader->GetValue('fkTestData_Type')."
+        AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup')."
+        AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ".$this->TestDataHeader->GetValue('fkFE_Config').")
+        ORDER BY `TestData_header`.keyID DESC";
 
-            $r = @mysql_query($q, $this->dbconnection);
+        $r = @mysql_query($q, $this->dbconnection);
 
-            $cnt = 0; //initialize counter
-            while ($row = @mysql_fetch_array($r)){
-                if ($cnt == 0){ // initialize label variables
-                    $keyId = $row[0];
+        $cnt = 0; //initialize counter
+        while ($row = @mysql_fetch_array($r)){
+            if ($cnt == 0){ // initialize label variables
+                $keyId = $row[0];
+                $maxTS = $row[1];
+                $minTS = $row[1];
+                $max_FE_Config = $row[2];
+                $min_FE_Config = $row[2];
+                $meas_ver = $row[3];
+            } else { // find the max and min TS and FE_config
+                $keyId = "$keyId,$row[0]";
+                if ($row[1] > $maxTS){
                     $maxTS = $row[1];
-                    $minTS = $row[1];
-                    $max_FE_Config = $row[2];
-                    $min_FE_Config = $row[2];
-                    $meas_ver = $row[3];
-                } else { // find the max and min TS and FE_config
-                    $keyId = "$keyId,$row[0]";
-                    if ($row[1] > $maxTS){
-                        $maxTS = $row[1];
-                    }
-                    if ($row[1] < $minTS){
-                        $minTS = $row[1];
-                    }
-                    if ($row[1] > $max_FE_Config){
-                        $max_FE_Config = $row[2];
-                    }
-                    if ($row[1] < $min_FE_Config){
-                        $min_FE_Config = $row[2];
-                    }
                 }
+                if ($row[1] < $minTS){
+                    $minTS = $row[1];
+                }
+                if ($row[1] > $max_FE_Config){
+                    $max_FE_Config = $row[2];
+                }
+                if ($row[1] < $min_FE_Config){
+                    $min_FE_Config = $row[2];
+                }
+            }
             $cnt++;
-            }
-            // format label string variables to display
-            if ($cnt > 1){
-                $TS = "($maxTS, $minTS)";
-                $FE_Config = "($max_FE_Config, $min_FE_Config)";
-            } else {
-                $TS = "($maxTS)";
-                $FE_Config = "($max_FE_Config)";
-            }
-
-            $plot_label_1 =" set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
-            $plot_label_2 ="set label 'Dataset: ".$this->TestDataHeader->GetValue('DataSetGroup').", TS: $TS, FE Configuration: $FE_Config' at screen 0.01, 0.04\r\n";
+        }
+        // format label string variables to display
+        if ($cnt > 1){
+            $TS = "($maxTS, $minTS)";
+            $FE_Config = "($max_FE_Config, $min_FE_Config)";
+        } else {
+            $TS = "($maxTS)";
+            $FE_Config = "($max_FE_Config)";
         }
 
-        $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set output '$imagepath'\r\n");
-        fwrite($fh, "set title '$plot_title'\r\n");
-        fwrite($fh, "set grid\r\n");
-        fwrite($fh, "set key outside\r\n");
-        fwrite($fh, "set xlabel 'LO Frequency (GHz)'\r\n");
-        fwrite($fh, "set pointsize 2\r\n");
-        fwrite($fh, "set y2label 'Photomixer Current (mA)'\r\n");
-        fwrite($fh, "set y2tics\r\n");
-        fwrite($fh, "set yrange[-5:0]\r\n");
-        fwrite($fh, "set ytics\r\n");
-        fwrite($fh, "set ylabel 'PLL IF Detected Power (Volts)'\r\n");
-        fwrite($fh, "set bmargin 6\r\n");
-        fwrite($fh, $plot_label_1);
-        fwrite($fh, $plot_label_2);
+        $plot_label_1 =" set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
+        $plot_label_2 ="set label 'Dataset: ".$this->TestDataHeader->GetValue('DataSetGroup').", TS: $TS";
+        if ($showFEConfig)
+            $plot_label_2 .=", FE Configuration: $FE_Config";
+        $plot_label_2 .= "' at screen 0.01, 0.04\r\n";
+    }
 
-        if ($UnlocksFound == 1){
-            //Plot points where lock failed
-            //This loop adds a function for each point where LO was unlocked.
-            for ($i=0; $i<count($UnlockedLO); $i++){
-                $minpoint = $UnlockedLO[$i] - (0.5 * $FreqStepSize);
-                $maxpoint = $UnlockedLO[$i] + (0.5 * $FreqStepSize);
-                //$pointval = "p$i(x)=((x>$minpoint) && (x<$maxpoint)) ? $UnlockedPwr[$i] : 1/0\r\n";
+    $fh = fopen($plot_command_file, 'w');
+    fwrite($fh, "set terminal png size 900,500\r\n");
+    fwrite($fh, "set output '$imagepath'\r\n");
+    fwrite($fh, "set title '$plot_title'\r\n");
+    fwrite($fh, "set grid\r\n");
+    fwrite($fh, "set key outside\r\n");
+    fwrite($fh, "set xlabel 'LO Frequency (GHz)'\r\n");
+    fwrite($fh, "set pointsize 2\r\n");
+    fwrite($fh, "set y2label 'Photomixer Current (mA)'\r\n");
+    fwrite($fh, "set y2tics\r\n");
+    fwrite($fh, "set yrange[-5:0]\r\n");
+    fwrite($fh, "set ytics\r\n");
+    fwrite($fh, "set ylabel 'PLL IF Detected Power (Volts)'\r\n");
+    fwrite($fh, "set bmargin 6\r\n");
+    fwrite($fh, $plot_label_1);
+    fwrite($fh, $plot_label_2);
 
-                $pointval = "p$i(x)=((x>$minpoint) && (x<$maxpoint)) ? 0 : 1/0\r\n";
+    if ($UnlocksFound == 1){
+        //Plot points where lock failed
+        //This loop adds a function for each point where LO was unlocked.
+        for ($i=0; $i<count($UnlockedLO); $i++){
+            $minpoint = $UnlockedLO[$i] - (0.5 * $FreqStepSize);
+            $maxpoint = $UnlockedLO[$i] + (0.5 * $FreqStepSize);
+            //$pointval = "p$i(x)=((x>$minpoint) && (x<$maxpoint)) ? $UnlockedPwr[$i] : 1/0\r\n";
 
-                fwrite($fh, $pointval);
-            }
+            $pointval = "p$i(x)=((x>$minpoint) && (x<$maxpoint)) ? 0 : 1/0\r\n";
+
+            fwrite($fh, $pointval);
         }
+    }
 
-        $plot_string = "plot '$data_file' using 1:2 title 'Photomixer Current' lt 8 with lines axis x1y2";
-        $plot_string .= ", '$data_file'  using 1:3 title 'PLL IF Total Power' with lines axis x1y1";
-        $plot_string .= ", -0.5  title 'spec' lt 1 with lines axis x1y1";
+    $plot_string = "plot '$data_file' using 1:2 title 'Photomixer Current' lt 8 with lines axis x1y2";
+    $plot_string .= ", '$data_file'  using 1:3 title 'PLL IF Total Power' with lines axis x1y1";
+    $plot_string .= ", -0.5  title 'spec' lt 1 with lines axis x1y1";
 
-        if ($UnlocksFound == 1){
-            //Plot points where lock failed
-            //This loops plots each function where LO was unlocked.
-            $plot_string .= ", p0(x) with linespoints  title 'LO Unlocked' pt 5 lt 12 pointsize 1 axis x1y1";
-            for ($i=1; $i<count($UnlockedLO); $i++){
-                //$plot_string .= ", p$i(x) with linespoints  notitle pt 5 lt 12 pointsize 1 axis x1y1";
-                $plot_string .= ", p$i(x) with linespoints  notitle pt 5 lt 12 pointsize 1 axis x1y1";
-            }
+    if ($UnlocksFound == 1){
+        //Plot points where lock failed
+        //This loops plots each function where LO was unlocked.
+        $plot_string .= ", p0(x) with linespoints  title 'LO Unlocked' pt 5 lt 12 pointsize 1 axis x1y1";
+        for ($i=1; $i<count($UnlockedLO); $i++){
+            //$plot_string .= ", p$i(x) with linespoints  notitle pt 5 lt 12 pointsize 1 axis x1y1";
+            $plot_string .= ", p$i(x) with linespoints  notitle pt 5 lt 12 pointsize 1 axis x1y1";
         }
+    }
+    $plot_string .= ", -4.5  notitle lt 1 with lines axis x1y1";
 
+    //Plot markers at points where lock was lost
+    $plot_string .= "\r\n";
+    fwrite($fh, $plot_string);
+    fclose($fh);
+    //Make the plot
 
-
-        $plot_string .= ", -4.5  notitle lt 1 with lines axis x1y1";
-
-        //Plot markers at points where lock was lost
-
-
-        $plot_string .= "\r\n";
-        fwrite($fh, $plot_string);
-        fclose($fh);
-        //Make the plot
-
-        $CommandString = "$GNUPLOT $plot_command_file";
-        system($CommandString);
+    $CommandString = "$GNUPLOT $plot_command_file";
+    system($CommandString);
 }
 
 function progressBar($percentage) {

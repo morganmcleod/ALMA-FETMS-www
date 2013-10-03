@@ -23,12 +23,6 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
     	model:'TDH',       
         proxy: {
             type: 'ajax',
-//            reader: {
-//                type: 'json'            
-//            },
-//            writer: {
-//                type: 'json'
-//            },
             actionMethods: {
                 create : 'POST',
                 read   : 'POST',
@@ -42,39 +36,7 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
             }
     
         }
-//        ,        
-//        sorters: [{
-//            property: 'ts',
-//            direction: 'ASC'
-//        }]        
     });
-    
-    //var cellEditing = Ext.create('Ext.grid.plugin.CellEditing', {
-      //  clicksToEdit: 1
-    //});
-    
-    
-//    Ext.define('DSG', {
-//        extend: 'Ext.data.Model',
-//        fields: [
-//            {name: 'datasetgroup',     type: 'string'},
-//            {name: 'TDHkeyId',         type: 'string'}
-//        ]
-//    });
-//
-//    var DataSetGroupStore = Ext.create('Ext.data.Store', {
-//        id: 'dsgstore',
-//        model: 'DSG',
-//        proxy: {
-//           type: 'ajax',
-//           url: "TreeGridJSON.php?action=combobox&FEid=" + FEid  + '&datatype=' + datatype + '&band=' + band,
-//           reader: {
-//              type: 'json',
-//              root: 'data'
-//           },
-//           autoload:true
-//       }
-//    });
     
     var tree = Ext.create('Ext.tree.Panel', {
     	title: dtype_desc + ' Data Sets Band ' + band,
@@ -86,11 +48,6 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
         renderTo: 'tree-div',
         width: 800,
         height: 550,
-       
-//        onSync: function(){
-//            alert('onSync()');
-//            //this.store.sync();            
-//        },
       
         columns: [
               {
@@ -135,29 +92,6 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
         plugins: [
             Ext.create('Ext.grid.plugin.CellEditing', {clicksToEdit:1})
         ]
-        
-//        dockedItems: [{ 
-//        	xtype: 'button',
-//            text: 'SAVE',
-//            id: 'update',
-//            name: 'update',
-//            icon:'../icons/disk.png'
-//        },{
-//            xtype : "combo",
-//            name : "GroupSelector",
-//            hiddenName : "datasetgroup",
-//            displayField: 'datasetgroup',
-//            valueField: 'TDHkeyId',
-//            fieldLabel : "Goto Group",
-//            id : "dsgcombo",
-//            store: DataSetGroupStore,
-//            listeners: {
-//                'select': function (combo,record) { 
-//                    window.location = link + combo.getValue();          
-//                }
-//            }
-//        }]
-
 });
     
     tree.addDocked({
@@ -194,8 +128,6 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
                });  
            
                var received = function (response) {
-                   //Reload the combobox DataSet values.
-//                   DataSetGroupStore.load();
                    // repopulate table
                    TDHStore.read();
                    Ext.MessageBox.hide();
@@ -205,7 +137,8 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
                    //Send the JSON object
                    url: 'TreeGridJSON.php?action=update_children&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype, // Called when saving new records                   
                    success: received,
-                   jsonData:  JSON.stringify(JSONObjectArray)
+                   jsonData:  JSON.stringify(JSONObjectArray),
+                   timeout: 60000
                });
            
                //Send the top level json records to the server.
@@ -225,28 +158,7 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
             	window.location = link + idBack;
             }
         }
-        
-//        ,{
-//        	xtype : "combo",
-//        	fieldLabel : "Goto Group",        	
-//        	store: DataSetGroupStore,
-//        	queryMode: 'remote',        	
-//        	valueField: 'TDHkeyId',
-//        	name : "GroupSelector",
-//        	hiddenName : "datasetgroup",
-//        	displayField: 'datasetgroup',
-//        	id : "dsgcombo",
-//
-//        	listeners: {
-//        		scope: this,
-//        		'select': function(combo,record) {
-//        			window.location = link + combo.getValue();
-//        		}
-//        	}
-//        }
-                
         ]
     });
-    
 };
 
