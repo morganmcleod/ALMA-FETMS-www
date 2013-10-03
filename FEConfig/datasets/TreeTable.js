@@ -100,13 +100,15 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
         listeners: {
         	'load': function () {
         		this.getView().node.cascadeBy(function(rec) {
-        			// cache the data in each child node so we can only send the ones which have changed on SAVE:
-        			ODArray[ODSize]          = new Object;
-        			ODArray[ODSize].subid    = rec.get('id');
-        			ODArray[ODSize].FEid     = FEid;
-        			ODArray[ODSize].datatype = datatype;
-        			ODArray[ODSize].checked  = (rec.get('checked')) ? '1' : '0';
-        			ODSize++;
+        			if (rec.isLeaf()) {
+	        			// cache the data in each child node so we can only send the ones which have changed on SAVE:
+	        			ODArray[ODSize]          = new Object;
+	        			ODArray[ODSize].subid    = rec.get('id');
+	        			ODArray[ODSize].FEid     = FEid;
+	        			ODArray[ODSize].datatype = datatype;
+	        			ODArray[ODSize].checked  = (rec.get('checked')) ? '1' : '0';
+	        			ODSize++;
+        			}
         		});
         	}
         }
@@ -133,36 +135,41 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
                    //Since ExtJS4 doesn't send updated child node values from client to server,
                    //we must iterate through the child nodes and send them one by one.
                    //This loop populates a JSON object.
-            	   IsChecked = rec.get('checked');
-            	   ODChecked = (ODArray[ODCount].checked == '1');
-                   if (IsChecked != ODChecked) {
-	                   JSONObjectArray[outputSize]          = new Object;
-	                   JSONObjectArray[outputSize].subid    = rec.get('id');
-	                   JSONObjectArray[outputSize].FEid     = FEid;
-	                   JSONObjectArray[outputSize].datatype = datatype;
-	                   JSONObjectArray[outputSize].checked  = (IsChecked) ? '1' : '0';
-	                   outputSize++;
-                   }
-                   ODCount++;
+	       			if (rec.isLeaf()) {
+	            	   IsChecked = rec.get('checked');
+	            	   ODChecked = (ODArray[ODCount].checked == '1');
+	                   if (IsChecked != ODChecked) {
+		                   JSONObjectArray[outputSize]          = new Object;
+		                   JSONObjectArray[outputSize].subid    = rec.get('id');
+		                   JSONObjectArray[outputSize].FEid     = FEid;
+		                   JSONObjectArray[outputSize].datatype = datatype;
+		                   JSONObjectArray[outputSize].checked  = (IsChecked) ? '1' : '0';
+		                   outputSize++;
+	                   }
+	                   ODCount++;
+	       			}
                });  
            
-               var received = function (response) {
-                   // repopulate table
-                   TDHStore.read();
-                   Ext.MessageBox.hide();
-               };
-           
-               Ext.Ajax.request({
-                   //Send the JSON object
-                   url: 'TreeGridJSON.php?action=update_children&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype, // Called when saving new records                   
-                   success: received,
-                   jsonData:  JSON.stringify(JSONObjectArray)
-                   //timeout: 60000
-               });
+               if (outputSize > 0) {
+                   Ext.MessageBox.wait('updating...');
+
+                   var received = function (response) {
+                       // repopulate table
+                       TDHStore.read();
+                       Ext.MessageBox.hide();
+                   };
+            	   
+            	   Ext.Ajax.request({
+	                   //Send the JSON object
+	                   url: 'TreeGridJSON.php?action=update_children&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype, // Called when saving new records                   
+	                   success: received,
+	                   jsonData:  JSON.stringify(JSONObjectArray)
+	                   //timeout: 60000
+	               });
+               }
            
                //Send the top level json records to the server.
                TDHStore.update();
-               Ext.MessageBox.wait('updating...');
            }
         }
         
