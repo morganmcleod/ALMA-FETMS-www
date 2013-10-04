@@ -2059,7 +2059,6 @@ class WCA extends FEComponent{
         AND fkFacility = $this->fc
         ORDER BY FreqLO ASC;";
         $rFindLO = @mysql_query($qFindLO,$this->dbconnection);
-        $rowLO=@mysql_fetch_array($rFindLO);
         $i=0;
         while ($rowLO = mysql_fetch_array($rFindLO)){
             $CurrentLO = @mysql_result($rFindLO,$i);
