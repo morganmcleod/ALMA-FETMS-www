@@ -264,7 +264,7 @@ int CheckSideband(SCANDATA *currentscan){
     PRINT_STDOUT(printmsg);
 
     //Rotate scan if wrong sideband
-    if (az_signs_not_equal && el_signs_not_equal){
+    if (az_signs_not_equal || el_signs_not_equal){
         sprintf(printmsg, "Rotating scan... %s\r\n",currentscan->sectionname);
         PRINT_STDOUT(printmsg);
 
