@@ -239,33 +239,16 @@ int RotateScan180(SCANDATA *currentscan){
 }
 
 int CheckSideband(SCANDATA *currentscan){
-    int az_signs_not_equal,el_signs_not_equal;
-    
-    az_signs_not_equal = !(((currentscan->az_nominal > 0) - (currentscan->az_nominal < 0)) ==
-                         ((currentscan->ff_xcenter > 0) - (currentscan->ff_xcenter < 0)));
-                                               
-    el_signs_not_equal = !(((currentscan->el_nominal > 0) - (currentscan->el_nominal < 0)) ==
-                         ((currentscan->ff_ycenter > 0) - (currentscan->ff_ycenter < 0)));   
-                         
-    if (currentscan->az_nominal == 0.00){
-       az_signs_not_equal = 0;
-    }
-    if (currentscan->el_nominal == 0.00){
-       el_signs_not_equal = 0;
-    }
-
     char printmsg[200];
 
-    sprintf(printmsg, "Band %d: CheckSideband()...\r\n",currentscan->band);
-    PRINT_STDOUT(printmsg);
     sprintf(printmsg, "nominal angles: %f, %f\r\n",currentscan->az_nominal,currentscan->el_nominal);
     PRINT_STDOUT(printmsg);
     sprintf(printmsg, "pointing angles: %f, %f\r\n",currentscan->ff_xcenter,currentscan->ff_ycenter);
     PRINT_STDOUT(printmsg);
 
-    //Rotate scan if wrong sideband
-    if (az_signs_not_equal || el_signs_not_equal){
-        sprintf(printmsg, "Rotating scan... %s\r\n",currentscan->sectionname);
+    //Rotate scan if in USB
+    if (currentscan->sb == 1) {
+        sprintf(printmsg, "Rotating USB scan %s...\r\n",currentscan->sectionname);
         PRINT_STDOUT(printmsg);
 
         currentscan->ff_xcenter = (-1.0) * currentscan->ff_xcenter;

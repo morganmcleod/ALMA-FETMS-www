@@ -246,6 +246,21 @@ class eff {
         }
     }
 
+    public function GetScanSideband($scanSetIdx) {
+        $scanSetId = $this->scansets[$scanSetIdx]->GetValue('keyID');
+
+        $qss = "SELECT sb FROM ScanDetails
+        WHERE fkScanSetDetails = $scanSetId
+        AND SourcePosition = 1
+        AND copol = 1
+        AND fkFacility = $this->fc
+        LIMIT 1;";
+
+        $rss = @mysql_query($qss,$this->dbconnection);
+        $rowss = @mysql_fetch_array($rss);
+        return $rowss[0];
+    }
+
     public function MakeInputFile() {
         $this -> MakeOutputEnvironment(FALSE);
 
@@ -265,6 +280,8 @@ class eff {
         for ($scanSetIdx = 0; $scanSetIdx < count($this->scansets); $scanSetIdx++){
             $scanSet = $scanSetIdx + 1;
 
+            $sb = $this -> GetScanSideband($scanSetIdx);
+
             //Copol pol 0 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
@@ -273,6 +290,7 @@ class eff {
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
             fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
+            fwrite($fhandle,"sb=" . $sb ."\r\n");
             fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
@@ -306,6 +324,7 @@ class eff {
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
             fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
+            fwrite($fhandle,"sb=" . $sb ."\r\n");
             fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
@@ -338,6 +357,7 @@ class eff {
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
             fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
+            fwrite($fhandle,"sb=" . $sb ."\r\n");
             fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
@@ -370,6 +390,7 @@ class eff {
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
             fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
+            fwrite($fhandle,"sb=" . $sb ."\r\n");
             fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");

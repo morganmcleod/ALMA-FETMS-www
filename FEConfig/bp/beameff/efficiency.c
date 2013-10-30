@@ -18,7 +18,7 @@ extern int DEBUGGING;
 int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilename) {
     char delimiter[2];
     SCANDATA scans[5];
-    int num_scans_in_file, i, pol;
+    int num_scans_in_file, i, pol, sb;
     char sectionname[20];
     char sectiontemp[20];
     char scantype[20];
@@ -67,17 +67,18 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
             //scans[4] = xpol, pol 1
             strcpy(sectionname,tempsec);
             strcpy(sectiontemp,tempsec);
+
+            //if the current scan is in the current scanset
             if (iniparser_getint (scan_file_dict, strcat(sectionname,":scanset"), 0) == scanset) {
-                //if the current scan is in the current scanset
-                strcpy(sectionname,sectiontemp);
-        
                 //Get pol for current scan
+                strcpy(sectionname,sectiontemp);
                 strcat(sectionname,":pol");
                 pol = iniparser_getint (scan_file_dict, sectionname, -1);
-                strcpy(sectionname,sectiontemp);
                 //Get type of current scan
+                strcpy(sectionname,sectiontemp);
                 strcat(sectionname,":type");
                 strcpy(scantype,iniparser_getstring (scan_file_dict, sectionname, "null"));
+
                 strcpy(sectionname,sectiontemp);
            
                 //Fill in the correct array slot in "scans"

@@ -102,6 +102,10 @@ void GetScanData(dictionary *scan_file_dict, char *sectionname, SCANDATA *Result
        strcpy(section_key,sectionname);
        strcat(section_key,":f");
        ResultScanData->f = iniparser_getint (scan_file_dict, section_key, 0);
+       //sb
+       strcpy(section_key,sectionname);
+       strcat(section_key,":sb");
+       ResultScanData->sb = iniparser_getint (scan_file_dict, section_key, 0);
        //ifatten
        strcpy(section_key,sectionname);
        strcat(section_key,":ifatten");
