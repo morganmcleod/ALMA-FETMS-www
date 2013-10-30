@@ -436,6 +436,8 @@ class eff {
         for ($scanSetIdx=0; $scanSetIdx < count($this->scansets); $scanSetIdx++){
             $scanSet = $scanSetIdx + 1;
 
+            $sb = $this -> GetScanSideband($scanSetIdx);
+
             //Copol pol 0 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
@@ -444,6 +446,7 @@ class eff {
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
             fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
+            fwrite($fhandle,"sb=" . $sb ."\r\n");
             fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
@@ -470,6 +473,7 @@ class eff {
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
             fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
+            fwrite($fhandle,"sb=" . $sb ."\r\n");
             fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
@@ -492,6 +496,7 @@ class eff {
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
             fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
+            fwrite($fhandle,"sb=" . $sb ."\r\n");
             fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
@@ -514,6 +519,7 @@ class eff {
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
             fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
+            fwrite($fhandle,"sb=" . $sb ."\r\n");
             fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
