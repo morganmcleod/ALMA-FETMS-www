@@ -1823,7 +1823,7 @@ class WCA extends FEComponent{
                 break;
 
             case 5:
-                fwrite($fh, "f2(x)=((x>83) && (x<101.5)) ? 12 : 1/0\r\n"); //max spec
+                fwrite($fh, "f2(x)=((x>83) && (x<101.5)) ? 15 : 1/0\r\n"); //max spec
                 fwrite($fh, "f3(x)=((x>83) && (x<101.5)) ? 40 : 1/0\r\n");//max safe
                 $plot_string = "plot f2(x) title 'Spec' with lines lw 3";
                 $plot_string .= ", f3(x) title 'Max Safe Operation' with lines lw 3 ";
@@ -1913,7 +1913,7 @@ class WCA extends FEComponent{
                 $enable_spec_2 = true;
                 break;
             case 5:
-                $spec_value_1 = 12;
+                $spec_value_1 = 15;
                 break;
             case 6:
                 $spec_value_1 = 20;
@@ -2180,9 +2180,9 @@ class WCA extends FEComponent{
                 $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
                 break;
             case 5:
-                fwrite($fh, "set xrange[0:12]\r\n");
+                fwrite($fh, "set xrange[0:15]\r\n");
                 fwrite($fh, "f1(x)=((x>=1) && (x<3)) ? 0.5 : 1/0\r\n");
-                fwrite($fh, "f2(x)=((x>=3) && (x<=12)) ? 0.3 : 1/0\r\n");
+                fwrite($fh, "f2(x)=((x>=3) && (x<=15)) ? 0.3 : 1/0\r\n");
                 $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
                 $plot_string .= ", f2(x) title 'Spec' with lines lw 3 lt 1";
                 break;
