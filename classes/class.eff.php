@@ -1047,52 +1047,86 @@ class eff {
 
 
     function Display_PolEff(){
-         echo "<div style = 'width:600px'><table id = 'table1' border='1'>";
+        echo "<div style = 'width:600px'><table id = 'table1' border='1'>";
 
-         echo "<tr class='alt'><th colspan = 7>Polarization Efficiency Band $this->band</th></tr>";
-         echo "<tr>
-               <th>RF GHz</th>
-               <th>pol</th>
-               <th>Elevation</th>
-               <th>Peak Cross dB</th>
-               <th>eta pol + spill</th>
-               <th>Polarization Eff</th>
-               </tr>";
+        echo "<tr class='alt'><th colspan = 7>Polarization Efficiency Band $this->band</th></tr>";
+        echo "<tr>
+            <th>RF GHz</th>
+            <th>pol</th>
+            <th>Elevation</th>
+            <th>Peak Cross dB</th>
+            <th>eta pol + spill</th>
+            <th>Polarization Eff</th>
+            </tr>";
 
-         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++){
-             echo "<tr>";
-             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('max_dbdifference'),2) . "</td>";
-             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_tot_np'),2) . "</td>";
+        for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
 
-             $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_pol'),2);
-             if ($pe < 99.0){
-                 echo "<td><font color ='#ff0000'>$pe</font></td>";
-             }
-             else{
-                 echo "<td>$pe</td>";
-             }
+            // if the polarization efficiency is less than the value calculated for $spec, display it as red:
+            $rf = $this->scansets[$scanSetIdx]->GetValue('f');
+            $spec = 0.0;
 
-             echo "<tr>";
-             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('max_dbdifference'),2) . "</td>";
-             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_tot_np'),2) . "</td>";
-             $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_pol'),2);
-             if ($pe < 99.0){
-                 echo "<td><font color ='#ff0000'>$pe</font></td>";
-             }
-             else{
-                 echo "<td>$pe</td>";
-             }
-         }
-         //Meas SW Ver
-         echo "<tr><td colspan='6'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-              . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
-         echo "</table></div><br><br>";
+            switch ($this->band) {
+                case 3:
+                    $spec = 99.0;
+                    break;
+                case 4:
+                    $spec = 98.7;
+                    if (134.0 <= rf && rf <= 158.0)
+                        $spec = 99.0;
+                    break;
+                case 6:
+                    $spec = 96.84;
+                    if (219.0 <= rf && rf <= 231.0)
+                        $spec = 99.0;
+                    else if (231.0 < rf && rf <= 262.0)
+                        $spec = 98.42;
+                    break;
+                case 8:
+                    $spec = 0.0;  // no red for band 8 outside of these ranges:
+                    if (455.0 <= rf && rf <= 471.0)
+                        $spec = 98.4;
+                    else if (491.0 <= rf && rf <= 495.0)
+                        $spec = 98.0;
+                    break;
+                case 9:
+                    $spec = 97.5;
+                    break;
+                default:
+                    $spec = 99.5;
+                    break;
+            }
+
+            echo "<tr>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('max_dbdifference'),2) . "</td>";
+            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_tot_np'),2) . "</td>";
+
+            $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_pol'),2);
+            if ($pe < $spec)
+                echo "<td><font color ='#ff0000'>$pe</font></td>";
+            else
+                echo "<td>$pe</td>";
+
+            echo "<tr>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('max_dbdifference'),2) . "</td>";
+            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_tot_np'),2) . "</td>";
+
+            $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_pol'),2);
+            if ($pe < $spec)
+                echo "<td><font color ='#ff0000'>$pe</font></td>";
+            else
+                echo "<td>$pe</td>";
+        }
+
+        //Meas SW Ver
+        echo "<tr><td colspan='6'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
+            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "</table></div><br><br>";
     }
 
     function Display_DefocusEff(){
