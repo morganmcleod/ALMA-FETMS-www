@@ -1082,10 +1082,8 @@ class eff {
                         $spec = 98.42;
                     break;
                 case 8:
-                    $spec = 0.0;  // no red for band 8 outside of these ranges:
-                    if (455.0 <= rf && rf <= 471.0)
-                        $spec = 98.4;
-                    else if (491.0 <= rf && rf <= 495.0)
+                    $spec = 98.4;
+                    if (491.0 <= rf && rf <= 495.0)
                         $spec = 98.0;
                     break;
                 case 9:
