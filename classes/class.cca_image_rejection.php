@@ -149,6 +149,7 @@ class cca_image_rejection extends TestData_header{
         $r = @mysql_query($q,$this->dbconnection);
         $l->WriteLogFile("CCA Image Rejection Data Query: $q");
 
+        $last_freq = '';
         while ($row = @mysql_fetch_array($r)){
             // pol 1 SB2
             if ($row[2] == 1 && $row[3] == 2){

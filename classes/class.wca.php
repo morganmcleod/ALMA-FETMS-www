@@ -221,7 +221,7 @@ class WCA extends FEComponent{
     public function DisplayData_WCA(){
         require(site_get_config_main());
         echo "<br><font size='+2'><b>WCA Information</b></font><br>";
-        echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
+        echo "<form action='" . $_SERVER["PHP_SELF"] . "' method='POST'>";
         echo "<div style ='width:100%;height:50%'>";
         //echo "<div align='right' style ='width:50%;height:30%'>";
 
@@ -542,6 +542,7 @@ class WCA extends FEComponent{
         fkFE_Component = $this->keyId
         AND fkFacility = $this->fc;";
         $rMSP=@mysql_query($qMSP,$this->dbconnection);
+        $bg_color = "";
         while ($rowMSP = @mysql_fetch_array($rMSP)){
             $bg_color = ($bg_color=="#ffffff" ? '#dddddd' : "#ffffff");
 
@@ -617,7 +618,7 @@ class WCA extends FEComponent{
         echo '
         <p><div style="width:500px;height:80px; align = "left"></p>
         <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
             <!-- MAX_FILE_SIZE must precede the file input field -->
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
             <!-- Name of input element determines name in $_FILES array -->
@@ -644,19 +645,17 @@ class WCA extends FEComponent{
         echo "<br>";
     }
     public function RequestValues_WCA(){
-        $this->password = $_REQUEST['password'];
+        $this->password = isset($_REQUEST['password']) ? $_REQUEST['password'] : '';
         parent::RequestValues();
 
-        //echo "pw= " . $_REQUEST['password'] . "<br>";
-
-            if (isset($_REQUEST['deleterecord_forsure'])){
-                //if($this->password == "nrao1234"){
-                    $this->DeleteRecord_WCA();
-                //}
-                //if($this->password != "nrao1234"){
-                    //echo "<font color = '#ff0000'><b>Incorrect password. Record NOT deleted.</b></font><br>";
-                //}
-            }
+        if (isset($_REQUEST['deleterecord_forsure'])){
+            //if($this->password == "nrao1234"){
+                $this->DeleteRecord_WCA();
+            //}
+            //if($this->password != "nrao1234"){
+                //echo "<font color = '#ff0000'><b>Incorrect password. Record NOT deleted.</b></font><br>";
+            //}
+        }
 
         if (isset($_REQUEST['fc'])){
             $this->fc = $_REQUEST['fc'];

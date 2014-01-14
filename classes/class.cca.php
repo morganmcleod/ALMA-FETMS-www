@@ -83,7 +83,6 @@ class CCA extends FEComponent {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
-        $this->keyId = $in_keyId;
         $this->ZipDirectory = $this->writedirectory . "zip";
         $this->ErrorArray = array();
    }
@@ -91,8 +90,6 @@ class CCA extends FEComponent {
 
     public function Initialize_CCA($in_keyId, $in_fc){
         $this->fc= $in_fc;
-
-
 
         parent::Initialize_FEComponent($in_keyId,$this->fc);
         $this->SetValue('keyFacility',$in_fc);
@@ -114,10 +111,10 @@ class CCA extends FEComponent {
 
 
         //Initialize preamp params.
-        $q = "SELECT FreqLO,keyId FROM CCA_PreampParams
+        $q = "SELECT FreqLO, keyId FROM CCA_PreampParams
               WHERE fkComponent = $this->keyId
               AND Temperature < 10
-              ORDER BY FreqLO ASC, Pol ASC, SB ASC;";
+              ORDER BY Pol ASC, SB ASC, FreqLO ASC;";
         //echo "preamps: " . $q . "<br>";
         $r = @mysql_query($q,$this->dbconnection);
         $pcount = 0;
@@ -268,140 +265,112 @@ class CCA extends FEComponent {
 
     }
 
-     public function DisplayMainData(){
-         echo "<div style = 'width: 370px'><br><br>";
-                echo "<table id = 'table1'>";
-
-                    echo "<tr>";
-                        echo "<th>Band</th>";
-                        echo "<td><input type='text' name='Band' size='2' maxlength='200' value = '".$this->GetValue('Band')."'></td>";
-                    echo "</tr>";
-                    echo "<tr>";
-                        echo "<th>SN</th>";
-                        echo "<td><input type='text' name='SN' size='2' maxlength='200' value = '".$this->GetValue('SN')."'></td>";
-                    echo "</tr>";
-                    echo "<tr>";
-                        echo "<th>ESN1</th>";
-                        echo "<td><input type='text' name='ESN1' size='20' maxlength='200' value = '".$this->GetValue('ESN1')."'></td>";
-                    echo "</tr>";
-                    echo "<tr>";
-                        echo "<th>ESN2</th>";
-                        echo "<td><input type='text' name='ESN2' size='20' maxlength='200' value = '".$this->GetValue('ESN2')."'></td>";
-                    echo "</tr>";
-                    echo "<tr>";
-                        echo "<th>Status</th>";
-                        echo "<td>";
-                        $this->Display_StatusSelector();
-                        echo "</td>";
-                    echo "</tr>";
-                    echo "<tr>";
-                        echo "<th>Location</th>";
-                        echo "<td>";
-                        $this->Display_LocationSelector();
-                        echo "</td>";
-                    echo "</tr>";
-
-                    /*
-                    echo "<tr>";
-                        echo "<th>Notes</th>";
-                        echo "<td>";
-                        echo "<input type='text' name='NotesOLD' size='50'
-        maxlength='200' value = '".$this->GetValue('Notes')."'>";
-                        echo "</td>";
-                    echo "</tr>";
-                    */
-
-
-                    echo "<th>Notes</th>";
-                        echo "<td>";
-                        //echo "<input type='text' name='Notes' size='50'
-                        //        maxlength='200' value = '".$this->sln->GetValue('Notes')."'>";
-
-                        echo '<textarea name = "Notes" rows="10" cols="50" >';
-                        echo $this->sln->GetValue('Notes');
-                        echo "</textarea>";
-
-
-                    echo "<tr>";
-                        echo "<th>Updated By</th>";
-                        echo "<td><input type='text' name='Updated_By' size='4' maxlength='200' value = '".$this->sln->GetValue('Updated_By')."'></td>";
-                    echo "</tr>";
-                    echo "<tr>";
-
-
-
-                        echo "</td>";
-                    echo "</tr>";
-                    unset($sln);
-
-                    echo "<tr>";
-                        echo "<th></th>";
-                        echo "<td>";
-                        echo "<b><a href='export_to_ini_cca.php?keyId=$this->keyId&cca=1'>Click for INI file</b></a>";
-
-                        echo "</td>";
-                    echo "</tr>";
-
-
-        echo "</table></div>";
-
-     }
-
-public function Display_TempSensors(){
-    $locs[0]= "Spare";
-    $locs[1]= "110K Stage";
-    $locs[2]= "15K Stage";
-    $locs[3]= "4K Stage";
-    $locs[4]= "Pol 0 Mixer";
-    $locs[5]= "Pol 1 Mixer";
-
-    //echo "<h2>Temperature Sensors</h2><br>";
-
-$ts = "";
-if ($this->TempSensors[1]->keyId != ''){
-    $ts = $this->TempSensors[1]->GetValue('TS') . ",";
-}
-
-
-    //    or die('No TS available');
-
-    //$ts = "TS";
-
-    echo "<div style= 'width: 350px'><table id = 'table1'>";
-    echo "<tr class='alt'>
-            <th colspan = '4'>TEMPERATURE SENSORS <br><i>($ts CCA ". $this->GetValue('Band')."-".$this->GetValue('SN').")</i></th>
-          </tr>";
-    echo "<tr>
-            <th>Location</th>
-            <th>Model</th>
-            <th>SN</th>
-            <th>OffsetK</th>
-
-          </tr>";
-
-    for ($i=1;$i<=5;$i++){
-        if ($this->TempSensors[$i]->keyId != ""){
-            if ($i % 2 == 0){
+    public function DisplayMainData() {
+        echo "<div style = 'width: 370px'><br><br>";
+            echo "<table id = 'table1'>";
                 echo "<tr>";
-            }
-            else{
-                echo "<tr class = 'alt'>";
-            }
-            echo "
-            <td>$locs[$i]</td>
-            <td>" . $this->TempSensors[$i]->GetValue('Model') . "</td>
-            <td>" . $this->TempSensors[$i]->GetValue('SN') . "</td>
-            <td>" . $this->TempSensors[$i]->GetValue('OffsetK') . "</td>
+                    echo "<th>Band</th>";
+                    echo "<td><input type='text' name='Band' size='2' maxlength='200' value = '".$this->GetValue('Band')."'></td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "<th>SN</th>";
+                    echo "<td><input type='text' name='SN' size='2' maxlength='200' value = '".$this->GetValue('SN')."'></td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "<th>ESN1</th>";
+                    echo "<td><input type='text' name='ESN1' size='20' maxlength='200' value = '".$this->GetValue('ESN1')."'></td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "<th>ESN2</th>";
+                    echo "<td><input type='text' name='ESN2' size='20' maxlength='200' value = '".$this->GetValue('ESN2')."'></td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "<th>Status</th>";
+                    echo "<td>";
+                    $this->Display_StatusSelector();
+                    echo "</td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "<th>Location</th>";
+                    echo "<td>";
+                    $this->Display_LocationSelector();
+                    echo "</td>";
+                echo "</tr>";
 
-          </tr>";
-        }
+                echo "<th>Notes</th>";
+                    echo "<td>";
+                    echo '<textarea name = "Notes" rows="10" cols="50" >';
+                    echo $this->sln->GetValue('Notes');
+                    echo "</textarea>";
+
+                echo "<tr>";
+                    echo "<th>Updated By</th>";
+                    echo "<td><input type='text' name='Updated_By' size='4' maxlength='200' value = '".$this->sln->GetValue('Updated_By')."'></td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "</td>";
+                echo "</tr>";
+                unset($sln);
+
+                echo "<tr>";
+                    echo "<th></th>";
+                    echo "<td>";
+                    echo "<b><a href='export_to_ini_cca.php?keyId=$this->keyId&cca=1'>Click for INI file</b></a>";
+                    echo "</td>";
+                echo "</tr>";
+        echo "</table></div>";
     }
-    echo "</table></div><br><br>";
-}
 
-    public function Display_MixerParams(){
-        for ($pol=0;$pol<=1;$pol++){
-            for ($sb=1;$sb<=2;$sb++){
+    public function Display_TempSensors(){
+        $locs[0]= "Spare";
+        $locs[1]= "110K Stage";
+        $locs[2]= "15K Stage";
+        $locs[3]= "4K Stage";
+        $locs[4]= "Pol 0 Mixer";
+        $locs[5]= "Pol 1 Mixer";
+
+        $ts = "";
+        if ($this->TempSensors[1]->keyId != ''){
+            $ts = $this->TempSensors[1]->GetValue('TS') . ",";
+        }
+
+        echo "<div style= 'width: 350px'><table id = 'table1'>";
+        echo "<tr class='alt'>
+                <th colspan = '4'>TEMPERATURE SENSORS <br><i>($ts CCA ". $this->GetValue('Band')."-".$this->GetValue('SN').")</i></th>
+              </tr>";
+        echo "<tr>
+                <th>Location</th>
+                <th>Model</th>
+                <th>SN</th>
+                <th>OffsetK</th>
+
+              </tr>";
+
+        for ($i=1;$i<=5;$i++){
+            if ($this->TempSensors[$i]->keyId != ""){
+                if ($i % 2 == 0){
+                    echo "<tr>";
+                }
+                else{
+                    echo "<tr class = 'alt'>";
+                }
+                echo "
+                <td>$locs[$i]</td>
+                <td>" . $this->TempSensors[$i]->GetValue('Model') . "</td>
+                <td>" . $this->TempSensors[$i]->GetValue('SN') . "</td>
+                <td>" . $this->TempSensors[$i]->GetValue('OffsetK') . "</td>
+
+              </tr>";
+            }
+        }
+        echo "</table></div><br>";
+    }
+
+    public function Display_MixerParams() {
+        $maxSb = $this->GetValue('Band') < 9 ? 2 : 1;
+
+        for ($pol = 0; $pol <= 1; $pol++){
+            for ($sb = 1; $sb <= $maxSb; $sb++){
                 $q = "SELECT Temperature,FreqLO,VJ,IJ,IMAG,TS
                       FROM CCA_MixerParams
                       WHERE fkComponent = $this->keyId
@@ -446,44 +415,56 @@ if ($this->TempSensors[1]->keyId != ''){
                     </tr>";
                     $count+=1;
                     }
-                echo "</table></div><br><br>";
+                echo "</table></div><br>";
                 }//end check for numrows
             }//end for sb
         }//end for pol
     }
 
-    public function Display_PreampParams(){
-        //echo "<h2>Preamp Parameters</h2><br>";
+    public function Display_PreampParams() {
 
+        // get the band number:
+        $band = $this->GetValue('Band');
 
-        //for ($i=1;$i<=4;$i++){
+        // loop on PreampParams records:
+        $numParams = count($this->PreampParams);
 
-        $sbmax = 2;
-        if ($this->GetValue('Band') == 9){
-            $sbmax = 1;
-        }
-        $pcount = 0;
-        for ($pol=0;$pol<=1;$pol++){
-            for ($sb=1;$sb<=$sbmax;$sb++){
-            echo "
-                    <div style= 'width: 500px'>
-                    <table id = 'table1' border = '1'>";
+        // flags to help decide whent to show table header:
+        $lastPol = -1;
+        $lastSb = -1;
+        $tableOpen = false;
 
-                echo "<tr class='alt'><th colspan = '11'>
-                            Preamp Pol ".$pol."
-                            SB ".$sb." <i>
-                            (";
+        // we are assuming they are in ascending order by Pol, SB, FreqLO, as loaded above in Initialize_CCA.
+        for ($paramIndex = 0; $paramIndex < $numParams; $paramIndex++) {
 
-                if ($this->PreampParams[$pcount]->keyId != ""){
-                echo $this->PreampParams[$pcount]->GetValue('TS');
-                }
+            // check whether data exists at this index:
+            $paramRow = $this -> PreampParams[$paramIndex];
+            if (isset($paramRow)) {
 
-                echo ", CCA ". $this->GetValue('Band')."-".$this->GetValue('SN').")</i>
+                // Get Pol and SB
+                $pol = $paramRow -> GetValue('Pol');
+                $sb = $paramRow -> GetValue('SB');
 
-                            </th>
-                        </tr>";
+                // don't display SB2 tables for bands 9 and 10:
+                if ($sb == 1 || $band < 9) {
 
-                echo "<th>LO (GHz)</th>
+                    // show table header if we're on a new pol or sb:
+                    if ($pol != $lastPol || $sb != $lastSb) {
+                        // but first close the previous table if needed:
+                        if ($tableOpen)
+                            echo "</table></div><br>";
+                        $tableOpen = true;
+                        echo "<div style= 'width: 500px'><table id = 'table1' border = '1'>";
+                        echo "<tr class='alt'><th colspan = '11'>Preamp Pol $pol SB $sb";
+
+                        if ($paramRow -> GetValue('keyId') != "") {
+                            echo "<i> (";
+                            echo $paramRow -> GetValue('TS');
+                            echo ", CCA ". $band . "-" . $this -> GetValue('SN').")</i>";
+                        }
+                        echo "</th></tr>";
+
+                        echo "<th>LO (GHz)</th>
                         <th>VD1</th>
                         <th>VD2</th>
                         <th>VD3</th>
@@ -493,47 +474,37 @@ if ($this->TempSensors[1]->keyId != ''){
                         <th>VG1</th>
                         <th>VG2</th>
                         <th>VG3</th>
-                      </tr>";
-                $count= 0;
-                for ($i=0; $i<count($this->PreampParams); $i++){
-                //while($row = @mysql_fetch_array($r)){
-                    if (($this->PreampParams[$i]->GetValue('Pol') == $pol)
-                        && ($this->PreampParams[$i]->GetValue('SB') == $sb)){
-
-
-                    if ($count % 2 == 0){
-                        echo "<tr>";
+                        </tr>";
                     }
-                    else{
-                        echo "<tr class = 'alt'>";
-                    }
+                    $lastPol = $pol;
+                    $lastSb = $sb;
+
+                    // show table row:
+                    echo ($paramIndex % 2 == 0) ? "<tr>" : "<tr class = 'alt'>";
                     echo "
-                        <td>".$this->PreampParams[$i]->GetValue('FreqLO')."</td>
-                        <td>".$this->PreampParams[$i]->GetValue('VD1')."</td>
-                        <td>".$this->PreampParams[$i]->GetValue('VD2')."</td>
-                        <td>".$this->PreampParams[$i]->GetValue('VD3')."</td>
-                        <td>".$this->PreampParams[$i]->GetValue('ID1')."</td>
-                        <td>".$this->PreampParams[$i]->GetValue('ID2')."</td>
-                        <td>".$this->PreampParams[$i]->GetValue('ID3')."</td>
-                        <td>".$this->PreampParams[$i]->GetValue('VG1')."</td>
-                        <td>".$this->PreampParams[$i]->GetValue('VG2')."</td>
-                        <td>".$this->PreampParams[$i]->GetValue('VG3')."</td>
+                    <td>" . $paramRow -> GetValue('FreqLO')."</td>
+                    <td>" . $paramRow -> GetValue('VD1')."</td>
+                    <td>" . $paramRow -> GetValue('VD2')."</td>
+                    <td>" . $paramRow -> GetValue('VD3')."</td>
+                    <td>" . $paramRow -> GetValue('ID1')."</td>
+                    <td>" . $paramRow -> GetValue('ID2')."</td>
+                    <td>" . $paramRow -> GetValue('ID3')."</td>
+                    <td>" . $paramRow -> GetValue('VG1')."</td>
+                    <td>" . $paramRow -> GetValue('VG2')."</td>
+                    <td>" . $paramRow -> GetValue('VG3')."</td>
                     </tr>";
-                    $count+=1;
-                        }
-                }// end for count preampparams
-                    //}//end check for numrows
-                echo "</table></div><br>";
-                $pcount += 1;
-            }
 
+                }
+            }
         }
-        echo "<br><br><br><br><br><br><br><br><br><br><br>.<br>";
+        if ($tableOpen)
+            echo "</table></div><br>";
+
+        echo "<br>";
     }
 
-
-public function Display_uploadform_Zip(){
-    require(site_get_config_main());
+    public function Display_uploadform_Zip() {
+        require(site_get_config_main());
 
             echo '
 
@@ -541,7 +512,7 @@ public function Display_uploadform_Zip(){
 
         <tr class="alt" ><td colspan="2">
         <!-- The data encoding type, enctype, MUST be specified as below -->
-    <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+    <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
         <!-- MAX_FILE_SIZE must precede the file input field -->
         <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
         <!-- Name of input element determines name in $_FILES array -->
@@ -564,7 +535,7 @@ public function Display_uploadform_AnyFile($keyId, $fc){
     echo '
         <tr class="alt" ><td colspan="2">
         <!-- The data encoding type, enctype, MUST be specified as below -->
-    <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+    <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
         <!-- MAX_FILE_SIZE must precede the file input field -->
         <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
         <!-- Name of input element determines name in $_FILES array -->
@@ -593,7 +564,7 @@ public function Display_uploadform_SingleCSVfile(){
 
             echo '<tr class="alt"><td colspan="2">
     <!-- The data encoding type, enctype, MUST be specified as below -->
-    <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+    <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
         <!-- MAX_FILE_SIZE must precede the file input field -->
         <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
         <!-- Name of input element determines name in $_FILES array -->
@@ -612,7 +583,7 @@ public function Display_uploadform_SingleCSVfile(){
                 echo '
         <p><div style="width:500px;height:80px; align = "left"></p>
         <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
             <!-- MAX_FILE_SIZE must precede the file input field -->
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
             <!-- Name of input element determines name in $_FILES array -->
@@ -631,7 +602,7 @@ public function Display_uploadform_SingleCSVfile(){
                             echo '
         <p><div style="width:500px;height:80px; align = "left"></p>
         <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
             <!-- MAX_FILE_SIZE must precede the file input field -->
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
             <!-- Name of input element determines name in $_FILES array -->
@@ -653,7 +624,7 @@ public function Display_uploadform_SingleCSVfile(){
         echo '
         <p><div style="width:500px;height:80px; align = "left"></p>
         <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
             <!-- MAX_FILE_SIZE must precede the file input field -->
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="1000000" /> -->
             <!-- Name of input element determines name in $_FILES array -->

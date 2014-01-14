@@ -25,11 +25,11 @@ class TestData_header extends GenericTable{
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '', $InitFEComps = -1) {
-        $this->swversion = "1.0.6";
-        /*
-         * version 1.0.5 MM code formatting fixes, fix Display_RawTestData() for LO Lock test.
-         * version 1.0.6 Moved code from here which instantiates classes derived from this one!   (to testdata.php, pending verification.)
-         */
+        $this->swversion = "1.0.7";
+        // 1.0.7 MM fixes so that we can run with E_NOTIFY
+        // version 1.0.6 Moved code from here which instantiates classes derived from this one!   (to testdata.php, pending verification.)
+        // version 1.0.5 MM code formatting fixes, fix Display_RawTestData() for LO Lock test.
+
         $this->fc = $in_fc;
         parent::Initialize("TestData_header",$in_keyId,"keyId",$in_fc,'keyFacility');
 
@@ -286,7 +286,7 @@ class TestData_header extends GenericTable{
                    $trclass = "";
                 }
                 $t = new TestData_header();
-                $t->Initialize_TestData_header($rowkeys[keyId], $this->GetValue('keyFacility'), 0);
+                $t->Initialize_TestData_header($rowkeys['keyId'], $this->GetValue('keyFacility'), 0);
                 echo "<tr class = $trclass>";
                 echo "<td>" . $t->keyId . "</td>";
                 echo "<td>" . $t->GetValue('TS') . "</td>";
@@ -879,7 +879,7 @@ class TestData_header extends GenericTable{
     }*/
 
     public function DisplayDataSetSelector_Form($IFChannel = '%'){
-        echo "<form name='paiform' action='$PHP_SELF' method='POST'>";
+        echo "<form name='paiform' action='" . $_SERVER['PHP_SELF'] . "' method='POST'>";
         //echo "<div style='border-radius:10px;background-color:#ff0000;width:700px;height:60px;'>Select datasets to be included in plots and tables.<br><br>
         //      Check the 'PAI' box for each measurement to be included.</div><br>";
 
@@ -953,7 +953,7 @@ class TestData_header extends GenericTable{
         echo '
             <p><div style="width:500px;height:80px; align = "left"></p>
             <!-- The data encoding type, enctype, MUST be specified as below -->
-            <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">';
+            <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">';
 
             $qdt = "SELECT keyId, Description FROM DataStatus
                 ORDER BY keyId ASC;";

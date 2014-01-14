@@ -21,6 +21,19 @@
 
 <tr>
 	<th>
+		1.2.0
+	</th>
+	<td>
+	    Many bug fixes and specification changes and works with PHP E_NOTIFY enabled.
+	</td>
+	<td>
+		2014-01-14
+	</td>
+</tr>
+
+
+<tr>
+	<th>
 		1.1.17
 	</th>
 	<td>

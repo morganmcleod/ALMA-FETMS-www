@@ -95,53 +95,53 @@ function createtabs(keyfe, fesn, fc, fe_id){
     
     var more=tabs.add({
         title:'Documents',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'docs',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'docs', key: keyfe, fc: fc}}
     });
       
     //for components with band 0 or null
       var more=tabs.add({
         title:'Components',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'other',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'other', key: keyfe, fc: fc}}
     });
       
       var more=tabs.add({
         title:'Band 1',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'1',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'1', key: keyfe, fc: fc}}
     });
     var more=tabs.add({
         title:'Band 2',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'2',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'2', key: keyfe, fc: fc}}
     });
     var more=tabs.add({
         title:'Band 3',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'3',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'3', key: keyfe, fc: fc}}
     });
     var more=tabs.add({
         title:'Band 4',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'4',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'4', key: keyfe, fc: fc}}
     });
     var more=tabs.add({
         title:'Band 5',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'5',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'5', key: keyfe, fc: fc}}
     });
     var more=tabs.add({
         title:'Band 6',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'6',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'6', key: keyfe, fc: fc}}
     });
     var more=tabs.add({
         title:'Band 7',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'7',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'7', key: keyfe, fc: fc}}
     });
     var more=tabs.add({
         title:'Band 8',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'8',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'8', key: keyfe, fc: fc}}
     });
     var more=tabs.add({
         title:'Band 9',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'9',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'9', key: keyfe, fc: fc}}
     });
     var more=tabs.add({
         title:'Band 10',
-        autoLoad: {url: 'getFrontEndData.php',params:{band :'10',key: keyfe}}
+        autoLoad: {url: 'getFrontEndData.php',params:{band :'10', key: keyfe, fc: fc}}
     });
 }

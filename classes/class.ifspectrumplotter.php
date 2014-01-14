@@ -34,11 +34,11 @@ class IFSpectrumPlotter extends TestData_header{
     var $TS;                      //Timestamp string
 
     public function __construct(){
-        $this->plotswversion = "1.0.22";
-        /* 1.0.21 MTM: fix font color for Total and In-band power table.
-         *        Fix using/displaying wrong noise floor profile for total and inband.
-         * 1.0.22 MTM: fix "set...screen" commands to gnuplot
-         */
+        $this->plotswversion = "1.0.23";
+        // 1.0.23 MTM: fixes so we can run with E_NOTICE enabled
+        // 1.0.22 MTM: fix "set...screen" commands to gnuplot
+        // 1.0.21 MTM: fix font color for Total and In-band power table.
+        //        Fix using/displaying wrong noise floor profile for total and inband.
         require(site_get_config_main());
         $this->logger = new Logger('IFSpectrumPlotter.php.txt', 'w');
         $this->GNUPLOT_path = $GNUPLOT;
@@ -208,7 +208,7 @@ class IFSpectrumPlotter extends TestData_header{
         echo '
             <p><div style="width:500px;height:80px; align = "left"></p>
             <!-- The data encoding type, enctype, MUST be specified as below -->
-            <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">';
+            <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">';
 
         if ($_SERVER['SERVER_NAME'] == "webtest.cv.nrao.edu"){
 
@@ -265,7 +265,9 @@ class IFSpectrumPlotter extends TestData_header{
         echo "    <table id = 'table7' border = '1'>";
 
         echo "        <tr class = 'alt'><th colspan = '5' >Band " .$this->DataSetBand . " Total and In-Band Power";
-        echo "      <font color = '#cccccc'>(Noise Floor Profile: ".$this->NoiseFloor->GetValue('Notes').")</font></th></tr>";
+        if (isset($this->NoiseFloor))
+            echo "  <font color = '#cccccc'>(Noise Floor Profile: ".$this->NoiseFloor->GetValue('Notes').")</font>";
+        echo "</th></tr>";
 
         //$minch = $in_ifchannel;
         //$maxch = $in_ifchannel;
@@ -410,7 +412,7 @@ class IFSpectrumPlotter extends TestData_header{
                     $fontcolor = "#ff0000";
 
                 // Output the total minus in-band difference:
-                echo "<td bgcolor = $bgcolor><font color = $fontcolor><b>$pwrdiff</b></font></td>";
+                echo "<td><font color = $fontcolor><b>$pwrdiff</b></font></td>";
                 echo "</tr>";
 
                 $rowcount += 1;
@@ -494,7 +496,7 @@ class IFSpectrumPlotter extends TestData_header{
                     $pwr = round(@mysql_result($r15,0,0),1);
                     $pwr = number_format($pwr, 1, '.', '');
 
-                    $bgcolor = $bg;
+                    $bgcolor = "";
                     $fontcolor = "#000000";
 
                     if ($band == 6 || $band == 7 || $band == 9) {

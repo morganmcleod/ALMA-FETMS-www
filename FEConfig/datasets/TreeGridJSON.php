@@ -116,23 +116,23 @@ if ($action == 'read'){
             $prev_FreqLO = 0;
             while ($rownt = @mysql_fetch_Array($rnt)){
                 // only display one entry per LO Frequency
-                if ($prev_FreqLO != $rownt[FreqLO]){
+                if ($prev_FreqLO != $rownt['FreqLO']){
 
                     $checked = false;
-                    if ($rownt[IsIncluded] == '1'){
+                    if ($rownt['IsIncluded'] == '1'){
                         $checked = true;
                     }
-                    $text = $rownt[FreqLO] . " GHz";
+                    $text = $rownt['FreqLO'] . " GHz";
 
                     //RecordID is an id value for a specific LO frequency corresponding to an LOLockTest_SubHeader.keyId
                     //An example RecordID would be 2314_221
-                    $RecordID = $ntsubId . "_" . $rownt[FreqLO];
+                    $RecordID = $ntsubId . "_" . $rownt['FreqLO'];
                     $sub_records[$count_ntsub] = array('text'=>$text,'leaf'=>true,'checked'=>$checked, 'id'=>$RecordID);
 
                     $count_ntsub += 1;
                     unset($ntsub);
                 }
-                $prev_FreqLO = $rownt[FreqLO];
+                $prev_FreqLO = $rownt['FreqLO'];
             }
             break;
 

@@ -24,7 +24,7 @@ require_once($site_classes . '/class.noisetemp.php');
 
 $fc = $_REQUEST['fc'];
 
-if ($_REQUEST['drawplot'] == 1 ) {
+if (isset($_REQUEST['drawplot']) && $_REQUEST['drawplot'] == 1 ) {
     //Show a spinner while plots are being drawn.
     include($site_FEConfig . '/spin.php');
 }
@@ -79,7 +79,7 @@ include('header_with_fe.php');
 
 ?>
 
-<form enctype="multipart/form-data" action="<?php echo $PHP_SELF; ?>" method="POST">
+<form enctype="multipart/form-data" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
 <div id="wrap" style="height:6000px">
 
 <div id="sidebar2" style="height:6000px">
@@ -204,7 +204,7 @@ switch ($td->GetValue('fkTestData_Type')) {
 
 $td->RequestValues_TDH();
 
-if (($_REQUEST['drawplot'] == 1 )){
+if (isset($_REQUEST['drawplot']) && ($_REQUEST['drawplot'] == 1 )){
     $td->DrawPlot();
     $refurl = "testdata.php?keyheader=$TestData_header_keyId";
     $refurl .= "&fc=$fc";
@@ -228,6 +228,10 @@ if (($td->GetValue('PlotURL') == '')) {
         case 47:
         case 48:
             //Don't automatically draw WCA cartridge PAI plots
+            break;
+
+        case 42:
+            //Don't automatically draw CCA cartridge PAI plots
             break;
 
         default:
@@ -382,7 +386,7 @@ function Display_Plot($td){
 Display_TestDataMain($td);
 Display_Plot($td);
 
-$showrawdata = $_REQUEST['showrawdata'];
+$showrawdata = isset($_REQUEST['showrawdata']) ? $_REQUEST['showrawdata'] : 0;
 
 switch($td->GetValue('fkTestData_Type')){
     case 1:

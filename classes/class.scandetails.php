@@ -24,7 +24,7 @@ class ScanDetails extends GenericTable {
     var $fc; //facility key
 
     public function Initialize_ScanDetails($keyId,$in_fc){
-        $this->dbconnection = $db;
+        $this->dbconnection = site_getDbConnection();
         $this->fc = $in_fc;
         parent::Initialize("ScanDetails",$keyId,"keyId",$this->fc,'fkFacility');
 

@@ -55,7 +55,7 @@ $fesn=$cryostat->FESN;
 include('header_with_fe.php');
 
 ?>
-<form enctype="multipart/form-data" action="<?php echo $PHP_SELF; ?>" method="POST">
+<form enctype="multipart/form-data" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
 <div id="wrap" style="height:6000px">
 
 <div id="sidebar2" style="height:6000px">

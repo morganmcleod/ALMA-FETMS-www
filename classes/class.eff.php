@@ -1495,7 +1495,7 @@ class eff {
             echo "<td width = '80px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ifatten') . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('ifatten') . "</td>";
             echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('SourceRotationAngle') . "</td>";
             echo "<tr>";
-            $count += 1;
+
             echo "<tr class='alt'>";
             echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
             echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";

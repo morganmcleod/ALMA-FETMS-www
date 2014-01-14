@@ -33,18 +33,19 @@ if($ctype==100)
         }
         $outstring .= "'config':'".$fe->feconfig->keyId."',";    ;
 
-        if ($fe->fesln->keyId > 0){
-            $outstring .= "'Location':'".$fe->fesln->location."',";
-            $outstring .= "'Status':'".$fe->fesln->status."',";
-            $outstring .= "'Updated_By':'".$fe->fesln->GetValue('Updated_By')."',";
-            $Notes = @mysql_real_escape_string(stripslashes($fe->fesln->GetValue('Notes')));
-        }
-
-        if ($fe->fesln->keyId < 1){
-            $outstring .= "'Location':'',";
-            $outstring .= "'Status':'',";
-            $outstring .= "'Updated_By':'',";
-            $Notes = '';
+        if (isset($fe -> fesln)) {
+            if ($fe -> fesln -> keyId > 0) {
+                $outstring .= "'Location':'".$fe->fesln->location."',";
+                $outstring .= "'Status':'".$fe->fesln->status."',";
+                $outstring .= "'Updated_By':'".$fe->fesln->GetValue('Updated_By')."',";
+                $Notes = @mysql_real_escape_string(stripslashes($fe->fesln->GetValue('Notes')));
+            }
+            if ($fe -> fesln -> keyId < 1){
+                $outstring .= "'Location':'',";
+                $outstring .= "'Status':'',";
+                $outstring .= "'Updated_By':'',";
+                $Notes = '';
+            }
         }
         $outstring .= "'Docs':'" . FixHyperLink($fe->GetValue('Docs')). "',";
         $outstring .= "'TS':'".$fe->GetValue('TS')."',";

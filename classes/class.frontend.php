@@ -38,26 +38,32 @@ class FrontEnd extends GenericTable{
         //Get CCAs portion of the string
         $jstring .=  ',"ccas":[';
         $cnt = 0;
-        for ($iband=1; $iband<= 10; $iband++){
-            if ($this->ccas[$iband]->keyId > 0){
-                if ($cnt > 0){
-                    $jstring .= ",";
+        for ($iband = 1; $iband <= 10; $iband++) {
+            if (isset($this -> ccas[$iband])) {
+                $ccas = $this -> ccas[$iband];
+                if ($ccas -> keyId > 0){
+                    if ($cnt > 0){
+                        $jstring .= ",";
+                    }
+                    $jstring .=  '{ "id": "' . $this->ccas[$iband]->keyId . '", "sn": "' . $this->ccas[$iband]->GetValue('SN') . '", "band": "' . $this->ccas[$iband]->GetValue('Band') . '" }';
+                    $cnt += 1;
                 }
-                $jstring .=  '{ "id": "' . $this->ccas[$iband]->keyId . '", "sn": "' . $this->ccas[$iband]->GetValue('SN') . '", "band": "' . $this->ccas[$iband]->GetValue('Band') . '" }';
-                $cnt += 1;
             }
         }
 
         //Get WCAs portion of the string
         $jstring .=  '],"wcas":[';
         $cnt = 0;
-        for ($iband=1; $iband<= 10; $iband++){
-            if ($this->wcas[$iband]->keyId > 0){
-                if ($cnt > 0){
-                    $jstring .= ",";
+        for ($iband = 1; $iband <= 10; $iband++){
+            if (isset($this -> wcas[$iband])) {
+                $wcas = $this->wcas[$iband];
+                if ($wcas -> keyId > 0){
+                    if ($cnt > 0){
+                        $jstring .= ",";
+                    }
+                    $jstring .=  '{ "id": "' . $this->wcas[$iband]->keyId . '", "sn": "' . $this->wcas[$iband]->GetValue('SN') . '", "band": "' . $this->wcas[$iband]->GetValue('Band') . '" }';
+                    $cnt += 1;
                 }
-                $jstring .=  '{ "id": "' . $this->wcas[$iband]->keyId . '", "sn": "' . $this->wcas[$iband]->GetValue('SN') . '", "band": "' . $this->wcas[$iband]->GetValue('Band') . '" }';
-                $cnt += 1;
             }
         }
         $jstring .=  "]}}";
@@ -84,10 +90,13 @@ class FrontEnd extends GenericTable{
         }
         $this->feconfig = new GenericTable();
         $this->feconfig->Initialize('FEConfig',$feconfig_id,'keyFEConfig');
-        //$this->feconfig_latest = $this->feconfig->keyId;
 
-        //TODO: Temporarily commented out. Will uncomment later when debugged.
+$this->feconfig_latest = $this->feconfig->keyId;
+//TODO: Temporarily commented out. Will uncomment later when debugged.
+
         //Get sln
+        $slnid = '';
+
         if ($this->feconfig->keyId > 0){
             $qsln = "SELECT MAX(keyId) FROM FE_StatusLocationAndNotes
                      WHERE fkFEConfig = ".$this->feconfig->keyId."
@@ -98,12 +107,8 @@ class FrontEnd extends GenericTable{
         }
 
         if ($slnid != ''){
-            //$this->fesln = new GenericTable();
-            //$this->fesln->Initialize('FE_StatusLocationAndNotes',$slnid,'keyId',$this->GetValue('keyFacility'),'keyFacility');
-
             $this->fesln = new SLN();
             $this->fesln->Initialize_SLN($slnid,$this->GetValue('keyFacility'));
-
         }
 
         //Get FE Configs
@@ -228,6 +233,7 @@ class FrontEnd extends GenericTable{
 
         $r = @mysql_query($q,$this->dbconnection);
 
+        $trclass = '';
         while ($row = @mysql_fetch_array($r)) {
             $trclass = ($trclass=="" ? 'class="alt"' : "");
             echo "<tr $trclass><td width = '10px'>$row[0]</td>";
@@ -436,6 +442,7 @@ class FrontEnd extends GenericTable{
                 <th>Notes</th>
                 </tr>";
 
+        $trclass = '';
         for ($i = 0; $i < count ($this->feconfigs); $i++){
             $q = "SELECT keyId FROM FE_StatusLocationAndNotes
                   WHERE fkFEConfig = " .$this->feconfigs[$i]."
@@ -542,6 +549,7 @@ class FrontEnd extends GenericTable{
         echo $q;
 
         $r = @mysql_query($q,$this->dbconnection);
+        $trclass = '';
         while ($row = @mysql_fetch_array($r)){
             $tdh = new TestData_header();
             $tdh->Initialize_TestData_header($row['keyId'],$this->fc, $this->feconfig->keyId);
@@ -620,6 +628,7 @@ class FrontEnd extends GenericTable{
 
         $r = @mysql_query($q,$this->dbconnection);
 
+        $trclass = '';
         while ($row = @mysql_fetch_array($r)){
             $Display = 1;
             if ($band == ''){
@@ -712,6 +721,7 @@ class FrontEnd extends GenericTable{
 
         $r = @mysql_query($q,$this->dbconnection);
 
+        $trclass = '';
         while ($row = @mysql_fetch_array($r)){
             // exclude test data types which are shown health check and PAS reference data table:
             if (!(in_array($row[2], array(1,2,3,4,5,6,8,9,10,12,13,14,15,24,39)))) {
@@ -735,7 +745,7 @@ class FrontEnd extends GenericTable{
 
                     $testpage = 'testdata/testdata.php';
 
-                    switch($row[fkTestData_Type]){
+                    switch($row['fkTestData_Type']){
                         case 55:
                             //Beam patterns
                             $testpage = 'bp/bp.php';
@@ -812,6 +822,7 @@ class FrontEnd extends GenericTable{
 
         $r = @mysql_query($q,$this->dbconnection);
 
+        $trclass = '';
         while ($row = @mysql_fetch_array($r)){
 
             $trclass = ($trclass=="" ? 'class="alt"' : "");
@@ -852,6 +863,7 @@ class FrontEnd extends GenericTable{
                       <th>Status</th>";
             echo "</tr>";
 
+            $trclass = '';
             while ($row = @mysql_fetch_array($r)){
                 $trclass = ($trclass=='class="alt5"' ? 'class="alt4"' : 'class="alt5"');
                 $doc = new FEComponent();
@@ -898,9 +910,10 @@ class FrontEnd extends GenericTable{
 
         $prev_data_status = -1;
         $prev_fe_config = -1;
-        while ($row = @mysql_fetch_array($r)){
-            if ($prev_data_status != $row[6] || $prev_fe_config != $row[3]){
-                        $trclass = ($trclass=="" ? 'class="alt"' : "");
+        $trclass = '';
+        while ($row = @mysql_fetch_array($r)) {
+            if ($prev_data_status != $row[6] || $prev_fe_config != $row[3]) {
+                $trclass = ($trclass=="" ? 'class="alt"' : "");
                 echo "<tr $trclass ><td width = '75px' align = 'center'>".$row[3]."</td>
                     <td width = '125px'><a href='testdata/pas_results.php?FE_Config=".$row[3]."&band=$band&Data_Status=".$row[6]."' target = 'blank'>$row[9]</a>
                     <td width = '300px'>".$row[7]."</td>";

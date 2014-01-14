@@ -42,7 +42,7 @@ if($tabtype == 1)
         $descr=$getFEComp['Descr'];
         $esn1=$getFEComp['ESN1'];
         $esn2=$getFEComp['ESN2'];
-        $docs=$getFEComp['Docs'];
+        $docs=isset($getFEComp['Docs']) ? $getFEComp['Docs'] : "";
 
         if($docs== "")
         {

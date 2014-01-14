@@ -24,7 +24,7 @@
 <?php
                     }
                 }
-                if ($componentId != '') {
+                if (isset($componentId) && $componentId != '') {
 ?>
                     <td><a href="../FEConfig/ShowComponents.php?conf=<?php echo $componentId; ?>&fc=<?php echo $fc; ?>" class="button gray biground">
                     <span>Component Record</span>

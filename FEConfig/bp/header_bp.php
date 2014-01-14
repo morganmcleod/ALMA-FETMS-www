@@ -23,7 +23,7 @@
             <span>Front End <?php echo $fesn; ?></span></a></td>
 <?php
         }
-        if ($componentId != '') {
+        if (isset($componentId) && ($componentId != '')) {
 ?>
             <td><a href="../ShowComponents.php?conf=<?php echo $componentId; ?>&fc=<?php echo $fc; ?>" class="button gray biground">
             <span>Component Record</span></a></td>

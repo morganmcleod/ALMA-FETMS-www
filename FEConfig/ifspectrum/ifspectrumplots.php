@@ -32,8 +32,9 @@ require_once($site_FEConfig . '/jsFunctions.php');
 $fc = $_REQUEST['fc'];
 $FEid = $_REQUEST['fe'];
 $band = $_REQUEST['b'];
-$DataSetGroup = $_REQUEST['g'];
+$DataSetGroup = isset($_REQUEST['g']) ? $_REQUEST['g'] : '';
 $id = $_REQUEST['id'];
+$drawPlots = isset($_REQUEST['d']) ? $_REQUEST['d'] : 0;
 
 $ifSpectrupPlotsLogger = new Logger('ifspectrumplots.php.txt', 'w');
 
@@ -69,7 +70,7 @@ include "header_ifspectrum.php";
 
 echo "<body id = 'body3' onload='createIFSpectrumTabs($fc,$id,$FEid,$DataSetGroup,$band);' BGCOLOR='#19475E'>";
 
-if ($_REQUEST['d'] == 1){
+if ($drawPlots == 1) {
 	$ifspec->CreateNewProgressFile($fc,$DataSetGroup);
 
 	echo "new file= " . $ifspec->progressfile;
@@ -106,7 +107,7 @@ if ($_REQUEST['d'] == 1){
 
 echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
 
-if ($_REQUEST['d'] == 1){
+if ($drawPlots == 1){
 	$ifspec->GeneratePlots();
 }
 

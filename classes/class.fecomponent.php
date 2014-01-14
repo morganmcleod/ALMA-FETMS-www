@@ -252,6 +252,7 @@ class FEComponent extends GenericTable{
 
 
         $r = @mysql_query($q,$this->dbconnection);
+        $trclass = "";
         while ($row = @mysql_fetch_array($r)){
             $trclass = ($trclass=="" ? 'class="alt"' : "");
 
@@ -280,7 +281,7 @@ class FEComponent extends GenericTable{
 
               echo '
                 <!-- The data encoding type, enctype, MUST be specified as below -->
-                <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+                <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
                 <!-- MAX_FILE_SIZE must precede the file input field -->
                 <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
                 <!-- Name of input element determines name in $_FILES array -->';

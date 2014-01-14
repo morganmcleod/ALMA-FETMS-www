@@ -18,6 +18,7 @@ $r = @mysql_query($q,$db);
 $outstring = "[";
 
 $rowcount = 0;
+$bgcolor = "";
 while ($row = @mysql_fetch_array($r)){
     $bgcolor=($bgcolor == 'blue-row' ? 'alt-row' : 'blue-row');
 

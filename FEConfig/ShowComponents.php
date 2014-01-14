@@ -60,15 +60,6 @@ include "header.php";
 
 $getQuery=new dbGetQueries;
 
-if(substr($comp_ser,0,1) == '0')
-{
-    $ser_mod=substr($comp_ser,1);
-}
-else
-{
-    $ser_mod=$comp_ser;
-}
-
 if (isset($_REQUEST['submitted_ccafile'])){
     $cca = new CCA();
     $cca->Initialize_CCA($comp_key,$fc);

@@ -340,7 +340,7 @@ class Cryostat extends GenericTable{
     public function Display_uploadform_TempSensor(){
         echo '
         <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
         <!-- MAX_FILE_SIZE must precede the file input field -->
         <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
         <!-- Name of input element determines name in $_FILES array -->
@@ -358,7 +358,7 @@ class Cryostat extends GenericTable{
         echo '
         <div style="width:750px">
         <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
             <!-- MAX_FILE_SIZE must precede the file input field -->
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
             <!-- Name of input element determines name in $_FILES array -->
@@ -426,7 +426,7 @@ class Cryostat extends GenericTable{
         echo '
         <div style="width:750px">
         <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $PHP_SELF . '" method="POST">
+        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
             <!-- MAX_FILE_SIZE must precede the file input field -->
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
             <!-- Name of input element determines name in $_FILES array -->

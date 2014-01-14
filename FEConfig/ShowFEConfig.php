@@ -52,7 +52,7 @@ include "header.php";
                   </font><br>";
         }
 
-        if ($_REQUEST['e'] != '') {
+        if (isset($_REQUEST['e']) && $_REQUEST['e'] != '') {
             $errorfile = $log_url_directory . $_REQUEST['e'] . ".txt";
     ?>
             <a style="width:90px" class="button red biground">

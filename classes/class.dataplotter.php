@@ -48,7 +48,7 @@ class DataPlotter extends GenericTable{
         $this->TestDataHeader = new TestData_header();
         $this->TestDataHeader->Initialize_TestData_header($in_TestDataHeaderID,$in_fc);
         $this->FEcfg = $this->TestDataHeader->GetValue('fkFE_Config');
-        if ($this->TestDataHeader->FrontEnd->keyId != ''){
+        if (isset($this->TestDataHeader->FrontEnd->keyId)) {
             $this->FESN = $this->TestDataHeader->FrontEnd->GetValue('SN');
         }
 
