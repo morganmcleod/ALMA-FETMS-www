@@ -55,7 +55,6 @@ class FEComponent extends GenericTable{
                 break;
         }
 
-
         //Find which Front End this component is in (if any)
         $q = "select Front_Ends.SN, FE_Config.keyFEConfig,Front_Ends.keyFrontEnds, Front_Ends.keyFacility,
             FE_ConfigLink.keyId
@@ -63,7 +62,7 @@ class FEComponent extends GenericTable{
             WHERE FE_ConfigLink.fkFE_Components = $this->keyId
             AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
             AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
-            GROUP BY FE_Config.keyFEConfig DESC LIMIT 1;";
+            GROUP BY FE_ConfigLink.keyId DESC LIMIT 1;";
 
         $r = @mysql_query($q,$this->dbconnection);
         if (@mysql_numrows($r) > 0){
