@@ -1064,9 +1064,9 @@ class eff {
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
 
             // if the polarization efficiency is less than the value calculated for $spec, display it as red:
-            $rf = $this->scansets[$scanSetIdx]->GetValue('f');
-            $pol =  $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol');
+            $rf = floatval($this->scansets[$scanSetIdx]->GetValue('f'));
             $spec = 0.0;
+            $band4Pol0Spec = 0.0;
 
             switch ($this->band) {
                 case 3:
@@ -1074,21 +1074,23 @@ class eff {
                     break;
                 case 4:
                     $spec = 98.7;
-                    if (134.0 <= rf && rf <= 158.0)
+                    if (134.0 <= $rf && $rf <= 158.0)
                         $spec = 99.0;
-                    if ($pol == 0 && 134.0 <= rf && rf <= 138.0)
-	                    $spec = 98.4;	// special case in pol0 only for FEND-40.02.04.00-0236-C-CRE
+                    if (134.0 <= $rf && $rf <= 138.0)
+                        $band4Pol0Spec = 98.4;    // special case in pol0 only for FEND-40.02.04.00-0236-C-CRE
+                    else
+                    	$band4Pol0Spec = $spec;
                     break;
                 case 6:
                     $spec = 96.84;
-                    if (219.0 <= rf && rf <= 231.0)
+                    if (219.0 <= $rf && $rf <= 231.0)
                         $spec = 99.0;
-                    else if (231.0 < rf && rf <= 262.0)
+                    else if (231.0 < $rf && $rf <= 262.0)
                         $spec = 98.42;
                     break;
                 case 8:
                     $spec = 98.4;
-                    if (491.0 <= rf && rf <= 495.0)
+                    if (491.0 <= $rf && $rf <= 495.0)
                         $spec = 98.0;
                     break;
                 case 9:
@@ -1101,19 +1103,20 @@ class eff {
 
             echo "<tr>";
             echo "<td>" . $rf . "</td>";
-            echo "<td>" . $pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('max_dbdifference'),2) . "</td>";
             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_tot_np'),2) . "</td>";
 
             $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_pol'),2);
-            if ($pe < $spec)
+
+            if (($pe < $spec) || (($this->band == 4) && ($pe < $band4Pol0Spec)))
                 echo "<td><font color ='#ff0000'>$pe</font></td>";
             else
                 echo "<td>$pe</td>";
 
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
+            echo "<td>" . $rf . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('max_dbdifference'),2) . "</td>";
