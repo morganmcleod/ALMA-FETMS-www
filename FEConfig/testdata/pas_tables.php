@@ -5,7 +5,7 @@ require_once($site_FEConfig . '/testdata/spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header ( $width , &$tdh ){
-    $table_ver = "1.0.3";
+    $table_ver = "1.0.4";
     $testpage = 'testdata.php';
 
     $q = "SELECT `Description` FROM `TestData_Types`
@@ -361,7 +361,7 @@ function SIS_results($td_keyID){
             }
             $SIS_Mon[$cnt][$i] = $mon_data;
         }
-    $cnt++;
+        $cnt++;
     }
     // get LO freq to get Control Data
     $FreqLO = @mysql_result($r,0,6);
@@ -377,55 +377,60 @@ function SIS_results($td_keyID){
         WHERE `fkComponent` = ($q_CompID) AND `FreqLO` = $FreqLO
         ORDER BY `Pol`ASC, `SB` ASC";
 
-    $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+    $r = @mysql_query($q,$tdh->dbconnection);
 
-    // reformat data to put in table
-    $cnt=0;
-    while ($row = @mysql_fetch_array($r)){
-        for ($i = 0; $i < 4; $i++) {
-            $SIS_Cntrl[$cnt][$i] = $row[$i];
-        }
-    $cnt++;
+    if (!$r) {
+    	echo "No data for TDH=$td_keyID and LO=$FreqLO<br>";
+
+    } else {
+	    // reformat data to put in table
+	    $cnt=0;
+	    while ($row = @mysql_fetch_array($r)){
+	        for ($i = 0; $i < 4; $i++) {
+	            $SIS_Cntrl[$cnt][$i] = $row[$i];
+	        }
+	        $cnt++;
+	    }
+
+	    table_header ( 700,$tdh);
+	    echo "<tr><th rowspan='2'>Device</th>
+	        <th colspan='3'>Control Values</th>
+	        <th colspan='4'>Monitor Values</th></tr>
+	        <th>Bias Voltage (mV)</th>
+	        <th>Bias Current (uA)</th>
+	        <th>Magnet Current (mA)</th>
+	        <th>Bias Voltage (mV)</th>
+	        <th>Bias Current (uA)</th>
+	        <th>Magnet Voltage (V)</th>
+	        <th>Magnet Current (mA)</th>";
+
+	    $cnt = count($SIS_Cntrl);
+	    if ($cnt ==0){
+	        $cnt = count($SIS_Mon);
+	    }
+	    for ($i = 0; $i < $cnt; $i++) {
+	        echo "<tr>
+	        <td width = '100px'>Pol".$SIS_Mon[$i][0]." SIS".$SIS_Mon[$i][1]. "</td>
+	        <td width = '75px'>".$SIS_Cntrl[$i][0]."</td>
+	        <td width = '75px'>".$SIS_Cntrl[$i][1]."</td>
+	        <td width = '75px'>".$SIS_Cntrl[$i][2]."</td>";
+
+	        // check to see if Bias voltage is in spec
+	        $mon_Bias_V = num_within_percent( $SIS_Mon[$i][2], $SIS_Cntrl[$i][0], $spec[13] );
+	        echo "<td width = '75px'>$mon_Bias_V</td> ";
+
+	        // check to see if Bias currrent is in spec
+	        $mon_Bias_I = num_within_percent( $SIS_Mon[$i][3], $SIS_Cntrl[$i][1], $spec[14] );
+	        echo "<td width = '75px'>$mon_Bias_I</td> ";
+
+	        echo "<td width = '75px'>".$SIS_Mon[$i][4]."</td>";
+
+	        // check to see if Magnet currrent is in spec
+	        $mon_Mag_I = num_within_percent( $SIS_Mon[$i][5], $SIS_Cntrl[$i][2], $spec[15] );
+	        echo "<td width = '75px'>$mon_Mag_I</td> ";
+	    }
+	    echo "</table></div>";
     }
-
-    table_header ( 700,$tdh);
-    echo "<tr><th rowspan='2'>Device</th>
-        <th colspan='3'>Control Values</th>
-        <th colspan='4'>Monitor Values</th></tr>
-        <th>Bias Voltage (mV)</th>
-        <th>Bias Current (uA)</th>
-        <th>Magnet Current (mA)</th>
-        <th>Bias Voltage (mV)</th>
-        <th>Bias Current (uA)</th>
-        <th>Magnet Voltage (V)</th>
-        <th>Magnet Current (mA)</th>";
-
-    $cnt = count($SIS_Cntrl);
-    if ($cnt ==0){
-        $cnt = count($SIS_Mon);
-    }
-    for ($i = 0; $i < $cnt; $i++) {
-        echo "<tr>
-        <td width = '100px'>Pol".$SIS_Mon[$i][0]." SIS".$SIS_Mon[$i][1]. "</td>
-        <td width = '75px'>".$SIS_Cntrl[$i][0]."</td>
-        <td width = '75px'>".$SIS_Cntrl[$i][1]."</td>
-        <td width = '75px'>".$SIS_Cntrl[$i][2]."</td>";
-
-        // check to see if Bias voltage is in spec
-        $mon_Bias_V = num_within_percent( $SIS_Mon[$i][2], $SIS_Cntrl[$i][0], $spec[13] );
-        echo "<td width = '75px'>$mon_Bias_V</td> ";
-
-        // check to see if Bias currrent is in spec
-        $mon_Bias_I = num_within_percent( $SIS_Mon[$i][3], $SIS_Cntrl[$i][1], $spec[14] );
-        echo "<td width = '75px'>$mon_Bias_I</td> ";
-
-        echo "<td width = '75px'>".$SIS_Mon[$i][4]."</td>";
-
-        // check to see if Magnet currrent is in spec
-        $mon_Mag_I = num_within_percent( $SIS_Mon[$i][5], $SIS_Cntrl[$i][2], $spec[15] );
-        echo "<td width = '75px'>$mon_Mag_I</td> ";
-    }
-    echo "</table></div>";
 }
 
 // Temperature Sensors – Actual Readings
@@ -1051,7 +1056,7 @@ function Band3_CCA_NT_results($td_keyID){
     $last_FREQ_LO = 0;
 
     $AVG_NT_FREQ_LO = array();
-    
+
     while ($row = @mysql_fetch_array($r)){
         if ($last_FREQ_LO != $row[2] && $last_FREQ_LO!= 0){
             $index=array_search($last_FREQ_LO,$AVG_NT_FREQ_LO);
