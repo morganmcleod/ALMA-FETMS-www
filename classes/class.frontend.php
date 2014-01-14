@@ -91,9 +91,6 @@ class FrontEnd extends GenericTable{
         $this->feconfig = new GenericTable();
         $this->feconfig->Initialize('FEConfig',$feconfig_id,'keyFEConfig');
 
-$this->feconfig_latest = $this->feconfig->keyId;
-//TODO: Temporarily commented out. Will uncomment later when debugged.
-
         //Get sln
         $slnid = '';
 
