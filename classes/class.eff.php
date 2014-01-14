@@ -32,13 +32,15 @@ class eff {
     var $GNUPLOT_path;
 
     public function __construct() {
-        $this->software_version = "1.0.19";
+        $this->software_version = "1.0.20";
+        // 1.0.20 MTM updated band 4 PolEff display per FEND-40.02.04.00-0236-C-CRE
+        //		  PolEff: modified band 8 display per Whyborn comment on AIVPNCR-24
+        // 1.0.19 MTM no longer writing out Notes to input file for beameff_64.
+        //        Equal sign and others were causing errors from parse_ini_file().
         // 1.0.18 MTM fix display of NSI filenames.
         //        Updates to phase center offsets table.
         //        Fix fonts in tables.
         //        Comments fixes from meeting with Todd and Saini.
-        // 1.0.19 MTM no longer writing out Notes to input file for beameff_64.
-        //        Equal sign and others were causing errors from parse_ini_file().
 
         require(site_get_config_main());
 
@@ -1063,6 +1065,7 @@ class eff {
 
             // if the polarization efficiency is less than the value calculated for $spec, display it as red:
             $rf = $this->scansets[$scanSetIdx]->GetValue('f');
+            $pol =  $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol');
             $spec = 0.0;
 
             switch ($this->band) {
@@ -1073,6 +1076,8 @@ class eff {
                     $spec = 98.7;
                     if (134.0 <= rf && rf <= 158.0)
                         $spec = 99.0;
+                    if ($pol == 0 && 134.0 <= rf && rf <= 138.0)
+	                    $spec = 98.4;	// special case in pol0 only for FEND-40.02.04.00-0236-C-CRE
                     break;
                 case 6:
                     $spec = 96.84;
@@ -1095,8 +1100,8 @@ class eff {
             }
 
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
+            echo "<td>" . $rf . "</td>";
+            echo "<td>" . $pol . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('max_dbdifference'),2) . "</td>";
             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_tot_np'),2) . "</td>";
