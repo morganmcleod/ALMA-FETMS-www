@@ -9,10 +9,10 @@ require_once("dbGetQueries.php");
 
 $fc=$_REQUEST['fc'];
 
-$band=$_POST['band'];
-$comp_type=$_POST['type'];
-$selected_key=$_POST['config'];
-$tabtype=$_POST['tabtype'];
+$band=(isset($_POST['band'])) ? $_POST['band'] : '';
+$comp_type=(isset($_POST['band'])) ? $_POST['type'] : '';
+$selected_key=(isset($_POST['band'])) ? $_POST['config'] : '';
+$tabtype=(isset($_POST['band'])) ? $_POST['tabtype'] : '';
 
 $fecomponent = new FEComponent();
 $fecomponent->Initialize_FEComponent($selected_key,$fc, -1);

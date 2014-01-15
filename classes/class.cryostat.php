@@ -508,6 +508,7 @@ class Cryostat extends GenericTable{
                 <th><b>K7</b></th>
             </tr>';
 
+        $trclass = "";
         for ($i=1;$i<count($this->tempsensors);$i++){
             $trclass = ($trclass=="" ? "tr class = 'alt'" : "");
 
