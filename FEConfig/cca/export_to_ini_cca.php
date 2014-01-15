@@ -29,6 +29,8 @@ echo "Band=$band\r\n";
 echo "SN=$sn\r\n";
 echo "ESN=$esn\r\n";
 
+$mstring = "";
+
 switch ($cca->GetValue('Band')) {
     case 3:
         echo "MagnetParams=0\r\n";
@@ -46,6 +48,10 @@ switch ($cca->GetValue('Band')) {
         break;
     default:
         //Get number of magnet params
+        $im01 = 'x';
+        $im02 = 'x';
+        $im11 = 'x';
+        $im12 = 'x';
         $numMags = 0;
         for ($ic = 0; $ic < count($cca->MixerParams); $ic++){
             if (($cca->MixerParams[$ic]->imag01 != $im01)

@@ -28,7 +28,7 @@ echo "Band=$band\r\n";
 echo "SN=$sn\r\n";
 echo "ESN=$esn\r\n";
 echo "FLOYIG=" . $wca->_WCAs->GetValue('FloYIG') . "\r\n";
-echo "FHIYIG=" . $wca->GetValue('FhiYIG') . "\r\n";
+echo "FHIYIG=" . $wca->_WCAs->GetValue('FhiYIG') . "\r\n";
 
 //Get lowest LO
 $lowlo = "0.000";
