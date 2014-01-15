@@ -13,9 +13,9 @@ $fc = 40;
 
 $Cryostat_keyId = $_REQUEST['keyId'];
 $id = $_REQUEST['keyId'];
-$get_cca = $_REQUEST['cca'];
-$get_wca = $_REQUEST['wca'];
-$get_all = $_REQUEST['all'];
+$get_cca = isset($_REQUEST['cca']) ? $_REQUEST['cca'] : 0;
+$get_wca = isset($_REQUEST['wca']) ? $_REQUEST['wca'] : 0;
+$get_all = isset($_REQUEST['all']) ? $_REQUEST['all'] : 0;
 
 if ($get_wca == 1){
 	$wca_id[0] = $id;
@@ -51,13 +51,13 @@ echo "configId=" . ltrim($fe->GetValue('SN'),'0') . "\r\n\r\n";
 echo "[~Configuration$fc-". ltrim($fe->GetValue('SN'),'0')  ."]\r\n";
 echo "Description=FE-".ltrim($fe->GetValue('SN'),'0') . " bands ";
 for ($i=1; $i <= 10; $i++){
-	if ($fe->ccas[$i]->keyId != ''){
+	if (isset($fe->ccas[$i]->keyId) && $fe->ccas[$i]->keyId != ''){
 		echo $fe->ccas[$i]->GetValue('Band');
 	}
 }
 echo ", WCAs";
 for ($i=1; $i <= 10; $i++){
-	if ($fe->wcas[$i]->keyId != ''){
+	if (isset($fe->wcas[$i]->keyId) && $fe->wcas[$i]->keyId != ''){
 		echo $fe->wcas[$i]->GetValue('Band');
 	}
 }
@@ -107,11 +107,11 @@ echo "[~FrontEnd$fc-". ltrim($fe->GetValue('SN'),'0')  ."]\r\n";
 //Get number of carts
 $cartcount = 0;
 for ($iband=1;$iband<=11;$iband++){
-	if ($fe->wcas[$iband]->keyId != ''){
+	if (isset($fe->wcas[$iband]->keyId) && $fe->wcas[$iband]->keyId != ''){
 		$cartbands[$cartcount] = $iband;
 		$cartcount += 1;
 	}
-	if ($fe->ccas[$iband]->keyId != ''){
+	if (isset($fe->ccas[$iband]->keyId) && $fe->ccas[$iband]->keyId != ''){
 		$cartbands[$cartcount] = $iband;
 		$cartcount += 1;
 	}
@@ -127,17 +127,17 @@ for ($i=0; $i<count($cartbands); $i++){
 	echo "Cart0" . ($i + 1) . "=";
 
 	//CCAs
-	if ($fe->ccas[$cartbands[$i]]->keyId != ''){
-	echo $fe->ccas[$cartbands[$i]]->GetValue('Band').",".$fe->ccas[$cartbands[$i]]->GetValue('Band')
-	.",".$fe->ccas[$cartbands[$i]]->GetValue('Band').",".ltrim($fe->ccas[$cartbands[$i]]->GetValue('SN'),'0').",";
+	if (isset($fe->ccas[$cartbands[$i]]->keyId) && $fe->ccas[$cartbands[$i]]->keyId != ''){
+	    echo $fe->ccas[$cartbands[$i]]->GetValue('Band').",".$fe->ccas[$cartbands[$i]]->GetValue('Band')
+	    .",".$fe->ccas[$cartbands[$i]]->GetValue('Band').",".ltrim($fe->ccas[$cartbands[$i]]->GetValue('SN'),'0').",";
 	}
 	else{
 		echo $fe->wcas[$cartbands[$i]]->GetValue('Band').",";
 		echo $fe->wcas[$cartbands[$i]]->GetValue('Band').",0,0,";
 	}
 	//WCAs
-	if ($fe->wcas[$cartbands[$i]]->keyId != ''){
-	echo $fe->wcas[$cartbands[$i]]->GetValue('Band').",".ltrim($fe->wcas[$cartbands[$i]]->GetValue('SN'),'0') . "\r\n";
+	if (isset($fe->wcas[$cartbands[$i]]->keyId) && $fe->wcas[$cartbands[$i]]->keyId != ''){
+	    echo $fe->wcas[$cartbands[$i]]->GetValue('Band').",".ltrim($fe->wcas[$cartbands[$i]]->GetValue('SN'),'0') . "\r\n";
 	}
 	else{
 		echo "0,0\r\n";
@@ -180,7 +180,7 @@ LOParam01=92.000,0,0,0,0
 if ($get_wca == '1'){
 
 	for ($iwca = 1; $iwca <= 10; $iwca++){
-		if ($fe->wcas[$iwca]->keyId != ''){
+		if (isset($fe->wcas[$iwca]->keyId) && $fe->wcas[$iwca]->keyId != ''){
 			$band = $fe->wcas[$iwca]->GetValue('Band');
 			$sn   = ltrim($fe->wcas[$iwca]->GetValue('SN'),'0');
 			$esn  = $fe->wcas[$iwca]->GetValue('ESN1');
@@ -261,7 +261,7 @@ PreampParam04=92.000,1,2,0.80,0.80,0.80,5,5,5,0,0,0
 if ($get_cca == '1'){
 
 	for ($icca = 0; $icca <= 10; $icca++){
-		if ($fe->ccas[$icca]->keyId != ''){
+		if (isset($fe->ccas[$icca]->keyId) && $fe->ccas[$icca]->keyId != ''){
 			$band = $fe->ccas[$icca]->GetValue('Band');
 			$sn   = ltrim($fe->ccas[$icca]->GetValue('SN'),'0');
 			$esn  = $fe->ccas[$icca]->GetValue('ESN1');
@@ -286,7 +286,7 @@ if ($get_cca == '1'){
 					break;
 				case 6:
 					$mstring = "MagnetParams=1\r\n";
-					$mstring .= "MagnetParam01=" . number_format($c->MixerParams[0]->lo,3) . ",";
+					$mstring .= "MagnetParam01=" . number_format($fe->ccas[$icca]->MixerParams[0]->lo,3) . ",";
 					$mstring .= number_format($fe->ccas[$icca]->MixerParams[0]->imag01,2) . ",";
 					$mstring .= "0.00,";
 					$mstring .= number_format($fe->ccas[$icca]->MixerParams[0]->imag11,2) . ",";
@@ -294,14 +294,14 @@ if ($get_cca == '1'){
 					break;
 				default:
 					$mstring = "MagnetParams=1\r\n";
-					$mstring .= "MagnetParam01=" . number_format($c->MixerParams[0]->lo,3) . ",";
+					$mstring .= "MagnetParam01=" . number_format($fe->ccas[$icca]->MixerParams[0]->lo,3) . ",";
 					$mstring .= number_format($fe->ccas[$icca]->MixerParams[0]->imag01,2) . ",";
 					$mstring .= number_format($fe->ccas[$icca]->MixerParams[0]->imag02,2) . ",";
 					$mstring .= number_format($fe->ccas[$icca]->MixerParams[0]->imag11,2) . ",";
 					$mstring .= number_format($fe->ccas[$icca]->MixerParams[0]->imag12,2) . "\r\n";
 			}
 
-				echo $mstring;
+			echo $mstring;
 
 
 			echo "MixerParams=" . (count($fe->ccas[$icca]->MixerParams)) . "\r\n";
