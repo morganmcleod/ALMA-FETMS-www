@@ -33,13 +33,13 @@ $rowcount = 0;
 
 
 while ($row= @mysql_fetch_array($r)){
-    $keyId = $row[keyId];
-    $keyFacility = $row[keyFacility];
-    $Band = $row[Band];
-    $TS = $row[TS];
-    $Notes = $row[Notes];
-    $fkTestData_Type = $row[fkTestData_Type];
-    $DataSetGroup = $row[DataSetGroup];
+    $keyId = $row['keyId'];
+    $keyFacility = $row['keyFacility'];
+    $Band = $row['Band'];
+    $TS = $row['TS'];
+    $Notes = $row['Notes'];
+    $fkTestData_Type = $row['fkTestData_Type'];
+    $DataSetGroup = $row['DataSetGroup'];
 
     //Get Test Data type
     $qfd = "SELECT Description FROM TestData_Types
