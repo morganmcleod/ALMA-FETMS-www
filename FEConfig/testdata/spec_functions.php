@@ -23,6 +23,7 @@ function get_specs ( $test_type , $band ){
     }
     $r = @mysql_query($q, site_getDbConnection()) or die("QUERY FAILED: $q");
 
+    $specs = array();
     while ($row = @mysql_fetch_array($r)){
         $specs[$row[1]] = $row[0];
     }
@@ -44,6 +45,7 @@ function get_specs_by_spec_type ( $spec_type , $band ){
 
     $r = @mysql_query($q, site_getDbConnection()) or die("QUERY FAILED: $q");
 
+    $specs = array();
     while ($row = @mysql_fetch_array($r)){
         $specs[$row[1]] = $row[0];
     }

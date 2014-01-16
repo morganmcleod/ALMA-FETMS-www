@@ -644,7 +644,9 @@ function IF_Power_results($td_keyID){
     echo "<tr><th>IFChannel</th>
         <th>Power 0dB gain (dBm)</th>
         <th>Power 15dB gain (dBm)</th>";
-    $atten_cnt=0;
+
+    $atten_cnt = 0;
+    $att_sum = 0;
 
     while ($row = @mysql_fetch_array($r)){
         echo "<tr>";
@@ -860,7 +862,8 @@ function Y_factor_results($td_keyID){
         <th width = '92px'>Pcold (dBm)</th>
         <th width = '92px'>Y-Factor</th><tr>";
 
-    $atten_cnt=0;
+    $atten_cnt = 0;
+    $att_sum = 0;
 
     while ($row = @mysql_fetch_array($r)){
         $att_sum = $att_sum + $row[3];
