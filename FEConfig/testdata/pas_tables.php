@@ -890,11 +890,11 @@ function Y_factor_results($td_keyID){
             <td>".mon_data($row[2])."</td>";
 
         // check to see if Y factor is in spec
-        $Y_factor = chk_num_agnst_spec( mon_data($row[3]), ">", $spec[15] );
+        $Y_factor = chk_num_agnst_spec( mon_data($row[3]), "<", $spec[16] );
         echo "<td width = '75px'>$Y_factor</tr> ";
     }
     $avg_atten = mon_data($att_sum /$atten_cnt);
-    $avg_atten_text = chk_num_agnst_spec( $avg_atten , ">", $spec[15] );
+    $avg_atten_text = chk_num_agnst_spec( $avg_atten , "<", $spec[16] );
     echo "<tr><th colspan='3'>Average Y factor </th>
         <th>$avg_atten_text</th>";
     echo "</table></div>";

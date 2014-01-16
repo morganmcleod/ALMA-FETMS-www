@@ -25,6 +25,7 @@ function get_specs ( $test_type , $band ){
 
     $specs = array();
     while ($row = @mysql_fetch_array($r)){
+//        echo $row[0] . ', ' . $row[1];
         $specs[$row[1]] = $row[0];
     }
     return $specs;
@@ -61,7 +62,8 @@ function get_specs_by_spec_type ( $spec_type , $band ){
  *
  * @return (string) returns and HTML string with $num and color encoding indicating
  * meeting spec.
-*/function inspec( $num, $inspec ){
+*/
+function inspec( $num, $inspec ){
     if ($inspec == 1){
         $result = "<font color='#008000'>$num</font>";
     } else {
