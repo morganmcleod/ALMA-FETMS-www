@@ -3,8 +3,8 @@
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.wca.php');
 
-$fc = $_REQUEST['fc'];
-$id = $_REQUEST['keyId'];
+$fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '';
+$id = isset($_REQUEST['keyId']) ? $_REQUEST['keyId'] : '';
 
 $wca = new WCA();
 $wca->Initialize_WCA($id,$fc);
@@ -58,8 +58,8 @@ $mstring = "LOParam01=$lowlo";
 $mstring .= ",1.00,1.00,";
 
 //TODO: number_format calls are blowing up below.  Why?
-$mstring .= number_format($wca->_WCAs->GetValue('VG0'),2) . ",";
-$mstring .= number_format($wca->_WCAs->GetValue('VG1'),2) . "\r\n";
+$mstring .= number_format(floatval($wca->_WCAs->GetValue('VG0')),2) . ",";
+$mstring .= number_format(floatval($wca->_WCAs->GetValue('VG1')),2) . "\r\n";
 echo $mstring;
 
 unset($w);

@@ -222,9 +222,11 @@ class WCA extends FEComponent{
 
     public function DisplayData_WCA(){
         require(site_get_config_main());
+        $where = $_SERVER["PHP_SELF"];
+        $where = '';
+        echo "<form action='" . $where . "' method='POST'>";
+        echo "<div style ='width:100%;height:50%;margin-left:20px'>";
         echo "<br><font size='+2'><b>WCA Information</b></font><br>";
-        echo "<form action='" . $_SERVER["PHP_SELF"] . "' method='POST'>";
-        echo "<div style ='width:100%;height:50%'>";
 
         $this->DisplayMainData();
 
@@ -243,6 +245,9 @@ class WCA extends FEComponent{
 
         echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>";
         echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'><br>";
+
+        echo "</div>";
+        echo "<div style ='width:100%;height:50%'>";
 
         if ($this->keyId != ""){
             echo "<table cellspacing='20'>";
