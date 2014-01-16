@@ -4,8 +4,8 @@ require_once($site_classes . '/class.wca.php');
 
 include('header_js.php');
 
-$fc = $_REQUEST['fc'];
-$keyWCA = $_REQUEST['keyId'];
+$fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '';
+$keyWCA = isset($_REQUEST['keyId']) ? $_REQUEST['keyId'] : '';
 
 $wca = new WCA;
 $wca->Initialize_WCA($keyWCA,$fc);

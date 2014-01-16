@@ -48,8 +48,13 @@ class GenericTable{
          *
          * Returns the value of the specified field (ValueName).
          */
-        return stripslashes($this->propertyVals[array_search($ValueName,$this->propertyNames,true)]);
+        $index = array_search($ValueName, $this->propertyNames, true);
+        if ($index && isset($this->propertyVals[$index]))
+            return stripslashes($this->propertyVals[$index]);
+        else
+            return '';
     }
+
     public function SetValue($ValueName,$SetValue){
         /*
          *Arguments:
@@ -58,7 +63,9 @@ class GenericTable{
          *
          *Sets the appropriate value in propertyVals to the specified value (SetValue).
          */
-        $this->propertyVals[array_search($ValueName,$this->propertyNames,true)] = $SetValue;
+        $index = array_search($ValueName,$this->propertyNames,true);
+        if ($index)
+            $this->propertyVals[$index] = $SetValue;
     }
 
     public function Initialize($tableName, $in_keyId = "", $in_keyId_name, $in_fc = '0', $in_fckeyname = 'none'){

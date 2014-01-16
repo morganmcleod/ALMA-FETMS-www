@@ -167,6 +167,8 @@ class WCA extends FEComponent{
     }
 
     public function AddNewLOParams(){
+        $FreqLO = 0;
+
         switch($this->GetValue('Band')){
             case 1:
                 $FreqLO = 27.3;
@@ -223,7 +225,6 @@ class WCA extends FEComponent{
         echo "<br><font size='+2'><b>WCA Information</b></font><br>";
         echo "<form action='" . $_SERVER["PHP_SELF"] . "' method='POST'>";
         echo "<div style ='width:100%;height:50%'>";
-        //echo "<div align='right' style ='width:50%;height:30%'>";
 
         $this->DisplayMainData();
 
@@ -614,11 +615,13 @@ class WCA extends FEComponent{
 
     }
 
-    public function Display_uploadform(){
+    public function Display_uploadform() {
+        $where = $_SERVER['PHP_SELF'];
+        $where = '';
         echo '
         <p><div style="width:500px;height:80px; align = "left"></p>
         <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
+        <form enctype="multipart/form-data" action="' . $where . '" method="POST">
             <!-- MAX_FILE_SIZE must precede the file input field -->
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
             <!-- Name of input element determines name in $_FILES array -->
@@ -1203,7 +1206,6 @@ class WCA extends FEComponent{
         //     contribution is in the lower half.
 
         $imagedirectory = $this->writedirectory;
-        //$imagedirectory .= $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
@@ -1741,7 +1743,7 @@ class WCA extends FEComponent{
 
         $TS = $this->tdh_outputpower->GetValue('TS');
 
-        $imagedirectory .= $this->writedirectory;
+        $imagedirectory = $this->writedirectory;
 
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
@@ -1946,49 +1948,53 @@ class WCA extends FEComponent{
         $rFindLO = @mysql_query($qFindLO,$this->dbconnection);
         $rowLO=@mysql_fetch_array($rFindLO);
         $i=0;
-        while ($rowLO = mysql_fetch_array($rFindLO)){
-            $CurrentLO = @mysql_result($rFindLO,$i);
+        $data_file = array();
 
-            // TODO:   special meaining of keyDataSet for band 3?   Hmmm...
-            if ($Band != 3){
-                $q = "SELECT VD$pol,Power FROM WCA_OutputPower
-                WHERE Pol = $pol
-                AND fkHeader = ". $this->tdh_outputpower->keyId . "
-                AND keyDataSet = 2
-                AND FreqLO = $CurrentLO
-                AND fkFacility = $this->fc
-                ORDER BY VD$pol ASC;";
-            }
-            if ($Band == 3){
-                $q = "SELECT VD$pol,Power FROM WCA_OutputPower
-                WHERE Pol = $pol
-                AND fkHeader = ". $this->tdh_outputpower->keyId . "
-                AND keyDataSet <> 1
-                AND FreqLO = $CurrentLO
-                AND fkFacility = $this->fc
-                ORDER BY VD$pol ASC;";
-            }
+        if ($rFindLO) {
+            while ($rowLO = mysql_fetch_array($rFindLO)){
+                $CurrentLO = @mysql_result($rFindLO,$i);
 
-            $r = @mysql_query($q,$this->dbconnection);
-
-            if (@mysql_num_rows($r) > 1){
-                $plottitle[$datafile_count] = "$CurrentLO GHz";
-                $data_file[$datafile_count] = $this->writedirectory . "wca_op_vs_dv_".$i."_".$pol.".txt";
-                if (file_exists($data_file[$datafile_count])){
-                    unlink($data_file[$datafile_count]);
+                // TODO:   special meaining of keyDataSet for band 3?   Hmmm...
+                if ($Band != 3){
+                    $q = "SELECT VD$pol,Power FROM WCA_OutputPower
+                    WHERE Pol = $pol
+                    AND fkHeader = ". $this->tdh_outputpower->keyId . "
+                    AND keyDataSet = 2
+                    AND FreqLO = $CurrentLO
+                    AND fkFacility = $this->fc
+                    ORDER BY VD$pol ASC;";
+                }
+                if ($Band == 3){
+                    $q = "SELECT VD$pol,Power FROM WCA_OutputPower
+                    WHERE Pol = $pol
+                    AND fkHeader = ". $this->tdh_outputpower->keyId . "
+                    AND keyDataSet <> 1
+                    AND FreqLO = $CurrentLO
+                    AND fkFacility = $this->fc
+                    ORDER BY VD$pol ASC;";
                 }
 
-                $fh = fopen($data_file[$datafile_count], 'w');
-                $row=@mysql_fetch_array($r);
-                while($row=@mysql_fetch_array($r)){
-                    $stringData = "$row[0]\t$row[1]\r\n";
-                    fwrite($fh, $stringData);
+                $r = @mysql_query($q,$this->dbconnection);
+
+                if (@mysql_num_rows($r) > 1){
+                    $plottitle[$datafile_count] = "$CurrentLO GHz";
+                    $data_file[$datafile_count] = $this->writedirectory . "wca_op_vs_dv_".$i."_".$pol.".txt";
+                    if (file_exists($data_file[$datafile_count])){
+                        unlink($data_file[$datafile_count]);
+                    }
+
+                    $fh = fopen($data_file[$datafile_count], 'w');
+                    $row=@mysql_fetch_array($r);
+                    while($row=@mysql_fetch_array($r)){
+                        $stringData = "$row[0]\t$row[1]\r\n";
+                        fwrite($fh, $stringData);
+                    }
+                    fclose($fh);
+                    $datafile_count++;
                 }
-                fclose($fh);
-                $datafile_count++;
-            }
-            $i++;
-        }//end for i
+                $i++;
+            }//end for i
+        }
 
         $imagedirectory = $this->writedirectory;
         if (!file_exists($imagedirectory)){
@@ -2059,81 +2065,84 @@ class WCA extends FEComponent{
         ORDER BY FreqLO ASC;";
         $rFindLO = @mysql_query($qFindLO,$this->dbconnection);
         $i=0;
-        while ($rowLO = mysql_fetch_array($rFindLO)){
-            $CurrentLO = @mysql_result($rFindLO,$i);
+        $data_file = array();
 
-            $q = "SELECT VD$pol,Power FROM WCA_OutputPower
-            WHERE Pol = $pol
-            AND fkHeader = ". $this->tdh_outputpower->keyId . "
-            AND keyDataSet = 3
-            AND FreqLO = $CurrentLO
-            AND fkFacility = $this->fc
-            ORDER BY Power ASC, VD$pol ASC;";
+        if ($rFindLO) {
+            while ($rowLO = mysql_fetch_array($rFindLO)){
+                $CurrentLO = @mysql_result($rFindLO,$i);
 
-            $r = @mysql_query($q,$this->dbconnection);
+                $q = "SELECT VD$pol,Power FROM WCA_OutputPower
+                WHERE Pol = $pol
+                AND fkHeader = ". $this->tdh_outputpower->keyId . "
+                AND keyDataSet = 3
+                AND FreqLO = $CurrentLO
+                AND fkFacility = $this->fc
+                ORDER BY Power ASC, VD$pol ASC;";
 
-
-            if (@mysql_num_rows($r) > 1){
-                $plottitle[$datafile_count] = "$CurrentLO GHz";
-                $data_file[$datafile_count] = $this->writedirectory . "wca_op_vs_ss_".$i."_".$pol.".txt";
-                if (file_exists($data_file[$datafile_count])){
-                    unlink($data_file[$datafile_count]);
-                }
-                $fh = fopen($data_file[$datafile_count], 'w');
-                $row=@mysql_fetch_array($r);
-
-                $k=0;
-                while($rowSS=@mysql_fetch_array($r)){
-                    $VD_pwr_array[$k] = "$rowSS[0],$rowSS[1]";
-                    $VDarray_unsorted[$k]=$rowSS[0];
-                    $Pwrarray_unsorted[$k]=$rowSS[1];
-                    $tempPwr = $rowSS[1];
-                    $k+=1;
-                }
-                sort($VD_pwr_array);
-                for ($arr_index=0;$arr_index<sizeof($VD_pwr_array);$arr_index++){
-                    $tempArr = explode(",",$VD_pwr_array[$arr_index]);
-                    $VDarray[$arr_index] = $tempArr[0];
-                    $Pwrarray[$arr_index] = $tempArr[1];
-                }
+                $r = @mysql_query($q,$this->dbconnection);
 
 
-                for($m=0;$m<sizeof($VDarray);$m++){
+                if (@mysql_num_rows($r) > 1){
+                    $plottitle[$datafile_count] = "$CurrentLO GHz";
+                    $data_file[$datafile_count] = $this->writedirectory . "wca_op_vs_ss_".$i."_".$pol.".txt";
+                    if (file_exists($data_file[$datafile_count])){
+                        unlink($data_file[$datafile_count]);
+                    }
+                    $fh = fopen($data_file[$datafile_count], 'w');
+                    $row=@mysql_fetch_array($r);
 
-                    if ($Pwrarray[$m+1] != $Pwrarray[$m]){
-                        $VDtemp=$VDarray[$m];
-                        $ptemp1 = $Pwrarray[$m];
-                        $ptemp2= $Pwrarray[$m+1];
-
-                        $stepSize = 0;
-                        if (($m+1)<=sizeof($VDarray)){
-                            if ($ptemp1==0){
-                                $stepSize = 0;
-                            }
-                            if ($ptemp1!=0){
-                                $stepSize = 10 * log($ptemp2/$ptemp1,10);
-                                if ($stepSize < 0){
-                                    $stepSize = 0;
-                                }
-                                if (($stepSize > 1) && ($ptemp1 > 2)){
-                                    $stepSize = 0;
-                                }
-                            }
-
-
-                        }
-                        $stringData = "$Pwrarray[$m]\t$stepSize\r\n";
-                        fwrite($fh, $stringData);
+                    $k=0;
+                    while($rowSS=@mysql_fetch_array($r)){
+                        $VD_pwr_array[$k] = "$rowSS[0],$rowSS[1]";
+                        $VDarray_unsorted[$k]=$rowSS[0];
+                        $Pwrarray_unsorted[$k]=$rowSS[1];
+                        $tempPwr = $rowSS[1];
+                        $k+=1;
+                    }
+                    sort($VD_pwr_array);
+                    for ($arr_index=0;$arr_index<sizeof($VD_pwr_array);$arr_index++){
+                        $tempArr = explode(",",$VD_pwr_array[$arr_index]);
+                        $VDarray[$arr_index] = $tempArr[0];
+                        $Pwrarray[$arr_index] = $tempArr[1];
                     }
 
 
+                    for($m=0;$m<sizeof($VDarray);$m++){
+
+                        if (isset($Pwrarray[$m+1]) && ($Pwrarray[$m+1] != $Pwrarray[$m])) {
+                            $VDtemp=$VDarray[$m];
+                            $ptemp1 = $Pwrarray[$m];
+                            $ptemp2 = $Pwrarray[$m+1];
+
+                            $stepSize = 0;
+                            if (($m+1)<=sizeof($VDarray)){
+                                if ($ptemp1==0){
+                                    $stepSize = 0;
+                                }
+                                if ($ptemp1!=0){
+                                    $stepSize = 10 * log($ptemp2/$ptemp1,10);
+                                    if ($stepSize < 0){
+                                        $stepSize = 0;
+                                    }
+                                    if (($stepSize > 1) && ($ptemp1 > 2)){
+                                        $stepSize = 0;
+                                    }
+                                }
+
+
+                            }
+                            $stringData = "$Pwrarray[$m]\t$stepSize\r\n";
+                            fwrite($fh, $stringData);
+                        }
+
+
+                    }
+                    fclose($fh);
+                    $datafile_count++;
                 }
-                //unlink($data_file[$datafile_count]);
-                fclose($fh);
-                $datafile_count++;
-            }
-            $i++;
-        }//end for i
+                $i++;
+            }//end for i
+        }
         //Get image path
 
         $imagedirectory = $this->writedirectory;
