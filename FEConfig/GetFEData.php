@@ -16,6 +16,7 @@ if($ctype==100)
     //Front Ends
     $outstring = "[";
     $rowcount = 0;
+    $Notes = "";
 
     $qfe = "SELECT keyFrontEnds, keyFacility FROM Front_Ends ORDER BY SN ASC;";
     $rfe = @mysql_query($qfe,$db);
@@ -78,6 +79,7 @@ else
 
     $outstring = "[";
     $rowcount = 0;
+    $Notes = "";
 
     $qfe = "SELECT keyId, keyFacility FROM FE_Components
             WHERE fkFE_ComponentType = $ctype

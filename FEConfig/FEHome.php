@@ -21,9 +21,11 @@
 <?php
     $title="Front Ends";
     include "header.php";
+    $where = $_SERVER["PHP_SELF"];
+    //$where = '';
 ?>
 
-<form action='<?php echo($_SERVER["PHP_SELF"]) ?>' method='post' name='fehome' id='fehome'>
+<form action='<?php echo $where ?>' method='post' name='fehome' id='fehome'>
 <div style= 'padding-left: 2em; padding-top: 1em; width:1100px; background-color: #19475E;'>
 
 <div id="toolbar" style="margin-top:10px;"></div>

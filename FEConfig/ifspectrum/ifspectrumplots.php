@@ -29,11 +29,11 @@ require_once($site_classes . '/class.ifspectrumplotter.php');
 require_once($site_dbConnect);
 require_once($site_FEConfig . '/jsFunctions.php');
 
-$fc = $_REQUEST['fc'];
-$FEid = $_REQUEST['fe'];
-$band = $_REQUEST['b'];
+$fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '';
+$FEid = isset($_REQUEST['fe']) ? $_REQUEST['fe'] : '';
+$band = isset($_REQUEST['b']) ? $_REQUEST['b'] : '';
 $DataSetGroup = isset($_REQUEST['g']) ? $_REQUEST['g'] : '';
-$id = $_REQUEST['id'];
+$id = isset($_REQUEST['id']) ? $_REQUEST['id'] : '';
 $drawPlots = isset($_REQUEST['d']) ? $_REQUEST['d'] : 0;
 
 $ifSpectrupPlotsLogger = new Logger('ifspectrumplots.php.txt', 'w');
