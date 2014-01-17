@@ -125,6 +125,5 @@ if ($drawPlots == 1){
     <div id="tab_datasets" class="x-hide-display"></div>
     <div id="subtab" class="x-hide-display"></div>
 </div>
-</form>
 </body>
 </html>

@@ -193,9 +193,9 @@ class DBOperations{
 
         $db = site_getDbConnection();
 
-        if ($fkFEComponents == ''){
-            $fkFEComponents = '%';
-        }
+//         if ($fkFEComponents == ''){
+//             $fkFEComponents = '%';
+//         }
         //See if a previous SLN record exists. If so, make a new one, and copy the old record,
         //but change any values that are passed as arguments to this function.
         $q = "SELECT max(keyId) FROM FE_StatusLocationAndNotes WHERE

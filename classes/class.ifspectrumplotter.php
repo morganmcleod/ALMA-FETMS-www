@@ -608,7 +608,7 @@ class IFSpectrumPlotter extends TestData_header{
         $rtemp = @mysql_query($qtemp,$this->dbConnection2);
         $tempcount = 0;
         while ($rowtemp = @mysql_fetch_array($rtemp)){
-            $ifsubkeys[$tempcount] = $rowtemp[keyId];
+            $ifsubkeys[$tempcount] = $rowtemp['keyId'];
             $tempcount += 1;
         }
 
@@ -1002,18 +1002,11 @@ class IFSpectrumPlotter extends TestData_header{
 
         $this->CheckForAbort();
 
-        //Plot powervar for all TestData_header keys
-
-        //Display for all TDH keys
-        //for ($iTDH=0;$iTDH<count($this->TDHkeys);$iTDH++){
-            //$TDHkey = $this->TDHkeys[$iTDH];
-
         $TDHkey = $this->TDHkeys[0];
 
         if ($this->aborted != 1){
             WriteINI($this->progressfile,'progress',70);
             WriteINI($this->progressfile,'message','Plotting Power Var IF0 31MHz...');
-
             $this->Plot_IFSpectrum_PowerVar($this->DataSetBand, 0, $TDHkey, $windowsizes[0]);
 
             WriteINI($this->progressfile,'progress',73);
@@ -1044,11 +1037,7 @@ class IFSpectrumPlotter extends TestData_header{
                 WriteINI($this->progressfile,'message','Plotting Power Var IF3 2GHz...');
                 $this->Plot_IFSpectrum_PowerVar($this->DataSetBand, 3, $TDHkey, $windowsizes[1]);
             }
-
         }
-
-        //}//end for loop iTDH
-
     }
 
     public function Generate_Power_Data(){
@@ -1187,7 +1176,10 @@ class IFSpectrumPlotter extends TestData_header{
         $rifsub = @mysql_query($qifsub,$this->dbConnection2) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
         $filecount = 0;
         $b6count = 0;
+        $b6points = Array();
         $maxpowervar6 = -999;
+        $data_file = Array();
+        $FreqLO = Array();
         while ($rowifsub = @mysql_fetch_array($rifsub)){
             $FreqLO[$filecount] = $rowifsub[1];
 

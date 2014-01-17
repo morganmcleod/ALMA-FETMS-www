@@ -35,6 +35,8 @@ else if($command =="saveData")
     }
     $obj = json_decode($data);
 
+    $error=0;
+
     foreach($obj AS $array)
     {
         //reset($comps);
@@ -48,8 +50,10 @@ else if($command =="saveData")
         if($comps['newRecord']==1 || $comps['newRecord'] == true)
         {
 
+            $desc = $comps['Description'];
+
             //get Component id for given component description.
-            $compType=mysql_query("SELECT keyId FROM ComponentTypes WHERE Description='$comps[Description]'")
+            $compType=mysql_query("SELECT keyId FROM ComponentTypes WHERE Description='$desc'")
             or die("Could not get component type id" .mysql_error());
 
             if(mysql_num_rows($compType) > 0)
@@ -57,7 +61,7 @@ else if($command =="saveData")
                 $type_id=mysql_result($compType,0,'keyId');
 
                 //check if record already exists in the database
-                if($comps[Band] != "" || $comps[Band] != 0)
+                if($comps['Band'] != "" || $comps['Band'] != 0)
                 {
                     $checkduplicates=mysql_query("SELECT keyId FROM FE_Components
                     WHERE fkFE_ComponentType='$type_id' AND keyFacility='$fc'
@@ -78,10 +82,14 @@ else if($command =="saveData")
                 //if record does not exist in database insert it.
                 else
                 {
+                    $esn1 = isset($comps['ESN1']) ? $comps['ESN1'] : '';
+                    $esn2 = isset($comps['ESN2']) ? $comps['ESN2'] : '';
+                    $pstat = isset($comps['Production_Status']) ? $comps['Production_Status'] : '';
+
                     $insertQuery=mysql_query("INSERT INTO FE_Components(fkFE_ComponentType,
                     SN,ESN1,ESN2,Band,Production_Status,keyFacility)
-                    VALUES('$type_id','$comps[SN]','$comps[ESN1]','$comps[ESN2]',
-                    '$comps[Band]','$comps[Production_Status]','$fc')")
+                    VALUES('$type_id','$comps[SN]','$esn1','$esn2',
+                    '$comps[Band]','$pstat','$fc')")
                     or die("Could not insert data" .mysql_error());
 
                     $getKey_query=mysql_query("SELECT Max(keyId) AS maxkey FROM
