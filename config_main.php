@@ -59,10 +59,10 @@ $main_url_directory   = $rootdir_url  . "test_datafiles/";
 $log_write_directory = $main_write_directory . "logs/";
 $log_url_directory = $main_url_directory . "logs/";
 
-$cca_write_directory = $rootdir_data . "cca_datafiles/";
-$cca_url_directory = $rootdir_url    . "cca_datafiles/";
+$cca_write_directory = $rootdir_data . "test_datafiles/";
+$cca_url_directory = $rootdir_url    . "test_datafiles/";
 
-$wca_write_directory = $rootdir_data . "wca_datafiles/";
-$wca_url_directory   = $rootdir_url  . "wca_datafiles/";
+$wca_write_directory = $rootdir_data . "test_datafiles/";
+$wca_url_directory   = $rootdir_url  . "test_datafiles/";
 
 ?>

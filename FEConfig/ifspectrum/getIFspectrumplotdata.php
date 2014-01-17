@@ -73,7 +73,7 @@ switch($tabtype){
 
     case 'spurious2_0':
         //Spurious Noise (Expanded Plots) tab was selected, IF0 subtab was selected.
-        echo "<div style='height:750px'>";
+        echo "<div>";
         if (isset($ifs -> urls[0]))
             echo "<img src='" . $ifs->urls[0]->GetValue('spurious_url2d2'). "'>";
         echo "</div>";
@@ -81,7 +81,7 @@ switch($tabtype){
 
     case 'spurious2_1':
         //Spurious Noise (Expanded Plots) tab was selected, IF1 subtab was selected.
-        echo "<div style='height:750px'>";
+        echo "<div>";
         if (isset($ifs -> urls[1]))
             echo "<img src='" . $ifs->urls[1]->GetValue('spurious_url2d2'). "'>";
         echo "</div>";
@@ -89,7 +89,7 @@ switch($tabtype){
 
     case 'spurious2_2':
         //Spurious Noise (Expanded Plots) tab was selected, IF2 subtab was selected.
-        echo "<div style='height:750px'>";
+        echo "<div>";
         if (isset($ifs->urls[2]))
             echo "<img src='" . $ifs->urls[2]->GetValue('spurious_url2d2'). "'>";
         echo "</div>";
@@ -97,7 +97,7 @@ switch($tabtype){
 
     case 'spurious2_3':
         //Spurious Noise (Expanded Plots) tab was selected, IF3 subtab was selected.
-        echo "<div style='height:750px'>";
+        echo "<div>";
         if (isset($ifs->urls[3]))
             echo "<img src='" . $ifs->urls[3]->GetValue('spurious_url2d2'). "'>";
         echo "</div>";
