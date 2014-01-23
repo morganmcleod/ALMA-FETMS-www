@@ -249,7 +249,7 @@ class eff {
     }
 
     public function GetScanSideband($scanSetIdx) {
-        $scanSetId = $this->scansets[$scanSetIdx]->GetValue('keyID');
+        $scanSetId = $this->scansets[$scanSetIdx]->GetValue('keyId');
 
         $qss = "SELECT sb FROM ScanDetails
         WHERE fkScanSetDetails = $scanSetId
