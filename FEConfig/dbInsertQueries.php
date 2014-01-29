@@ -1,4 +1,8 @@
 <?php
+
+$er = error_reporting();
+error_reporting($er ^ E_NOTICE);
+
 class dbInsertQueries
 {
     function InsertIntoFrontEnds($FEarray)
@@ -99,3 +103,5 @@ class dbInsertQueries
 
     }
 }
+
+error_reporting($er);

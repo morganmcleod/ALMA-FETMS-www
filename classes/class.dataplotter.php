@@ -178,7 +178,7 @@ class DataPlotter extends GenericTable{
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_as_command.txt";
-        $imagedirectory .= $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
+        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
@@ -370,7 +370,7 @@ class DataPlotter extends GenericTable{
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_ibp_command.txt";
-        $imagedirectory .= $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
+        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
@@ -450,7 +450,7 @@ class DataPlotter extends GenericTable{
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_tp_command.txt";
-        $imagedirectory .= $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
+        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
@@ -531,7 +531,7 @@ class DataPlotter extends GenericTable{
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_gc_command.txt";
-        $imagedirectory .= $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
+        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
@@ -612,7 +612,7 @@ class DataPlotter extends GenericTable{
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_ifs_command.txt";
-        $imagedirectory .= $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
+        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
@@ -688,7 +688,7 @@ class DataPlotter extends GenericTable{
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_polacc_command.txt";
-        $imagedirectory .= $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
+        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
@@ -928,8 +928,7 @@ class DataPlotter extends GenericTable{
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "rep_command_" . date("Ymd_G_i_s") . ".txt";
-        $imagedirectory .= $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
-        //$imagedirectory .= $this->writedirectory;
+        $imagedirectory = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
 
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
@@ -1081,8 +1080,7 @@ class DataPlotter extends GenericTable{
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "wkm_amp_command_tdh$TestData_Id.txt.txt";
-        $imagedirectory .= $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
-        //$imagedirectory .= $this->writedirectory;
+        $imagedirectory = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
 
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
@@ -1216,7 +1214,7 @@ public function Plot_WorkmanshipPhase(){
 
         $l->WriteLogFile("Max=$maxphase min=$minphase mid=$phasemid");
     }
-    $imagedirectory .= $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
+    $imagedirectory = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
     if (!file_exists($imagedirectory)){
         mkdir($imagedirectory);
     }
@@ -1507,25 +1505,25 @@ public function Plot_LOLockTest(){
     $UnlocksFound = 0;
     $count = 0;
     while ($rowdata = @mysql_fetch_array($rdata)){
-        if ($counted == 1){
-            $FreqStepSize = abs($previousLO - $rowdata[LOFreq]);
+        if ($count == 1){
+            $FreqStepSize = abs($previousLO - $rowdata['LOFreq']);
         }
         //If even one unlock is found, set $UnlocksFound = 1.
         //If any unlocked points are found, they will be plotted on the graph.
-        if (($rowdata[LOLocked] == 0) || ($rowdata[LORTMLocked] == 0)){
-            $UnlocksFound = 1;
-        }
-        $stringData = $rowdata[LOFreq] . "\t" . $rowdata[PhotomixerCurrent] . "\t" . $rowdata[PLLRefTotalPower] . "\r\n";
+//         if (($rowdata['LOLocked'] == 0) || ($rowdata['LORTMLocked'] == 0)){
+//             $UnlocksFound = 1;
+//         }
+        $stringData = $rowdata['LOFreq'] . "\t" . $rowdata['PhotomixerCurrent'] . "\t" . $rowdata['PLLRefTotalPower'] . "\r\n";
         fwrite($fh, $stringData);
 
         //Record any points at which TEST_LOLockTest.LOLocked=0 or TEST_LOLockTest.LORTMLocked=0
-        if (($rowdata[LOLocked] == '0') || ($rowdata[LORTMLocked] == '0')){
-            $UnlockedLO[$UnlockedCount]  = $rowdata[LOFreq];
-            $UnlockedPwr[$UnlockedCount] = $rowdata[PhotomixerCurrent];
-            $UnlockedCount += 1;
-        }
-        $previousLO = $rowdata[LOFreq];
-        $counted += 1;
+//         if (($rowdata['LOLocked'] == '0') || ($rowdata['LORTMLocked'] == '0')){
+//             $UnlockedLO[$UnlockedCount]  = $rowdata['LOFreq'];
+//             $UnlockedPwr[$UnlockedCount] = $rowdata['PhotomixerCurrent'];
+//             $UnlockedCount += 1;
+//         }
+        $previousLO = $rowdata['LOFreq'];
+        $count += 1;
     }
     //Put empty line after each series for gnuplot
     fwrite($fh, "\r\n");
@@ -1552,14 +1550,14 @@ public function Plot_LOLockTest(){
     $t->WriteLogFile($plot_title);
 
     //Create directories if necesary
-    $imagedirectory .= $this->writedirectory . "FE_" . $this->FESN . "/";
+    $imagedirectory = $this->writedirectory . "FE_" . $this->FESN . "/";
 
     if (!file_exists($imagedirectory)){
         mkdir($imagedirectory);
     }
     $imagename = "LOLockTest_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
     $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/$imagename";
-    $plot_command_file = $this->writedirectory . "lolocktest_command_tdh$TestData_Id.txt";
+    $plot_command_file = $this->writedirectory . "lolocktest_command_tdh$td_header.txt";
     $image_url = $this->url_directory . "FE_" . $this->FESN . "/$imagename";
 
     //Update plot url. Set the same value for all TestData_header records in this group.

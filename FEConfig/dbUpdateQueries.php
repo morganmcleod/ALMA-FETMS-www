@@ -1,4 +1,8 @@
 <?php
+
+$er = error_reporting();
+error_reporting($er ^ E_NOTICE);
+
 class dbUpdateQueries
 {
     function UpdateFrontEnd($FrontEndArray,$keyFE)
@@ -23,3 +27,5 @@ class dbUpdateQueries
 
     }
 }
+
+error_reporting($er);

@@ -60,18 +60,21 @@ else if($command =="saveData")
             {
                 $type_id=mysql_result($compType,0,'keyId');
 
+                $sn = $comps['SN'];
+                $band = $comps['Band'];
+
                 //check if record already exists in the database
-                if($comps['Band'] != "" || $comps['Band'] != 0)
+                if($band != "" || $band != 0)
                 {
                     $checkduplicates=mysql_query("SELECT keyId FROM FE_Components
                     WHERE fkFE_ComponentType='$type_id' AND keyFacility='$fc'
-                    AND SN='$comps[SN]' AND Band='$comps[Band]'");
+                    AND SN='$sn' AND Band='$band'");
                 }
                 else
                 {
                     $checkduplicates=mysql_query("SELECT keyId FROM FE_Components WHERE
                             fkFE_ComponentType='$type_id' AND keyFacility='$fc'
-                            AND SN='$comps[SN]' AND (Band is NULL OR Band='0')");
+                            AND SN='$sn' AND (Band is NULL OR Band='0')");
                 }
                 if(mysql_num_rows($checkduplicates) > 0)
                 {
@@ -88,8 +91,7 @@ else if($command =="saveData")
 
                     $insertQuery=mysql_query("INSERT INTO FE_Components(fkFE_ComponentType,
                     SN,ESN1,ESN2,Band,Production_Status,keyFacility)
-                    VALUES('$type_id','$comps[SN]','$esn1','$esn2',
-                    '$comps[Band]','$pstat','$fc')")
+                    VALUES('$type_id','$sn','$esn1','$esn2','$band','$pstat','$fc')")
                     or die("Could not insert data" .mysql_error());
 
                     $getKey_query=mysql_query("SELECT Max(keyId) AS maxkey FROM

@@ -522,7 +522,7 @@ function createfiles($frontend_sn,$warmconf_sn)
 					$yig_ifchannel=$dom->createElement($yig_IF_channel,'');
 					$yig_main->appendChild($yig_ifchannel);
 
-					//$yig_ifchannel=$dom->createElement($yfactor_array[IFchannel],'');
+					//$yig_ifchannel=$dom->createElement($yfactor_array['IFchannel'],'');
 					//$yig_main->appendChild($yig_ifchannel);
 
 					$yig_switchgain=$dom->createElement('IFSwitchGain','15.0');
@@ -1545,7 +1545,7 @@ function createfiles($frontend_sn,$warmconf_sn)
 */
 
 		$logger->WriteLogFile('Save XML...');
-		
+
 		include(site_get_config_main());
 
 		$dom->save("$main_write_directory/PASData/PASData.xml");

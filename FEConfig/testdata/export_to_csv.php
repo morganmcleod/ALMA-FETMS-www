@@ -7,18 +7,17 @@ require_once($site_dbConnect);
 
 $fc = $_REQUEST['fc'];
 
-if ((isset($_REQUEST['keyheader']) && (!isset($_REQUEST['ifsub'])))){
+if ((isset($_REQUEST['keyheader']) && (!isset($_REQUEST['ifsub'])))) {
     $TestData_header_keyId = $_REQUEST['keyheader'];
     $td = new TestData_header();
     $td->Initialize_TestData_header($TestData_header_keyId,$fc);
 
     header("Content-type: application/x-msdownload");
     $csv_filename = str_replace(" ","_",$td->TestDataType . ".csv");
-    //$csv_filename = "exported.csv";
+
     header("Content-Disposition: attachment; filename=$csv_filename");
     header("Pragma: no-cache");
     header("Expires: 0");
-
 
     switch($td->GetValue('fkTestData_Type')){
 
@@ -40,65 +39,66 @@ if ((isset($_REQUEST['keyheader']) && (!isset($_REQUEST['ifsub'])))){
             break;
 
         case 58:
-                //Noise Temperature
-                $q = "SELECT keyId FROM Noise_Temp_SubHeader
-                      WHERE fkHeader = $td->keyId
-                      AND keyFacility = " . $td->GetValue('keyFacility');
-                $r = @mysql_query($q,$db);
-                $subid = @mysql_result($r,0,0);
-                $qdata = "SELECT * FROM Noise_Temp WHERE
-                fkSub_Header = $subid AND keyFacility = ".$td->GetValue('keyFacility').";";
-                $td->TestDataTableName = 'Noise_Temp';
-                break;
-        case 59:
-                //fine LO Sweep
-                $q = "SELECT keyId FROM TEST_FineLOSweep_SubHeader
-                      WHERE fkHeader = $td->keyId
-                      AND keyFacility = " . $td->GetValue('keyFacility');
-                $r = @mysql_query($q,$td->dbconnection);
-                $subid = @mysql_result($r,0,0);
-                $qdata = "SELECT * FROM TEST_FineLOSweep WHERE
-                fkSubHeader = $subid AND fkFacility = ".$td->GetValue('keyFacility').";";
-                $td->TestDataTableName = 'TEST_FineLOSweep';
-                break;
+            //Noise Temperature
+            $q = "SELECT keyId FROM Noise_Temp_SubHeader
+                  WHERE fkHeader = $td->keyId
+                  AND keyFacility = " . $td->GetValue('keyFacility');
+            $r = @mysql_query($q,$db);
+            $subid = @mysql_result($r,0,0);
+            $qdata = "SELECT * FROM Noise_Temp WHERE
+            fkSub_Header = $subid AND keyFacility = ".$td->GetValue('keyFacility').";";
+            $td->TestDataTableName = 'Noise_Temp';
+            break;
 
+        case 59:
+            //fine LO Sweep
+            $q = "SELECT keyId FROM TEST_FineLOSweep_SubHeader
+                  WHERE fkHeader = $td->keyId
+                  AND keyFacility = " . $td->GetValue('keyFacility');
+            $r = @mysql_query($q,$td->dbconnection);
+            $subid = @mysql_result($r,0,0);
+            $qdata = "SELECT * FROM TEST_FineLOSweep WHERE
+            fkSubHeader = $subid AND fkFacility = ".$td->GetValue('keyFacility').";";
+            $td->TestDataTableName = 'TEST_FineLOSweep';
+            break;
 
         default:
             $qdata = "SELECT * FROM $td->TestDataTableName WHERE fkHeader = $td->keyId;";ls;
-
-        break;
+            break;
     }
 
     switch($td->Component->GetValue('fkFE_ComponentType')){
-            case 6:
-                //Cryostat
-                $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
-                      WHERE fkHeader = $td->keyId;";
-                $r = @mysql_query($q,$td->dbconnection);
-                $fkHeader = @mysql_result($r,0,0);
-                $qdata = "SELECT * FROM $td->TestDataTableName WHERE
-                fkSubHeader = $fkHeader AND fkFacility = ".$td->GetValue('keyFacility').";";
-                break;
-        }
+        case 6:
+            //Cryostat
+            $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
+                  WHERE fkHeader = $td->keyId;";
+            $r = @mysql_query($q,$td->dbconnection);
+            $fkHeader = @mysql_result($r,0,0);
+            $qdata = "SELECT * FROM $td->TestDataTableName WHERE
+            fkSubHeader = $fkHeader AND fkFacility = ".$td->GetValue('keyFacility').";";
+            break;
+    }
 
-//Output records to csv file
-$qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
+    //Output records to csv file
+    $qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
 
-$rcols = @mysql_query ($qcols, $db);
-while($rowcols = mysql_fetch_array($rcols)){
-    echo $rowcols[0] . ",";
-}
-echo "\r\n";
+    $rcols = @mysql_query ($qcols, $db);
+    while($rowcols = mysql_fetch_array($rcols)){
+        echo $rowcols[0] . ",";
+    }
+    echo "\r\n";
 
-$rdata = @mysql_query ($qdata, $db);
-while($rowdata = mysql_fetch_array($rdata)){
-        for ($i=0;$i<count($rowdata);$i++){
-            echo "$rowdata[$i],";
+    $rdata = @mysql_query ($qdata, $db);
+    while($rowdata = mysql_fetch_array($rdata)) {
+        for ($i=0; $i<count($rowdata); $i++) {
+            if (isset($rowdata[$i]))
+                echo "$rowdata[$i],";
+            else
+                echo ",";
         }
         echo "\r\n";
     }
 }
-
 
 if (isset($_REQUEST['ssdid'])){
     $ssdid = $_REQUEST['ssdid'];
