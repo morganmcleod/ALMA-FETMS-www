@@ -82,14 +82,14 @@ if ($action == 'read'){
             $count_losub = 0;
             while ($rowlo = @mysql_fetch_Array($rlo)){
                 $checked = false;
-                if ($rowlo[IsIncluded] == '1'){
+                if ($rowlo['IsIncluded'] == '1'){
                     $checked = true;
                 }
-                $text = $rowlo[LOFreq] . " GHz";
+                $text = $rowlo['LOFreq'] . " GHz";
 
                 //RecordID is an id value for a specific LO frequency corresponding to an LOLockTest_SubHeader.keyId
                 //An example RecordID would be 2314_221
-                $RecordID = $losubId . "_" . $rowlo[LOFreq];
+                $RecordID = $losubId . "_" . $rowlo['LOFreq'];
                 $sub_records[$count_losub] = array('text'=>$text,'leaf'=>true,'checked'=>$checked, 'id'=>$RecordID);
 
                 $count_losub++;
@@ -176,11 +176,11 @@ if ($action == 'update_children'){
     switch ($DataType){
         case 7: // ifspectrum
             for ($i=0;$i<count($array);$i++){
-                $FEid        = $array[$i][FEid];
-                $checked     = $array[$i][checked];
-                $datatype    = $array[$i][datatype];
+                $FEid        = $array[$i]['FEid'];
+                $checked     = $array[$i]['checked'];
+                $datatype    = $array[$i]['datatype'];
 
-                    $subid = $array[$i][subid];
+                    $subid = $array[$i]['subid'];
 
                     //Update "IsIncluded" value in the table IFSpectrum_SubHeader
                     $ifsub = new GenericTable();
@@ -198,11 +198,11 @@ if ($action == 'update_children'){
 
         case 57: // LOlocktest
             for ($i=0;$i<count($array);$i++){
-                $FEid        = $array[$i][FEid];
-                $checked     = $array[$i][checked];
-                $datatype    = $array[$i][datatype];
+                $FEid        = $array[$i]['FEid'];
+                $checked     = $array[$i]['checked'];
+                $datatype    = $array[$i]['datatype'];
 
-                $subid_array = explode("_",$array[$i][subid]);
+                $subid_array = explode("_",$array[$i]['subid']);
                 $subid = $subid_array[0];
                 $lofreq = $subid_array[1];
                 $q  = "UPDATE TEST_LOLockTest SET IsIncluded = $checked WHERE fkHeader = $subid AND LOFreq = $lofreq;";
@@ -212,11 +212,11 @@ if ($action == 'update_children'){
 
         case 58: // Noise Tempertaure
             for ($i=0;$i<count($array);$i++){
-                $FEid        = $array[$i][FEid];
-                $checked     = $array[$i][checked];
-                $datatype    = $array[$i][datatype];
+                $FEid        = $array[$i]['FEid'];
+                $checked     = $array[$i]['checked'];
+                $datatype    = $array[$i]['datatype'];
 
-                $subid_array = explode("_",$array[$i][subid]);
+                $subid_array = explode("_",$array[$i]['subid']);
                 $subid = $subid_array[0];
                 $lofreq = $subid_array[1];
                 $q  = "UPDATE Noise_Temp SET IsIncluded = $checked WHERE fkSub_Header = $subid AND FreqLO = $lofreq;";

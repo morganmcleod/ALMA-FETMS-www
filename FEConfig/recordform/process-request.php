@@ -132,18 +132,18 @@ else if($command =="saveData")
             if ($commacount > 0){
                 $newstring .= ", ";
             }
-            $sn = $comps[SN];
+            $sn = $comps['SN'];
             if (strtolower($sn) == 'na'){
                 $sn = '';
             }
             if (strtolower($sn) == 'n/a'){
                 $sn = '';
             }
-            if ($comps[Band] > 0){
-                $newstring .= "$comps[Description] $comps[Band]-$sn";
+            if ($comps['Band'] > 0){
+                $newstring .= $comps['Description'] . " " . $comps['Band'] . "-$sn";
             }
-            if ($comps[Band] < 1){
-                $newstring .= "$comps[Description] $sn";
+            if ($comps['Band'] < 1){
+                $newstring .= $comps['Description'] . " " . $sn";
             }
             $commacount += 1;
         }
@@ -167,29 +167,29 @@ else if($command =="saveData")
         }
         if($comps['newRecord']==1 || $comps['newRecord'] == true)
         {
-
-
             //get Component id for given component description.
-            $compType=mysql_query("SELECT keyId FROM ComponentTypes WHERE Description='$comps[Description]'");
+            $desc = $comps['Description'];
+
+            $compType=mysql_query("SELECT keyId FROM ComponentTypes WHERE Description='$desc'");
             if(mysql_num_rows($compType) > 0)
             {
                 $type_id=mysql_result($compType,0,'keyId');
                 $dbop = new DBOperations();
-
-
+                $sn = $comps['SN'];
+                $band = $comps['Band'];
 
                 //get the latest configuration number of a given frontend
-                if($comps[Band] != "No band") //band is not 0 or null
+                if($band != "No band") //band is not 0 or null
                 {
                     $checkduplicates=mysql_query("SELECT MAX(keyId) AS MaxKey FROM
                     FE_Components WHERE fkFE_ComponentType='$type_id'
-                    AND SN='$comps[SN]' AND Band='$comps[Band]' AND keyFacility='$facility'");
+                    AND SN='$sn' AND Band='$band' AND keyFacility='$facility'");
                 }
                 else
                 {
                     $checkduplicates=mysql_query("SELECT MAX(keyId) AS MaxKey
                     FROM FE_Components WHERE fkFE_ComponentType='$type_id'
-                    AND SN='$comps[SN]' AND (Band is NULL OR Band='0')
+                    AND SN='$sn' AND (Band is NULL OR Band='0')
                     AND keyFacility='$facility'");
                 }
 

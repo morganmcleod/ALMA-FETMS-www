@@ -68,7 +68,7 @@ echo "<title>$title </title></head>";
 
 
 
-<form action=".htmlentities($_SERVER[PHP_SELF])." method='post'>
+<form action=".htmlentities($_SERVER['PHP_SELF'])." method='post'>
 <br>
 <input type='submit' name='formSubmit' value='Save Changes' />
 <br>

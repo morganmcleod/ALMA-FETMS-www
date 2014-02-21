@@ -418,11 +418,6 @@ class WCA extends FEComponent{
         echo "</table></div>";
         echo "<br>Notes:<input type='text' name='Notes' size='50'
         maxlength='200' value = '".$this->GetValue('Notes')."'>";
-
-        echo '<br><br><font color = "#ff0000"><b>
-                      * Caution:  </b></font>The <b>ESN</b> is recorded as CRC-SerNum-FamilyCode (MSB to LSB).<br>
-                      The FEMC reports it FamilyCode first. An ESN recorded as "A1 B2 C3 D4 E5 F6 A7 B8"<br>
-                      in this database will be reported as "B8 A7 F6 E5 D4 C3 B2 A1" using the FEMC.';
     }
 
     public function DisplayMainDataNonEdit(){

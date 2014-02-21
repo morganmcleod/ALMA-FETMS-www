@@ -13,7 +13,7 @@ or die("Could not get data" .mysql_error());
 
 while($bands=mysql_fetch_array($getbands))
 {
-		$ba=$bands[Band];
+		$ba=$bands['Band'];
 		$BandArray[]=$ba;
 }
 
