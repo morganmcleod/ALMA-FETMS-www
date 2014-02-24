@@ -73,8 +73,8 @@ if (strpos($_SERVER['HTTP_USER_AGENT'],'MSIE') > 0){
     echo "</div>";
 }
 ?>
-<div id="wrap">
-    <body onload="javascript:showsubform(<?php echo $feconfig . "," . $fc; ?>)">
+<body onload="javascript:showsubform(<?php echo $feconfig . "," . $fc; ?>)">
+    <div id="wrap">
         <div style="height:900px;">
             <div id="spe">
                 <div id="west-content" class="x-hidden">
@@ -85,8 +85,8 @@ if (strpos($_SERVER['HTTP_USER_AGENT'],'MSIE') > 0){
         </div>
         <div id="win_req_in">
         </div>
-    </body>
-</div>
+    </div>
+</body>
 <?php
 Include "footer.php";
 ?>

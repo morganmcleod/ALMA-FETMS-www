@@ -15,10 +15,10 @@ require_once($site_config_main);
 require_once($site_dbConnect);
 
 
-$key=$_POST['key'];
-$command=$_POST['cmd'];
-$compTypeName=$_POST['ctype'];
-$band=$_POST['band'];
+$key = isset($_POST['key']) ? $_POST['key'] : '';
+$command = isset($_POST['cmd']) ? $_POST['cmd'] : '';
+$compTypeName = isset($_POST['ctype']) ? $_POST['ctype'] : '';
+$band = isset($_POST['band']) ? $_POST['band'] : '';
 
 $UserCode = ' ';
 if (isset($_REQUEST['UserCode'])){
@@ -55,18 +55,16 @@ else if ($command=="getComboSN")
     or die("Could not get Component key" .mysql_error());
 
     $compType=mysql_result($getCompkey,0,"keyId");
-    if($band != "No band")
+    if($band != "No band" && $band != "")
     {
         $combo_data=mysql_query("SELECT DISTINCT SN FROM FE_Components
-        WHERE SN IS NOT NULL AND fkFE_ComponentType='$compType' AND Band='$band'
-     ORDER BY (SN + 0) ASC")
+        WHERE SN IS NOT NULL AND fkFE_ComponentType='$compType' AND Band='$band' ORDER BY (SN + 0) ASC")
         or die("Could not get SN combo box data" .mysql_error());
     }
     else
     {
         $combo_data=mysql_query("SELECT DISTINCT SN FROM FE_Components
-        WHERE SN IS NOT NULL AND fkFE_ComponentType='$compType' AND
-        (Band IS NULL OR Band='0')
+        WHERE SN IS NOT NULL AND fkFE_ComponentType='$compType' AND (Band IS NULL OR Band='0')
         ORDER BY BINARY SN ASC")
         or die("Could not get SN combo box data" .mysql_error());
     }
@@ -143,7 +141,7 @@ else if($command =="saveData")
                 $newstring .= $comps['Description'] . " " . $comps['Band'] . "-$sn";
             }
             if ($comps['Band'] < 1){
-                $newstring .= $comps['Description'] . " " . $sn";
+                $newstring .= $comps['Description'] . " " . "$sn";
             }
             $commacount += 1;
         }
