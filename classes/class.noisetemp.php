@@ -102,13 +102,14 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.1.3";
+        $this->Plot_SWVer = "1.1.4";
         /*
-         * 1.1.3  MTM: Fixed band 10 averaging calculation bug.
-         * 1.1.2  MTM: Fixed bugs introduced by refactoring (not loading IR data.)
-         * 1.1.1  MTM: Got band 10 special averaging plot metrics working
-         * 1.1.0  MTM: Refactored into top-level function and helpers.
-         * 1.0.18  MTM: cleaned up NT calc and averagign loop.  Added check for band 10 80% spec.
+         * 1.1.4  Modified caption for band 10 averaging plot 80% spec.
+         * 1.1.3  Fixed band 10 averaging calculation bug.
+         * 1.1.2  Fixed bugs introduced by refactoring (not loading IR data.)
+         * 1.1.1  Got band 10 special averaging plot metrics working
+         * 1.1.0  Refactored into top-level function and helpers.
+         * 1.0.18 cleaned up NT calc and averaging loop.  Added check for band 10 80% spec.
          * 1.0.17  MTM: fix "set label...screen" commands to gnuplot
          * 1.0.16  MTM: fix plot axis labels for Tssb and "corrected"
          */
@@ -1126,8 +1127,8 @@ class NoiseTemperature extends TestData_header{
                 $TS = "($maxTS, $minTS)";
                 $FE_Config = "($max_FE_Config, $min_FE_Config)";
             } else {
-                $TS = "($maxTS)";
-                $FE_Config = "($max_FE_Config)";
+                $TS = "$maxTS";
+                $FE_Config = "$max_FE_Config";
             }
             $this->plot_label_1 = "set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->Plot_SWVer, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
             $this->plot_label_2 = "set label 'Dataset: " . $this->GetValue('DataSetGroup') . ", TS: $TS, FE Configuration $FE_Config, TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
@@ -1243,7 +1244,8 @@ class NoiseTemperature extends TestData_header{
                 fclose($fspec);
 
                 fwrite($f, 'set label "' .
-                        "Compliance metric for $this->NT_80_spec K spec over $this->lower_80_RFLimit-$this->upper_80_RFLimit GHz RF" .
+                        "Compliance metric for $this->NT_80_spec K spec over $this->lower_80_RFLimit-$this->upper_80_RFLimit RF " .
+                        "(computed against $lower-$upper LO)" .
                         '" at screen .1, .91'."\r\n");
 
                 $metricText = ($this->Pol0_80_metric > 0) ? "$this->Pol0_80_metric%" : "N/A";
