@@ -28,6 +28,7 @@ class NoiseTemperature extends TestData_header{
 
     // Noise temperature data:
     private $NT_data;               // 2-D array of noise temperature data being processed and plotted
+    private $NT_avgData;            // 2-D array of NT data averaged across the IF band
 
     private $FEIC_USB;              // array of USB RFs
     private $FEIC_LSB;              // array of LSB RFs
@@ -49,6 +50,7 @@ class NoiseTemperature extends TestData_header{
 
     // Data files:
     private $spec_datafile;         // for spec lines
+    private $avSpec_datafile;       // for spec lines on averaged plot
     private $avg_datafile;          // for averaged noise temps
     private $rf_datafile;           // for NT vs RF
     private $if_datafile;           // for NT vs IF
@@ -100,8 +102,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.1.0";
+        $this->Plot_SWVer = "1.1.1";
         /*
+         * 1.1.1  MTM: Got band 10 special averaging plot metrics working
          * 1.1.0  MTM: Refactored into top-level function and helpers.
          * 1.0.18  MTM: cleaned up NT calc and averagign loop.  Added check for band 10 80% spec.
          * 1.0.17  MTM: fix "set label...screen" commands to gnuplot
@@ -135,7 +138,13 @@ class NoiseTemperature extends TestData_header{
 
         $this->CalculateNoiseTemps();
 
-        $this->CalculateBand3Results();
+        $this->CalculateAvgNoiseTemps();
+
+        if ($this->GetValue('Band') == 3)
+            $this->CalculateBand3AvgNT();
+
+        if ($this->GetValue('Band') == 10)
+            $this->CalculateBand10AvgNT();
 
         $this->LoadAndWriteCCANoiseTempData();
 
@@ -302,12 +311,14 @@ class NoiseTemperature extends TestData_header{
         $this->lower_80_RFLimit = (isset($specs[18])) ? $specs[18] : 0;
 
         // upper RF limit for applying 80% spec:
-        $this->upper_80_RFLimit = $specs[17];
+        $this->upper_80_RFLimit = (isset($specs[17])) ? $specs[17] : 0;
+
+        $this->lowerRFLimit = 0;
+        $this->upperRFLimit = 1000;
     }
 
     private function WriteSpecsDataFile() {
         $this->spec_datafile = $this->plotDir . "NoiseTemp_spec.txt";
-        $this->NT_Logger->WriteLogFile("specifications datafile: $this->spec_datafile");
         $fspec = fopen($this->spec_datafile,'w');
 
         // write specifications datafile
@@ -377,7 +388,7 @@ class NoiseTemperature extends TestData_header{
         }
 
         function Tssb_Corr($TrUncorr, $IRdB) {
-            // correct Tr for image rejectin
+            // correct Tr for image rejection
             return $TrUncorr * (1 + pow(10, -abs($IRdB) / 10));
         }
 
@@ -396,16 +407,6 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger->WriteLogFile("if_datafile: $this->if_datafile");
         $fif = fopen($this->if_datafile,'w');
 
-        $this->avg_datafile = $this->plotDir . "NoiseTemp_avg.txt";
-        $this->NT_Logger->WriteLogFile("average_datafile: $this->avg_datafile");
-        $favg = fopen($this->avg_datafile,'w');
-
-        // arrays for accumulating data points for the averaging plot:
-        $Pol0_Sb1_avg = array();
-        $Pol0_Sb2_avg = array();
-        $Pol1_Sb1_avg = array();
-        $Pol1_Sb2_avg = array();
-
         // arrays for accumulating data for RF and IF plots:
         $this->FEIC_USB = array();
         $this->FEIC_LSB = array();
@@ -414,11 +415,11 @@ class NoiseTemperature extends TestData_header{
         $this->FEIC_Pol1Sb1 = array();
         $this->FEIC_Pol1Sb2 = array();
 
-        // declare vars reused in loop:
-        $Pol0Sb1_TssbCorr = 0;
-        $Pol0Sb2_TssbCorr = 0;
-        $Pol1Sb1_TssbCorr = 0;
-        $Pol1Sb2_TssbCorr = 0;
+        // variables to hold intermediate (uncorr) and final noise temp result (possibly corrected):
+        $Pol0Sb1_Tr = 0;
+        $Pol0Sb2_Tr = 0;
+        $Pol1Sb1_Tr = 0;
+        $Pol1Sb2_Tr = 0;
 
         // track the current LO frequency being processed across multiple IF steps:
         $currentLO = $this->NT_data[0]['FreqLO'];
@@ -437,32 +438,19 @@ class NoiseTemperature extends TestData_header{
                 $RF_LSB = $LO - $IF;
 
                 // compute Tr, uncorrected (K)
-                $Pol0Sb1_TrUncorr = Trx_Uncorr($TAmb, $this->effColdLoadTemp, $this->NT_data[$index]['Pol0Sb1YFactor']);
-                $Pol0Sb2_TrUncorr = Trx_Uncorr($TAmb, $this->effColdLoadTemp, $this->NT_data[$index]['Pol0Sb2YFactor']);
-                $Pol1Sb1_TrUncorr = Trx_Uncorr($TAmb, $this->effColdLoadTemp, $this->NT_data[$index]['Pol1Sb1YFactor']);
-                $Pol1Sb2_TrUncorr = Trx_Uncorr($TAmb, $this->effColdLoadTemp, $this->NT_data[$index]['Pol1Sb2YFactor']);
-
-                // save to data array:
-                $this->NT_data[$index]['Pol0Sb1Tr'] = $Pol0Sb1_TrUncorr;
-                $this->NT_data[$index]['Pol0Sb1Tr'] = $Pol0Sb1_TrUncorr;
-                $this->NT_data[$index]['Pol1Sb2Tr'] = $Pol1Sb2_TrUncorr;
-                $this->NT_data[$index]['Pol1Sb2Tr'] = $Pol1Sb2_TrUncorr;
+                $Pol0Sb1_Tr = Trx_Uncorr($TAmb, $this->effColdLoadTemp, $this->NT_data[$index]['Pol0Sb1YFactor']);
+                $Pol0Sb2_Tr = Trx_Uncorr($TAmb, $this->effColdLoadTemp, $this->NT_data[$index]['Pol0Sb2YFactor']);
+                $Pol1Sb1_Tr = Trx_Uncorr($TAmb, $this->effColdLoadTemp, $this->NT_data[$index]['Pol1Sb1YFactor']);
+                $Pol1Sb2_Tr = Trx_Uncorr($TAmb, $this->effColdLoadTemp, $this->NT_data[$index]['Pol1Sb2YFactor']);
 
                 // Select Image Rejection data:
                 if ($this->foundIRData) {
-                    // pol 1 SB2
-                    $index = array_search($RF_LSB, $this->IR_LSB_Pol1_Sb2);
+                    // pol 0 SB1
+                    $index = array_search($RF_USB, $this->IR_USB_Pol0_Sb1);
                     if ($index !== FALSE)
-                        $IR_1_2 = $this->IR_Pol1_Sb2[$index];
+                        $IR_0_1 = $this->IR_Pol0_Sb1[$index];
                     else
-                        $IR_1_2 = $this->default_IR;
-
-                    // pol 1 SB1
-                    $index = array_search($RF_USB, $this->IR_USB_Pol1_Sb1);
-                    if ($index !== FALSE)
-                        $IR_1_1 = $this->IR_Pol1_Sb1[$index];
-                    else
-                        $IR_1_1 = $this->default_IR;
+                        $IR_0_1 = $this->default_IR;
 
                     // pol 0 SB2
                     $index = array_search($RF_LSB, $this->IR_LSB_Pol0_Sb2);
@@ -471,48 +459,120 @@ class NoiseTemperature extends TestData_header{
                     else
                         $IR_0_2 = $this->default_IR;
 
-                    // pol 0 SB1
-                    $index = array_search($RF_USB, $this->IR_USB_Pol0_Sb1);
+                    // pol 1 SB1
+                    $index = array_search($RF_USB, $this->IR_USB_Pol1_Sb1);
                     if ($index !== FALSE)
-                        $IR_0_1 = $this->IR_Pol0_Sb1[$index];
+                        $IR_1_1 = $this->IR_Pol1_Sb1[$index];
                     else
-                        $IR_0_1 = $this->default_IR;
+                        $IR_1_1 = $this->default_IR;
+
+                    // pol 1 SB2
+                    $index = array_search($RF_LSB, $this->IR_LSB_Pol1_Sb2);
+                    if ($index !== FALSE)
+                        $IR_1_2 = $this->IR_Pol1_Sb2[$index];
+                    else
+                        $IR_1_2 = $this->default_IR;
 
                     // correct the data using image correction
                     //Tssb, corrected (K)
-                    $Pol0Sb1_TssbCorr = Tssb_Corr($Pol0Sb1_TrUncorr, $IR_0_1);
-                    $Pol0Sb1_TssbCorr = Tssb_Corr($Pol0Sb1_TrUncorr, $IR_0_2);
-                    $Pol1Sb2_TssbCorr = Tssb_Corr($Pol0Sb1_TrUncorr, $IR_1_1);
-                    $Pol1Sb2_TssbCorr = Tssb_Corr($Pol0Sb1_TrUncorr, $IR_1_1);
-
-                } else {
-                    // if no Cartridge image rejection data is found don't correct data
-                    $Pol0Sb1_TssbCorr = $Pol0Sb1_TrUncorr;
-                    $Pol0Sb2_TssbCorr = $Pol0Sb2_TrUncorr;
-                    $Pol1Sb1_TssbCorr = $Pol1Sb1_TrUncorr;
-                    $Pol1Sb2_TssbCorr = $Pol1Sb2_TrUncorr;
+                    $Pol0Sb1_Tr = Tssb_Corr($Pol0Sb1_Tr, $IR_0_1);
+                    $Pol0Sb1_Tr = Tssb_Corr($Pol0Sb1_Tr, $IR_0_2);
+                    $Pol1Sb2_Tr = Tssb_Corr($Pol0Sb1_Tr, $IR_1_1);
+                    $Pol1Sb2_Tr = Tssb_Corr($Pol0Sb1_Tr, $IR_1_1);
                 }
 
-                // Save corrected Trx to data array:
-                $this->NT_data[$index]['Pol0Sb1TrCorr'] = $Pol0Sb1_TssbCorr;
-                $this->NT_data[$index]['Pol0Sb1TrCorr'] = $Pol0Sb2_TssbCorr;
-                $this->NT_data[$index]['Pol1Sb2TrCorr'] = $Pol1Sb1_TssbCorr;
-                $this->NT_data[$index]['Pol1Sb2TrCprr'] = $Pol1Sb2_TssbCorr;
+                // save to data array:
+                $this->NT_data[$index]['Pol0Sb1Tr'] = $Pol0Sb1_Tr;
+                $this->NT_data[$index]['Pol0Sb2Tr'] = $Pol0Sb2_Tr;
+                $this->NT_data[$index]['Pol1Sb1Tr'] = $Pol1Sb1_Tr;
+                $this->NT_data[$index]['Pol1Sb2Tr'] = $Pol1Sb2_Tr;
             }
 
             // do things which happen when we encounter a new LO or the end of the data:
-            if (($currentLO != $LO) || $done) {
-
+            if (($LO != $currentLO) || $done) {
                 // insert blank line between LO freqs in RF and IF trace plots:
                 $writestring = "\r\n";
                 fwrite($frf, $writestring);
                 fwrite($fif, $writestring);
 
+                // move to next currentLO:
+                if (!$done)
+                    $currentLO = $LO;
+            }
+
+            // now save and write out the current row data using currentLO:
+            if (!$done) {
+                // write out data for the IF plot:
+                $writestring = "$IF\t$Pol0Sb1_Tr\t$Pol0Sb2_Tr\t$Pol1Sb1_Tr\t$Pol1Sb2_Tr\r\n";
+                fwrite($fif, $writestring);
+
+                // for IFs within the IF spec range...
+                if ($this->lowerIFLimit <= $IF && $IF <= $this->upperIFLimit) {
+
+                    // write out data for the RF plot:
+                    $writestring = "$RF_USB\t$RF_LSB\t$Pol0Sb1_Tr\t$Pol0Sb2_Tr\t$Pol1Sb1_Tr\t$Pol1Sb2_Tr\r\n";
+                    fwrite($frf, $writestring);
+
+                    // append to arrays for compare with cart data:
+                    $this->FEIC_USB[] = $RF_USB;
+                    $this->FEIC_LSB[] = $RF_LSB;
+                    $this->FEIC_Pol0Sb1[] = $Pol0Sb1_Tr;
+                    $this->FEIC_Pol0Sb2[] = $Pol0Sb2_Tr;
+                    $this->FEIC_Pol1Sb1[] = $Pol1Sb1_Tr;
+                    $this->FEIC_Pol1Sb2[] = $Pol1Sb2_Tr;
+                }
+                $index++;
+            }
+        } while (!$done);
+
+        fclose($frf);
+        fclose($fif);
+    }
+
+    private function CalculateAvgNoiseTemps() {
+        unset($this->NT_avgData);
+        $this->NT_avgData = array();
+
+        // total number of rows in data set:
+        $cnt = count($this->NT_data);
+        if (!$cnt) {
+            return;
+        }
+
+        $this->avg_datafile = $this->plotDir . "NoiseTemp_avg.txt";
+        $this->NT_Logger->WriteLogFile("average_datafile: $this->avg_datafile");
+        $favg = fopen($this->avg_datafile,'w');
+
+        // arrays for accumulating data points for the averaging plot:
+        $Pol0_Sb1_avg = array();
+        $Pol0_Sb2_avg = array();
+        $Pol1_Sb1_avg = array();
+        $Pol1_Sb2_avg = array();
+
+        // track the current LO frequency being processed across multiple IF steps:
+        $currentLO = $this->NT_data[0]['FreqLO'];
+        $done = false;
+        $index = 0;
+        do {
+            if ($index >= $cnt)
+                $done = true;
+            else {
+                $LO = $this->NT_data[$index]['FreqLO'];
+                $IF = $this->NT_data[$index]['CenterIF'];
+                $Pol0Sb1_Tr = $this->NT_data[$index]['Pol0Sb1Tr'];
+                $Pol0Sb2_Tr = $this->NT_data[$index]['Pol0Sb2Tr'];
+                $Pol1Sb1_Tr = $this->NT_data[$index]['Pol1Sb1Tr'];
+                $Pol1Sb2_Tr = $this->NT_data[$index]['Pol1Sb2Tr'];
+            }
+
+            // do things which happen when we encounter a new LO or the end of the data:
+            if (($LO != $currentLO) || $done) {
+
                 // calculate the averaged noise temps across the whole IF:
-                $avg01 = array_sum ($Pol0_Sb1_avg) / count ($Pol0_Sb1_avg);
-                $avg02 = array_sum ($Pol0_Sb2_avg) / count ($Pol0_Sb2_avg);
-                $avg11 = array_sum ($Pol1_Sb1_avg) / count ($Pol1_Sb1_avg);
-                $avg12 = array_sum ($Pol1_Sb2_avg) / count ($Pol1_Sb2_avg);
+                $avg01 = array_sum($Pol0_Sb1_avg) / count($Pol0_Sb1_avg);
+                $avg02 = array_sum($Pol0_Sb2_avg) / count($Pol0_Sb2_avg);
+                $avg11 = array_sum($Pol1_Sb1_avg) / count($Pol1_Sb1_avg);
+                $avg12 = array_sum($Pol1_Sb2_avg) / count($Pol1_Sb2_avg);
 
                 // points to draw 80% and full-band spec lines for averaging plot:
                 if ($this->lower_80_RFLimit <= $currentLO && $currentLO <= $this->upper_80_RFLimit)
@@ -522,6 +582,24 @@ class NoiseTemperature extends TestData_header{
 
                 $spec_line2 = $this->NT_allRF_spec;
 
+                // append to array of averaged data:
+                $rowData = array (
+                        'FreqLO'        => $currentLO,
+                        'Pol0Sb1TrAvg'  => $avg01,
+                        'Pol0Sb2TrAvg'  => $avg02,
+                        'Pol1Sb1TrAvg'  => $avg11,
+                        'Pol1Sb2TrAvg'  => $avg12,
+                        'spec_line1'    => $spec_line1,
+                        'spec_line2'    => $spec_line2
+                );
+                $this->NT_avgData[] = $rowData;
+
+                // reset arrays for averaging noise temp:
+                unset($Pol0_Sb1_avg);
+                unset($Pol0_Sb2_avg);
+                unset($Pol1_Sb1_avg);
+                unset($Pol1_Sb2_avg);
+
                 // write out data for the averaging plot:
                 $writestring = "$currentLO\t$avg01\t$avg02\t$avg11\t$avg12\t$spec_line1\t$spec_line2\r\n";
                 fwrite($favg, $writestring);
@@ -529,52 +607,25 @@ class NoiseTemperature extends TestData_header{
                 // move to next currentLO:
                 if (!$done)
                     $currentLO = $LO;
-
-                // reset arrays for averaging noise temp:
-                unset($Pol0_Sb1_avg);
-                unset($Pol0_Sb2_avg);
-                unset($Pol1_Sb1_avg);
-                unset($Pol1_Sb2_avg);
             }
 
-            // now save and write out the current row data using currentLO:
             if (!$done) {
-                // write out data for the IF plot:
-                $writestring = "$IF\t$Pol0Sb1_TssbCorr\t$Pol0Sb2_TssbCorr\t$Pol1Sb1_TssbCorr\t$Pol1Sb2_TssbCorr\r\n";
-                fwrite($fif, $writestring);
-
                 // for IFs within the IF spec range...
                 if ($this->lowerIFLimit <= $IF && $IF <= $this->upperIFLimit) {
-
-                    // write out data for the RF plot:
-                    $writestring = "$RF_USB\t$RF_LSB\t$Pol0Sb1_TssbCorr\t$Pol0Sb2_TssbCorr\t$Pol1Sb1_TssbCorr\t$Pol1Sb2_TssbCorr\r\n";
-                    fwrite($frf, $writestring);
-
                     // append to arrays for IF averaging plot:
-                    $Pol0_Sb1_avg[] = $Pol0Sb1_TssbCorr;
-                    $Pol0_Sb2_avg[] = $Pol0Sb2_TssbCorr;
-                    $Pol1_Sb1_avg[] = $Pol1Sb1_TssbCorr;
-                    $Pol1_Sb2_avg[] = $Pol1Sb2_TssbCorr;
-
-                    // append to arrays for compare with cart data:
-                    $this->FEIC_USB[] = $RF_USB;
-                    $this->FEIC_LSB[] = $RF_LSB;
-                    $this->FEIC_Pol0Sb1[] = $Pol0Sb1_TssbCorr;
-                    $this->FEIC_Pol0Sb2[] = $Pol0Sb2_TssbCorr;
-                    $this->FEIC_Pol1Sb1[] = $Pol1Sb1_TssbCorr;
-                    $this->FEIC_Pol1Sb2[] = $Pol1Sb2_TssbCorr;
+                    $Pol0_Sb1_avg[] = $Pol0Sb1_Tr;
+                    $Pol0_Sb2_avg[] = $Pol0Sb2_Tr;
+                    $Pol1_Sb1_avg[] = $Pol1Sb1_Tr;
+                    $Pol1_Sb2_avg[] = $Pol1Sb2_Tr;
                 }
                 $index++;
             }
         } while (!$done);
 
-        fclose($frf);
-        fclose($fif);
         fclose($favg);
     }
 
-
-    private function CalculateBand3Results() {
+    private function CalculateBand3AvgNT() {
         // For band 3 read the average NT file and store the information in the db
         if ($this->GetValue('Band') == 3) {
             $favg = fopen($this->avg_datafile, 'r');
@@ -603,6 +654,114 @@ class NoiseTemperature extends TestData_header{
 
             fclose($favg);
         }
+    }
+
+    private function CalculateBand10AvgNT() {
+
+        function truncateSpanToSpecRange($LO0, $LO1, $lower80, $upper80) {
+            // compute the portion within the spec bounds:
+            $span = $LO1 - $LO0;
+            if ($LO0 < $lower80)
+                $span = $lower80 - $LO0;
+            else if ($LO1 > $upper80)
+                $span = $LO1 - $upper80;
+            return $span;
+        }
+
+        function freqSpanOutOfSpec($LO0, $LO1, $TR0, $TR1, $spec, $lower80, $upper80) {
+            // What portion of the LO range between $LO0 and $LO1 have TR out of spec?
+            // - Use linear interpolation between the two points.
+            // - Truncate to the range to where the 80% spec applies.
+
+            // $LO1 must be > $LO0
+            if ($LO1 <= $LO0)
+                return 0;
+
+            // at least one point must be in the spec range:
+            if ($LO0 < $lower80 && $LO1 < $lower80)
+                return 0;
+            if ($LO0 > $upper80 && $LO1 > $upper80)
+                return 0;
+
+            // check for endpoints in spec:
+            $inSpec0 = $TR0 <= $spec;
+            $inSpec1 = $TR1 <= $spec;
+
+            // both endppoints are in spec:
+            if ($inSpec0 && $inSpec1)
+                return 0;
+
+            // neither endpoint in spec:
+            if (!$inSpec0 && !$inSpec1)
+                // return the portion within the 80% spec range:
+                return truncateSpanToSpecRange($LO0, $LO1, $lower80, $upper80);
+
+            // calculate abs(slope) between the two points:
+            $slope = abs($TR1 - $TR0) / ($LO1 - $LO0);
+
+            // first endpoint is in spec, second isn't:
+            if ($inSpec0 && !$inSpec1) {
+                // how far above the spec is the second endpoint?
+                $failTr = $TR1 - $spec;
+
+                // slope crosses the spec line at:
+                $failLO = $LO1 - ($failTr / $slope);
+
+                // return the portion of the out of spec part within the 80% spec range:
+                return truncateSpanToSpecRange($failLO, $LO1, $lower80, $upper80);
+            }
+            // second endpoint is in spec, first isn't:
+            if (!$inSpec0 && $inSpec1) {
+                // how far above the spec is the first endpoint?
+                $failTr = $TR0 - $spec;
+
+                // slope crosses the spec line at:
+                $failLO = $LO0 + ($failTr / $slope);
+
+                // return the portion of the out of spec part within the 80% spec range:
+                return truncateSpanToSpecRange($LO0, $failLO, $lower80, $upper80);
+            }
+            // impossible case:
+            return false;
+        }
+
+        $this->Pol0_80_metric = 0;
+        $this->Pol1_80_metric = 0;
+
+        // don't do this except for band 10:
+        if ($this->GetValue('Band') != 10)
+            return;
+
+        // total number of rows in data set:
+        $cnt = count($this->NT_avgData);
+        if (!$cnt)
+            return;
+
+        // vars to accumulate frequency span out of spec:
+        $span0 = $span1 = 0;
+        unset($lastRow);
+
+        // adjust limits for this calculation only:
+        $lower = $this->lower_80_RFLimit + 12;
+        $upper = $this->upper_80_RFLimit - 12;
+        $specRange = $upper - $lower;
+
+        foreach($this->NT_avgData as $thisRow) {
+            $LO1 = $thisRow['FreqLO'];
+
+            // if no previous row, assume same as current row:
+            if (isset($lastRow)) {
+                $LO0 = $lastRow['FreqLO'];
+
+                $span0 += freqSpanOutOfSpec($LO0, $LO1, $lastRow['Pol0Sb1TrAvg'], $thisRow['Pol0Sb1TrAvg'],
+                                            $this->NT_80_spec, $lower, $upper);
+                $span1 += freqSpanOutOfSpec($LO0, $LO1, $lastRow['Pol1Sb1TrAvg'], $thisRow['Pol1Sb1TrAvg'],
+                                            $this->NT_80_spec, $lower, $upper);
+            }
+            $lastRow = $thisRow;
+        }
+        $this->Pol0_80_metric = 100 - round($span0 / $specRange * 100, 1);
+        $this->Pol1_80_metric = 100 - round($span1 / $specRange * 100, 1);
     }
 
     private function LoadAndWriteCCANoiseTempData() {
@@ -1039,25 +1198,42 @@ class NoiseTemperature extends TestData_header{
                 break;
 
             case 10:
-//                 $Pol0_80_metric = 100 - round($Pol0_Sb1_outOfSpec80 / $Pol0_Sb1_allPts80 * 100, 1);
-//                 $Pol1_80_metric = 100 - round($Pol1_Sb1_outOfSpec80 / $Pol1_Sb1_allPts80 * 100, 1);
-//
-//                 fwrite($f, 'set label "' .
-//                         "Compliance metric for $this->NT_80_spec K spec over 797-$this->upper_80_RFLimit GHz" .
-//                         '" at screen .1, .91'."\r\n");
-//                 fwrite($f, 'set label "' .
-//                         "Pol0: $Pol0_80_metric%, Pol1: $Pol1_80_metric%" .
-//                         '" at screen .1, .88');
-//
-//                 if ($Pol0_80_metric < 80 || $Pol1_80_metric < 80)
-//                     fwrite($f, ' tc lt 1');
-//
-//                 fwrite($f, "\r\n");
+
+                $this->avSpec_datafile = $this->plotDir . "NoiseTemp_avSpec.txt";
+                $fspec = fopen($this->avSpec_datafile,'w');
+
+                // write specifications datafile
+                $lower = $this->lower_80_RFLimit + 12;
+                $upper = $this->upper_80_RFLimit - 12;
+
+                fwrite($fspec,"787\tNAN\t$this->NT_allRF_spec\r\n");
+                fwrite($fspec,"$lower\t$this->NT_80_spec\t$this->NT_allRF_spec\r\n");
+                fwrite($fspec,"$upper\t$this->NT_80_spec\t$this->NT_allRF_spec\r\n");
+                fwrite($fspec,"950\tNAN\t$this->NT_allRF_spec\r\n");
+                fclose($fspec);
+
+                fwrite($f, 'set label "' .
+                        "Compliance metric for $this->NT_80_spec K spec over $this->lower_80_RFLimit-$this->upper_80_RFLimit GHz RF" .
+                        '" at screen .1, .91'."\r\n");
+
+                fwrite($f, 'set label "' .
+                           "Pol0: $this->Pol0_80_metric%" .
+                           '" at screen .1, .88');
+                if ($this->Pol0_80_metric < 80)
+                    fwrite($f, ' tc lt 1');
+                fwrite($f, "\r\n");
+
+                fwrite($f, 'set label "' .
+                           "Pol1: $this->Pol1_80_metric%" .
+                           '" at screen .2, .88');
+                if ($this->Pol1_80_metric < 80)
+                    fwrite($f, ' tc lt 1');
+                fwrite($f, "\r\n");
 
                 fwrite($f, "plot  '$this->avg_datafile' using 1:2 with linespoints lt 1 lw 1 title 'Pol0',");
                 fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1',");
-                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt -1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
-                fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt 0 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
+                fwrite($f, "'$this->avSpec_datafile' using 1:3 with lines lt -1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
+                fwrite($f, "'$this->avSpec_datafile' using 1:2 with lines lt 0 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
                 break;
 
             default:
