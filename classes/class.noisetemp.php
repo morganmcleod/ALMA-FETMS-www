@@ -102,8 +102,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.1.1";
+        $this->Plot_SWVer = "1.1.2";
         /*
+         * 1.1.2  MTM: Fixed bugs introduced by refactoring (not loading IR data.)
          * 1.1.1  MTM: Got band 10 special averaging plot metrics working
          * 1.1.0  MTM: Refactored into top-level function and helpers.
          * 1.0.18  MTM: cleaned up NT calc and averagign loop.  Added check for band 10 80% spec.
@@ -135,6 +136,11 @@ class NoiseTemperature extends TestData_header{
         $this->WriteSpecsDataFile();
 
         $this->LoadNoiseTempData();
+
+        if (!count($this->NT_data)) {
+            $this->NT_Logger->WriteLogFile("No Data");
+            return;
+        }
 
         $this->CalculateNoiseTemps();
 
@@ -224,9 +230,11 @@ class NoiseTemperature extends TestData_header{
             //TODO: should we be finding the newest IR data?
             $index = 0;
             do {
+                $compKey = $this->CCA_componentKeys[$index];
+
                 //get CCA Test Data key for cartridge image rejection:
                 $q = "SELECT keyID FROM TestData_header WHERE fkTestData_Type = 38
-                AND fkDataStatus = 7 AND fkFE_Components = $this->CCA_componentKeys[$index]
+                AND fkDataStatus = 7 AND fkFE_Components = $compKey
                 AND keyFacility =" . $this->GetValue('keyFacility');
                 $r = @mysql_query($q, $this->dbconnection);
                 $this->NT_Logger->WriteLogFile("CCA Image Rejection Testdata_Header Query: $q");
@@ -247,7 +255,6 @@ class NoiseTemperature extends TestData_header{
 
         // found IR data for band <= 8:
         } else {
-            $this->foundIRData = true;
             $this->NT_Logger->WriteLogFile("Cartridge Image Rejection Data Was Found");
 
             //get CCA Image Rejection data
@@ -268,27 +275,31 @@ class NoiseTemperature extends TestData_header{
             $this->IR_Pol1_Sb1 = array();
             $this->IR_Pol1_Sb2 = array();
 
+            $count = 0;
             while ($row = @mysql_fetch_array($r)) {
+                $count++;
+                if ($row[2] == 0) {                                    // Pol0
+                    if ($row[3] == 2) {                                // SB2
+                        $this->IR_LSB_Pol0_Sb2[] = $row[0] - $row[1];  // RF = LSB
+                        $this->IR_Pol0_Sb2[] = $row[4];
 
-                if ($row[2] == 1) {                                // Pol1
-                    if ($row[3] == 2) {                            // SB2
-                        $IR_LSB_Pol1_Sb2[] = $row[0] - $row[1];    // RF = LSB
-                        $IR_Pol1_Sb2[] = $row[4];
-                    } else {                                       // SB1 or undefinded
-                        $IR_USB_Pol1_Sb1[] = $row[0] + $row[1];    // RF = USB
-                        $IR_Pol1_Sb1[] = $row[4];
+                    } else {                                           // SB1 or undefinded
+                        $this->IR_USB_Pol0_Sb1[] = $row[0] + $row[1];  // RF = USB
+                        $this->IR_Pol0_Sb1[] = $row[4];
                     }
-
-                } else {                                           // Pol0
-                    if ($row[3] == 2) {                            // SB2
-                        $IR_LSB_Pol0_Sb2[] = $row[0] - $row[1];    // RF = LSB
-                        $IR_Pol0_Sb2[] = $row[4];
-
-                    } else {                                       // SB1 or undefinded
-                        $IR_USB_Pol0_Sb1[] = $row[0] + $row[1];    // RF = USB
-                        $IR_Pol0_Sb1[] = $row[4];
+                } else {                                               // Pol1
+                    if ($row[3] == 2) {                                // SB2
+                        $this->IR_LSB_Pol1_Sb2[] = $row[0] - $row[1];  // RF = LSB
+                        $this->IR_Pol1_Sb2[] = $row[4];
+                    } else {                                           // SB1 or undefinded
+                        $this->IR_USB_Pol1_Sb1[] = $row[0] + $row[1];  // RF = USB
+                        $this->IR_Pol1_Sb1[] = $row[4];
                     }
                 }
+            }
+            if ($count > 0) {
+                // found at least one row of IR data:
+                $this->foundIRData = true;
             }
         }
     }
@@ -446,30 +457,30 @@ class NoiseTemperature extends TestData_header{
                 // Select Image Rejection data:
                 if ($this->foundIRData) {
                     // pol 0 SB1
-                    $index = array_search($RF_USB, $this->IR_USB_Pol0_Sb1);
-                    if ($index !== FALSE)
-                        $IR_0_1 = $this->IR_Pol0_Sb1[$index];
+                    $IRindex = array_search($RF_USB, $this->IR_USB_Pol0_Sb1);
+                    if ($IRindex !== FALSE)
+                        $IR_0_1 = $this->IR_Pol0_Sb1[$IRindex];
                     else
                         $IR_0_1 = $this->default_IR;
 
                     // pol 0 SB2
-                    $index = array_search($RF_LSB, $this->IR_LSB_Pol0_Sb2);
-                    if ($index !== FALSE)
-                        $IR_0_2 = $this->IR_Pol0_Sb2[$index];
+                    $IRindex = array_search($RF_LSB, $this->IR_LSB_Pol0_Sb2);
+                    if ($IRindex !== FALSE)
+                        $IR_0_2 = $this->IR_Pol0_Sb2[$IRindex];
                     else
                         $IR_0_2 = $this->default_IR;
 
                     // pol 1 SB1
-                    $index = array_search($RF_USB, $this->IR_USB_Pol1_Sb1);
-                    if ($index !== FALSE)
-                        $IR_1_1 = $this->IR_Pol1_Sb1[$index];
+                    $IRindex = array_search($RF_USB, $this->IR_USB_Pol1_Sb1);
+                    if ($IRindex !== FALSE)
+                        $IR_1_1 = $this->IR_Pol1_Sb1[$IRindex];
                     else
                         $IR_1_1 = $this->default_IR;
 
                     // pol 1 SB2
-                    $index = array_search($RF_LSB, $this->IR_LSB_Pol1_Sb2);
-                    if ($index !== FALSE)
-                        $IR_1_2 = $this->IR_Pol1_Sb2[$index];
+                    $IRindex = array_search($RF_LSB, $this->IR_LSB_Pol1_Sb2);
+                    if ($IRindex !== FALSE)
+                        $IR_1_2 = $this->IR_Pol1_Sb2[$IRindex];
                     else
                         $IR_1_2 = $this->default_IR;
 
@@ -630,11 +641,13 @@ class NoiseTemperature extends TestData_header{
         if ($this->GetValue('Band') == 3) {
             $favg = fopen($this->avg_datafile, 'r');
 
+            $values = "";
+
             // read file and format data into a string to write out in a DB query
             while ($scan = fscanf($favg, "%f\t%f\t%f\t%f\t%f\t%f\r\n")) {
                 list ($freq, $avg01, $avg02, $avg11, $avg12, $this->NT_80_spec) = $scan;
                 $avg = ($avg01 + $avg02 + $avg11 + $avg12) / 4;
-                $values = "(" . $this->GetValue('keyId') . ",$freq,$avg01,$avg02,$avg11,$avg12,$avg),".$values;
+                $values = "(" . $this->GetValue('keyId') . ",$freq,$avg01,$avg02,$avg11,$avg12,$avg)," . $values;
             }
             //delete last "," and replace it with ";"
             $values = substr_replace ($values,";",(strlen ($values))-1);
@@ -746,10 +759,14 @@ class NoiseTemperature extends TestData_header{
         $upper = $this->upper_80_RFLimit - 12;
         $specRange = $upper - $lower;
 
+        // in the loop we'll check whether the 80% spec range is covered or not:
+        $lower80measured = false;
+        $upper80measured = false;
+
         foreach($this->NT_avgData as $thisRow) {
             $LO1 = $thisRow['FreqLO'];
 
-            // if no previous row, assume same as current row:
+            // loop on segments between data points, not indvidual points.
             if (isset($lastRow)) {
                 $LO0 = $lastRow['FreqLO'];
 
@@ -757,11 +774,23 @@ class NoiseTemperature extends TestData_header{
                                             $this->NT_80_spec, $lower, $upper);
                 $span1 += freqSpanOutOfSpec($LO0, $LO1, $lastRow['Pol1Sb1TrAvg'], $thisRow['Pol1Sb1TrAvg'],
                                             $this->NT_80_spec, $lower, $upper);
+
+                // check whether any range in the set touches or encloses the 80% spec endpoints:
+                if ($LO0 <= $lower && $LO1 > $lower)
+                    $lower80measured = true;
+                if ($LO0 < $upper && $LO1 >= $upper)
+                    $upper80measured = true;
             }
             $lastRow = $thisRow;
         }
-        $this->Pol0_80_metric = 100 - round($span0 / $specRange * 100, 1);
-        $this->Pol1_80_metric = 100 - round($span1 / $specRange * 100, 1);
+        // if the 80% spec endpoints are adequately covered then we can compute the 80% spec mectric:
+        if ($lower80measured && $upper80measured) {
+            $this->Pol0_80_metric = 100 - round($span0 / $specRange * 100, 1);
+            $this->Pol1_80_metric = 100 - round($span1 / $specRange * 100, 1);
+        // otherwise we will show "N/A":
+        } else {
+            $this->Pol0_80_metric = $this->Pol1_80_metric = 0;
+        }
     }
 
     private function LoadAndWriteCCANoiseTempData() {
@@ -1051,7 +1080,7 @@ class NoiseTemperature extends TestData_header{
         // if no DataSetGroup then use data from the test TestData_header
         if ($this->GetValue('DataSetGroup') == 0) {
             $this->plot_label_1 = "set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $this->Plot_SWVer, Meas SWVer: " . $this->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
-            $this->plot_label_2 = "set label '" . $this->GetValue('TS') . ", FE Configuration " . $this->GetValue('fkFE_Config') . "' at screen 0.01, 0.04\r\n";
+            $this->plot_label_2 = "set label '" . $this->GetValue('TS') . ", FE Configuration " . $this->GetValue('fkFE_Config') . ", TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
 
         // find the max timestamp and FE config number for the plot labels
         } else {
@@ -1100,7 +1129,7 @@ class NoiseTemperature extends TestData_header{
                 $FE_Config = "($max_FE_Config)";
             }
             $this->plot_label_1 = "set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->Plot_SWVer, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
-            $this->plot_label_2 = "set label 'Dataset: " . $this->GetValue('DataSetGroup') . ", TS: $TS, FE Configuration: $FE_Config' at screen 0.01, 0.04\r\n";
+            $this->plot_label_2 = "set label 'Dataset: " . $this->GetValue('DataSetGroup') . ", TS: $TS, FE Configuration $FE_Config, TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
         }
     }
 
@@ -1216,15 +1245,17 @@ class NoiseTemperature extends TestData_header{
                         "Compliance metric for $this->NT_80_spec K spec over $this->lower_80_RFLimit-$this->upper_80_RFLimit GHz RF" .
                         '" at screen .1, .91'."\r\n");
 
+                $metricText = ($this->Pol0_80_metric > 0) ? "$this->Pol0_80_metric%" : "N/A";
                 fwrite($f, 'set label "' .
-                           "Pol0: $this->Pol0_80_metric%" .
+                           "Pol0: $metricText" .
                            '" at screen .1, .88');
                 if ($this->Pol0_80_metric < 80)
                     fwrite($f, ' tc lt 1');
                 fwrite($f, "\r\n");
 
+                $metricText = ($this->Pol1_80_metric > 0) ? "$this->Pol1_80_metric%" : "N/A";
                 fwrite($f, 'set label "' .
-                           "Pol1: $this->Pol1_80_metric%" .
+                           "Pol1: $metricText" .
                            '" at screen .2, .88');
                 if ($this->Pol1_80_metric < 80)
                     fwrite($f, ' tc lt 1');
