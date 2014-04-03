@@ -102,8 +102,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.1.2";
+        $this->Plot_SWVer = "1.1.3";
         /*
+         * 1.1.3  MTM: Fixed band 10 averaging calculation bug.
          * 1.1.2  MTM: Fixed bugs introduced by refactoring (not loading IR data.)
          * 1.1.1  MTM: Got band 10 special averaging plot metrics working
          * 1.1.0  MTM: Refactored into top-level function and helpers.
@@ -675,9 +676,9 @@ class NoiseTemperature extends TestData_header{
             // compute the portion within the spec bounds:
             $span = $LO1 - $LO0;
             if ($LO0 < $lower80)
-                $span = $lower80 - $LO0;
+                $span = $LO1 - $lower80;
             else if ($LO1 > $upper80)
-                $span = $LO1 - $upper80;
+                $span = $upper80 - $LO0;
             return $span;
         }
 
