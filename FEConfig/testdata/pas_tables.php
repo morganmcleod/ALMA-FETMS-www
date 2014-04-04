@@ -5,7 +5,11 @@ require_once($site_FEConfig . '/testdata/spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header ( $width , &$tdh ){
-    $table_ver = "1.0.4";
+    $table_ver = "1.0.5";
+    /*
+     * 1.0.5 MM fixed error in calculating average attenuation in IF_Power_results()
+     */
+
     $testpage = 'testdata.php';
 
     $q = "SELECT `Description` FROM `TestData_Types`
@@ -650,7 +654,7 @@ function IF_Power_results($td_keyID){
 
     while ($row = @mysql_fetch_array($r)){
         echo "<tr>";
-        $att_sum = $att_sum + (abs($row[2]) - abs($row[1]));
+        $att_sum = $att_sum + abs($row[2] - $row[1]);
         $atten_cnt++;
         // check to see if the numbers meet spec
         $check1=num_in_range(($row[2]-14),mon_data($row[1]),($row[2]-16));
@@ -685,7 +689,7 @@ function IF_Power_results($td_keyID){
     }
     $avg_atten = mon_data($att_sum /$atten_cnt);
     //check to see if avgerage attunuation is in range
-    $check3=num_in_range(-14,$avg_atten,-16);
+    $check3=num_in_range(16,$avg_atten,14);
     echo "<tr><th width = '200px'>Average Attenutation (dB) </th>
         <th width = '200px' colspan='2' align='right'>" .$check3."</th>";
     echo "</table></div>";
