@@ -5,8 +5,9 @@ require_once($site_FEConfig . '/testdata/spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header ( $width , &$tdh ){
-    $table_ver = "1.0.5";
+    $table_ver = "1.0.6";
     /*
+     * 1.0.6 MM fixed query fetching LNA config data for band 4.
      * 1.0.5 MM fixed error in calculating average attenuation in IF_Power_results()
      */
 
@@ -240,27 +241,24 @@ function LNA_results($td_keyID){
         AND `fkFE_ComponentType`= 20 AND Band =". $tdh->GetValue('Band')."";
 
     // data queries
-        // default query
+        // default query looks for exact LO match
         $q_default = "SELECT `VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`,`FreqLO`
                 FROM `CCA_PreampParams`
                 WHERE `fkComponent`=($q_CompID)
                 AND `FreqLO`= $FreqLO ORDER BY `Pol`ASC, `SB` ASC";
 
-        // query for band 6, 7, 9
-        $q_6_7_9 = "SELECT `VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`,`FreqLO`
+        // query for band 4, 6, 7, 9 matches any LO
+        $q_any_lo = "SELECT `VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`,`FreqLO`
                 FROM `CCA_PreampParams`
                 WHERE `fkComponent`=($q_CompID)
                 ORDER BY `Pol`ASC, `SB` ASC";
 
     switch( $tdh->GetValue('Band') ){
+        case 4:
         case 6:
-            $q = $q_6_7_9;
-            break;
         case 7:
-            $q = $q_6_7_9;
-            break;
         case 9:
-            $q = $q_6_7_9;
+            $q = $q_any_lo;
             break;
 
         Default:
