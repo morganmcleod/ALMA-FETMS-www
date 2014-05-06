@@ -5,15 +5,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link href="style2.css" rel="stylesheet" type="text/css" />
 <link type="text/css" href="../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
-<script type="text/javascript" src="js/cufon-yui.js"></script>
-<script type="text/javascript" src="js/arial.js"></script>
-<script type="text/javascript" src="js/cuf_run.js"></script>
 <script src="../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
 <script src="../ext/ext-all.js" type="text/javascript"></script>
-<script src="dbGrid.js" type="text/javascript"></script>
 </head>
-<body onload=" var val=document.getElementById('Band_selected').value; creategrid(val);">
-
+<body>
 <div class="main">
   <div class="header">
     <div class="header_resize">
