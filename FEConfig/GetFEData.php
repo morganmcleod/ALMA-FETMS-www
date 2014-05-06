@@ -87,6 +87,8 @@ else
     $rfe = @mysql_query($qfe,$db);
 
     //$l->WriteLogFile($qfe);
+    $tempBand = FALSE;
+    $tempSN = FALSE;
 
     while ($row = @mysql_fetch_array($rfe)){
 
@@ -100,44 +102,43 @@ else
             }
         }
 
-
         if ($Duplicate == 0){
-        if ($rowcount == 0 ){
-            $outstring .= "{'SN':'".$c->GetValue('SN')."',";
-        }
-        if ($rowcount > 0 ){
-            $outstring .= ",{'SN':'".$c->GetValue('SN')."',";
-        }
-        $outstring .= "'config':'".$c->keyId."',";    ;
+            if ($rowcount == 0 ){
+                $outstring .= "{'SN':'".$c->GetValue('SN')."',";
+            }
+            if ($rowcount > 0 ){
+                $outstring .= ",{'SN':'".$c->GetValue('SN')."',";
+            }
+            $outstring .= "'config':'".$c->keyId."',";
 
-        if ($c->sln->keyId > 0){
-            $outstring .= "'Location':'".$c->sln->location."',";
-            $outstring .= "'Status':'".$c->sln->status."',";
-            $outstring .= "'Updated_By':'".$c->sln->GetValue('Updated_By')."',";
-            $Notes = @mysql_real_escape_string($c->sln->GetValue('Notes'));
-            //$l->WriteLogFile("SLN: " . $c->sln->location . "," . $c->sln->status . "," . $c->sln->GetValue('Notes'));
-        }
+            if (isset($c->sln)) {
+                if ($c->sln->keyId > 0){
+                    $outstring .= "'Location':'".$c->sln->location."',";
+                    $outstring .= "'Status':'".$c->sln->status."',";
+                    $outstring .= "'Updated_By':'".$c->sln->GetValue('Updated_By')."',";
+                    $Notes = @mysql_real_escape_string($c->sln->GetValue('Notes'));
+                    //$l->WriteLogFile("SLN: " . $c->sln->location . "," . $c->sln->status . "," . $c->sln->GetValue('Notes'));
+                }
 
-        //
+                if ($c->sln->keyId < 1){
+                    $outstring .= "'Location':'',";
+                    $outstring .= "'Status':'',";
+                    $outstring .= "'Updated_By':'',";
+                    $Notes = '';
+                }
+            }
+            $outstring .= "'Docs':'" . FixHyperLink($c->GetValue('Link1')). "',";
+            $outstring .= "'TS':'".$c->GetValue('TS')."',";
+            $outstring .= "'Band':'".$c->GetValue('Band')."',";
+            $outstring .= "'keyFacility':'".$c->GetValue('keyFacility')."',";
+            $outstring .= "'FESN':'".$c->FESN."',";
+            $outstring .= "'Notes':'$Notes'}";
 
-        if ($c->sln->keyId < 1){
-            $outstring .= "'Location':'',";
-            $outstring .= "'Status':'',";
-            $outstring .= "'Updated_By':'',";
-            $Notes = '';
-        }
-        $outstring .= "'Docs':'" . FixHyperLink($c->GetValue('Link1')). "',";
-        $outstring .= "'TS':'".$c->GetValue('TS')."',";
-        $outstring .= "'Band':'".$c->GetValue('Band')."',";
-        $outstring .= "'keyFacility':'".$c->GetValue('keyFacility')."',";
-        $outstring .= "'FESN':'".$c->FESN."',";
-        $outstring .= "'Notes':'$Notes'}";
+            $tempBand = $c->GetValue('Band');
+            $tempSN   = $c->GetValue('SN');
 
-        $tempBand = $c->GetValue('Band');
-        $tempSN   = $c->GetValue('SN');
-
-        unset($c);
-        $rowcount += 1;
+            unset($c);
+            $rowcount += 1;
         }
     }
     $outstring .= "]";
