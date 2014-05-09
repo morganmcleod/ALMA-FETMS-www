@@ -114,105 +114,6 @@ class TestData_header extends GenericTable{
         }
     }
 
-//     public function Display_TestDataMain() {
-//         require_once(site_get_classes() . '/class.wca.php');
-
-//         switch ($this->GetValue('fkTestData_Type')) {
-//             case 27:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $this->Display_PhaseStabilitySubHeader();
-//                 break;
-
-//             case 7:
-//                 //IF Spectrum
-//                 break;
-
-//             case 56:
-//                 //Pol Angles
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $this->Display_Data_PolAngles();
-//                 break;
-
-//             case 57:
-//                 //LO Lock Test
-//                 $this->Display_DataSetNotes();
-//                 echo "<br>";
-//                 break;
-
-//             case 58:
-//                 //Noise Temperature
-//                 $this->Display_DataSetNotes();
-//                 echo "<br>";
-//                 break;
-
-//             case 50:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $this->Display_Data_Cryostat(1);
-//                 break;
-//             case 52:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $this->Display_Data_Cryostat(3);
-//                 break;
-//             case 53:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $this->Display_Data_Cryostat(2);
-//                 break;
-//             case 54:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $this->Display_Data_Cryostat(4);
-//                 break;
-//             case 25:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $this->Display_Data_Cryostat(5);
-//                 break;
-//             case 45:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $wca = new WCA();
-//                 $wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'));
-//                 $wca->Display_AmplitudeStability();
-//                 break;
-//             case 44:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $wca = new WCA();
-//                 $wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'));
-//                 $wca->Display_AMNoise();
-//                 break;
-//             case 46:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $wca = new WCA();
-//                 $wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'));
-//                 $wca->Display_OutputPower();
-//                 break;
-//             case 47:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $wca = new WCA();
-//                 $wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'));
-//                 $wca->Display_PhaseNoise();
-//                 break;
-//             case 48:
-//                 $this->Display_DataForm();
-//                 echo "<br>";
-//                 $wca = new WCA();
-//                 $wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'));
-//                 $wca->Display_PhaseNoise();
-//                 break;
-//             default:
-//                 $this->Display_DataForm();
-//                 break;
-//         }
-//     }
-
     public function Display_Data_Cryostat($datatype){
         //Array of TestData_header objects (TestData_header)
         //[1] = First Rate of Rise
@@ -300,43 +201,6 @@ class TestData_header extends GenericTable{
             $this->Display_DataForm();
         }
     }
-
-//     public function Display_Plot(){
-//         require_once(site_get_classes() . '/class.finelosweep.php');
-//         require_once(site_get_classes() . '/class.noisetemp.php');
-//         require_once(site_get_classes() . '/class.cca_image_rejection.php');
-//         switch($this->GetValue('fkTestData_Type')){
-//             case 59:
-//                 //Fine LO Sweep
-//                 $finelosweep = new FineLOSweep();
-//                 $finelosweep->Initialize_FineLOSweep($this->keyId,$this->GetValue('keyFacility'));
-//                 $finelosweep->DisplayPlots();
-//                 unset($finelosweep);
-//                 break;
-//             case 58:
-//                 //Noise Temperature
-//                 $nztemp = new NoiseTemperature();
-//                 $nztemp->Initialize_NoiseTemperature($this->keyId,$this->GetValue('keyFacility'));
-//                 $nztemp->DisplayPlots();
-//                 unset($nztemp);
-//                 break;
-//             case 38:
-//                 //CCA Image Rejection
-//                 $ccair = new cca_image_rejection();
-//                 $ccair->Initialize_cca_image_rejection($this->keyId,$this->GetValue('keyFacility'));
-//                 $ccair->DisplayPlots();
-//                 unset($ccair);
-//                 break;
-
-//             default:
-//                 $urlarray = explode(",",$this->GetValue('PlotURL'));
-//                 for ($i=0;$i<count($urlarray);$i++){
-//                     echo "<img src='" . $urlarray[$i] . "'><br>";
-//                 }
-//                 break;
-//         }
-
-//     }
 
     public function Display_ExportToCSV(){
         echo '<form name = "ExportCSVButton" action= "export_to_csv.php" method="get">';
@@ -566,44 +430,6 @@ class TestData_header extends GenericTable{
         $sh->Initialize('TEST_PhaseStability_SubHeader',$this->keyId,'fkHeader',$this->GetValue('keyFacility'),'fkFacility');
     }
 
-    /*  //obsolete function????
-    public function Display_Data_LOLockTest(){
-        $this->SelectDatasets = $_REQUEST['sd'];
-        $Band = $this->GetValue('Band');
-
-        if (isset($_REQUEST['submit_lolocktestisincluded'])){
-            $this->UpdateLOLockIsIncludedStatus();
-        }
-        if ($this->SelectDatasets == 1){
-            $this->DisplayDataSetSelector_Form_LOLockTest();
-        }
-
-    }
-    */
-
-    /*    TODO: MM commented out.  dead code?
-    public function Display_Data_IFSpectrum(){
-        $this->SelectDatasets = $_REQUEST['sd'];
-        $Band = $this->GetValue('Band');
-
-        if (isset($_REQUEST['submit_pai'])){
-            $this->UpdateIFPAIStatus();
-        }
-
-        if ($this->SelectDatasets == 1){
-                $this->DisplayDataSetSelector_Form();
-        }
-
-        $this->Display_NoiseFloorSelector();
-        $ifspec = new IFSpectrum();
-        $ifspec->Initialize_IFSpectrum($this->keyId,$this->GetValue('keyFacility'));
-        $ifspec->ShowPlots_Spurious();
-        $ifspec->ShowPlots_PowerVar();
-        $ifspec->Display_TotalPowerTable('all');
-        $ifspec->DisplayPowerVarFullBandTable();
-    }
-    */
-
     public function Display_Data_PolAngles(){
         $pa = new GenericTable();
         $pa->Initialize("SourceRotationAngles",$this->GetValue('Band'),"band");
@@ -612,10 +438,6 @@ class TestData_header extends GenericTable{
         $nom_0_p90 = $pa->GetValue('pol0_copol') + 90;
         $nom_1_m90 = $pa->GetValue('pol1_copol') - 90;
         $nom_1_p90 = $pa->GetValue('pol1_copol') + 90;
-
-
-
-
 
         $pol0_min1 = 999;
         $pol0_min2 = 999;
