@@ -182,7 +182,7 @@ class FEComponent extends GenericTable{
 
                     if ($this->IsDocument != 1){
                         $Qty = 1;
-                        if ($this->FE_ConfigLink->keyId > 0){
+                        if (isset($this->FE_ConfigLink) && $this->FE_ConfigLink->keyId > 0){
                             $Qty = $this->FE_ConfigLink->GetValue('Quantity');
                         }
                         echo"<tr><th>Quantity</th><td>$Qty</td></tr>";
