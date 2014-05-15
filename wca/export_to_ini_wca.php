@@ -108,7 +108,7 @@ if ($type == 'fec') {
 
 
 
-    echo <<<EOS
+echo <<<EOS
 ;
 ; WCA configuration file
 ;
@@ -141,16 +141,23 @@ PLL_YIG_C_OFFSET=150.0
 
 [PA_LIMITS]
 EOS;
+
     echo "\r\n";
 
-    $table = $wca->Compute_MaxSafePowerLevels();
-    echo "ENTRIES=" . count($table) . "\r\n";
+    $powerLimit = $wca->maxSafePowerForBand($band);
 
-    $entry = 0;
-    foreach ($table as $row) {
-        $entry++;
-        echo "ENTRY_$entry=" . $row['YTO'] . ", " . number_format($row['VD0'], 2, '.', '') . ", " .
-                                                    number_format($row['VD1'], 2, '.', '') . "\r\n";
+    if ($powerLimit == 0)
+        echo "ENTRIES=0\r\n";
+    else {
+        $table = $wca->Compute_MaxSafePowerLevels();
+        echo "ENTRIES=" . count($table) . "\r\n";
+
+        $entry = 0;
+        foreach ($table as $row) {
+            $entry++;
+            echo "ENTRY_$entry=" . $row['YTO'] . ", " . number_format($row['VD0'], 2, '.', '') . ", " .
+                                                        number_format($row['VD1'], 2, '.', '') . "\r\n";
+        }
     }
     echo "\r\n";
 }

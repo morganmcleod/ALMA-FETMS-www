@@ -509,7 +509,7 @@ class WCA extends FEComponent{
         echo "</table></div>";
     }
 
-    private function maxSafePowerForBand($band) {
+    public function maxSafePowerForBand($band) {
         // define max safe power limit per band:
         // TODO: move into specs class.
         switch($this->GetValue('Band')) {
@@ -528,7 +528,7 @@ class WCA extends FEComponent{
                 return 168;
                 break;
             default:
-                return 9999;
+                return 0;
                 break;
         }
     }
@@ -570,7 +570,7 @@ class WCA extends FEComponent{
             // found excessive power?
             else if ($pwr > $powerLimit) {
                 // yes.  Preserve lastRow for rest of this LO chunk:
-                if ($lastRow['Power'] <= $powerLimit) {
+                if ($powerLimit > 0 && $lastRow['Power'] <= $powerLimit) {
                     $found = TRUE;
                 }
             }
@@ -581,11 +581,6 @@ class WCA extends FEComponent{
                 $lastRow = $row;
             }
         }
-
-//         foreach($output as $row) {
-//             echo $row['FreqLO'] . ", " . $row['VD'] . ", " . $row['Power'] . "<br>";
-//         }
-
         return $output;
     }
 
@@ -709,10 +704,13 @@ class WCA extends FEComponent{
           <table id = "table1" align="left" cellspacing="1" cellpadding="1" width="60%">
             <tr class="alt">
               <th align = "center" colspan = "5"><font size="+1">
-                <b>MAX SAFE OPERATING PARAMETERS<br>(from output power data) limit=' . $powerLimit . ' dBm</b>';
+                <b>MAX SAFE OPERATING PARAMETERS<br>(from output power data) ';
+
+        if ($powerLimit > 0)
+            echo 'limit=' . $powerLimit . ' dBm';
+
+        echo '<b></th></tr>';
         echo '
-              </th>
-            </tr>
             <tr>
               <th><b>FreqLO (GHz)</b></th>
               <th><b>Digital Setting VD0</b></th>
