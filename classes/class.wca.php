@@ -252,7 +252,7 @@ class WCA extends FEComponent{
         if ($this->keyId != ""){
             echo "<table cellspacing='20'>";
             echo "<tr><td>";
-            $this->Compute_MaxSafePowerLevels();
+            $this->Compute_MaxSafePowerLevels(FALSE);
             $this->Display_MaxSafePowerLevels();
             echo "</td></tr>";
             echo "<tr><td>";
@@ -584,45 +584,96 @@ class WCA extends FEComponent{
         return $output;
     }
 
-    private function loadPowerData($pol) {
-        // Load the output power data for one polarization, coarse and fine combined.
-        $tdh = $this->tdh_outputpower->keyId;
+    private function GetTestDataHeaders($testDataType) {
+        $SN = $this->GetValue('SN');
+        $Band = $this->GetValue('Band');
+        $compType = $this->GetValue('fkFE_ComponentType');
+
+        $q = "SELECT TestData_header.keyId
+        FROM TestData_header, TestData_Types, FE_Components
+        WHERE TestData_header.fkFE_Components = FE_Components.keyId
+        AND FE_Components.SN LIKE '$SN'
+        AND FE_Components.Band LIKE '$Band'
+        AND TestData_header.fkTestData_Type = '$testDataType'
+        AND TestData_header.fkTestData_Type = TestData_Types.keyId
+        AND FE_Components.fkFE_ComponentType = '$compType'
+        AND TestData_header.fkFE_Config < 1;";
+
+        $output = array();
+
+        $r = @mysql_query($q,$this->dbconnection);
+        while ($row = @mysql_fetch_array($r))
+            $output[]= $row[0];
+
+        return $output;
+    }
+
+    private function FormatTDHList($tdhArray) {
+        $output = "(";
+        $index = 0;
+        while ($index < count($tdhArray)) {
+            $output .= "'$tdhArray[$index]'";
+            $index++;
+            if ($index < (count($tdhArray) - 1))
+                $output .= ",";
+        }
+        $output .= ")";
+        return $output;
+    }
+
+    private function loadPowerData($pol, $tdhArray) {
+        // Load the output power data for one polarization, coarse and fine combined:
 
         $q = "SELECT FreqLO, VD$pol as VD, Power FROM WCA_OutputPower WHERE
-        fkHeader = $tdh
-        AND fkFacility = $this->fc
-        AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol
-        ORDER BY FreqLO, VD ASC";
+              fkHeader IN " . $this->FormatTDHList($tdhArray);
+
+        $q .= " AND fkFacility = $this->fc
+                AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol
+                ORDER BY FreqLO, VD ASC";
 
         $r = @mysql_query($q, $this->dbconnection);
 
-        $allRows = array();
         while($row = @mysql_fetch_array($r))
             $allRows[] = $row;    // append row to allRows.
 
         return $allRows;
     }
 
-    private function loadMaxDrainVoltages() {
+    private function loadMaxDrainVoltages($tdhArray) {
         // Load and return an array having the maximum drain voltages
         //  found for Pol0 and Pol1 in the fine output power data.
-        $tdh = $this->tdh_outputpower->keyId;
 
         $q = "SELECT MAX(VD0), MAX(VD1) FROM WCA_OutputPower WHERE
-        fkHeader = $tdh
-        AND fkFacility = $this->fc
-        AND keyDataSet=2";
+        fkHeader in " . $this->FormatTDHList($tdhArray);
+        $q .= " AND fkFacility = $this->fc
+                AND keyDataSet=2";
 
         $r = @mysql_query($q, $this->dbconnection);
         $row = @mysql_fetch_array($r);
         return $row;
     }
 
-    public function Compute_MaxSafePowerLevels() {
+    public function Compute_MaxSafePowerLevels($allHistory) {
         $eof = array('FreqLO'=>'EOF', 'VD'=>0, 'Power'=>0);
 
+        $this->maxSafePowerTable = array();
+
+        // allHistory means find prev test data from previous configs
+        if (!isset($allHistory))
+            $allHistory = FALSE;
+
+        $tdhArray = array();
+        if ($allHistory)
+            $tdhArray = $this->GetTestDataHeaders('46');
+        else
+            $tdhArray[] = $this->tdh_outputpower->keyId;
+
         // load pol0 power data:
-        $allRows = $this->loadPowerData(0);
+        $allRows = $this->loadPowerData(0, $tdhArray);
+
+        // quit now if there's no data:
+        if (!$allRows || count($allRows) == 0)
+            return $this->maxSafePowerTable;
 
         // append dummy EOF record:
         $allRows[] = $eof;
@@ -631,7 +682,7 @@ class WCA extends FEComponent{
         $pol0table = $this->findMaxSafeRows($allRows);
 
         // load pol1 power data:
-        $allRows = $this->loadPowerData(1);
+        $allRows = $this->loadPowerData(1, $tdhArray);
 
         // append dummy EOF record:
         $allRows[] = $eof;
@@ -640,7 +691,7 @@ class WCA extends FEComponent{
         $pol1table = $this->findMaxSafeRows($allRows);
 
         // compute scaling factors to convert drain voltages into control values:
-        $vdMax = $this->loadMaxDrainVoltages($this->fc, $this->tdh_outputpower->keyId, $this->dbconnection);
+        $vdMax = $this->loadMaxDrainVoltages($tdhArray);
         $pol0scale = 2.5 / $vdMax[0];
         $pol1scale = 2.5 / $vdMax[1];
 
@@ -666,8 +717,6 @@ class WCA extends FEComponent{
 
         $loYig = $this->_WCAs->GetValue('FloYIG');
         $hiYig = $this->_WCAs->GetValue('FhiYIG');
-
-        $this->maxSafePowerTable = array();
 
         // combine the two tables into one output table:
         $flags = MultipleIterator::MIT_NEED_ANY | MultipleIterator::MIT_KEYS_NUMERIC;
@@ -719,15 +768,17 @@ class WCA extends FEComponent{
               <th><b>Power Pol1 (dBm)</b></th>
             </tr>';
 
-        $bg_color = FALSE;
-        foreach($this->maxSafePowerTable as $row) {
-            $bg_color = ($bg_color=="#ffffff" ? '#dddddd' : "#ffffff");
-            echo "<tr bgcolor='$bg_color'>";
-            echo "<td>" . $row['FreqLO'] . "</td>";
-            echo "<td>" . $row['VD0'] . "</td>";
-            echo "<td>" . $row['VD1'] . "</td>";
-            echo "<td>" . $row['Pwr0'] . "</td>";
-            echo "<td>" . $row['Pwr1'] . "</td></tr>";
+        if (count($this->maxSafePowerTable) > 0) {
+            $bg_color = FALSE;
+            foreach($this->maxSafePowerTable as $row) {
+                $bg_color = ($bg_color=="#ffffff" ? '#dddddd' : "#ffffff");
+                echo "<tr bgcolor='$bg_color'>";
+                echo "<td>" . $row['FreqLO'] . "</td>";
+                echo "<td>" . $row['VD0'] . "</td>";
+                echo "<td>" . $row['VD1'] . "</td>";
+                echo "<td>" . $row['Pwr0'] . "</td>";
+                echo "<td>" . $row['Pwr1'] . "</td></tr>";
+            }
         }
         echo "</table></div>";
 

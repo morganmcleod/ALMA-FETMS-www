@@ -149,7 +149,7 @@ EOS;
     if ($powerLimit == 0)
         echo "ENTRIES=0\r\n";
     else {
-        $table = $wca->Compute_MaxSafePowerLevels();
+        $table = $wca->Compute_MaxSafePowerLevels(TRUE);
         echo "ENTRIES=" . count($table) . "\r\n";
 
         $entry = 0;

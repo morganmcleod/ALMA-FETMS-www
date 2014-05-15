@@ -83,7 +83,7 @@ function createtabs(keyfe, fesn, fc, fe_id){
                     }
                 },{
                     xtype: 'tbbutton',
-                    text: 'Cartridge Config',
+                    text: 'FrontEnd Config',
                     icon:'icons/application_view_list.png',
                     style: 'margin: 1px;',
                     handler: function() {
