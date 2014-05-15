@@ -5,7 +5,7 @@ require_once($site_dbConnect);
 
 $band=$_GET['band'];
 
-$q = "select *
+$q = "select keyFacility, keyId, LPAD(SN, 2, '0') AS SN, Band, TS
      FROM FE_Components
      WHERE Band LIKE '$band'
      AND Band <> 0
@@ -23,11 +23,11 @@ while ($row = @mysql_fetch_array($r)){
     $bgcolor=($bgcolor == 'blue-row' ? 'alt-row' : 'blue-row');
 
 
-    $qfd = "SELECT Description, Notes FROM Locations
-            WHERE keyId = ".$row['keyFacility'].";";
-    $rfd = @mysql_query($qfd,$db);
-    $facdescr = @mysql_result($rfd,0,0) . " (";
-    $facdescr .= @mysql_result($rfd,0,1) . " )";
+//     $qfd = "SELECT Description, Notes FROM Locations
+//             WHERE keyId = ".$row['keyFacility'].";";
+//     $rfd = @mysql_query($qfd,$db);
+//     $facdescr = @mysql_result($rfd,0,0) . " (";
+//     $facdescr .= @mysql_result($rfd,0,1) . " )";
 
     if ($rowcount == 0 ){
         $outstring .= "{'SN':'".$row['SN']."',";
@@ -39,7 +39,7 @@ while ($row = @mysql_fetch_array($r)){
     $outstring .= "'Band':'".$row['Band']."',";
     $outstring .= "'TS':'".$row['TS']."',";
     $outstring .= "'keyId':'".$row['keyId']."',";
-    $outstring .= "'Facility':'$facdescr',";
+//     $outstring .= "'Facility':'$facdescr',";
     $outstring .= "'keyFacility':'".$row['keyFacility']."',";
     $outstring .= "'bgcolor':'$bgcolor'}";
 

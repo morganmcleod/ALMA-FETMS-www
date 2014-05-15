@@ -1,5 +1,5 @@
 </div>
-      <div class="sidebar">
+      <div class="sidebar" style="margin-left:30px">
         <div class="search">
             <?php
           echo "

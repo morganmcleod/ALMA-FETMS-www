@@ -10,7 +10,6 @@ class WCA extends FEComponent{
     var $_WCAs;
     var $LOParams; //array of LO Params (Generic Table objects)
     var $facility;
-    var $swversionwca;
     var $ConfigId;
     var $ConfigLinkId;
     var $fkDataStatus;
@@ -21,15 +20,16 @@ class WCA extends FEComponent{
     var $logfile;
     var $logfile_fh;
 
-    var $tdh_amnoise;         //TestData_header record object for AM Noise
-    var $tdh_ampstab;         //TestData_header record object for Amplitude Stability
-    var $tdh_outputpower;     //TestData_header record object for Output Power
+    var $tdh_amnoise;        //TestData_header record object for AM Noise
+    var $tdh_ampstab;        //TestData_header record object for Amplitude Stability
+    var $tdh_outputpower;    //TestData_header record object for Output Power
     var $tdh_phasenoise;     //TestData_header record object for Phase Noise
-    var $tdh_phasejitter;     //TestData_header record object for Phase Jitter
+    var $tdh_phasejitter;    //TestData_header record object for Phase Jitter
+
+    var $maxSafePowerTable;  //Array of rows for the Max Safe Operating Parameters table.
 
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversionwca = "1.0.2";
         require(site_get_config_main());
         $this->writedirectory = $wca_write_directory;
         $this->url_directory = $wca_url_directory;
@@ -42,11 +42,11 @@ class WCA extends FEComponent{
         $this->logging = 0;
         $this->fc = $in_fc;
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.2";
+        $this->swversion = "1.0.3";
         /*
-         * 1.0.2  MTM:  fix "set label...screen" commands to gnuplot
+         * 1.0.3 calculate max safe power table from output power data in database.
+         * 1.0.2 fix "set label...screen" commands to gnuplot
          */
-
 
         parent::Initialize_FEComponent($in_keyId, $in_fc);
 
@@ -225,7 +225,7 @@ class WCA extends FEComponent{
         $where = $_SERVER["PHP_SELF"];
         $where = '';
         echo "<form action='" . $where . "' method='POST'>";
-        echo "<div style ='width:100%;height:50%;margin-left:20px'>";
+        echo "<div style ='width:100%;height:50%;margin-left:30px'>";
         echo "<br><font size='+2'><b>WCA Information</b></font><br>";
 
         $this->DisplayMainData();
@@ -252,6 +252,7 @@ class WCA extends FEComponent{
         if ($this->keyId != ""){
             echo "<table cellspacing='20'>";
             echo "<tr><td>";
+            $this->Compute_MaxSafePowerLevels();
             $this->Display_MaxSafePowerLevels();
             echo "</td></tr>";
             echo "<tr><td>";
@@ -369,10 +370,15 @@ class WCA extends FEComponent{
         echo "<table id = 'table1'>";
 
         echo "<tr>";
-            echo "<th>In Front End SN</th>";
-            echo "<td><b>
-            <a href='https://safe.nrao.edu/php/ntc/FEConfig/ShowFEConfig.php?key=" . $this->ConfigId  . "'>
-            ".$this->FESN . "</a></b></td>";
+        echo "<th>In Front End SN</th>";
+        echo "<td><b>";
+
+        if ($this->FESN === FALSE)
+            echo "-none-";
+        else {
+            echo "<a href='https://safe.nrao.edu/php/ntc/FEConfig/ShowFEConfig.php?key=" . $this->ConfigId .
+                 "&fc=" . $this->fc . "'>" . $this->FESN . "</a></b></td>";
+        }
         echo "</tr>";
 
         echo "<tr>";
@@ -384,7 +390,7 @@ class WCA extends FEComponent{
             echo "<td><input type='text' name='SN' size='2' maxlength='200' value = '".$this->GetValue('SN')."'></td>";
         echo "</tr>";
         echo "<tr>";
-            echo "<th>ESN<font color='#cc3300'>*</font></th>";
+            echo "<th>ESN</th>";
             echo "<td><input type='text' name='ESN1' size='20' maxlength='200' value = '".$this->GetValue('ESN1')."'></td>";
         echo "</tr>";
 
@@ -408,9 +414,10 @@ class WCA extends FEComponent{
         echo "</tr>";
 
         echo "<tr>";
-            echo "<th></th>";
+            echo "<th>INI file downloads</th>";
             echo "<td>";
-            echo "<b><a href='export_to_ini_wca.php?keyId=$this->keyId&wca=1'>Click for INI file</b></a>";
+            echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&wca=1'>FrontEndControl.ini</a><br>";
+            echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&wca=1&type=wca'>FEMC WCA.ini</a>";
 
             echo "</td>";
         echo "</tr>";
@@ -454,23 +461,6 @@ class WCA extends FEComponent{
             echo "<td>".$this->_WCAs->GetValue('VG1')."</td>";
         echo "</tr>";
 
-        /*
-        echo "<tr>";
-            echo "<th>Notes</th>";
-            echo "<td>".$this->sln->GetValue('Notes')."</td>";
-        echo "</tr>";
-        */
-
-        //TEMPORARILY DISABLED
-        /*
-        echo "<tr>";
-            echo "<th></th>";
-            echo "<td>";
-            echo "<b><a href='../testdata/export_to_ini.php?keyId=$this->keyId&wca=1'>Click for INI file</b></a>";
-
-            echo "</td>";
-        echo "</tr>";
-        */
         echo "</table></div>";
     }
 
@@ -484,7 +474,6 @@ class WCA extends FEComponent{
         $band = $this->GetValue('Band');
         $sn = $this->GetValue('SN');
 
-        //if (@mysql_num_rows($r) > 0){
         $r = @mysql_query($q,$this->dbconnection);
         echo "<div style= 'width: 500px'>
             <table id = 'table1' border = '1'>";
@@ -520,21 +509,245 @@ class WCA extends FEComponent{
         echo "</table></div>";
     }
 
-    public function Display_MaxSafePowerLevels(){
-        echo "<br><br><br>";
+    private function maxSafePowerForBand($band) {
+        // define max safe power limit per band:
+        // TODO: move into specs class.
+        switch($this->GetValue('Band')) {
+            case 4:
+                return 33;
+                break;
+            case 6:
+            case 7:
+                return 53;
+                break;
+            case 8:
+                return 121;
+                break;
+            case 9:
+            case 10:
+                return 168;
+                break;
+            default:
+                return 9999;
+                break;
+        }
+    }
+
+    private function findMaxSafeRows($allRows) {
+        // $allRows is an array of arrays where each row has:
+        // FreqLO, VD, Power
+        // sorted by FreqLO, VD
+        // The final row must be an 'EOF' row where FreqLO has a invalid value != FALSE
+        //  see example $eof row in Compute_MaxSafePowerLevels()
+        //
+        // Outputs an array of arrays with same structure with one row per LO,
+        //   having the highest Power level found less than $powerLimit.
+
+        $powerLimit = $this->maxSafePowerForBand($this->GetValue('Band'));
+
+        $output = array();
+        $lastLO = FALSE;
+        $lastRow = FALSE;
+        $found = FALSE;
+
+        foreach($allRows as $row) {
+            $LO = $row['FreqLO'];
+            $pwr = $row['Power'];
+
+            // starting a new LO chunk?
+            if ($LO != $lastLO) {
+                // not first row of table?
+                if ($lastLO !== FALSE) {
+                    // next LO in table or EOF.  Save max safe values found:
+                    $output[] = $lastRow;
+                    $lastRow = FALSE;
+                    $found = FALSE;
+                }
+                // save for next iter on this LO chunk:
+                $lastLO = $LO;
+            }
+
+            // found excessive power?
+            else if ($pwr > $powerLimit) {
+                // yes.  Preserve lastRow for rest of this LO chunk:
+                if ($lastRow['Power'] <= $powerLimit) {
+                    $found = TRUE;
+                }
+            }
+
+            // found max safe?
+            if (!$found) {
+                // no.  move to next row:
+                $lastRow = $row;
+            }
+        }
+
+//         foreach($output as $row) {
+//             echo $row['FreqLO'] . ", " . $row['VD'] . ", " . $row['Power'] . "<br>";
+//         }
+
+        return $output;
+    }
+
+    private function loadPowerData($pol) {
+        // Load the output power data for one polarization, coarse and fine combined.
+        $tdh = $this->tdh_outputpower->keyId;
+
+        $q = "SELECT FreqLO, VD$pol as VD, Power FROM WCA_OutputPower WHERE
+        fkHeader = $tdh
+        AND fkFacility = $this->fc
+        AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol
+        ORDER BY FreqLO, VD ASC";
+
+        $r = @mysql_query($q, $this->dbconnection);
+
+        $allRows = array();
+        while($row = @mysql_fetch_array($r))
+            $allRows[] = $row;    // append row to allRows.
+
+        return $allRows;
+    }
+
+    private function loadMaxDrainVoltages() {
+        // Load and return an array having the maximum drain voltages
+        //  found for Pol0 and Pol1 in the fine output power data.
+        $tdh = $this->tdh_outputpower->keyId;
+
+        $q = "SELECT MAX(VD0), MAX(VD1) FROM WCA_OutputPower WHERE
+        fkHeader = $tdh
+        AND fkFacility = $this->fc
+        AND keyDataSet=2";
+
+        $r = @mysql_query($q, $this->dbconnection);
+        $row = @mysql_fetch_array($r);
+        return $row;
+    }
+
+    public function Compute_MaxSafePowerLevels() {
+        $eof = array('FreqLO'=>'EOF', 'VD'=>0, 'Power'=>0);
+
+        // load pol0 power data:
+        $allRows = $this->loadPowerData(0);
+
+        // append dummy EOF record:
+        $allRows[] = $eof;
+
+        // compute the max safe power table:
+        $pol0table = $this->findMaxSafeRows($allRows);
+
+        // load pol1 power data:
+        $allRows = $this->loadPowerData(1);
+
+        // append dummy EOF record:
+        $allRows[] = $eof;
+
+        // compute the max safe power table:
+        $pol1table = $this->findMaxSafeRows($allRows);
+
+        // compute scaling factors to convert drain voltages into control values:
+        $vdMax = $this->loadMaxDrainVoltages($this->fc, $this->tdh_outputpower->keyId, $this->dbconnection);
+        $pol0scale = 2.5 / $vdMax[0];
+        $pol1scale = 2.5 / $vdMax[1];
+
+        // define warm multiplication factor per band.
+        // TODO: move into specs class
+        switch ($this->GetValue('Band')) {
+            case 3:
+            case 5:
+            case 6:
+            case 7:
+            case 10:
+                $warmMult = 6;
+                break;
+            case 4:
+            case 8:
+            case 9:
+                $warmMult = 3;
+                break;
+            default:
+                $warmMult = 1;
+                break;
+        }
+
+        $loYig = $this->_WCAs->GetValue('FloYIG');
+        $hiYig = $this->_WCAs->GetValue('FhiYIG');
+
+        $this->maxSafePowerTable = array();
+
+        // combine the two tables into one output table:
+        $flags = MultipleIterator::MIT_NEED_ANY | MultipleIterator::MIT_KEYS_NUMERIC;
+        $iterator = new MultipleIterator($flags);
+        $iterator->attachIterator(new ArrayIterator($pol0table));
+        $iterator->attachIterator(new ArrayIterator($pol1table));
+
+        foreach ($iterator as $values) {
+            //var_dump($values);
+
+            $LO = $values[0]['FreqLO'];
+            $YIG0 = round(((($LO / $warmMult) - $loYig) / ($hiYig - $loYig)) * 4095);
+            $VD0 = round($values[0]['VD'] * $pol0scale, 3);
+            $VD1 = round($values[1]['VD'] * $pol1scale, 3);
+            $P0 = round($values[0]['Power'], 1);
+            $P1 = round($values[1]['Power'], 1);
+
+            // append to array:
+            $this->maxSafePowerTable[] = array('FreqLO' => $LO,
+                                               'YTO' => $YIG0,
+                                               'VD0' => $VD0,
+                                               'VD1' => $VD1,
+                                               'Pwr0' => $P0,
+                                               'Pwr1' => $P1);
+        }
+        return $this->maxSafePowerTable;
+    }
+
+    public function Display_MaxSafePowerLevels() {
+        $powerLimit = $this->maxSafePowerForBand($this->GetValue('Band'));
+
+        echo '
+        <div style= "width:400px">
+          <table id = "table1" align="left" cellspacing="1" cellpadding="1" width="60%">
+            <tr class="alt">
+              <th align = "center" colspan = "5"><font size="+1">
+                <b>MAX SAFE OPERATING PARAMETERS<br>(from output power data) limit=' . $powerLimit . ' dBm</b>';
+        echo '
+              </th>
+            </tr>
+            <tr>
+              <th><b>FreqLO (GHz)</b></th>
+              <th><b>Digital Setting VD0</b></th>
+              <th><b>Digital Setting VD1</b></th>
+              <th><b>Power Pol0 (dBm)</b></th>
+              <th><b>Power Pol1 (dBm)</b></th>
+            </tr>';
+
+        $bg_color = FALSE;
+        foreach($this->maxSafePowerTable as $row) {
+            $bg_color = ($bg_color=="#ffffff" ? '#dddddd' : "#ffffff");
+            echo "<tr bgcolor='$bg_color'>";
+            echo "<td>" . $row['FreqLO'] . "</td>";
+            echo "<td>" . $row['VD0'] . "</td>";
+            echo "<td>" . $row['VD1'] . "</td>";
+            echo "<td>" . $row['Pwr0'] . "</td>";
+            echo "<td>" . $row['Pwr1'] . "</td></tr>";
+        }
+        echo "</table></div>";
+
+        //--------------------------------------------------------------------------------
+        echo "<div style='width:400px'>&nbsp;<br></div>";
 
         echo '
         <div style= "width:400px">
         <table id = "table1" align="left" cellspacing="1" cellpadding="1" width="60%" >
           <tr class="alt">
-            <th align = "center" colspan = "7"><font size="+1" >
-                 <b>MAX SAFE OPERATING PARAMETERS</b>
+            <th align = "center" colspan = "5"><font size="+1" >
+              <b>MAX SAFE OPERATING PARAMETERS<br>(original values from LO group)</b>
             </th>
           </tr>
           <tr>
-              <th><b>FreqLO (GHz)</b></th>
-              <th><b>Digital Setting VD0</b></th>
-              <th><b>Digital Setting VD1</b></th>
+            <th><b>FreqLO (GHz)</b></th>
+            <th><b>Digital Setting VD0</b></th>
+            <th><b>Digital Setting VD1</b></th>
             <th><b>Drain Voltage VD0</b></th>
             <th><b>Drain Voltage VD1</b></th>
           </tr>';
@@ -543,11 +756,9 @@ class WCA extends FEComponent{
         fkFE_Component = $this->keyId
         AND fkFacility = $this->fc;";
         $rMSP=@mysql_query($qMSP,$this->dbconnection);
-        $bg_color = "";
-        while ($rowMSP = @mysql_fetch_array($rMSP)){
+        $bg_color = FALSE;
+        while ($rowMSP = @mysql_fetch_array($rMSP)) {
             $bg_color = ($bg_color=="#ffffff" ? '#dddddd' : "#ffffff");
-
-
             echo "<tr bgcolor='$bg_color'>
                     <td>".$rowMSP['FreqLO']."</td>
                     <td>".$rowMSP['VD0_setting']."</td>
@@ -555,64 +766,8 @@ class WCA extends FEComponent{
                     <td>".$rowMSP['VD0']."</td>
                     <td>".$rowMSP['VD1']."</td>
                   </tr>";
-
-
-        }
-        echo "</table></div><br>";
-
-    }
-
-    public function Display_GateVoltages(){
-
-
-        $qbias = "select distinct(FreqLO), VG0, VG1 from WCA_OutputPower
-        where fkFE_Component = $this->keyId limit 1;";
-        $rbias = @mysql_query($qbias,$this->dbconnection);
-
-        echo "<table>";
-        echo "<tr>";
-        echo "<td>";
-        echo "<div style = 'width: 150px'><br><br>";
-        echo "<table id = 'table1'>";
-        echo "
-        <tr>
-        <th colspan = '2'>Gate Voltages</th>
-        </tr>
-        <tr>
-        <th>VG0</th>
-        <th>VG1</th>
-        </tr>";
-        while ($rowbias = @mysql_fetch_array($rbias)){
-            echo "<tr>";
-            echo "<td>$rowbias[1]</td>";
-            echo "<td>$rowbias[2]</td>";
-            echo "</tr>";
         }
         echo "</table></div>";
-
-        echo "</td>";
-
-        echo "<td>";
-        echo "<div style = 'width: 300px'><br><br>";
-        echo "<table id = 'table1'>";
-        echo "
-        <tr>
-        <th colspan = '2'>YIG Frequencies</th>
-        </tr>
-        <tr>
-        <th>YIG HIGH (GHz)</th>
-        <th>YIG LOW (GHz)</th>
-        </tr>";
-
-        echo "<tr>";
-        echo "<td><input type='text' name='FloYIG' size='5' maxlength='200' value = '".$this->_WCAs->GetValue('FloYIG')."'></td>";
-        echo "<td><input type='text' name='FhiYIG' size='5' maxlength='200' value = '".$this->_WCAs->GetValue('FhiYIG')."'></td>";
-        echo "</tr>";
-
-        echo "</table></div>";
-        echo "</td></tr>";
-        echo "</table>";
-
     }
 
     public function Display_uploadform() {

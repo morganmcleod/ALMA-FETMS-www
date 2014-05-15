@@ -4,7 +4,7 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
 
 include('header_js.php');
-echo '<div class="article">';
+echo '<div class="article" style="margin:30px">';
 
 echo 'To search for a WCA, enter the Band followed by serial number,<br>
       separated by a space.
@@ -15,11 +15,13 @@ if (isset($_REQUEST['band_sn'])){
     $Band = $band_sn[0];
     $SN = $band_sn[1];
 
-    $q="SELECT keyId FROM FE_Components
+    $q="SELECT keyFacility, keyId FROM FE_Components
     WHERE band=$Band AND SN = $SN
     AND fkFE_ComponentType = 11;";
     $r = @mysql_query($q,$db);
-    $keyId = @mysql_result($r,0);
+    $row = @mysql_fetch_array($r);
+    $fc = $row[0];
+    $keyId = $row[1];
 
     if ($keyId == ""){
         echo "<br><br><font size = '+2' color = '#ff0000'>No WCA record found for band $Band, SN $SN.</font><br>";
@@ -31,5 +33,5 @@ if (isset($_REQUEST['band_sn'])){
 
 echo '</div>';
 
-include('footer.php');
+include('wca_search.php');
 ?>
