@@ -27,7 +27,10 @@ function site_getDbConnection() {
 
 function site_warnProductionDb($dbname) {
     if ($_SERVER['SERVER_NAME'] == 'webtest.cv.nrao.edu') {
-        if ($dbname == 'alma_feic') {
+
+        if (FALSE && $dbname == 'alma_feic') {
+            // MM disabled this case now that production db is at OSF.
+
             echo "<font size = '+2' color = '#ff0000'><h><b>
             WARNING- Using production alma_feic database! Be careful!
             </b></h></font>";
