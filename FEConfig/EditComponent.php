@@ -29,7 +29,7 @@ $c->Initialize_FEComponent($keyId,$fc);
 $feconfig = $c->FEConfig;
 $fesn=$c->FESN;
 
-$title.=$c->ComponentType->GetValue('Description');
+$title=$c->ComponentType->GetValue('Description');
 if ($c->GetValue('Band') > 0){
     $title.= " Band" . $c->GetValue('Band');
 }
@@ -280,14 +280,12 @@ echo "
                         <td>
         ";
 
-                            if ($c->FE_ConfigLink->keyId != ''){
-                             echo "<input type='text' size='3' name='Quantity' value='" . $c->FE_ConfigLink->GetValue('Quantity') . "'>";
+                            if (isset($c->FE_ConfigLink) && $c->FE_ConfigLink->keyId != ''){
+                                echo "<input type='text' size='3' name='Quantity' value='" . $c->FE_ConfigLink->GetValue('Quantity') . "'>";
                             }
-                            else{
+                            else {
                                 echo 'Must be in front end to edit quantity';
                             }
-
-
 
                              echo "
                         </td>

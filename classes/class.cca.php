@@ -330,7 +330,7 @@ class CCA extends FEComponent {
         $locs[5]= "Pol 1 Mixer";
 
         $ts = "";
-        if ($this->TempSensors[1]->keyId != ''){
+        if (isset($this->TempSensors[1]) && $this->TempSensors[1]->keyId != ''){
             $ts = $this->TempSensors[1]->GetValue('TS') . ",";
         }
 
@@ -347,7 +347,7 @@ class CCA extends FEComponent {
               </tr>";
 
         for ($i=1;$i<=5;$i++){
-            if ($this->TempSensors[$i]->keyId != ""){
+            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != ""){
                 if ($i % 2 == 0){
                     echo "<tr>";
                 }
@@ -2194,7 +2194,7 @@ public function Upload_TestDataFile(){
               </tr>";
 
         for ($i=1;$i<=count($this->TempSensors);$i++){
-            if ($this->TempSensors[$i]->keyId != ""){
+            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != ""){
                 if ($i % 2 == 0){
                     echo "<tr>";
                 }
