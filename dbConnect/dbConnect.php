@@ -25,4 +25,18 @@ function site_getDbConnection() {
     return $db;
 }
 
+function site_warnProductionDb($dbname) {
+    if ($_SERVER['SERVER_NAME'] == 'webtest.cv.nrao.edu') {
+        if ($dbname == 'alma_feic') {
+            echo "<font size = '+2' color = '#ff0000'><h><b>
+            WARNING- Using production alma_feic database! Be careful!
+            </b></h></font>";
+        } else {
+            echo "<font size = '+2' color = '#ff0000'><h><b>
+            On webtest.cv.nrao.edu using database $dbname
+            </b></h></font>";
+        }
+    }
+}
+
 ?>
