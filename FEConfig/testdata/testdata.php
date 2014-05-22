@@ -213,6 +213,12 @@ if (isset($_REQUEST['drawplot']) && ($_REQUEST['drawplot'] == 1 )){
 
 if (($td->GetValue('PlotURL') == '')) {
     switch($td->GetValue('fkTestData_Type')) {
+        case 1:
+        case 2:
+        case 3:
+            // don't draw plots for CCA health check monitor data
+            break;
+
         case 57:
             //Don't automatically draw LO Lock test
             break;
