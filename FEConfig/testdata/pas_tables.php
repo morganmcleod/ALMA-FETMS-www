@@ -301,30 +301,31 @@ function LNA_results($td_keyID){
     }
 
     for ($i = 0; $i < $cnt; $i++) {
+        if (isset($LNA_Mon[$i])) {
+            echo "<tr>";
+            // don't display cell unless is has changed
+            if ( $prev_SB  != $LNA_Mon[$i][1] || $prev_Pol  != $LNA_Mon[$i][0]){
+                echo "<td width = '100px'>Pol".    $LNA_Mon[$i][0]." LNA".$LNA_Mon[$i][1]. "</td>";
+            } else {
+                echo "<td width = '100px'></td>";
+            }
+            $prev_Pol =$LNA_Mon[$i][0];
+            $prev_SB = $LNA_Mon[$i][1];
 
-        echo "<tr>";
-        // don't display cell unless is has changed
-        if ( $prev_SB  != $LNA_Mon[$i][1] || $prev_Pol  != $LNA_Mon[$i][0]){
-            echo "<td width = '100px'>Pol".    $LNA_Mon[$i][0]." LNA".$LNA_Mon[$i][1]. "</td>";
-        } else {
-            echo "<td width = '100px'></td>";
+            echo "<td width = '75px'> Stage ".$LNA_Mon[$i][2]."</td>
+                <td width = '75px'>".$LNA_Cntrl[$i][0]."</td>
+                <td width = '75px'>".$LNA_Cntrl[$i][1]."</td>
+                <td width = '75px'>".$LNA_Cntrl[$i][2]."</td>";
+
+            // check to see if Vd is in spec
+            $mon_Vd = num_within_percent( $LNA_Mon[$i][3], $LNA_Cntrl[$i][0], $spec[11] );
+            echo "<td width = '75px'>$mon_Vd</td> ";
+
+            // check to see if Id is in spec
+            $mon_Id = num_within_percent( $LNA_Mon[$i][4], $LNA_Cntrl[$i][1], $spec[12] );
+            echo "<td width = '75px'>$mon_Id</td>
+                <td width = '75px'>".$LNA_Mon[$i][5]."</td></tr>";
         }
-        $prev_Pol =$LNA_Mon[$i][0];
-        $prev_SB = $LNA_Mon[$i][1];
-
-        echo "<td width = '75px'> Stage ".$LNA_Mon[$i][2]."</td>
-            <td width = '75px'>".$LNA_Cntrl[$i][0]."</td>
-            <td width = '75px'>".$LNA_Cntrl[$i][1]."</td>
-            <td width = '75px'>".$LNA_Cntrl[$i][2]."</td>";
-
-        // check to see if Vd is in spec
-        $mon_Vd = num_within_percent( $LNA_Mon[$i][3], $LNA_Cntrl[$i][0], $spec[11] );
-        echo "<td width = '75px'>$mon_Vd</td> ";
-
-        // check to see if Id is in spec
-        $mon_Id = num_within_percent( $LNA_Mon[$i][4], $LNA_Cntrl[$i][1], $spec[12] );
-        echo "<td width = '75px'>$mon_Id</td>
-            <td width = '75px'>".$LNA_Mon[$i][5]."</td></tr>";
     }
     echo "</table></div>";
 }

@@ -213,6 +213,21 @@ if (isset($_REQUEST['drawplot']) && ($_REQUEST['drawplot'] == 1 )){
 
 if (($td->GetValue('PlotURL') == '')) {
     switch($td->GetValue('fkTestData_Type')) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 8:
+        case 9:
+        case 10:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+            // don't draw plots for health check tabular data
+            break;
+
         case 57:
             //Don't automatically draw LO Lock test
             break;
