@@ -1,10 +1,10 @@
 
 function creategrid(band){
 		var store = new Ext.data.JsonStore({
-			url: "GetFEData.php?band=" + band,
+			url: "GetWCAData.php?band=" + band,
 			id:'Band_selected',
 			bg:'alt-row',
-			fields:[{name:'SN', type:'string'},'Band','keyId','TS','Facility','keyFacility','bgcolor']
+			fields:[{name:'SN', type:'string'},'Band','keyId','TS','keyFacility','bgcolor']
 		});
 		store.load();
 		
@@ -16,8 +16,7 @@ function creategrid(band){
 					columns: [
 					{header:'Band', width:100, sortable: true, dataIndex:'Band'},
 					{header: 'SN', width:100, sortable: true, dataIndex:'SN' },
-					{header:'Date Added', width:130, sortable: true, dataIndex:'TS'},
-					{header:'Facility', width:265, sortable: true, dataIndex:'Facility'}
+					{header:'Date Added', width:130, sortable: true, dataIndex:'TS'}
 					],
 				 listeners: {
 		            rowclick: function(grid,rowIndex){
@@ -37,7 +36,6 @@ function creategrid(band){
 			        
 				stripeRows: true,
 				autoHeight:true,
-				Width:1005,
 				title:'WCAs',
 				loadMask:true
 			

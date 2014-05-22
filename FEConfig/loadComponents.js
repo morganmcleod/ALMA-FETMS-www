@@ -205,6 +205,15 @@ function createCompTabs(band,comptype,compKey, fc, CompDescription){
                }
                ,{   
                    xtype: 'tbbutton',
+                   text: CompDescription + '.INI for FEMC',
+                   style: 'margin: 1px;',
+                   icon:'icons/cog.png',
+                   handler: function() {
+                       window.location = '../wca/export_to_ini_wca.php?keyId=' + compKey + '&fc=' + fc + '&type=wca';
+                   }
+                } 
+               ,{   
+                   xtype: 'tbbutton',
                    text: 'Cartridge Config',
                    style: 'margin: 1px;',
                    icon:'icons/cog.png',

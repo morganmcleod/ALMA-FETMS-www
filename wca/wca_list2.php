@@ -18,7 +18,7 @@ ORDER BY Band ASC;";
 $rBand = @mysql_query($qBand,$db);
 
 echo '
-<div style="width:600px">
+<div style="width:330px; margin:30px;">
 <form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
     echo "<select name='Band_selected' id='Band_selected' onChange='creategrid(this.value)'>";
 

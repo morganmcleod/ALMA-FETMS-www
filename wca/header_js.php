@@ -7,8 +7,9 @@
 <link type="text/css" href="../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
 <script src="../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
 <script src="../ext/ext-all.js" type="text/javascript"></script>
+<script src="dbGrid.js" type="text/javascript"></script>
 </head>
-<body>
+<body onload=" var val=document.getElementById('Band_selected').value; creategrid(val);">
 <div class="main">
   <div class="header">
     <div class="header_resize">
@@ -17,10 +18,10 @@
       </div>
       <div class="menu_nav">
         <ul>
-          <li><a href="../FEConfig/FEHome.php "><span>FE Home</span></a></li>
+          <li><a href="wca_main.php"><span>WCAs Home</span></a></li>
           <li><a href="wca_list2.php"><span>WCA List</span></a></li>
           <li><a href="wca.php"><span>Add a WCA</span></a></li>
-          <li><a href="https://safe.nrao.edu/php/ntc/bugs/AddNewBug.php?modulekey=45"><span>Report a Bug</span></a></li>
+          <li><a href="https://safe.nrao.edu/php/ntc/Bugs/AddNewBug.php?modulekey=45"><span>Report a Bug</span></a></li>
 
         </ul>
         <div class="clr"></div>

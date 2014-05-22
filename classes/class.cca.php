@@ -330,7 +330,7 @@ class CCA extends FEComponent {
         $locs[5]= "Pol 1 Mixer";
 
         $ts = "";
-        if ($this->TempSensors[1]->keyId != ''){
+        if (isset($this->TempSensors[1]) && $this->TempSensors[1]->keyId != ''){
             $ts = $this->TempSensors[1]->GetValue('TS') . ",";
         }
 
@@ -347,7 +347,7 @@ class CCA extends FEComponent {
               </tr>";
 
         for ($i=1;$i<=5;$i++){
-            if ($this->TempSensors[$i]->keyId != ""){
+            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != ""){
                 if ($i % 2 == 0){
                     echo "<tr>";
                 }
@@ -779,38 +779,46 @@ public function Upload_TestDataFile(){
 
     }
 
-    public function Delete_ALL_TestData(){
+    public function Delete_ALL_TestData() {
         $q = "SELECT keyId FROM TestData_header
-              WHERE fkFE_Components = $this->keyId;";
+              WHERE keyFacility = '$this->fc' AND fkFE_Components = '$this->keyId';";
         $r = @mysql_query($q,$this->dbconnection);
 
-        while ($row_testdata = @mysql_fetch_array($r)){
-            $TestData_Id = $row_testdata[0];
-            //echo "test data id= $TestData_Id<br>";
-            $qDelete = "DELETE FROM CCA_TEST_AmplitudeStability WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_GainCompression WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_IFSpectrum WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_InBandPower WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_NoiseTemperature WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_PhaseDrift WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_PolAccuracy WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_PowerVariation WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_SidebandRatio WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_TotalPower WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
-            $qDelete = "DELETE FROM CCA_TEST_IVCurve WHERE fkHeader = $TestData_Id;";
-            $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $keyList = "(";
+        $first = true;
+        while ($row_testdata = @mysql_fetch_array($r)) {
+            if ($first)
+                $first = false;
+            else
+                $keyList .= ",";
+            $keyList .= $row_testdata[0];
         }
+        $keyList .= ")";
 
+        $qDelete = "DELETE FROM CCA_TEST_AmplitudeStability WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_GainCompression WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_IFSpectrum WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_InBandPower WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_NoiseTemperature WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_PhaseDrift WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_PolAccuracy WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_PowerVariation WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_SidebandRatio WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_TotalPower WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM CCA_TEST_IVCurve WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
+        $qDelete = "DELETE FROM TestData_header WHERE keyFacility = '$this->fc' AND keyId IN $keyList;";
+        $rDelete = @mysql_query($qDelete,$this->dbconnection);
     }
 
 
@@ -990,102 +998,106 @@ public function Upload_TestDataFile(){
         $this->ErrorArray[count($this->ErrorArray)] = $ErrorString;
     }
 
-    public function Upload_CCAs_file(){
-        $this->UploadTF = 1;
+    public function Upload_CCAs_file() {
+        $this->UploadTF = 0;
         $filecontents = file($this->file_COLDCARTS);
+        $sn = '';
 
-
-        for($i=0; $i<sizeof($filecontents); $i++) {
+        // iterate over COLDCARTS record to find the first line we can use...
+        $i = 0;
+        while (($this->UploadTF == 0) && ($i < sizeof($filecontents))) {
+            // trim and separate by commas:
             $line_data = trim($filecontents[$i]);
-            $tempArray   = explode(",", $line_data);
-            if (count($tempArray) < 2){
-                    $tempArray   = explode("\t", $line_data);
-                }
-
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
-                  /*
-                  $this->SetValue('Band',$tempArray[0]);
-                  $this->sln->SetValue('Notes',$this->sln->GetValue('Notes') . " \r\nTimestamp from COLDCARTS file: " . $tempArray[18]);
-                  $this->sln->Update();
-                  */
-
-                  $SNtemp = explode( ".", $tempArray[20]);
+            $tempArray = explode(",", $line_data);
+            // if too short still, try separating by tabs:
+            if (count($tempArray) < 2) {
+                $tempArray = explode("\t", $line_data);
+            }
+            // if the first column is numeric, assume data not header row:
+            if (is_numeric(substr($tempArray[0],0,1))) {
+                // get the serial number:
+                $SNtemp = explode( ".", $tempArray[20]);
                 $sn = trim($SNtemp[count($SNtemp) - 1] + 0);
+                // get the TS_Removed:
+                $tsr = trim($tempArray[19]);
 
-                if ($sn != $this->GetValue('SN')){
-                    $thisSN = $this->GetValue('SN');
+                // same as this CCA and not marked as Removed?
+                if ($sn == $this->GetValue('SN') && $tsr == "") {
+                    // found a record to upload:
+                    $this->UploadTF = 1;
 
-
-                    $warning = "Warning- The SN in the uploaded file ($sn)\\n";
-                    $warning .= "does not match the SN of this CCA ($thisSN).\\n";
-                    $warning .= "Please check the SN of the COLDCARTS csv file.\\n";
-                    $warning .= "This upload operation is being terminated.";
-
-                    $this->AddError($warning);
-                    $this->UploadTF = 0;
-                }
-
-
-                if ($this->UploadTF == 1){
+                    // save the Status Location Notes records about the upload:
                     $this->SetValue('Band',$tempArray[0]);
-                      $this->sln->SetValue('Notes',$this->sln->GetValue('Notes') . " \r\nTimestamp from COLDCARTS file: " . $tempArray[18]);
-                      $this->sln->Update();
+                    $this->sln->SetValue('TS', Date('Y-m-d H:i:s'));
+                    $this->sln->SetValue('Notes',$this->sln->GetValue('Notes') . " \r\nTimestamp from COLDCARTS file: " . $tempArray[18]);
+                    $this->sln->Update();
 
-                  $this->SetValue('SN',$sn);
+                    $this->SetValue('SN',$sn);
 
-                  //Check if record already exists...
-                  $qc = "SELECT keyId FROM FE_Components
-                  WHERE TRIM(LEADING 0 FROM SN) = " . $this->GetValue('SN') . "
-                  AND Band = " . $this->GetValue('Band') . "
-                  AND keyFacility = " . $this->GetValue('keyFacility') . "
-                  AND fkFE_ComponentType = 20;";
+                    //Check if record already exists...
+                    $qc = "SELECT keyId FROM FE_Components
+                    WHERE TRIM(LEADING 0 FROM SN) = " . $this->GetValue('SN') . "
+                    AND Band = " . $this->GetValue('Band') . "
+                    AND keyFacility = " . $this->GetValue('keyFacility') . "
+                    AND fkFE_ComponentType = 20;";
 
-                  $rc = @mysql_query($qc,$this->dbconnection);
-                  $numrows = @mysql_numrows($rc);
+                    $rc = @mysql_query($qc,$this->dbconnection);
+                    $numrows = @mysql_numrows($rc);
 
+                    if ($numrows > 1) {
+                        // one already exists
+                        $this->AddError("Warning- More than one CCA exist in the database for this Band ($tempArray[0]) and SN ($sn)");
+                        $this->AddError("The files will be uploaded for this CCA configuration.");
+                    }
+                    if ($numrows < 1) {
+                        // add the CCA record:
+                        $this->NewRecord_CCA($this->GetValue('keyFacility'));
+                        $this->SetValue('Band',$tempArray[0]);
+                        $this->SetValue('SN',$sn);
+                        parent::Update();
+                    }
+                    if ($numrows > 0) {
+                        // update the existing CCA:
+                        $this->Initialize_CCA($this->keyId, $this->GetValue('keyFacility'));
+                        $this->Delete_ALL_TestData();
+                    }
 
-                  if ($numrows > 1){
-                      $this->AddError("Warning- More than one CCA exist in the database for this Band ($tempArray[0]) and SN ($sn)");
-                    $this->AddError("The files will be uploaded for the CCA for are viewing.");
-                  }
+                    $ESN = trim(str_replace('"','',$tempArray[21]));
 
-                  if ($numrows < 1){
-                      $this->NewRecord_CCA($this->GetValue('keyFacility'));
-                      $this->SetValue('Band',$tempArray[0]);
-                      $this->SetValue('SN',$sn);
-                  parent::Update();
-                  }
-                  if ($numrows > 0){
-                      $this->Initialize_CCA($this->keyId, $this->GetValue('keyFacility'));
-                      $this->Delete_ALL_TestData();
-                  }
+                    if ($this->GetValue('ESN1') == '') {
+                        $this->SetValue('ESN1', $ESN);
+                    }
+                    $this->fkMixer01     = $tempArray[2];
+                    $this->fkMixer02     = $tempArray[3];
+                    $this->fkMixer11     = $tempArray[4];
+                    $this->fkMixer12     = $tempArray[5];
+                    $this->fkPreamp01    = $tempArray[6];
+                    $this->fkPreamp02    = $tempArray[7];
+                    $this->fkPreamp11    = $tempArray[8];
+                    $this->fkPreamp12    = $tempArray[9];
+                    $this->fkTempSensor0 = $tempArray[12];
+                    $this->fkTempSensor1 = $tempArray[13];
+                    $this->fkTempSensor2 = $tempArray[14];
+                    $this->fkTempSensor3 = $tempArray[15];
+                    $this->fkTempSensor4 = $tempArray[16];
+                    $this->fkTempSensor5 = $tempArray[17];
+                }
+            }
+            $i++;
+        }
 
-                  $ESN = trim(str_replace('"','',$tempArray[21]));
+        if ($this->UploadTF == 0) {
+            // no matching or suitable COLDCART row found to upload:
+            $thisSN = $this->GetValue('SN');
 
-                  if ($this->GetValue('ESN1') == ''){
-                      $this->SetValue('ESN1',$ESN);
-                  }
-                  $this->fkMixer01     = $tempArray[2];
-                  $this->fkMixer02     = $tempArray[3];
-                  $this->fkMixer11     = $tempArray[4];
-                  $this->fkMixer12     = $tempArray[5];
-                  $this->fkPreamp01    = $tempArray[6];
-                  $this->fkPreamp02    = $tempArray[7];
-                  $this->fkPreamp11    = $tempArray[8];
-                  $this->fkPreamp12    = $tempArray[9];
-                  $this->fkTempSensor0 = $tempArray[12];
-                  $this->fkTempSensor1 = $tempArray[13];
-                  $this->fkTempSensor2 = $tempArray[14];
-                  $this->fkTempSensor3 = $tempArray[15];
-                  $this->fkTempSensor4 = $tempArray[16];
-                  $this->fkTempSensor5 = $tempArray[17];
+            $warning = "Warning- The SN in the uploaded file ($sn)\\n";
+            $warning .= "does not match the SN of this CCA ($thisSN).\\n";
+            $warning .= "(Or no suitable record was found in COLDCARTS.)\\n";
+            $warning .= "Please check the SN in the COLDCARTS csv file.\\n";
+            $warning .= "Upload operation terminated.";
 
-              }//end if ($this->UploadTF == 1){
-              }//end if (is_numeric(substr($tempArray[0],0,1)) == true)
-        }//end for($i=0; $i<sizeof($filecontents); $i++)
-
-
-
+            $this->AddError($warning);
+        }
     }
 
     public function UploadTempSensors(){
@@ -1265,33 +1277,35 @@ public function Upload_TestDataFile(){
 
         //Upload file contents
         $ct = 0;
+        $TS = '';
+
         $filecontents = file($this->file_AMPLITUDESTABILITY);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
             if (count($tempArray) < 2){
-                    $tempArray   = explode("\t", $line_data);
+                $tempArray   = explode("\t", $line_data);
+            }
+            if (is_numeric(substr($tempArray[0],0,1)) == true){
+                $ds = $tempArray[1];
+                $FreqLO = $tempArray[4];
+                $Pol = $tempArray[5];
+                $SB = $tempArray[6];
+                $TS = $tempArray[3];
+                if (trim(strtoupper($SB)) == "U"){
+                  $SB = 1;
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
-                  $ds = $tempArray[1];
-                  $FreqLO = $tempArray[4];
-                  $Pol = $tempArray[5];
-                  $SB = $tempArray[6];
-                  $TS = $tempArray[3];
-                  if (trim(strtoupper($SB)) == "U"){
-                      $SB = 1;
-                  }
-                  if (trim(strtoupper($SB)) == "L"){
-                      $SB = 2;
-                  }
-                  $Time = $tempArray[7];
-                  $AllanVar = $tempArray[8];
+                if (trim(strtoupper($SB)) == "L"){
+                  $SB = 2;
+                }
+                $Time = $tempArray[7];
+                $AllanVar = $tempArray[8];
 
-                  $qAS = "INSERT INTO CCA_TEST_AmplitudeStability(FreqLO,Pol,SB,Time,AllanVar,fkHeader,keyDataSet)
-                  VALUES('$FreqLO','$Pol','$SB','$Time','$AllanVar','$TestData_header->keyId','$ds')";
-                  $rAS = @mysql_query($qAS,$this->dbconnection);
+                $qAS = "INSERT INTO CCA_TEST_AmplitudeStability(FreqLO,Pol,SB,Time,AllanVar,fkHeader,keyDataSet)
+                VALUES('$FreqLO','$Pol','$SB','$Time','$AllanVar','$TestData_header->keyId','$ds')";
+                $rAS = @mysql_query($qAS,$this->dbconnection);
 
-                  $ct+=1;
+                $ct+=1;
             }
             $TestData_header->SetValue("TS",$TS);
             //$TestData_header->Update();
@@ -1311,6 +1325,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_PHASE_DRIFT);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1366,6 +1382,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_GAIN_COMPRESSION);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1408,6 +1426,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_POLACCURACY);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1444,6 +1464,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_INBANDPOWER);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1486,6 +1508,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_TOTALPOWER);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1529,6 +1553,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_SIDEBANDRATIO);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1573,6 +1599,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_IVCURVE);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1616,6 +1644,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_POWERVARIATION);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1660,6 +1690,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_IFSPECTRUM);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1704,6 +1736,8 @@ public function Upload_TestDataFile(){
         $TestData_header->Update();
 
         //Upload file contents
+        $TS = '';
+
         $filecontents = file($this->file_NOISETEMPERATURE);
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -2194,7 +2228,7 @@ public function Upload_TestDataFile(){
               </tr>";
 
         for ($i=1;$i<=count($this->TempSensors);$i++){
-            if ($this->TempSensors[$i]->keyId != ""){
+            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != ""){
                 if ($i % 2 == 0){
                     echo "<tr>";
                 }

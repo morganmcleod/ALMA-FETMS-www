@@ -7,8 +7,7 @@ require_once($site_classes . '/class.fecomponent.php');
 require_once($site_classes . '/class.wca.php');
 require_once("dbGetQueries.php");
 
-$fc=$_REQUEST['fc'];
-
+$fc=(isset($_REQUEST['fc'])) ? $_REQUEST['fc'] : '';
 $band=(isset($_POST['band'])) ? $_POST['band'] : '';
 $comp_type=(isset($_POST['band'])) ? $_POST['type'] : '';
 $selected_key=(isset($_POST['band'])) ? $_POST['config'] : '';
@@ -109,6 +108,7 @@ if($tabtype != 1)
                 break;
 
             case 3:
+                $wca->Compute_MaxSafePowerLevels(TRUE);
                 $wca->Display_MaxSafePowerLevels();
                 break;
 
