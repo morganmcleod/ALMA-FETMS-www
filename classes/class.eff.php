@@ -32,7 +32,9 @@ class eff {
     var $GNUPLOT_path;
 
     public function __construct() {
-        $this->software_version = "1.0.20";
+        $this->software_version = "1.0.21";
+        // 1.0.21
+        //
         // 1.0.20 MTM updated band 4 PolEff display per FEND-40.02.04.00-0236-C-CRE
         //		  PolEff: modified band 8 display per Whyborn comment on AIVPNCR-24
         // 1.0.19 MTM no longer writing out Notes to input file for beameff_64.
@@ -1063,41 +1065,39 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
 
-            // if the polarization efficiency is less than the value calculated for $spec, display it as red:
+            // if the polarization efficiency is less than the value calculated for $p0spec/$p1spec, display it as red:
             $rf = floatval($this->scansets[$scanSetIdx]->GetValue('f'));
-            $spec = 0.0;
-            $band4Pol0Spec = 0.0;
+            $p0spec = $p1spec = 0.0;
 
             switch ($this->band) {
                 case 3:
-                    $spec = 99.0;
+                    $p0spec = $p1spec = 99.0;
                     break;
                 case 4:
-                    $band4Pol0Spec = $spec = 98.7;
-                    if (134.0 <= $rf && $rf <= 158.0)
-                        $spec = 99.0;
-                    if (134.0 <= $rf && $rf <= 138.0)
-                        $band4Pol0Spec = 98.4;    // special case in pol0 only for FEND-40.02.04.00-0236-C-CRE
-                    else
-                    	$band4Pol0Spec = $spec;
-                    break;
+                    $p0spec = $p1spec = 98.7;
+                    if (134.0 <= $rf && $rf < 138.0) {
+                        $p0spec = 98.4;     // special case in pol0 only for FEND-40.02.04.00-0236-C-CRE
+                        $p1spec = 99.0;
+                    } else if (138.0 <= $rf && $rf <= 158.0) {
+                        $p0spec = $p1spec = 99.0;
+                    }
                 case 6:
-                    $spec = 96.84;
+                    $p0spec = $p1spec = 96.84;
                     if (219.0 <= $rf && $rf <= 231.0)
-                        $spec = 99.0;
+                        $p0spec = $p1spec = 99.0;
                     else if (231.0 < $rf && $rf <= 262.0)
-                        $spec = 98.42;
+                        $p0spec = $p1spec = 98.42;
                     break;
                 case 8:
-                    $spec = 98.4;
+                    $p0spec = $p1spec = 98.4;
                     if (491.0 <= $rf && $rf <= 495.0)
-                        $spec = 98.0;
+                        $p0spec = $p1spec = 98.0;
                     break;
                 case 9:
-                    $spec = 97.5;
+                    $p0spec = $p1spec = 97.5;
                     break;
                 default:
-                    $spec = 99.5;
+                    $p0spec = $p1spec = 99.5;
                     break;
             }
 
@@ -1110,7 +1110,7 @@ class eff {
 
             $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_pol'),2);
 
-            if (($pe < $spec) || (($this->band == 4) && ($pe < $band4Pol0Spec)))
+            if ($pe < $p0spec)
                 echo "<td><font color ='#ff0000'>$pe</font></td>";
             else
                 echo "<td>$pe</td>";
@@ -1123,7 +1123,7 @@ class eff {
             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_tot_np'),2) . "</td>";
 
             $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_pol'),2);
-            if ($pe < $spec)
+            if ($pe < $p1spec)
                 echo "<td><font color ='#ff0000'>$pe</font></td>";
             else
                 echo "<td>$pe</td>";
