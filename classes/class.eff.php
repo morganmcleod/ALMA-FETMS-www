@@ -1073,7 +1073,7 @@ class eff {
                     $spec = 99.0;
                     break;
                 case 4:
-                    $spec = 98.7;
+                    $band4Pol0Spec = $spec = 98.7;
                     if (134.0 <= $rf && $rf <= 158.0)
                         $spec = 99.0;
                     if (134.0 <= $rf && $rf <= 138.0)
