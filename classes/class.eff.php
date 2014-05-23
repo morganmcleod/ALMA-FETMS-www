@@ -33,7 +33,7 @@ class eff {
 
     public function __construct() {
         $this->software_version = "1.0.21";
-        // 1.0.21
+        // 1.0.21 Fixed bugs in pol.eff display, comparing to specs
         //
         // 1.0.20 MTM updated band 4 PolEff display per FEND-40.02.04.00-0236-C-CRE
         //		  PolEff: modified band 8 display per Whyborn comment on AIVPNCR-24
@@ -1081,6 +1081,7 @@ class eff {
                     } else if (138.0 <= $rf && $rf <= 158.0) {
                         $p0spec = $p1spec = 99.0;
                     }
+                    break;
                 case 6:
                     $p0spec = $p1spec = 96.84;
                     if (219.0 <= $rf && $rf <= 231.0)
