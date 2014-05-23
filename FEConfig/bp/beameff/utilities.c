@@ -502,7 +502,6 @@ int PickNominalAngles(int almaBand, float *xtarget, float *ytarget) {
       case 8:  *xtarget = +0.0000; *ytarget = +0.9740; break;
       case 9:  *xtarget = +0.0000; *ytarget = -0.9740; break;
       case 10: *xtarget = -0.9740; *ytarget = +0.0000; break;
-      case 62:  *xtarget = +2.3041; *ytarget = -0.6174; break; 
       default:
         printf("Illegal band number = %d\n", almaBand);
         return(-1);
