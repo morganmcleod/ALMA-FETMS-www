@@ -79,7 +79,13 @@ class CCA extends FEComponent {
 
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.8";
+        $this->swversion = "1.0.9";
+
+        /*
+         * 1.0.9 fixed bugs in CCA data upload
+         * 1.0.8 fixes to allow operation with E_NOTICE enabled
+         */
+
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
@@ -1022,7 +1028,7 @@ public function Upload_TestDataFile(){
                 $tsr = trim($tempArray[19]);
 
                 // same as this CCA and not marked as Removed?
-                if ($sn == $this->GetValue('SN') && $tsr == "") {
+                if ($sn == $this->GetValue('SN') && !$tsr) {
                     // found a record to upload:
                     $this->UploadTF = 1;
 
