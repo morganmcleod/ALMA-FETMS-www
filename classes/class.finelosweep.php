@@ -29,10 +29,11 @@ class FineLOSweep extends TestData_header {
 
     public function DrawPlot(){
     // set Plot Software Version
-        $Plot_SWVer = "1.0.7";
+        $Plot_SWVer = "1.0.8";
     /*
-     *  version 1.0.6:  MTM updated plotting to show measured TS rather than TS from the TestDataHeader
-     *  version 1.0.7:  MTM fixed "set...screen" commands to gnuplot
+     *  1.0.8:  MTM scale Y-axis maximum to the SIS current data rather than fixed 100 uA.
+     *  1.0.7:  MTM fixed "set...screen" commands to gnuplot
+     *  1.0.6:  MTM updated plotting to show measured TS rather than TS from the TestDataHeader
      */
         $this->SetValue('Plot_SWVer',$Plot_SWVer);
         $this->Update();
@@ -106,23 +107,33 @@ class FineLOSweep extends TestData_header {
 
         $max_freq = 0;
         $min_freq = 10000;
+        $max_sis = 0;
 
         unset($LO_freq);
         unset($PA_set);
-        while ($row = @mysql_fetch_array($r)){
+        while ($row = @mysql_fetch_array($r)) {
             $LO_freq[] = $row[0]; // save frequencies for processing
             $PA_set[] = $row[3];    // save PA_sets for processing
-            if ($row[0] > $max_freq){
+            if ($row[0] > $max_freq) {
                 $max_freq = $row[0];
             }
-                if ($row[0] < $min_freq){
+            if ($row[0] < $min_freq) {
                 $min_freq = $row[0];
+            }
+            if ($row[1] > $max_sis) {
+                $max_sis = $row[1];
+            }
+            if ($row[2] > $max_sis) {
+                $max_sis = $row[2];
             }
             //Write the data to a file for gnuplot
             $writestring = "$row[0]\t$row[1]\t$row[2]\t\t$row[3]\t\t$row[4]\r\n";
             fwrite($fh,$writestring);
         }
         fclose($fh);
+
+        //Round Y-axis maximum up to the nearest 20 uA:
+        $max_sis = ceil($max_sis / 20) * 20;
 
         //***************************************************
         // flag data that doesn't meet spec
@@ -152,7 +163,7 @@ class FineLOSweep extends TestData_header {
         fwrite($fh, "set xrange [$min_freq:$max_freq]\r\n");
         fwrite($fh, "set xlabel 'LO Frequency (GHz)'\r\n");
         fwrite($fh, "set ylabel 'SIS current (uA)'\r\n");
-        fwrite($fh, "set yrange [0:100]\r\n");
+        fwrite($fh, "set yrange [0:$max_sis]\r\n");
         fwrite($fh, "set y2label 'LO PA drain monitor/control'\r\n");
         fwrite($fh, "set y2tics\r\n");
         fwrite($fh, "set y2range [0:5]\r\n");
