@@ -34,7 +34,8 @@ class IFSpectrumPlotter extends TestData_header{
     var $TS;                      //Timestamp string
 
     public function __construct(){
-        $this->plotswversion = "1.0.23";
+        $this->plotswversion = "1.0.24";
+        // 1.0.24 MTM: fixed inconsistency in the two queries in Display_TotalPowerTable
         // 1.0.23 MTM: fixes so we can run with E_NOTICE enabled
         // 1.0.22 MTM: fix "set...screen" commands to gnuplot
         // 1.0.21 MTM: fix font color for Total and In-band power table.
@@ -330,8 +331,6 @@ class IFSpectrumPlotter extends TestData_header{
                 }
                 $q0 .= ");";
                 $r0 = @mysql_query($q0,$this->dbConnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-
-
 
                 $q15 = "select ROUND(TEST_IFSpectrum_TotalPower.InBandPower,1),
                         ROUND(TEST_IFSpectrum_TotalPower.TotalPower,1)
