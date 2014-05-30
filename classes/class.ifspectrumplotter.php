@@ -334,14 +334,14 @@ class IFSpectrumPlotter extends TestData_header{
 
 
                 $q15 = "select ROUND(TEST_IFSpectrum_TotalPower.InBandPower,1),
-                ROUND(TEST_IFSpectrum_TotalPower.TotalPower,1)
-                from IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower
-                where IFSpectrum_SubHeader.FreqLO =$lo
-                and IFSpectrum_SubHeader.IFGain = 15
-                and IFSpectrum_SubHeader.IFChannel = $ifchannel
-                and IFSpectrum_SubHeader.IsPAI = 1
-                and TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId
-                and ((IFSpectrum_SubHeader.fkHeader =  " . $this->TDHkeys[0] . ") ";
+                        ROUND(TEST_IFSpectrum_TotalPower.TotalPower,1)
+                        from IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower
+                        where IFSpectrum_SubHeader.FreqLO =$lo
+                        and IFSpectrum_SubHeader.IFGain = 15
+                        and IFSpectrum_SubHeader.IFChannel = $ifchannel
+                        and IFSpectrum_SubHeader.IsIncluded = 1
+                        and TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId
+                        and ((IFSpectrum_SubHeader.fkHeader =  " . $this->TDHkeys[0] . ") ";
 
                 //Display for all TDH keys
                 for ($iTDH=1;$iTDH<count($this->TDHkeys);$iTDH++){
