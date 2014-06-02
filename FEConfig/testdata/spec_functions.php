@@ -60,7 +60,7 @@ function get_specs_by_spec_type ( $spec_type , $band ){
  * @param $num (float) - number to display
  * @param $inspec (boolean) - one of three strings, ">", "<" or "=".
  *
- * @return (string) returns and HTML string with $num and color encoding indicating
+ * @return (string) returns an HTML string with $num and color encoding indicating
  * meeting spec.
 */
 function inspec( $num, $inspec ){
@@ -120,7 +120,7 @@ function chk_num_agnst_spec( $num, $operator, $spec ){
  * on if $num is in the specified range.
  *
  * @param $hi_range (float) - upper limit of range
- * @param $num (string) - parameter to test if in range
+ * @param $num (float) - parameter to test if in range
  * @param $low_range (float) - lower limit of range
  *
  * @return (string) returns and HTML string with $num and color encoding indicating
@@ -139,8 +139,8 @@ function num_in_range( $hi_range, $num, $low_range ){
  * Returns an HTML string with $num encoded green or red based
  * on if $num is within $spec percent of $num2.
  *
- * @param $num (string) - parameter return colored
- * @param $num2 (string) - value to compare $num to
+ * @param $num (float) - parameter return colored
+ * @param $num2 (float) - value to compare $num to
  * @param $spec (float) - percent specification
  *
  * @return (string) returns and HTML string with $num and color encoding indicating
@@ -248,7 +248,7 @@ function stdev_check($y, $x, $win_size, $stdev_spec, $file){
     $y_cnt = count($y);
     foreach ($y as $input){
 
-        // this is where the moving average start value it determined.
+        // this is where the moving average start value is determined.
         $low_pt = $index - $half_win_size;
         if ($low_pt < 0){
             $low_pt = 0;

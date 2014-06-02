@@ -308,6 +308,51 @@ class NoiseTemperature extends TestData_header{
 
     private function LoadSpecs() {
         //get specs from DB
+    	$new_specs = new Specifications();
+    	$specs = $new_specs->getSpecs(array('FEIC_NoiseTemperature') , array(3));
+    	
+    	$this->lower_80_RFLimit = 0;
+    	$this->upper_80_RFLimit = 0;
+    	
+    	foreach($specs as $s) {
+    		if($s[2]=='CLTemp') {
+    			$this->effColdLoadTemp = $s[3];         // effective cold load temperature
+    		}
+    		if($s[2]=='defImgRej') {
+    			$this->default_IR = $s[3];              // default image rejection to use if no CCA data available.
+    		}
+    		if($s[2]=='loIFLim') {
+    			$this->lowerIFLimit = $s[3];            // lower IF limit
+    		}
+    		if($s[2]=='hiIFLim') {
+    			$this->upperIFLimit = $s[3];            // upper IF limit
+    		}
+    		if($s[2]=='NT20') {
+    			$this->NT_allRF_spec = $s[3];           // spec which must me met at all points in the RF band
+    		}
+    		if($s[2]=='NT80') {
+    			$this->NT_80_spec = $s[3];              // spec which must be met over 80% of the RF band
+    		}
+    		// extra Tssb spec applies to band 3 only:
+    		if ((3 == 3) & ($s[2]=='B3exSpec'))
+    			$this->NT_B3Special_spec=$s[3];
+    	
+    		// lower RF limit for applying 80% spec:
+    		if($s[2]=='NT80RF_loLim') {
+    			$this->lower_80_RFLimit = $s[3];
+    		}
+    		//$this->lower_80_RFLimit = ($s[2]=='NT80RF_loLim')? $s[3] : 0;
+    	
+    		// upper RF limit for applying 80% spec:
+    		if($s[2]=='NT80RF_hiLim') {
+    			$this->upper_80_RFLimit = $s[3];
+    		}
+    		//$this->upper_80_RFLimit = ($s[2]=='NT80RF_hiLim') ? $s[3] : 0;
+    	
+    		$this->lowerRFLimit = 0;
+    		$this->upperRFLimit = 1000;
+    	}
+    	/*
         $specs = get_specs(58 , $this->GetValue('Band'));
         $this->effColdLoadTemp = $specs[1];         // effective cold load temperature
         $this->default_IR = $specs[2];              // default image rejection to use if no CCA data available.
@@ -327,7 +372,7 @@ class NoiseTemperature extends TestData_header{
         $this->upper_80_RFLimit = (isset($specs[17])) ? $specs[17] : 0;
 
         $this->lowerRFLimit = 0;
-        $this->upperRFLimit = 1000;
+        $this->upperRFLimit = 1000;*/
     }
 
     private function WriteSpecsDataFile() {

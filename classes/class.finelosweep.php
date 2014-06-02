@@ -3,7 +3,8 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.logger.php');
-require_once($site_FEConfig . '/testdata/spec_functions.php');
+//require_once($site_FEConfig . '/testdata/spec_functions.php');
+require_once($site_classes . '/class.spec_functions.php');
 
 class FineLOSweep extends TestData_header {
     var $FLOSweepSubHeader; // array for subheader objects from TEST_FineLOSweep_SubHeader (class.generictable.php)
@@ -140,10 +141,16 @@ class FineLOSweep extends TestData_header {
         //***************************************************
 
         //get specs
-        $specs = get_specs ( 59, $this->GetValue('Band') );
+        $new_spec = new Specifications();
+        //$specs = get_specs ( 59, $this->GetValue('Band') );
+        $spec = $new_spec->getSpecs(array('FLOSweep.ini'), $this->GetValue('Band'));
+        $specs = array();
+        foreach ($spec as $s) {
+        	$specs[$s[2]] = $s[3];
+        }
 
         // find outliers
-        stdev_check($PA_set, $LO_freq, $specs[8], $specs[9], $fspec1);
+       	$new_spec->stdevChks($PA_set, $LO_freq, $specs['FLOSpts_win'], $specs['FLOSstdev'], $fspec1);
 
         fclose($fspec1);
 
