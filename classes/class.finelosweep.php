@@ -3,7 +3,6 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.logger.php');
-//require_once($site_FEConfig . '/testdata/spec_functions.php');
 require_once($site_classes . '/class.spec_functions.php');
 
 class FineLOSweep extends TestData_header {
@@ -30,8 +29,9 @@ class FineLOSweep extends TestData_header {
 
     public function DrawPlot(){
     // set Plot Software Version
-        $Plot_SWVer = "1.0.8";
+        $Plot_SWVer = "1.1.0";
     /*
+     * 	1.1.0 Now pulls specifications from new class that pulls from files instead of database.
      *  1.0.8:  MTM scale Y-axis maximum to the SIS current data rather than fixed 100 uA.
      *  1.0.7:  MTM fixed "set...screen" commands to gnuplot
      *  1.0.6:  MTM updated plotting to show measured TS rather than TS from the TestDataHeader

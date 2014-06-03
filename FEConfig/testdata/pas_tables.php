@@ -2,12 +2,12 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.spec_functions.php');
-//require_once($site_FEConfig . '/testdata/spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header ( $width , &$tdh ){
-    $table_ver = "1.0.6";
+    $table_ver = "1.1.0";
     /*
+     * 1.1.0 Now pulls specifications from new class that pulls from files instead of database.
      * 1.0.6 MM fixed query fetching LNA config data for band 4.
      * 1.0.5 MM fixed error in calculating average attenuation in IF_Power_results()
      */
@@ -951,8 +951,7 @@ function Band3_NT_results($td_keyID){
     for ($i=1; $i<6; $i++) {
     	$spec_names[] = 'Bspec_bbTSSB' . $i . 'f';
     	$spec_names[] = 'Bspec_bbTSSB' . $i . 's';
-    }
-    //$specs=get_specs_by_spec_type ( 10 , $tdh->GetValue('Band') );    
+    }  
     $new_spec = new Specifications();
     $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
     $specs = array();

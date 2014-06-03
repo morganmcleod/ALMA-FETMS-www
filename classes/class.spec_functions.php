@@ -23,7 +23,6 @@
 	* Initialized the class specs.
 	*/
 	class Specifications implements SpecRetrieval {
-	//class specs{
 	
 		/**
 		* Constructor for class specs.
@@ -52,10 +51,8 @@
 			$tLen = count($test_type);
 			$bLen = count($Band);
 			$sLen = count($spec_name);
-			//Sorts through each array to find the specification from each band for each 
-			//spec type for each test type.'
+			//Sorts through each array to find the specification for each band for each test type.
 			
-			//TODO isarray()
 			for($t=0; $t<$tLen; $t++) {
 				$filename = "../../specs/" . $test_type[$t] . ".ini";
 				$test=parse_ini_file($filename,true);
@@ -74,14 +71,10 @@
 					$sLen = count($spec_names);
 					for($s=0; $s<$sLen; $s++) {
 						$ans = $test[$band][$spec_names[$s]];
+						
 						//checks to see if there is a spec available to pass on.
 						$cont = !empty($ans);
 						if($cont) {
-							//$resp = array($test_type[$t],$band,$spec_names[$s],$ans);
-							/*
-							echo $resp[2], " = ", $resp[3], " for ", $resp[1], " from the ", $resp[0], " test.";
-							echo "<br>";
-							*/
 							$specs[$spec_names[$s]] = $ans;
 						}
 					}

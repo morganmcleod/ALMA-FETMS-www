@@ -3,7 +3,7 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.logger.php');
-require_once($site_FEConfig. '/testdata/spec_functions.php');
+require_once($site_classes . '/class.spec_functions.php');
 require_once($site_FEConfig. '/testdata/pas_tables.php');
 
 class NoiseTemperature extends TestData_header{
@@ -102,8 +102,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.1.4";
+        $this->Plot_SWVer = "1.1.5";
         /*
+         * 1.2.0 Now pulls specifications from new class that pulls from files instead of database.
          * 1.1.4  Modified caption for band 10 averaging plot 80% spec.
          * 1.1.3  Fixed band 10 averaging calculation bug.
          * 1.1.2  Fixed bugs introduced by refactoring (not loading IR data.)
