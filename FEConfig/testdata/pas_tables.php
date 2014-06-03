@@ -207,11 +207,7 @@ function LNA_results($td_keyID){
 
     // get specifications array
     $new_spec= new Specifications();
-    $spec_array = $new_spec->getSpecs(array('CCA_LNA_bias'), array(0));
-    $spec=array();
-    foreach($spec_array as $s) {
-    	$spec[] = $s[3];
-    }
+    $spec = $new_spec->getSpecs('CCA_LNA_bias', 0);
     
     //$spec = get_specs(1,0);
 
@@ -326,11 +322,11 @@ function LNA_results($td_keyID){
                 <td width = '75px'>".$LNA_Cntrl[$i][2]."</td>";
 
             // check to see if Vd is in spec
-            $mon_Vd = $new_spec->numWithinPercent( $LNA_Mon[$i][3], $LNA_Cntrl[$i][0], $spec[0] );
+            $mon_Vd = $new_spec->numWithinPercent( $LNA_Mon[$i][3], $LNA_Cntrl[$i][0], $spec['Vd_diff'] );
             echo "<td width = '75px'>$mon_Vd</td> ";
 
             // check to see if Id is in spec
-            $mon_Id = $new_spec->numWithinPercent( $LNA_Mon[$i][4], $LNA_Cntrl[$i][1], $spec[1] );
+            $mon_Id = $new_spec->numWithinPercent( $LNA_Mon[$i][4], $LNA_Cntrl[$i][1], $spec['Id_diff'] );
             echo "<td width = '75px'>$mon_Id</td>
                 <td width = '75px'>".$LNA_Mon[$i][5]."</td></tr>";
         }
@@ -351,11 +347,7 @@ function SIS_results($td_keyID){
     // get specifications array
     //$spec = get_specs(3,0);
     $new_spec = new Specifications();
-    $specs = $new_spec->getSpecs(array('CCA_SIS_bias'), array(0));
-    $spec = array();
-    foreach ($specs as $s){
-    	$spec[] = $s[3];
-    }
+    $spec = $new_spec->getSpecs('CCA_SIS_bias', 0);
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
@@ -433,17 +425,17 @@ function SIS_results($td_keyID){
 	        <td width = '75px'>".$SIS_Cntrl[$i][2]."</td>";
 
 	        // check to see if Bias voltage is in spec
-	        $mon_Bias_V = $new_spec->numWithinPercent( $SIS_Mon[$i][2], $SIS_Cntrl[$i][0], $spec[0] );
+	        $mon_Bias_V = $new_spec->numWithinPercent( $SIS_Mon[$i][2], $SIS_Cntrl[$i][0], $spec['bias_V_diff'] );
 	        echo "<td width = '75px'>$mon_Bias_V</td> ";
 
 	        // check to see if Bias currrent is in spec
-	        $mon_Bias_I = $new_spec->numWithinPercent( $SIS_Mon[$i][3], $SIS_Cntrl[$i][1], $spec[1] );
+	        $mon_Bias_I = $new_spec->numWithinPercent( $SIS_Mon[$i][3], $SIS_Cntrl[$i][1], $spec['bias_I_diff'] );
 	        echo "<td width = '75px'>$mon_Bias_I</td> ";
 
 	        echo "<td width = '75px'>".$SIS_Mon[$i][4]."</td>";
 
 	        // check to see if Magnet currrent is in spec
-	        $mon_Mag_I = $new_spec->numWithinPercent( $SIS_Mon[$i][5], $SIS_Cntrl[$i][2], $spec[2] );
+	        $mon_Mag_I = $new_spec->numWithinPercent( $SIS_Mon[$i][5], $SIS_Cntrl[$i][2], $spec['magI_diff'] );
 	        echo "<td width = '75px'>$mon_Mag_I</td> ";
 	    }
 	    echo "</table></div>";
@@ -866,11 +858,7 @@ function Y_factor_results($td_keyID){
     // get specifications array
     //$spec=get_specs ( 15 , $tdh->GetValue('Band') );
     $new_spec = new Specifications();
-    $specs = $new_spec->getSpecs(array('Yfactor'), array($tdh->GetValue('Band')));
-    $spec = array();
-    foreach($specs as $s) {
-    	$spec[] = $s[3];
-    }
+    $spec = $new_spec->getSpecs('Yfactor', $tdh->GetValue('Band'));
     
 
     $Col_name = array("IFchannel","Phot_dBm","Pcold_dBm","Y","FreqLO" );
@@ -917,11 +905,11 @@ function Y_factor_results($td_keyID){
             <td>".mon_data($row[2])."</td>";
 
         // check to see if Y factor is in spec
-        $Y_factor = $new_spec->chkNumAgnstSpec( mon_data($row[3]), "<", $spec[0] );
+        $Y_factor = $new_spec->chkNumAgnstSpec( mon_data($row[3]), "<", $spec['Y'] );
         echo "<td width = '75px'>$Y_factor</tr> ";
     }
     $avg_atten = mon_data($att_sum /$atten_cnt);
-    $avg_atten_text = $new_spec->chkNumAgnstSpec( $avg_atten , "<", $spec[0] );
+    $avg_atten_text = $new_spec->chkNumAgnstSpec( $avg_atten , "<", $spec['Y'] );
     echo "<tr><th colspan='3'>Average Y factor </th>
         <th>$avg_atten_text</th>";
     echo "</table></div>";
@@ -956,25 +944,23 @@ function Band3_NT_results($td_keyID){
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
-    //get specs
     
+    
+    //get specs    
     $spec_names = array();
-    for ($i=0; $i<5; $i++) {
+    for ($i=1; $i<6; $i++) {
     	$spec_names[] = 'Bspec_bbTSSB' . $i . 'f';
     	$spec_names[] = 'Bspec_bbTSSB' . $i . 's';
     }
-    
-    //$specs=get_specs_by_spec_type ( 10 , $tdh->GetValue('Band') );
-    
+    //$specs=get_specs_by_spec_type ( 10 , $tdh->GetValue('Band') );    
     $new_spec = new Specifications();
-    $spec = $new_spec->getSpecs(array('FEIC_NoiseTemperature'), array($tdh->GetValue('Band')), $spec_names);
+    $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
     $specs = array();
-    $i=0;
-    while ($i<count($spec_names)) {
-    	$specs[$spec[$i][3]] = $spec[$i+1][3];
-    	$i+=2;
+    for($i=1; $i<6; $i++){
+    	$specs[$spec['Bspec_bbTSSB' . $i . 'f']] = $spec['Bspec_bbTSSB' . $i . 's'];
     }
 
+    
     $col_name = array("FreqLO","Pol0USB","Pol0LSB","Pol1USB","Pol1LSB","AvgNT" );
     $col_strg = implode(",",$col_name);
     $q = "SELECT $col_strg
@@ -1050,22 +1036,19 @@ function Band3_CCA_NT_results($td_keyID){
 
     //get specs
     $spec_names = array();
-    for ($i=0; $i<5; $i++) {
+    for ($i=1; $i<6; $i++) {
     	$spec_names[] = 'Bspec_bbTSSB' . $i . 'f';
     	$spec_names[] = 'Bspec_bbTSSB' . $i . 's';
     }
-    
     //$specs=get_specs_by_spec_type ( 10 , $tdh->GetValue('Band') );
-    
     $new_spec = new Specifications();
-    $spec = $new_spec->getSpecs(array('FEIC_NoiseTemperature'), array($tdh->GetValue('Band')), $spec_names);
+    $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
     $specs = array();
-    $i=0;
-    while ($i<count($spec_names)) {
-    	$specs[$spec[$i][3]] =  $spec[$i+1][3];
-    	$i+=2;
+    for($i=1; $i<6; $i++){
+    	$specs[$spec['Bspec_bbTSSB' . $i . 'f']] = $spec['Bspec_bbTSSB' . $i . 's'];
     }
 
+    
     //Query to get CCA Serial Number
     $q ="SELECT MAX(FE_Components.SN) FROM FE_Components, FE_ConfigLink, FE_Config
          WHERE FE_ConfigLink.fkFE_Config = " .$tdh->GetValue('fkFE_Config'). "

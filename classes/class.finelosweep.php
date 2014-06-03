@@ -143,11 +143,7 @@ class FineLOSweep extends TestData_header {
         //get specs
         $new_spec = new Specifications();
         //$specs = get_specs ( 59, $this->GetValue('Band') );
-        $spec = $new_spec->getSpecs(array('FLOSweep.ini'), $this->GetValue('Band'));
-        $specs = array();
-        foreach ($spec as $s) {
-        	$specs[$s[2]] = $s[3];
-        }
+        $specs = $new_spec->getSpecs('FLOSweep', $this->GetValue('Band'));
 
         // find outliers
        	$new_spec->stdevChks($PA_set, $LO_freq, $specs['FLOSpts_win'], $specs['FLOSstdev'], $fspec1);

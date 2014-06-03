@@ -1,6 +1,10 @@
 <?php	
 	//require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once(dirname(__FILE__) . '/../../classes/class.spec_functions.php');
+//require_once($site_classes . '/class.spec_functions.php');
+require_once($site_FEConfig . '/testdata/spec_functions.php');
+require_once($site_classes . '/class.noisetemp.php');
+
 class test {
 	private $Band;
 	private $effColdLoadTemp;       // effective cold load temperature
@@ -15,6 +19,14 @@ class test {
 
 	public function test() {}
 	
+	public function old_test() {
+		$specs = get_specs_by_spec_type(10, 3);
+		$keys = array_keys($specs);
+		$values = array_values($specs);
+		for($i=0; $i<count($keys); $i++) {
+			echo "$keys[$i]: $values[$i] <br>";
+		}
+	}
 	public function test_pt($test_type, $band=None){
 		if ($band==None) {
 			$band=array(0);
@@ -30,129 +42,61 @@ class test {
 		}
 	}
 	
-	public function test_flos($band){
-		$band = array(4);
-		$new_spec = new Specifications();
-		$spec = $new_spec->getSpecs(array('FLOSweep'), $band);
-		$specs = array();
-		foreach($spec as $s) {
-			$specs[$s[2]] = $s[3];
+	public function new_test($Band) {
+		$n = new Specifications();
+		$this->Band = 3;
+		$specs = $n->getSpecs('FEIC_NoiseTemperature', $this->Band);
+		
+		foreach ($specs as $s) {
+			echo "$s <br>";
 		}
-		echo $specs['FLOSpts_win'], $specs['FLOSstdev'];
+		echo $specs['CLTemp'], $specs['defImgRej'], $specs['loIFLim'], $specs['hiIFLim'], $specs['NT20'], $specs['NT80'];
+		echo "<br>";
+		$this->effColdLoadTemp = $specs['CLTemp'];         // effective cold load temperature    	
+    	$this->default_IR = $specs['defImgRej'];              // default image rejection to use if no CCA data available.   	
+    	$this->lowerIFLimit = $specs['loIFLim'];            // lower IF limit    	
+		$this->upperIFLimit = $specs['hiIFLim'];            // upper IF limit		
+		$this->NT_allRF_spec = $specs['NT20'];           // spec which must me met at all points in the RF band		
+		$this->NT_80_spec = $specs['NT80'];              // spec which must be met over 80% of the RF band
+		
+		// extra Tssb spec applies to band 3 only:
+		if ($this->Band == 3) {
+			$this->NT_B3Special_spec=$specs['B3exSpec'];
+		}
+		// lower RF limit for applying 80% spec:
+		$this->lower_80_RFLimit = (isset($specs['NT80RF_loLim']))? $specs['NT80RF_loLim'] : 0;
+		
+		// upper RF limit for applying 80% spec:
+		$this->upper_80_RFLimit = (isset($specs['NT80RF_hiLim'])) ? $specs['NT80RF_hiLim'] : 0;
+    	    			
+		$this->lowerRFLimit = 0;
+		$this->upperRFLimit = 1000;
+		
+		echo "effColdLoadTemp: ", $this->effColdLoadTemp, "; default_IR: ", $this->default_IR, 
+		"; lowerIFLimit: ". $this->lowerIFLimit, ";<br> upperIFLimit: ", $this->upperIFLimit,
+		 "; NT_allRF_spec: ", $this->NT_allRF_spec, "; NT_80_spec: ", $this->NT_80_spec, "<br>";
+		echo "NT_B3Special_spec: ", $this->NT_B3Special_spec, "; lower_80_RFLimit: ", $this->lower_80_RFLimit,
+		"; upper_80_RFLimit: ", $this->upper_80_RFLimit, "; lowerRFLimit: ", $this->lowerRFLimit,
+		 "; upperRFLimit: ", $this->upperRFLimit, "<br>";
+		
+		$keys = array_keys($specs);
+		$values = array_values($specs);
+		for($i=0; $i<count($specs); $i++) {
+			echo "$keys[$i]: $values[$i] <br>";
+		}
 	}
-	
-	public function test_bspec($band){
-		$spec_names = array();
-	    for ($i=1; $i<6; $i++) {
-	    	$name = 'Bspec_bbTSSB' . $i . 'f';
-	    	$spec_names[] = $name;
-	    	$spec_names[] = 'Bspec_bbTSSB' . $i . 's';
-	    }
-		$new_spec = new Specifications();
-	    $spec = $new_spec->getSpecs(array('FEIC_NoiseTemperature'), $band, $spec_names);
-	    $specs = array();
-	    $i=0;
-	    while ($i<count($spec_names)) {
-	    	$x = $i+1;
-	    	echo (string)$spec[$i][3], ": ", $spec[$i+1][3], "<br>";
-	    	$specs[] = array((string)$spec[$i][3] => $spec[$i+1][3]);
-	    	$i+=2;
-	    }
-	    echo $specs[0]['92'], "<br>";
-	    /*
-	    foreach ($spec as $s) {
-	    	$specs[] = $s[3];
-	    	echo "$s[3] <br>";
-	    }*/
-	    $freqs = array('92','96','100','104','108');
-	    foreach ($specs as $s){
-    		
-		    foreach ($freqs as $f) {
-		    	if(!empty($s[$f])) {
-		    		echo "$f: $s[$f] <br>";
-		    	}
-		    }
-	    }
-	}
-	
+	/*
 	public function test_NT(){
 		//$this->$Band = 3;
-		
-		$new_specs = new Specifications();
-		$specs = $new_specs->getSpecs(array('FEIC_NoiseTemperature') , array(3));
-		
-		$this->lower_80_RFLimit = 0;
-		$this->upper_80_RFLimit = 0;
-		
-		foreach($specs as $s) {
-			if($s[2]=='CLTemp') {
-				$this->effColdLoadTemp = $s[3];         // effective cold load temperature
-			}
-			if($s[2]=='defImgRej') {
-				$this->default_IR = $s[3];              // default image rejection to use if no CCA data available.
-			}
-			if($s[2]=='loIFLim') {
-				$this->lowerIFLimit = $s[3];            // lower IF limit
-			}
-			if($s[2]=='hiIFLim') {
-				$this->upperIFLimit = $s[3];            // upper IF limit
-			}
-			if($s[2]=='NT20') {
-				$this->NT_allRF_spec = $s[3];           // spec which must me met at all points in the RF band
-			}
-			if($s[2]=='NT80') {
-				$this->NT_80_spec = $s[3];              // spec which must be met over 80% of the RF band
-			}
-			// extra Tssb spec applies to band 3 only:
-			if ((3 == 3) & ($s[2]=='B3exSpec'))
-				$this->NT_B3Special_spec=$s[3];
-		
-			// lower RF limit for applying 80% spec:
-			if($s[2]=='NT80RF_loLim') {
-				$this->lower_80_RFLimit = $s[3];
-			}
-			//$this->lower_80_RFLimit = ($s[2]=='NT80RF_loLim')? $s[3] : 0;
-			 
-			// upper RF limit for applying 80% spec:
-			if($s[2]=='NT80RF_hiLim') {
-				$this->upper_80_RFLimit = $s[3];
-			}
-			//$this->upper_80_RFLimit = ($s[2]=='NT80RF_hiLim') ? $s[3] : 0;
-			 
-			$this->lowerRFLimit = 0;
-			$this->upperRFLimit = 1000;
-		}
-		echo "$this->effColdLoadTemp $this->default_IR $this->lowerIFLimit $this->upperIFLimit $this->NT_allRF_spec <br>";
-		echo "$this->NT_80_spec. $this->NT_B3Special_spec $this->lower_80_RFLimit $this->upper_80_RFLimit <br>";
-		/*$test=array("FEIC_NoiseTemperature");
-		$band=array(3);
-		$spec=array("CLTemp","NT80","NT20","hiIFLim");
-		
-		$s = new Specifications();
-		$t = $s->getSpecs($test, $band);
-		foreach($t as $ex) {
-			//echo "$ex[0], $ex[1], $ex[2], $ex[3] <br>";
-		}
-		$c= count($t);
-		//echo $c . "<br>";
-		
-		for($a=0; $a<$c; $a++){
-			$new_spec = $t[$a][3];
-			//echo $new_spec . "<br>";
-			$color = $s->chkNumAgnstSpec(70, "<", $new_spec);
-			//echo $color . "<br>";
-			
-			$perc = $s->numWithinPercent(70, 75, $new_spec);
-			//echo $perc . "<br>";
-		}
-		*/
-		echo "done";
-	}
+		$NT = new NoiseTemperature();
+		$NT->Load
+	}*/
 }
 $c = new test();
 $test_type = array('Yfactor');
 $band = array(3);
 //$t = $c->test_flos($band);
-$t = $c->test_NT();
+$t = $c->old_test();
+$t = $c->new_test(3);
 //$t = $c->test_pt($test_type, $band);
 ?>

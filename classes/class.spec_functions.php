@@ -42,6 +42,12 @@
 		* four values, the test type, band, spec type, and the specification, respectively.
 		*/
 		public function getSpecs($test_type, $Band, $spec_name=None) {
+			if(!is_array($test_type)) {
+				$test_type = array($test_type);
+			}
+			if(!is_array($Band)) {
+				$Band = array($Band);
+			}
 			$specs = array();
 			$tLen = count($test_type);
 			$bLen = count($Band);
@@ -71,12 +77,12 @@
 						//checks to see if there is a spec available to pass on.
 						$cont = !empty($ans);
 						if($cont) {
-							$resp = array($test_type[$t],$band,$spec_names[$s],$ans);
+							//$resp = array($test_type[$t],$band,$spec_names[$s],$ans);
 							/*
 							echo $resp[2], " = ", $resp[3], " for ", $resp[1], " from the ", $resp[0], " test.";
 							echo "<br>";
 							*/
-							$specs[] = $resp;
+							$specs[$spec_names[$s]] = $ans;
 						}
 					}
 				}
@@ -89,7 +95,7 @@
 		 * on an integer value $inspec.
 		 *
 		 * @param $num (float) - number to display
-		 * @param $inspec (integer) - the value 1 to make number green, 0 to make number red.
+		 * @param $inspec (boolean) - If true, number is green, if false, number is red.
 		 *
 		 * @return (string) returns an HTML string with $num and color encoding indicating
 		 * meeting spec.
@@ -119,27 +125,27 @@
 			switch ($operator) {
 				case ">";
 				if ($num > $spec) {
-					$inspec = 1;
+					$inspec = true;
 				} else {
-					$inspec = 0;
+					$inspec = false;
 				}
 				break;
 				case "<";
 				if ($num < $spec) {
-					$inspec = 1;
+					$inspec = true;
 				} else {
-					$inspec = 0;
+					$inspec = false;
 				}
 				break;
 				case "=";
 				if ($num = $spec) {
-					$inspec = 1;
+					$inspec = true;
 				} else {
-					$inspec = 0;
+					$inspec = false;
 				}
 				break;
 				default;
-				$inspec = 0;
+				$inspec = false;
 				break;
 			}
 			$resp = $this->inspec($num, $inspec);
@@ -159,12 +165,11 @@
 		 */
 		public function numInRange($hi_range, $num, $lo_range) {
 			if ( ($num < $hi_range) && ($num > $low_range)) {
-				$inspec = 1;
+				$inspec = true;
 			} else {
-				$inspec = 0;
+				$inspec = false;
 			}
-			$s = new Specifications();
-			$resp = $s->inspec($num, $inspec);
+			$resp = $this->inspec($num, $inspec);
 			return $resp;
 		}
 		
@@ -187,8 +192,7 @@
 				$hi_range = $num2 + abs($num2*($spec/100));
 				$lo_range = $num2 - abs($num2*($spec/100));
 			}
-			$s = new Specifications();
-			$resp = $s->numInRange($hi_range, $num, $lo_range);
+			$resp = $this->numInRange($hi_range, $num, $lo_range);
 			return $resp;
 		}
 		//TODO check client code for need for files

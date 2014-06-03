@@ -1,5 +1,8 @@
 iniParser - class.iniparser.php
 
+Spec_functions - class.spec_functions.php
+-SiteConfig.php
+
 GenericTable - class.generictable.php
 - dbConnect
 
@@ -110,7 +113,7 @@ class.noisetemp.php
 - TestData_header
 - GenericTable
 - Logger
-- FEConfig/testdata/spec_functions.php
+- Spec_functions
 -- FEConfig/testdata/pas_tables.php
 -- config_main
 
@@ -133,7 +136,7 @@ FineLOSweep - class.finelosweep.php
 - TestData_header
 - GenericTable
 - Logger
-- FEConfig/testdata/spec_functions.php
+- Spec_functions
 -- config_main
 
 IFSpectrumPlotter - class.ifspectrumplotter.php
