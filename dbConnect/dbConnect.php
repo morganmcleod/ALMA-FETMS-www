@@ -8,6 +8,11 @@ switch ($_SERVER['SERVER_NAME']) {
         $dbpassword = '!fetms';
         break;
 
+    case "webtest.cv.nrao.edu":
+        // database credentials are kept in the /conf/ directory, not in the webserver document root:
+        require_once("/home/webtest.cv.nrao.edu/conf/mtm-dbConnect.conf");
+        break;
+
     default:
         $dbname     = 'alma_feic';
         $dbserver   = 'sql5.cv.nrao.edu';
