@@ -1,12 +1,13 @@
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
-require_once($site_FEConfig . '/testdata/spec_functions.php');
+require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header ( $width , &$tdh ){
-    $table_ver = "1.0.6";
+    $table_ver = "1.1.0";
     /*
+     * 1.1.0 Now pulls specifications from new class that pulls from files instead of database.
      * 1.0.6 MM fixed query fetching LNA config data for band 4.
      * 1.0.5 MM fixed error in calculating average attenuation in IF_Power_results()
      */
@@ -205,7 +206,10 @@ function CPDS_results($td_keyID){
 function LNA_results($td_keyID){
 
     // get specifications array
-    $spec = get_specs(1,0);
+    $new_spec= new Specifications();
+    $spec = $new_spec->getSpecs('CCA_LNA_bias', 0);
+    
+    //$spec = get_specs(1,0);
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
@@ -318,11 +322,11 @@ function LNA_results($td_keyID){
                 <td width = '75px'>".$LNA_Cntrl[$i][2]."</td>";
 
             // check to see if Vd is in spec
-            $mon_Vd = num_within_percent( $LNA_Mon[$i][3], $LNA_Cntrl[$i][0], $spec[11] );
+            $mon_Vd = $new_spec->numWithinPercent( $LNA_Mon[$i][3], $LNA_Cntrl[$i][0], $spec['Vd_diff'] );
             echo "<td width = '75px'>$mon_Vd</td> ";
 
             // check to see if Id is in spec
-            $mon_Id = num_within_percent( $LNA_Mon[$i][4], $LNA_Cntrl[$i][1], $spec[12] );
+            $mon_Id = $new_spec->numWithinPercent( $LNA_Mon[$i][4], $LNA_Cntrl[$i][1], $spec['Id_diff'] );
             echo "<td width = '75px'>$mon_Id</td>
                 <td width = '75px'>".$LNA_Mon[$i][5]."</td></tr>";
         }
@@ -341,7 +345,9 @@ function LNA_results($td_keyID){
 function SIS_results($td_keyID){
 
     // get specifications array
-    $spec = get_specs(3,0);
+    //$spec = get_specs(3,0);
+    $new_spec = new Specifications();
+    $spec = $new_spec->getSpecs('CCA_SIS_bias', 0);
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
@@ -419,17 +425,17 @@ function SIS_results($td_keyID){
 	        <td width = '75px'>".$SIS_Cntrl[$i][2]."</td>";
 
 	        // check to see if Bias voltage is in spec
-	        $mon_Bias_V = num_within_percent( $SIS_Mon[$i][2], $SIS_Cntrl[$i][0], $spec[13] );
+	        $mon_Bias_V = $new_spec->numWithinPercent( $SIS_Mon[$i][2], $SIS_Cntrl[$i][0], $spec['bias_V_diff'] );
 	        echo "<td width = '75px'>$mon_Bias_V</td> ";
 
 	        // check to see if Bias currrent is in spec
-	        $mon_Bias_I = num_within_percent( $SIS_Mon[$i][3], $SIS_Cntrl[$i][1], $spec[14] );
+	        $mon_Bias_I = $new_spec->numWithinPercent( $SIS_Mon[$i][3], $SIS_Cntrl[$i][1], $spec['bias_I_diff'] );
 	        echo "<td width = '75px'>$mon_Bias_I</td> ";
 
 	        echo "<td width = '75px'>".$SIS_Mon[$i][4]."</td>";
 
 	        // check to see if Magnet currrent is in spec
-	        $mon_Mag_I = num_within_percent( $SIS_Mon[$i][5], $SIS_Cntrl[$i][2], $spec[15] );
+	        $mon_Mag_I = $new_spec->numWithinPercent( $SIS_Mon[$i][5], $SIS_Cntrl[$i][2], $spec['magI_diff'] );
 	        echo "<td width = '75px'>$mon_Mag_I</td> ";
 	    }
 	    echo "</table></div>";
@@ -445,6 +451,7 @@ function SIS_results($td_keyID){
 */
 function Temp_Sensor_results($td_keyID){
 
+	$new_spec = new Specifications();
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
 
@@ -471,7 +478,7 @@ function Temp_Sensor_results($td_keyID){
             if(in_array($Col, $cold_array)){
                 $num= @mysql_result($r,0,$i);
                 // check to see if 4k stange meets spec
-                $num = chk_num_agnst_spec( $num, "<", 4);
+                $num = $new_spec->chkNumAgnstSpec($num, "<", 4);
             } else {
                 $num = @mysql_result($r,0,$i);
             }
@@ -650,14 +657,16 @@ function IF_Power_results($td_keyID){
 
     $atten_cnt = 0;
     $att_sum = 0;
-
+	
+    $new_spec = new Specifications();
+    
     while ($row = @mysql_fetch_array($r)){
         echo "<tr>";
         $att_sum = $att_sum + abs($row[2] - $row[1]);
         $atten_cnt++;
         // check to see if the numbers meet spec
-        $check1=num_in_range(($row[2]-14),mon_data($row[1]),($row[2]-16));
-        $check2=num_in_range(($row[1]+16),mon_data($row[2]),($row[1]+14));
+        $check1=$new_spec->numInRange(($row[2]-14),mon_data($row[1]),($row[2]-16));
+        $check2=$new_spec->numInRange(($row[1]+16),mon_data($row[2]),($row[1]+14));
         switch ($row[0]) {
 
             case 0:
@@ -688,7 +697,7 @@ function IF_Power_results($td_keyID){
     }
     $avg_atten = mon_data($att_sum /$atten_cnt);
     //check to see if avgerage attunuation is in range
-    $check3=num_in_range(16,$avg_atten,14);
+    $check3=$new_spec->numInRange(16,$avg_atten,14);
     echo "<tr><th width = '200px'>Average Attenutation (dB) </th>
         <th width = '200px' colspan='2' align='right'>" .$check3."</th>";
     echo "</table></div>";
@@ -847,7 +856,10 @@ function Y_factor_results($td_keyID){
     $tdh->Initialize_TestData_header($td_keyID,"40");
 
     // get specifications array
-    $spec=get_specs ( 15 , $tdh->GetValue('Band') );
+    //$spec=get_specs ( 15 , $tdh->GetValue('Band') );
+    $new_spec = new Specifications();
+    $spec = $new_spec->getSpecs('Yfactor', $tdh->GetValue('Band'));
+    
 
     $Col_name = array("IFchannel","Phot_dBm","Pcold_dBm","Y","FreqLO" );
     $col_strg = implode(",",$Col_name);
@@ -893,11 +905,11 @@ function Y_factor_results($td_keyID){
             <td>".mon_data($row[2])."</td>";
 
         // check to see if Y factor is in spec
-        $Y_factor = chk_num_agnst_spec( mon_data($row[3]), "<", $spec[16] );
+        $Y_factor = $new_spec->chkNumAgnstSpec( mon_data($row[3]), "<", $spec['Y'] );
         echo "<td width = '75px'>$Y_factor</tr> ";
     }
     $avg_atten = mon_data($att_sum /$atten_cnt);
-    $avg_atten_text = chk_num_agnst_spec( $avg_atten , "<", $spec[16] );
+    $avg_atten_text = $new_spec->chkNumAgnstSpec( $avg_atten , "<", $spec['Y'] );
     echo "<tr><th colspan='3'>Average Y factor </th>
         <th>$avg_atten_text</th>";
     echo "</table></div>";
@@ -932,9 +944,22 @@ function Band3_NT_results($td_keyID){
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
-    //get specs
-    $specs=get_specs_by_spec_type ( 10 , $tdh->GetValue('Band') );
+    
+    
+    //get specs    
+    $spec_names = array();
+    for ($i=1; $i<6; $i++) {
+    	$spec_names[] = 'Bspec_bbTSSB' . $i . 'f';
+    	$spec_names[] = 'Bspec_bbTSSB' . $i . 's';
+    }  
+    $new_spec = new Specifications();
+    $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
+    $specs = array();
+    for($i=1; $i<6; $i++){
+    	$specs[$spec['Bspec_bbTSSB' . $i . 'f']] = $spec['Bspec_bbTSSB' . $i . 's'];
+    }
 
+    
     $col_name = array("FreqLO","Pol0USB","Pol0LSB","Pol1USB","Pol1LSB","AvgNT" );
     $col_strg = implode(",",$col_name);
     $q = "SELECT $col_strg
@@ -977,7 +1002,7 @@ function Band3_NT_results($td_keyID){
                 case 5;
                     //average NT column
                     $num = mon_data (@mysql_result($r,$cnt,$i));
-                    $text=chk_num_agnst_spec( $num, "<", $specs[$freq]);
+                    $text=$new_spec->chkNumAgnstSpec( $num, "<", $specs[$freq]);
                     echo "<td width = '300px'>$text</td>";
                     break;
                 case 6;
@@ -1009,8 +1034,20 @@ function Band3_CCA_NT_results($td_keyID){
     $tdh->Initialize_TestData_header($td_keyID,"40");
 
     //get specs
-    $specs=get_specs_by_spec_type ( 10 , $tdh->GetValue('Band') );
+    $spec_names = array();
+    for ($i=1; $i<6; $i++) {
+    	$spec_names[] = 'Bspec_bbTSSB' . $i . 'f';
+    	$spec_names[] = 'Bspec_bbTSSB' . $i . 's';
+    }
+    //$specs=get_specs_by_spec_type ( 10 , $tdh->GetValue('Band') );
+    $new_spec = new Specifications();
+    $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
+    $specs = array();
+    for($i=1; $i<6; $i++){
+    	$specs[$spec['Bspec_bbTSSB' . $i . 'f']] = $spec['Bspec_bbTSSB' . $i . 's'];
+    }
 
+    
     //Query to get CCA Serial Number
     $q ="SELECT MAX(FE_Components.SN) FROM FE_Components, FE_ConfigLink, FE_Config
          WHERE FE_ConfigLink.fkFE_Config = " .$tdh->GetValue('fkFE_Config'). "
@@ -1153,7 +1190,7 @@ function Band3_CCA_NT_results($td_keyID){
         echo "<td width = '300px'>".mon_data ($AVG_NT_Pol1_Sb2[$cnt])."</td>";
         $AVG =     mon_data (($AVG_NT_Pol0_Sb1[$cnt]+$AVG_NT_Pol0_Sb2[$cnt]+$AVG_NT_Pol1_Sb1[$cnt]+$AVG_NT_Pol1_Sb2[$cnt])/4);
         $spec = $specs[$FREQ_LO] - 3;
-        $text=chk_num_agnst_spec( $AVG, "<", $spec);
+        $text=$new_spec->chkNumAgnstSpec( $AVG, "<", $spec);
         echo "<td width = '300px'>$text</td>";
         echo "<td width = '400px'>less than $spec</td>";
         $result = mon_data ($TFETMS[$FREQ_LO] - $AVG - 3);

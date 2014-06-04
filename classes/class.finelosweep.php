@@ -3,7 +3,7 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.logger.php');
-require_once($site_FEConfig . '/testdata/spec_functions.php');
+require_once($site_classes . '/class.spec_functions.php');
 
 class FineLOSweep extends TestData_header {
     var $FLOSweepSubHeader; // array for subheader objects from TEST_FineLOSweep_SubHeader (class.generictable.php)
@@ -29,8 +29,9 @@ class FineLOSweep extends TestData_header {
 
     public function DrawPlot(){
     // set Plot Software Version
-        $Plot_SWVer = "1.0.8";
+        $Plot_SWVer = "1.1.0";
     /*
+     * 	1.1.0 Now pulls specifications from new class that pulls from files instead of database.
      *  1.0.8:  MTM scale Y-axis maximum to the SIS current data rather than fixed 100 uA.
      *  1.0.7:  MTM fixed "set...screen" commands to gnuplot
      *  1.0.6:  MTM updated plotting to show measured TS rather than TS from the TestDataHeader
@@ -140,10 +141,12 @@ class FineLOSweep extends TestData_header {
         //***************************************************
 
         //get specs
-        $specs = get_specs ( 59, $this->GetValue('Band') );
+        $new_spec = new Specifications();
+        //$specs = get_specs ( 59, $this->GetValue('Band') );
+        $specs = $new_spec->getSpecs('FLOSweep', $this->GetValue('Band'));
 
         // find outliers
-        stdev_check($PA_set, $LO_freq, $specs[8], $specs[9], $fspec1);
+       	$new_spec->stdevChks($PA_set, $LO_freq, $specs['FLOSpts_win'], $specs['FLOSstdev'], $fspec1);
 
         fclose($fspec1);
 

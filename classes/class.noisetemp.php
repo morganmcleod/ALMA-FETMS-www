@@ -3,7 +3,7 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.logger.php');
-require_once($site_FEConfig. '/testdata/spec_functions.php');
+require_once($site_classes . '/class.spec_functions.php');
 require_once($site_FEConfig. '/testdata/pas_tables.php');
 
 class NoiseTemperature extends TestData_header{
@@ -102,8 +102,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.1.4";
+        $this->Plot_SWVer = "1.1.5";
         /*
+         * 1.2.0 Now pulls specifications from new class that pulls from files instead of database.
          * 1.1.4  Modified caption for band 10 averaging plot 80% spec.
          * 1.1.3  Fixed band 10 averaging calculation bug.
          * 1.1.2  Fixed bugs introduced by refactoring (not loading IR data.)
@@ -308,26 +309,35 @@ class NoiseTemperature extends TestData_header{
 
     private function LoadSpecs() {
         //get specs from DB
-        $specs = get_specs(58 , $this->GetValue('Band'));
-        $this->effColdLoadTemp = $specs[1];         // effective cold load temperature
-        $this->default_IR = $specs[2];              // default image rejection to use if no CCA data available.
-        $this->lowerIFLimit = $specs[4];            // lower IF limit
-        $this->upperIFLimit = $specs[3];            // upper IF limit
-        $this->NT_allRF_spec = $specs[6];           // spec which must me met at all points in the RF band
-        $this->NT_80_spec = $specs[5];              // spec which must be met over 80% of the RF band
-
-        // extra Tssb spec applies to band 3 only:
-        if ($this->GetValue('Band') == 3)
-            $this->NT_B3Special_spec=$specs[7];
-
-        // lower RF limit for applying 80% spec:
-        $this->lower_80_RFLimit = (isset($specs[18])) ? $specs[18] : 0;
-
-        // upper RF limit for applying 80% spec:
-        $this->upper_80_RFLimit = (isset($specs[17])) ? $specs[17] : 0;
-
-        $this->lowerRFLimit = 0;
-        $this->upperRFLimit = 1000;
+    	$new_specs = new Specifications();
+    	$specs = $new_specs->getSpecs('FEIC_NoiseTemperature' , $this->GetValue('Band'));
+    	
+    	$keys = array_keys($specs);
+    	$values = array_values($specs);
+    	
+    	for($i=0; $i<count($keys); $i++) {
+    		echo $keys[$i], $values[$i];
+    	}
+    	
+    	$this->effColdLoadTemp = $specs['CLTemp'];         // effective cold load temperature    	
+    	$this->default_IR = $specs['defImgRej'];              // default image rejection to use if no CCA data available.   	
+    	$this->lowerIFLimit = $specs['loIFLim'];            // lower IF limit    	
+		$this->upperIFLimit = $specs['hiIFLim'];            // upper IF limit		
+		$this->NT_allRF_spec = $specs['NT20'];           // spec which must me met at all points in the RF band		
+		$this->NT_80_spec = $specs['NT80'];              // spec which must be met over 80% of the RF band
+		
+		// extra Tssb spec applies to band 3 only:
+		if ($this->GetValue('Band') == 3) {
+			$this->NT_B3Special_spec=$specs['B3exSpec'];
+		}
+		// lower RF limit for applying 80% spec:
+		$this->lower_80_RFLimit = (isset($specs['NT80RF_loLim']))? $specs['NT80RF_loLim'] : 0;
+		
+		// upper RF limit for applying 80% spec:
+		$this->upper_80_RFLimit = (isset($specs['NT80RF_hiLim'])) ? $specs['NT80RF_hiLim'] : 0;
+    	    			
+		$this->lowerRFLimit = 0;
+		$this->upperRFLimit = 1000;
     }
 
     private function WriteSpecsDataFile() {
@@ -868,7 +878,7 @@ class NoiseTemperature extends TestData_header{
 
                 // special band 3 NT_specs
                 if ( $this->GetValue('Band') == 3 && $row[0] == 104) {
-                    $NT_spec = $this->NT_B3Special_spec;
+                   $NT_spec = $this->NT_B3Special_spec;
                 } else {
                     $NT_spec = $this->NT_80_spec;
                 }
