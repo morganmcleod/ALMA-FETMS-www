@@ -102,8 +102,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.1.5";
+        $this->Plot_SWVer = "1.2.1";
         /*
+         * 1.2.1 Uses only MAX(keyDataSet) when loading CCA NT and IR data.
          * 1.2.0 Now pulls specifications from new class that pulls from files instead of database.
          * 1.1.4  Modified caption for band 10 averaging plot 80% spec.
          * 1.1.3  Fixed band 10 averaging calculation bug.
@@ -260,6 +261,11 @@ class NoiseTemperature extends TestData_header{
         } else {
             $this->NT_Logger->WriteLogFile("Cartridge Image Rejection Data Was Found");
 
+            // find the max keyDataSet for CCA image rejection:
+            $q ="SELECT MAX(keyDataSet) FROM CCA_TEST_SidebandRatio WHERE fkheader = $CCA_TD_key";
+            $r = @mysql_query($q,$this->dbconnection);
+            $keyDataSet = @mysql_result($r,0,0);
+
             //get CCA Image Rejection data
             $q = "SELECT FreqLO, CenterIF, Pol, SB, SBR
             FROM CCA_TEST_SidebandRatio WHERE fkHeader = $CCA_TD_key
@@ -315,9 +321,9 @@ class NoiseTemperature extends TestData_header{
     	$keys = array_keys($specs);
     	$values = array_values($specs);
 
-    	for($i=0; $i<count($keys); $i++) {
-    		echo $keys[$i], $values[$i];
-    	}
+//     	for($i=0; $i<count($keys); $i++) {
+//     		echo $keys[$i], $values[$i];
+//     	}
 
     	$this->effColdLoadTemp = $specs['CLTemp'];         // effective cold load temperature
     	$this->default_IR = $specs['defImgRej'];              // default image rejection to use if no CCA data available.
