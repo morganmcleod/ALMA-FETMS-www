@@ -32,7 +32,9 @@ class eff {
     var $GNUPLOT_path;
 
     public function __construct() {
-        $this->software_version = "1.0.21";
+        $this->software_version = "1.0.22";
+        // 1.0.22 Reduced number of copies of NominalAngles tables being consulted
+        //
         // 1.0.21 Fixed bugs in pol.eff display, comparing to specs
         //
         // 1.0.20 MTM updated band 4 PolEff display per FEND-40.02.04.00-0236-C-CRE
@@ -879,12 +881,11 @@ class eff {
     }
 
     function Display_PointingAngles() {
-         //Get nominal Az, El
-         $qn = "SELECT AZ, EL FROM NominalAngles
-                WHERE Band = $this->band;";
-         $rn = @mysql_query($qn,$this->dbconnection);
-         $nomAZ = @mysql_result($rn,0,0);
-         $nomEL = @mysql_result($rn,0,1);
+        //Get nominal Az, El
+        $sd = new ScanDetails();
+
+        $nomAZ = $nomEL = 0;
+        $sd -> GetNominalAnglesDB($this->band, $nomAZ, $nomEL);
 
          echo "<div style = 'width:200px'><table id = 'table1'>";
 

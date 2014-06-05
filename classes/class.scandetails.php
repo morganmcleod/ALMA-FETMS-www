@@ -36,54 +36,25 @@ class ScanDetails extends GenericTable {
         $this->BeamEfficencies->Initialize("BeamEfficiencies",$keyBE,"keyBeamEfficiencies",$this->fc,'fkFacility');
     }
 
-    public function GetNominalAngles(){
+    public function GetNominalAnglesDB($band, &$nomAZ, &$nomEL) {
+        $nomAZ = $nomEL = 0;
+        $qn = "SELECT AZ, EL FROM NominalAngles WHERE Band = $band;";
+        $rn = @mysql_query($qn,site_getDbConnection());
+        $row = @mysql_fetch_array($rn);
+        $nomAZ = $row['AZ'];
+        $nomEL = $row['EL'];
+        return true;
+    }
+
+    public function GetNominalAngles() {
         $qBand = "SELECT band FROM ScanSetDetails
         WHERE keyId = ".$this->GetValue(fkScanSetDetails).";";
         $rband = @mysql_query($qBand,$this->dbconnection);
         $band = @mysql_result($rband,0);
-
-        switch ($band) {
-        case "1":
-            $this->nominal_az = -1.7553;
-            $this->nominal_el = -1.7553;
-            break;
-        case "2":
-            $this->nominal_az = -1.7553;
-            $this->nominal_el = 1.7553;
-            break;
-        case "3":
-            $this->nominal_az = 0.323;
-            $this->nominal_el = 1.811;
-            break;
-        case "4":
-            $this->nominal_az = 0;
-            $this->nominal_el = 0;
-            break;
-        case "5":
-            $this->nominal_az = 1.6867;
-            $this->nominal_el = 1.6867;
-            break;
-        case "6":
-            $this->nominal_az = 1.6867;
-            $this->nominal_el = -1.6867;
-            break;
-        case "7":
-            $this->nominal_az = 0.974;
-            $this->nominal_el = 0;
-            break;
-        case "8":
-            $this->nominal_az = 0;
-            $this->nominal_el = 0.974;
-            break;
-        case "9":
-            $this->nominal_az = 0;
-            $this->nominal_el = -0.974;
-            break;
-        case "10":
-            $this->nominal_az = 0;
-            $this->nominal_el = 0;
-            break;
-        }
+        $nomAZ = $nomEL = 0;
+        $this->GetNominalAnglesDB($band, $nomAZ, $nomEL);
+        $this->nominal_az = $nomAZ;
+        $this->nominal_el = $nomEL;
     }
 
     public function UploadListing_Nearfield($filename_nf){
