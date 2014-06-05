@@ -311,31 +311,31 @@ class NoiseTemperature extends TestData_header{
         //get specs from DB
     	$new_specs = new Specifications();
     	$specs = $new_specs->getSpecs('FEIC_NoiseTemperature' , $this->GetValue('Band'));
-    	
+
     	$keys = array_keys($specs);
     	$values = array_values($specs);
-    	
+
     	for($i=0; $i<count($keys); $i++) {
     		echo $keys[$i], $values[$i];
     	}
-    	
-    	$this->effColdLoadTemp = $specs['CLTemp'];         // effective cold load temperature    	
-    	$this->default_IR = $specs['defImgRej'];              // default image rejection to use if no CCA data available.   	
-    	$this->lowerIFLimit = $specs['loIFLim'];            // lower IF limit    	
-		$this->upperIFLimit = $specs['hiIFLim'];            // upper IF limit		
-		$this->NT_allRF_spec = $specs['NT20'];           // spec which must me met at all points in the RF band		
+
+    	$this->effColdLoadTemp = $specs['CLTemp'];         // effective cold load temperature
+    	$this->default_IR = $specs['defImgRej'];              // default image rejection to use if no CCA data available.
+    	$this->lowerIFLimit = $specs['loIFLim'];            // lower IF limit
+		$this->upperIFLimit = $specs['hiIFLim'];            // upper IF limit
+		$this->NT_allRF_spec = $specs['NT20'];           // spec which must me met at all points in the RF band
 		$this->NT_80_spec = $specs['NT80'];              // spec which must be met over 80% of the RF band
-		
+
 		// extra Tssb spec applies to band 3 only:
 		if ($this->GetValue('Band') == 3) {
 			$this->NT_B3Special_spec=$specs['B3exSpec'];
 		}
 		// lower RF limit for applying 80% spec:
 		$this->lower_80_RFLimit = (isset($specs['NT80RF_loLim']))? $specs['NT80RF_loLim'] : 0;
-		
+
 		// upper RF limit for applying 80% spec:
 		$this->upper_80_RFLimit = (isset($specs['NT80RF_hiLim'])) ? $specs['NT80RF_hiLim'] : 0;
-    	    			
+
 		$this->lowerRFLimit = 0;
 		$this->upperRFLimit = 1000;
     }
@@ -865,9 +865,15 @@ class NoiseTemperature extends TestData_header{
         } else {
             $this->foundCCAData = true;
 
+            // find the max keyDataSet for CCA noise temp:
+            $q ="SELECT MAX(keyDataSet) FROM CCA_TEST_NoiseTemperature WHERE fkheader = $CCA_NT_key";
+            $r = @mysql_query($q,$this->dbconnection);
+            $keyDataSet = @mysql_result($r,0,0);
+
             // finally get the CCA Noise Temp data...I'm sure there's a better way
             $q ="SELECT FreqLO, CenterIF, Pol, SB, Treceiver FROM CCA_TEST_NoiseTemperature
-            WHERE fkheader = $CCA_NT_key ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
+            WHERE fkheader = $CCA_NT_key AND keyDataSet = $keyDataSet
+            ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
             $r = @mysql_query($q,$this->dbconnection);
             $this->NT_Logger->WriteLogFile("CCA Noise Temp data query: $q");
 
