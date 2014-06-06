@@ -54,7 +54,7 @@
 			//Sorts through each array to find the specification for each band for each test type.
 			
 			for($t=0; $t<$tLen; $t++) {
-				$filename = "../../specs/" . $test_type[$t] . ".ini";
+				$filename = "../specs/" . $test_type[$t] . ".ini";
 				$test=parse_ini_file($filename,true);
 				for($b=0; $b<$bLen; $b++) {
 					$band = (string)$Band[$b];

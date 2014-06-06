@@ -5,6 +5,7 @@ require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.pwrspectools.php');
 require_once($site_classes . '/class.logger.php');
 require_once($site_FEConfig . '/HelperFunctions.php');
+require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 class IFSpectrumPlotter extends TestData_header{
@@ -32,6 +33,9 @@ class IFSpectrumPlotter extends TestData_header{
     var $TDHkeyString;            //String containing TestData_header keys ("304,308,309,etc", used to append to plots.
     var $logger;                   //Debugging logger.
     var $TS;                      //Timestamp string
+    
+    var $new_spec;				  //Specifications class to be used throughout program
+    var $test_type;				  //Test type to be used throughout program
 
     public function __construct(){
         $this->plotswversion = "1.0.24";
@@ -59,6 +63,9 @@ class IFSpectrumPlotter extends TestData_header{
 
         $this->dbConnection = site_getDbConnection();
         $this->FacilityCode = $infc;
+        
+        $this->new_spec = new Specifications();
+        $this->test_type = 'ifspectrum';
 
     //     $this->logger->NewLine();
     //     $this->logger->WriteLogFile('Initialize_IFSpectrum: fc=' . $this->FacilityCode . ' FEid=' . $this->FEid
@@ -125,7 +132,13 @@ class IFSpectrumPlotter extends TestData_header{
     //         $this->logger->WriteLogFile('Initialize_IFSpectrum: NoiseFloorHeader=' . $this->NoiseFloorHeader);
 
         }//end if numurl > 0
-
+		
+        $specs = $this->new_spec->getSpecs($this->test_type, $this->DataSetBand);
+        
+        $this->fWindow_Low = $specs['fWindow_Low'];
+        $this->fWindow_High = $specs['fWindow_High'];
+        
+        /*
         switch ($this->DataSetBand) {
             case "3":
                 $this->fWindow_Low  = 4  * pow(10,9);
@@ -156,6 +169,7 @@ class IFSpectrumPlotter extends TestData_header{
                 $this->fWindow_High = 12  * pow(10,9);
                 break;
         }
+        */
 
         $this->CCASN = 0;
         $this->FrontEnd = new FrontEnd();
@@ -467,10 +481,14 @@ class IFSpectrumPlotter extends TestData_header{
                     $trclass = "";
                 }
                 echo "<tr class=$trclass><td style='border-right:solid 1px #000000;'><b>$lo</b></td>";
-                $maxch = 3;
+                
+                $spec = $this->new_spec->getSpecs($this->test_type, $band);
+                $maxch = $spec['maxch'];
+                /*
                 if ($band >= 9){
                     $maxch = 1;
                 }
+                */
                 for ($ifchannel = 0; $ifchannel <= $maxch; $ifchannel++ ){
 
                     $q15 = "select TEST_IFSpectrum_PowerVarFullBand.Power_dBm
@@ -495,6 +513,15 @@ class IFSpectrumPlotter extends TestData_header{
                     $pwr = round(@mysql_result($r15,0,0),1);
                     $pwr = number_format($pwr, 1, '.', '');
 
+                    $temp = $spec['pwr'];
+                    if($pwr >= $temp) {
+                    	$bgcolor = $spec['bgcolor' . $temp];
+                    	$fontcolor = $spec['fontcolor' . $temp];
+                    } else {
+                    	$bgcolor = $spec['bgcolor'];
+                    	$fontcolor = $spec['fontcolor'];
+                    }
+                     /*
                     $bgcolor = "";
                     $fontcolor = "#000000";
 
@@ -509,6 +536,7 @@ class IFSpectrumPlotter extends TestData_header{
                             $fontcolor = "#ff0000";
                         }
                     }
+                    */
                     echo "<td><font color = $fontcolor><b>$pwr</b></font></td>";
 
                 }// end for ifchannel
@@ -712,6 +740,11 @@ class IFSpectrumPlotter extends TestData_header{
         $plot_title = "Spurious Noise, FE-".$this->FrontEnd->GetValue('SN').", Band $this->DataSetBand SN ";
         $plot_title .= $this->CCASN . " IF$IFChannel";
 
+       $spec = $this->new_spec->getSpecs($this->test_type, $this->DataSetBand);
+       $ifspec_low = $spec['ifspec_low'];
+       $ifspec_high = $spec['ifspec_high'];
+        
+        /*
         $ifspec_low = 4;
         $ifspec_high = 8;
 
@@ -726,6 +759,7 @@ class IFSpectrumPlotter extends TestData_header{
                 $ifspec_high = 12;
                 break;
         }
+        */
 
         //Get Max and Min LO Values
         $qlo = "SELECT IFSpectrum_SubHeader.FreqLO
@@ -1114,8 +1148,11 @@ class IFSpectrumPlotter extends TestData_header{
         }
 
         $windowSize_string = "2 GHz";
-        $spec_value = 6;
+        
+        $spec = $this->new_spec->getSpecs($this->test_type, $this->DataSetBand);
+        $spec_value = $spec['spec_value'];
 
+        /*
         switch($this->DataSetBand){
             case "6" :
                 $spec_value = 7;
@@ -1129,7 +1166,7 @@ class IFSpectrumPlotter extends TestData_header{
                 $spec_value = 7;
             case "10" :
                 $spec_value = 7;
-        }
+        }*/
 
         if ($windowSize == 31 * pow(10,6)){
             $windowSize_string = "31 MHz";
