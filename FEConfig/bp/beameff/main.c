@@ -34,18 +34,16 @@ int main(int argc, char *argv[])
   char *delimiter;
   dictionary *scan_file_dict,*scan_file_dict2;
   char *inputfile;
-  char *outputfilename;    
+  char *outputfilename;
+  char *outputdirectory;
   int *scansetnumbers;
   int scanset_array[200];
   char printmsg[200];
 
-  sprintf(printmsg,"********************************************<br>\n",VersionNumber);
-  PRINT_STDOUT(printmsg);
-  sprintf(printmsg,"Beam Efficiency Calculator Version  %s<br>\n",VersionNumber);
-  PRINT_STDOUT(printmsg);
-  sprintf(printmsg,"********************************************<br>\n<br>\n",VersionNumber);
-  PRINT_STDOUT(printmsg);
-    
+  printf("********************************************<br>\n");
+  printf("Beam Efficiency Calculator Version  %s<br>\n",VersionNumber);
+  printf("********************************************<br>\n<br>\n");
+
   //Temporary input file name can be put here for debugging:
   inputfile = "";
   if (argc > 1){  
@@ -60,9 +58,12 @@ int main(int argc, char *argv[])
   //Create dictionary from the input text file
   scan_file_dict = iniparser_load(inputfile);
   num_scansets=GetScanSetNumberArray(scan_file_dict,&scanset_array,200);
-  sprintf(printmsg,"Input File: %s<br>\n",inputfile);
+  outputdirectory = iniparser_getstring(scan_file_dict,"settings:outputdirectory", "null");
+  strcpy(stdOutDirectory, outputdirectory);
 
+  sprintf(printmsg,"Input File: %s<br>\n",inputfile);
   PRINT_STDOUT(printmsg);
+
   sprintf(printmsg,"Number of scans: %d<br>\n",GetNumberOfScans(scan_file_dict));
   PRINT_STDOUT(printmsg);
   

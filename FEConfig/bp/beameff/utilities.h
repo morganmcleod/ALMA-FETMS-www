@@ -1,5 +1,7 @@
 #include "SCANDATA.h"
 
+extern char stdOutDirectory[];
+
 #define WARN(args) sprintf(warning,args);warn(); 
 #define WARNING_LENGTH 200
 extern void warn(void);

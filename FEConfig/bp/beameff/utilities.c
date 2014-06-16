@@ -4,32 +4,42 @@
 #include "iniparser.h"
 #include "utilities.h"
 
-char warning[WARNING_LENGTH];  /* this is global, so rename if conflict */ 
-char printmessage[MESSAGE_LENGTH];  //* this is global, so rename if conflict */ 
-
-
 extern int DEBUGGING;
 
-#define OUTPUT_DIR "../../test_datafiles"
+char warning[WARNING_LENGTH];  /* this is global, so rename if conflict */ 
+char printmessage[MESSAGE_LENGTH];  //* this is global, so rename if conflict */ 
+char stdOutDirectory[MESSAGE_LENGTH];
 
 void warn(void) {
   static FILE *warnfile = NULL;
+  char fn[MESSAGE_LENGTH];
   if (warnfile == NULL) {
-    warnfile = fopen(OUTPUT_DIR "/stderr.txt","a");
+      strcpy(fn, stdOutDirectory);
+      strcat(fn, "/stderr.txt");
+      warnfile = fopen(fn, "a");
+      printf("warnfile=%s\n", fn);
   }
   printf(warning); /* to the stdout, i.e. to the screen */
-  fprintf(warnfile,warning);  /* and now to the file */
-  fflush(warnfile);  /* make sure the file gets updated */
+  if (warnfile) {
+      fprintf(warnfile, warning);  /* and now to the file */
+      fflush(warnfile);  /* make sure the file gets updated */
+  }
 } 
 
 void print_stdout(void) {
   static FILE *stdout_file = NULL;
+  char fn[MESSAGE_LENGTH];
   if (stdout_file == NULL) {
-    stdout_file = fopen(OUTPUT_DIR "/stdoutput.txt","a");
+      strcpy(fn, stdOutDirectory);
+      strcat(fn, "/stdoutput.txt");
+      stdout_file = fopen(fn, "a");
+      printf("stdout_fileme=%s\n", fn);
   }
   printf(printmessage); /* to the stdout, i.e. to the screen */
-  fprintf(stdout_file,printmessage);  /* and now to the file */
-  fflush(stdout_file);  /* make sure the file gets updated */
+  if (stdout_file) {
+      fprintf(stdout_file, printmessage);  /* and now to the file */
+      fflush(stdout_file);  /* make sure the file gets updated */
+  }
 } 
 
 
