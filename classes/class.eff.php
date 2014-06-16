@@ -32,7 +32,9 @@ class eff {
     var $GNUPLOT_path;
 
     public function __construct() {
-        $this->software_version = "1.0.22";
+        $this->software_version = "1.0.23";
+        // 1.0.23 Supressed E_NOTICE errors in the Upload...() functions
+        //
         // 1.0.22 Reduced number of copies of NominalAngles tables being consulted
         //
         // 1.0.21 Fixed bugs in pol.eff display, comparing to specs
@@ -603,26 +605,14 @@ class eff {
 
         $software_version = $ini_array['settings']['software_version'];
 
-        if ($ini_array['settings']['pointingangles_band_3'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_3'];
-        }
-        if ($ini_array['settings']['pointingangles_band_4'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_4'];
-        }
-        if ($ini_array['settings']['pointingangles_band_6'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_6'];
-        }
-        if ($ini_array['settings']['pointingangles_band_7'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_7'];
-        }
-        if ($ini_array['settings']['pointingangles_band_8'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_8'];
-        }
-        if ($ini_array['settings']['pointingangles_band_9'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_9'];
-        }
-        if ($ini_array['settings']['pointingangles_band_10'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_10'];
+        $band = 1;
+        while ($band <= 10) {
+            $key = "pointingangles_band_$band";
+            if (isset ($ini_array['settings'][$key]) && $ini_array['settings'][$key] != '') {
+                $pointing_angles_plot = $ini_array['settings'][$key];
+                $band = 11;
+            } else
+                $band++;
         }
 
         foreach ($ini_array as $key => $value) {
@@ -648,6 +638,10 @@ class eff {
                 if ($beameffID != ""){
                     $beameff->Initialize("BeamEfficiencies",$beameffID,"keyBeamEfficiencies",$this->fc,'fkFacility');
                 }
+
+                global $errorReportSettingsNo_E_NOTICE;
+                global $errorReportSettingsNormal;
+                error_reporting($errorReportSettingsNo_E_NOTICE);
 
                 $beameff-> SetValue("fkScanDetails", $keyScanDetails);
                 $beameff-> SetValue("eff_output_file", $ini_filename);
@@ -706,6 +700,8 @@ class eff {
                 $beameff-> SetValue("max_dbdifference", $ini_array[$key]['max_dbdifference']);
                 $beameff-> SetValue("software_version_class_eff", $this->software_version);
 
+                error_reporting($errorReportSettingsNormal);
+
                 $oldurl =  $beameff->GetValue("pointing_angles_plot");
                 $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/") , -1) .  "g";
                 $beameff->SetValue("pointing_angles_plot", $newurl);
@@ -722,26 +718,14 @@ class eff {
 
         $software_version = $ini_array['settings']['software_version'];
 
-        if ($ini_array['settings']['pointingangles_band_3'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_3'];
-        }
-        if ($ini_array['settings']['pointingangles_band_4'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_4'];
-        }
-        if ($ini_array['settings']['pointingangles_band_6'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_6'];
-        }
-        if ($ini_array['settings']['pointingangles_band_7'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_7'];
-        }
-        if ($ini_array['settings']['pointingangles_band_8'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_8'];
-        }
-        if ($ini_array['settings']['pointingangles_band_9'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_9'];
-        }
-        if ($ini_array['settings']['pointingangles_band_10'] != ''){
-            $pointing_angles_plot = $ini_array['settings']['pointingangles_band_10'];
+        $band = 1;
+        while ($band <= 10) {
+            $key = "pointingangles_band_$band";
+            if (isset ($ini_array['settings'][$key]) && $ini_array['settings'][$key] != '') {
+                $pointing_angles_plot = $ini_array['settings'][$key];
+                $band = 11;
+            } else
+                $band++;
         }
 
         foreach ($ini_array as $key => $value) {
@@ -762,6 +746,11 @@ class eff {
                 $beameff-> SetValue("eff_output_file", $ini_filename);
                 $beameff-> SetValue("pointing_angles_plot", $pointing_angles_plot);
                 $beameff-> SetValue("software_version", $software_version);
+
+                global $errorReportSettingsNo_E_NOTICE;
+                global $errorReportSettingsNormal;
+                error_reporting($errorReportSettingsNo_E_NOTICE);
+
                 $beameff-> SetValue("tilt", $ini_array[$key]['tilt']);
                 $beameff-> SetValue("f", $ini_array[$key]['f']);
                 $beameff-> SetValue("type", $ini_array[$key]['type']);
@@ -808,6 +797,8 @@ class eff {
                 $beameff-> SetValue("shift_from_focus_mm", $ini_array[$key]['shift_from_focus_mm']);
                 $beameff-> SetValue("subreflector_shift_mm", $ini_array[$key]['subreflector_shift_mm']);
                 $beameff-> SetValue("defocus_efficiency_due_to_moving_the_subreflector", $ini_array[$key]['defocus_efficiency_due_to_moving_the_subreflector']);
+
+                error_reporting($errorReportSettingsNormal);
 
                 //Get pol of the 180 scan
                 $sd180 = new ScanDetails();
