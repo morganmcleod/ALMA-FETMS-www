@@ -5,6 +5,7 @@ require_once($site_classes . '/class.fecomponent.php');
 require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.cryostat.php');
 require_once($site_classes . '/class.dataplotter.php');
+require_once($site_classes . '/class.wca.php');
 require_once($site_dbConnect);
 
 class TestData_header extends GenericTable{
@@ -25,7 +26,8 @@ class TestData_header extends GenericTable{
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '', $InitFEComps = -1) {
-        $this->swversion = "1.0.7";
+        $this->swversion = "1.0.8";
+        // 1.0.8 minor fix to require(class.wca.php)
         // 1.0.7 MM fixes so that we can run with E_NOTIFY
         // version 1.0.6 Moved code from here which instantiates classes derived from this one!   (to testdata.php, pending verification.)
         // version 1.0.5 MM code formatting fixes, fix Display_RawTestData() for LO Lock test.
@@ -394,7 +396,6 @@ class TestData_header extends GenericTable{
     }
 
     public function Plot_WCA($datatype){
-        require_once($site_classes . '/class.wca.php');
         $wca = new WCA();
         $wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'));
 

@@ -5,6 +5,9 @@ require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.dboperations.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.frontend.php');
+require_once($site_dBcode . '/../dBcode/wcadb.php');
+require_once($site_classes . '/class.spec_functions.php');
+require_once($site_dbConnect);
 
 class WCA extends FEComponent{
     var $_WCAs;
@@ -25,6 +28,10 @@ class WCA extends FEComponent{
     var $tdh_outputpower;    //TestData_header record object for Output Power
     var $tdh_phasenoise;     //TestData_header record object for Phase Noise
     var $tdh_phasejitter;    //TestData_header record object for Phase Jitter
+    
+    var $db_pull;
+    var $new_spec;
+    var $dbconnection;
 
     var $maxSafePowerTable;  //Array of rows for the Max Safe Operating Parameters table.
 
@@ -32,6 +39,9 @@ class WCA extends FEComponent{
         $this->fkDataStatus = '7';
         require(site_get_config_main());
         $this->writedirectory = $wca_write_directory;
+        $this->dbconnection = site_getDbConnection();
+        $this->db_pull = new WCAdb($this->dbconnection);
+        $this->new_spec = new Specifications();
         $this->url_directory = $wca_url_directory;
         $this->GNUplot = $GNUplot;
         $this->ZipDirectory = $this->writedirectory . "zip";
@@ -57,18 +67,18 @@ class WCA extends FEComponent{
         $this->url_directory = $this->url_directory . "wca"
         . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
 
-        $qWCA="SELECT keyId FROM WCAs WHERE fkFE_Component = $this->keyId LIMIT 1;";
         //$qWCA="SELECT keyId FROM WCAs WHERE fkFE_Component = $this->keyId LIMIT 1;";
-        $rWCA=@mysql_query($qWCA,$this->dbconnection);
+        $rWCA = $this->db_pull->q_other('WCA', $this->keyId);
         $WCAs_id = @mysql_result($rWCA,0);
         $this->_WCAs = New GenericTable();
         $this->_WCAs->Initialize("WCAs", $WCAs_id,"keyId",$this->fc,'fkFacility');
 
-        $q = "SELECT keyId
+        /*$q = "SELECT keyId
               FROM LOParams
               WHERE fkComponent = " . $this->keyId . "
               ORDER BY FreqLO ASC;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = @mysql_query($q,$this->dbconnection);//*/
+        $r = $this->db_pull->q(1, $this->keyId);
         $lopcount = 1;
         while ($row = @mysql_fetch_array($r)){
             $this->LOParams[$lopcount] = new GenericTable();
@@ -77,18 +87,8 @@ class WCA extends FEComponent{
         }
 
         //Get FE_Config information
-        $qcfg = "select FE_Config.keyFEConfig AS ConfigId,
-        FE_ConfigLink.keyId AS ConfigLinkId, Front_Ends.keyFrontEnds AS FEId,
-        Front_Ends.SN AS FESN
-        from FE_Config, FE_ConfigLink, Front_Ends
-        WHERE FE_ConfigLink.fkFE_Components = $this->keyId
-        AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
-        AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
-        AND FE_Config.keyFacility = $this->fc
-        AND FE_Config.keyFacility = FE_ConfigLink.fkFE_ConfigFacility
-        AND Front_Ends.keyFacility = $this->fc;";
         //echo $qcfg . "<br>";
-        $rcfg = @mysql_query($qcfg,$this->dbconnection);
+        $rcfg = $this->db_pull->q_other('cfg', $this->keyId, $this->fc);
 
         $this->ConfigId     = @mysql_result($rcfg,0,0);
         $this->ConfigLinkId = @mysql_result($rcfg,0,1);
@@ -96,9 +96,7 @@ class WCA extends FEComponent{
         $this->FESN         = @mysql_result($rcfg,0,3);
 
         //Status location and notes
-        $qsln = "SELECT MAX(keyId) FROM FE_StatusLocationAndNotes
-                             WHERE fkFEComponents = $this->keyId;";
-        $rsln = @mysql_query($qsln,$this->dbconnection);
+        $rsln = $this->db_pull->q_other('sln', $this->keyId);
         $slnid = @mysql_result($rsln,0,0);
         $this->sln = new GenericTable();
         $this->sln->Initialize("FE_StatusLocationAndNotes",$slnid,"keyId");
@@ -110,33 +108,23 @@ class WCA extends FEComponent{
         //echo $this->facility->GetValue('Notes') . "<br>";
 
         //Test data header objects
-        $qtdh = "SELECT keyId FROM TestData_header WHERE
-                 fkFE_Components = $this->keyId and fkTestData_Type = 47;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
+		$rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseJitter');
         $this->tdh_phasejitter = new TestData_header();
         $this->tdh_phasejitter->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
 
-        $qtdh = "SELECT keyId FROM TestData_header WHERE
-                 fkFE_Components = $this->keyId and fkTestData_Type = 45;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
+        $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AmplitudeStability');
         $this->tdh_ampstab = new TestData_header();
         $this->tdh_ampstab->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
 
-        $qtdh = "SELECT keyId FROM TestData_header WHERE
-                 fkFE_Components = $this->keyId and fkTestData_Type = 46;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
+        $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_OutputPower');
         $this->tdh_outputpower = new TestData_header();
         $this->tdh_outputpower->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
 
-        $qtdh = "SELECT keyId FROM TestData_header WHERE
-                 fkFE_Components = $this->keyId and fkTestData_Type = 48;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
+        $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseNoise');
         $this->tdh_phasenoise = new TestData_header();
         $this->tdh_phasenoise->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
 
-        $qtdh = "SELECT keyId FROM TestData_header WHERE
-                 fkFE_Components = $this->keyId and fkTestData_Type = 44;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
+        $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AMNoise');
         $this->tdh_amnoise = new TestData_header();
         $this->tdh_amnoise->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
 
@@ -160,56 +148,22 @@ class WCA extends FEComponent{
         $this->_WCAs->SetValue('fkFE_Component',$this->keyId);
         $this->_WCAs->SetValue('keyFacility',$fc);
 
-        $q_status = "INSERT INTO FE_StatusLocationAndNotes
-        (fkFEComponents, fkLocationNames,fkStatusType)
-        VALUES($this->keyId,$this->fc,'7');";
-        $r_status = @mysql_query($q_status, $this->dbconnection);
+        $r_status = $this->db_pull->q_other('status', $this->keyId, $this->fc);
     }
 
     public function AddNewLOParams(){
-        $FreqLO = 0;
+    	$spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
+        $FreqLO = $spec['FreqLO'];
 
-        switch($this->GetValue('Band')){
-            case 1:
-                $FreqLO = 27.3;
-                break;
-            case 2:
-                $FreqLO = 79;
-                break;
-            case 3:
-                $FreqLO = 92;
-                break;
-            case 4:
-                $FreqLO = 133;
-                break;
-            case 5:
-                $FreqLO = 171;
-                break;
-            case 6:
-                $FreqLO = 221;
-                break;
-            case 7:
-                $FreqLO = 283;
-                break;
-            case 8:
-                $FreqLO = 393;
-                break;
-            case 9:
-                $FreqLO = 610;
-                break;
-            case 10:
-                $FreqLO = 795;
-                break;
-        }
-
-        $q = "Select * from WCA_LOParams WHERE fkComponent = $this->keyId;";
-        $r = @mysql_query($q,$this->dbconnection);
+        /*$q = "Select * from WCA_LOParams WHERE fkComponent = $this->keyId;";
+        $r = @mysql_query($q,$this->dbconnection);//*/
+        $this->db_pull->q(2, $this->keyId);
         $numrows = @mysql_num_rows($r);
         if ($numrows < 1){
-            $qn = "Insert into WCA_LOParams(fkComponent,FreqLO,VDP0,VDP1,VGP0,VGP1)
-                VALUES (".$this->keyId.",".$FreqLO.",
-                0,0,'".$this->_WCAs->GetValue('VG0')."','".$this->_WCAs->GetValue('VG1')."');";
-            $rn = @mysql_query($qn,$this->dbconnection);
+            $values = array();
+            $values[] = $this->_WCAs->GetValue('VG0');
+            $values[] = $this->_WCAs->GetValue('VG1');
+            $rn = $this->db_pull->q_other('n', $this->keyId, NULL, NULL, $FreqLO, NULL, NULL, $values);
         }
     }
 
@@ -346,10 +300,8 @@ class WCA extends FEComponent{
                     <td>Jitter (fs)</td>
                 </tr>
             </div>";
-        $qpj = "SELECT LO, Jitter, Pol FROM WCA_PhaseJitter WHERE fkHeader = " .$this->tdh_phasejitter->keyId . "
-                ORDER BY Pol ASC, LO ASC;";
-
-        $rpj = @mysql_query($qpj,$this->dbconnection);
+        
+        $rpj = $this->db_pull->qpj('select', $this->tdh_phasejitter->keyId);
 
         while ($rowpj = @mysql_fetch_array($rpj)){
             $lo = $rowpj[0];
@@ -465,11 +417,12 @@ class WCA extends FEComponent{
     }
 
     public function Display_LOParams(){
-        $q = "SELECT TS FROM WCA_LOParams
+        /*$q = "SELECT TS FROM WCA_LOParams
             WHERE fkComponent = $this->keyId
             ORDER BY FreqLO ASC
             LIMIT 1;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = @mysql_query($q,$this->dbconnection); //*/
+        $r = $this->db_pull->q(3, $this->keyId);
         $ts = @mysql_result($r,0,0);
         $band = $this->GetValue('Band');
         $sn = $this->GetValue('SN');
@@ -487,10 +440,11 @@ class WCA extends FEComponent{
                 <th>VGP1</th>
             </tr>";
 
-        $q = "SELECT * FROM WCA_LOParams
+        /*$q = "SELECT * FROM WCA_LOParams
               WHERE fkComponent = $this->keyId
               ORDER BY FreqLO ASC;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = @mysql_query($q,$this->dbconnection);//*/
+        $r = $this->db_pull->q(4, $this->keyId);
         $count = 0;
         while ($row = @mysql_fetch_array($r)){
             if ($count % 2 == 0){
@@ -512,27 +466,10 @@ class WCA extends FEComponent{
     public function maxSafePowerForBand($band) {
         // define max safe power limit per band:
         // TODO: move into specs class.
-        switch($this->GetValue('Band')) {
-            case 4:
-                return 33;
-                break;
-            case 6:
-            case 7:
-                return 53;
-                break;
-            case 8:
-                return 121;
-                break;
-            case 9:
-            case 10:
-                return 168;
-                break;
-            default:
-                return 0;
-                break;
-        }
+        $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
+        return $spec['value'];
     }
-
+       
     private function findMaxSafeRows($allRows) {
         // $allRows is an array of arrays where each row has:
         // FreqLO, VD, Power
@@ -601,7 +538,8 @@ class WCA extends FEComponent{
 
         $output = array();
 
-        $r = @mysql_query($q,$this->dbconnection);
+        /*$r = @mysql_query($q,$this->dbconnection);//*/
+        $r = $this->db_pull->run_query($q);
         while ($row = @mysql_fetch_array($r))
             $output[]= $row[0];
 
@@ -623,7 +561,7 @@ class WCA extends FEComponent{
 
     private function loadPowerData($pol, $tdhArray) {
         // Load the output power data for one polarization, coarse and fine combined:
-
+/*
         $q = "SELECT FreqLO, VD$pol as VD, Power FROM WCA_OutputPower WHERE
               fkHeader IN " . $this->FormatTDHList($tdhArray);
 
@@ -631,7 +569,8 @@ class WCA extends FEComponent{
                 AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol
                 ORDER BY FreqLO, VD ASC";
 
-        $r = @mysql_query($q, $this->dbconnection);
+        $r = @mysql_query($q, $this->dbconnection);//*/
+        $r = $this->db_pull->q(5, NULL, $pol, $this->fc, $this->FormatTDHList($tdhArray));
 
         while($row = @mysql_fetch_array($r))
             $allRows[] = $row;    // append row to allRows.
@@ -649,6 +588,7 @@ class WCA extends FEComponent{
                 AND keyDataSet=2";
 
         $r = @mysql_query($q, $this->dbconnection);
+        $r = $this->db_pull->q(6, NULL, NULL, $this->fc, $this->FormatTDHList($tdhArray));
         $row = @mysql_fetch_array($r);
         return $row;
     }
@@ -697,23 +637,8 @@ class WCA extends FEComponent{
 
         // define warm multiplication factor per band.
         // TODO: move into specs class
-        switch ($this->GetValue('Band')) {
-            case 3:
-            case 5:
-            case 6:
-            case 7:
-            case 10:
-                $warmMult = 6;
-                break;
-            case 4:
-            case 8:
-            case 9:
-                $warmMult = 3;
-                break;
-            default:
-                $warmMult = 1;
-                break;
-        }
+        $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
+        $warmMult = $spec['warmMult'];
 
         $loYig = $this->_WCAs->GetValue('FloYIG');
         $hiYig = $this->_WCAs->GetValue('FhiYIG');
@@ -801,10 +726,7 @@ class WCA extends FEComponent{
             <th><b>Drain Voltage VD1</b></th>
           </tr>';
 
-        $qMSP="SELECT * FROM WCA_MaxSafePower WHERE
-        fkFE_Component = $this->keyId
-        AND fkFacility = $this->fc;";
-        $rMSP=@mysql_query($qMSP,$this->dbconnection);
+        $rMSP = $this->db_pull->q_other('MSP', $this->keyId, $this->fc);
         $bg_color = FALSE;
         while ($rowMSP = @mysql_fetch_array($rMSP)) {
             $bg_color = ($bg_color=="#ffffff" ? '#dddddd' : "#ffffff");
@@ -957,24 +879,15 @@ class WCA extends FEComponent{
     }
 
     public function DeleteRecord_WCA(){
-        $qDel = "DELETE FROM WCAs WHERE fkFE_Component = $this->keyId;";
-        $rDel = @mysql_query($qDel,$this->dbconnection);
-        $qDel = "DELETE FROM WCA_AMNoise WHERE fkHeader = ".$this->tdh_amnoise->keyId.";";
-        $rDel = @mysql_query($qDel,$this->dbconnection);
-        $qDel = "DELETE FROM WCA_MaxSafePower WHERE fkFE_Component = $this->keyId;";
-        $rDel = @mysql_query($qDel,$this->dbconnection);
-        $qDel = "DELETE FROM WCA_LOParams WHERE fkFE_Component = $this->keyId;";
-        $rDel = @mysql_query($qDel,$this->dbconnection);
-        $qDel = "DELETE FROM WCA_OutputPower WHERE fkHeader = ".$this->tdh_outputpower->keyId.";";
-        $rDel = @mysql_query($qDel,$this->dbconnection);
-        $qDel = "DELETE FROM WCA_PhaseNoise WHERE fkHeader = ".$this->tdh_phasenoise->keyId.";";
-        $rDel = @mysql_query($qDel,$this->dbconnection);
-        $qDel = "DELETE FROM WCA_PhaseJitter WHERE fkHeader = ".$this->tdh_phasejitter->keyId.";";
-        $rDel = @mysql_query($qDel,$this->dbconnection);
-        $qDel = "DELETE FROM WCA_AmplitudeStability WHERE fkHeader = ".$this->tdh_ampstab->keyId.";";
-        $rDel = @mysql_query($qDel,$this->dbconnection);
-        $qDel = "DELETE FROM FE_ConfigLink WHERE fkFE_Components = $this->keyId;";
-        $rDel = @mysql_query($qDel,$this->dbconnection);
+        $this->db_pull->qDel($this->keyId, 'WCAs', TRUE);
+        $this->db_pull->qDel($this->tdh_amnoise->keyId, 'WCA_AMNoise');
+        $this->db_pull->qDel($this->keyId, 'WCA_MaxSafePower', TRUE);
+        $this->db_pull->qDel($this->keyId, 'WCA_LOParams', TRUE);
+        $this->db_pull->qDel($this->tdh_outputpower->keyId, 'WCA_OutputPower');
+        $this->db_pull->qDel($this->tdh_phasenoise->keyId, 'WCA_PhaseNoise');
+        $this->db_pull->qDel($this->tdh_phasejitter->keyId, 'WCA_PhaseJitter');
+        $this->db_pull->qDel($this->tdh_ampstab->keyId, 'WCA_AmplitudeStability');
+        $this->db_pull->qDel($this->keyId, 'FE_ConfigLink', TRUE);
         parent::Delete_record();
         echo '<meta http-equiv="Refresh" content="1;url=wca_main.php">';
     }
@@ -1038,14 +951,10 @@ class WCA extends FEComponent{
             $keyIdNEW = $this->keyId;
 
             //Copy Max Safe Operating Parameters
-            $qMS = "SELECT * FROM WCA_MaxSafePower WHERE fkFE_Component = $keyIdOLD ORDER BY FreqLO ASC;";
-            $rMS = @mysql_query($qMS,$this->dbconnection);
-            while ($rowMS = @mysql_fetch_array($rMS)){
-                $qMSnew  = "INSERT INTO WCA_MaxSafePower(fkFacility,FreqLO,VD0_setting,VD1_setting,VD0,VD1,fkFE_Component) ";
-                $qMSnew .= "VALUES('". $rowMS['fkFacility'] . "','" . $rowMS['FreqLO'] . "','" . $rowMS['VD0_setting'];
-                $qMSnew .= "','". $rowMS['VD1_setting'] ."','". $rowMS['VD0'] ."','". $rowMS['VD1'] ."','$keyIdNEW')";
-                $rMSnew = @mysql_query($qMSnew,$this->dbconnection);
-            }
+            $keys = array();
+            $keys['old'] = $keyIdOLD;
+            $keys['new'] = $keyIdNEW;
+            $this->db_pull->q_other('MS', NULL, NULL, NULL, NULL, NULL, $keys);
 
             //Copy Yig settings
 
@@ -1053,11 +962,13 @@ class WCA extends FEComponent{
             $Notes = "Configuration changed on " . date('r') . ". ";
 
             //Get rid of any existing LO Params
-            $q = "DELETE FROM WCA_LOParams WHERE fkComponent = $this->keyId;";
-            $r = @mysql_query($q,$this->dbconnection);
+            /*$q = "DELETE FROM WCA_LOParams WHERE fkComponent = $this->keyId;";
+            $r = @mysql_query($q,$this->dbconnection);//*/
+            $r = $this->db_pull->q(7, $this->keyId);
             //Get rid of any existing WCAs table records
-            $q = "DELETE FROM WCAs WHERE fkFE_Component = $this->keyId;";
-            $r = @mysql_query($q,$this->dbconnection);
+           /* $q = "DELETE FROM WCAs WHERE fkFE_Component = $this->keyId;";
+            $r = @mysql_query($q,$this->dbconnection);//*/
+            $r = $this->db_pull->q(8, $this->keyId);
 
             //Read INI file
             $NumLOParams = $ini_array[$sectionname]['LOParams'];
@@ -1078,7 +989,7 @@ class WCA extends FEComponent{
 
                 $qnew  = "INSERT INTO WCA_LOParams(fkComponent,FreqLO,VDP0,VDP1,VGP0,VGP1) ";
                 $qnew .= " VALUES('$this->keyId','$FreqLO','$VDP0','$VDP1','$VGP0','$VGP1');";
-                $rnew = @mysql_query($qnew);
+				$rnew = $this->db_pull->run_query($qnew);
 
                 if ($i == 1){
                     $VG0 = $VGP0;
@@ -1089,8 +1000,7 @@ class WCA extends FEComponent{
             $FHIYIG = $ini_array[$sectionname]['FHIYIG'];
 
             //Copy Yig settings
-            $qYIG = "SELECT * FROM WCAs WHERE fkFE_Component = $this->keyId;";
-            $rYIG = @mysql_query($qYIG,$this->dbconnection);
+            $rYIG = $this->db_pull->q_other('YIG', $this->keyId);
             $YIGnumrows = @mysql_num_rowS($rYIG);
 
             if ($YIGnumrows > 0){
@@ -1103,7 +1013,7 @@ class WCA extends FEComponent{
             if ($YIGnumrows < 1){
                 $qwcas  = "INSERT INTO WCAs(fkFE_Component,FloYIG,FhiYIG,VG0,VG1) ";
                 $qwcas .= "VALUES('$this->keyId','$FLOYIG','$FHIYIG','$VG0','$VG1');";
-                $rwcas = @mysql_query($qwcas,$this->dbconnection);
+				$rwcas = $this->db_pull->run_query($qwcas);
             }
 
             //Done reading from INI file.
@@ -1137,29 +1047,7 @@ class WCA extends FEComponent{
     public function Upload_MaxSafePower_file($datafile_name){
 
         $filecontents = file($datafile_name);
-        $qDelete_AS = "DELETE FROM WCA_MaxSafePower
-        WHERE fkFE_Component = $this->keyId
-        AND fkFacility = $this->fc;";
-        $rDelete_AS = @mysql_query($qDelete_AS,$this->dbconnection);
-
-        for($i=0; $i<sizeof($filecontents); $i++) {
-            $line_data = trim($filecontents[$i]);
-            $RowArray   = explode(",", $line_data);
-            if (is_numeric(substr($RowArray[0],0,1)) == true){
-                $TS = $RowArray[3];
-                $FreqLO = $RowArray[4];
-                $VD0_setting = $RowArray[5];
-                $VD1_setting = $RowArray[6];
-                $VD0 = $RowArray[7];
-                $VD1 = $RowArray[8];
-
-                $qAS = "INSERT INTO WCA_MaxSafePower
-                (TS,FreqLO,VD0_setting,VD1_setting,VD0,VD1,fkFE_Component, fkFacility)
-                VALUES ('$RowArray[3]','$RowArray[4]','$RowArray[5]','$RowArray[6]',
-                '$RowArray[7]','$RowArray[8]','$this->keyId','$this->fc')";
-                $rAS = @mysql_query($qAS,$this->dbconnection);
-            }
-        }
+		$this->db_pull->del_ins('WCA_MaxSafePower', $filecontents, $this, $this->fc);
         unlink($datafile_name);
         unset($tdh);
         //fclose($filecontents);
@@ -1168,10 +1056,7 @@ class WCA extends FEComponent{
     public function Upload_AmplitudeStability_file($datafile_name){
         //Test Data Header object
         //Delete any existing header records
-        $qtdh = "DELETE FROM TestData_header
-            WHERE fkFE_Components = $this->keyId
-            AND fkTestData_Type = 45;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
+        $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_AmplitudeStability');
         $this->tdh_ampstab = new GenericTable();
         $this->tdh_ampstab->NewRecord("TestData_header", 'keyId',$this->GetValue('keyFacility'),'keyFacility');
         $this->tdh_ampstab->SetValue('fkTestData_Type',45);
@@ -1181,31 +1066,7 @@ class WCA extends FEComponent{
 
 
         $filecontents = file($datafile_name);
-        $qDelete_AS = "DELETE FROM WCA_AmplitudeStability WHERE fkHeader = " . $this->tdh_ampstab->keyId . ";";
-        $rDelete_AS = @mysql_query($qDelete_AS,$this->dbconnection);
-
-        $once = 0;
-        for($i=0; $i<sizeof($filecontents); $i++) {
-            $line_data = trim($filecontents[$i]);
-            $tempArray   = explode(",", $line_data);
-            if (is_numeric(substr($tempArray[0],0,1)) == true){
-                $TS = $tempArray[3];
-
-                if ($once == 0){
-                    $this->tdh_ampstab->SetValue('TS',$TS);
-                    $this->tdh_ampstab->Update();
-                    $once = 1;
-                }
-                $FreqLO = $tempArray[4];
-                $Pol = $tempArray[5];
-                $Time = $tempArray[6];
-                $AllanVar = $tempArray[7];
-
-                $qAS = "INSERT INTO WCA_AmplitudeStability(fkHeader,FreqLO,Pol,Time,AllanVar)
-                VALUES('" . $this->tdh_ampstab->keyId . "','$FreqLO','$Pol','$Time','$AllanVar')";
-                $rAS = @mysql_query($qAS,$this->dbconnection);
-            }
-        }
+        $this->db_pull->del_ins('WCA_AmplitudeStability', $filecontents, $this->tdh_ampstab);
         unlink($datafile_name);
         unset($tdh);
         //fclose($filecontents);
@@ -1221,10 +1082,7 @@ class WCA extends FEComponent{
         //$TS = $tdh->GetValue('TS');
 
         //write data file from database
-        $qFindLO = "SELECT DISTINCT(FreqLO) FROM WCA_AmplitudeStability
-        WHERE fkHeader = " . $this->tdh_ampstab->keyId . "
-        ORDER BY FreqLO ASC;";
-        $rFindLO = @mysql_query($qFindLO,$this->dbconnection);
+        $rFindLO = $this->db_pull->qFindLO('WCA_AmplitudeStability', $this->tdh_ampstab->keyId);
         $rowLO=@mysql_fetch_array($rFindLO);
 
         $datafile_count=0;
@@ -1234,13 +1092,14 @@ class WCA extends FEComponent{
             for ($i=0;$i<=sizeof($rowLO);$i++){
                 $CurrentLO = @mysql_result($rFindLO,$i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
-
+/*
                 $q = "SELECT Time,AllanVar FROM WCA_AmplitudeStability
                 WHERE FreqLO = $CurrentLO
                 AND Pol = $j
                 AND fkHeader = " . $this->tdh_ampstab->keyId . "
                 ORDER BY Time ASC;";
-                $r = @mysql_query($q,$this->dbconnection);
+                $r = @mysql_query($q,$this->dbconnection);//*/
+                $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $j, NULL, NULL, $CurrentLO);
 
                 if (@mysql_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "Pol $j, $CurrentLO GHz";
@@ -1330,10 +1189,7 @@ class WCA extends FEComponent{
     public function Upload_AMNoise_file($datafile_name){
         //Test Data Header object
         //Delete any existing header records
-        $qtdh = "DELETE FROM TestData_header
-            WHERE fkFE_Components = $this->keyId
-            AND fkTestData_Type = 44;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
+        $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_AMNoise');
         $this->tdh_amnoise = new GenericTable();
         $this->tdh_amnoise->NewRecord("TestData_header", 'keyId',$this->GetValue('keyFacility'),'keyFacility');
         $this->tdh_amnoise->SetValue('fkTestData_Type',44);
@@ -1342,37 +1198,7 @@ class WCA extends FEComponent{
         $this->tdh_amnoise->Update();
 
         $filecontents = file($datafile_name);
-        $qDelete_AM = "DELETE FROM WCA_AMNoise WHERE fkHeader = " . $this->tdh_amnoise->keyId . ";";
-        $rDelete_AM = @mysql_query($qDelete_AM,$this->dbconnection);
-
-        $once = 0;
-        for($i=0; $i<sizeof($filecontents); $i++) {
-            $line_data = trim($filecontents[$i]);
-            $tempArray   = explode(",", $line_data);
-            if (is_numeric(substr($tempArray[0],0,1)) == true){
-                $TS = $tempArray[3];
-                if ($once == 0){
-                    $this->tdh_amnoise->SetValue('TS',$TS);
-                    $this->tdh_amnoise->Update();
-                    $once = 1;
-                }
-
-                $AMNoise = $tempArray[4];
-                $FreqLO = $tempArray[5];
-                $FreqIF = $tempArray[6];
-                $Pol = $tempArray[7];
-                $DrainVoltage = $tempArray[8];
-                $GateVoltage = $tempArray[9];
-
-                $qAM = "INSERT INTO WCA_AMNoise(fkHeader,AMNoise,FreqLO,FreqIF,Pol,DrainVoltage,GateVoltage)
-                VALUES('" . $this->tdh_amnoise->keyId . "','$AMNoise','$FreqLO','$FreqIF','$Pol','$DrainVoltage','$GateVoltage')";
-                if ($i < 10){
-                    //echo $qAM . "<br>";
-                }
-                $rAM = @mysql_query($qAM,$this->dbconnection);
-
-            }
-        }
+        $this->db_pull->del_ins('WCA_AMNoise', $filecontents, $this->tdh_amnoise);
         unlink($datafile_name);
         unset($tdh);
     }
@@ -1426,14 +1252,7 @@ class WCA extends FEComponent{
             unset($amnzarr);
             $arrct = 0;
             //Get X axis values
-            $qFreqLO = "SELECT FreqLO, AMNoise FROM WCA_AMNoise
-            WHERE fkHeader = " . $this->tdh_amnoise->keyId . "
-            AND FreqIf >= $FreqLOW
-            AND FreqIF <= $FreqHI
-            AND Pol = $pol
-            AND fkFacility = $this->fc
-            ORDER BY FreqLO ASC;";
-            $rFreqLO  = @mysql_query($qFreqLO ,$this->dbconnection);
+            $rFreqLO = $this->db_pull->q_other('FreqLO', $this->tdh_amnoise->keyId, $this->fc, $pol, $FreqLOW, $FreqHI);
             while ($row = @mysql_fetch_array($rFreqLO)){
                 $amnzarr[0][$arrct]=$row[0];
                 $amnzarr[1][$arrct]=$row[1];
@@ -1446,14 +1265,7 @@ class WCA extends FEComponent{
             //echo "1: ".$amnzarr[1][5]."<br>";
 
             $arrct = 0;
-            $qlo = "SELECT DISTINCT(FreqLO) FROM WCA_AMNoise
-            WHERE fkHeader = " . $this->tdh_amnoise->keyId . "
-            AND FreqIf >= $FreqLOW
-            AND FreqIF <= $FreqHI
-            AND Pol = $pol
-            AND fkFacility = $this->fc
-            ORDER BY FreqLO ASC;";
-            $rlo = @mysql_query($qlo,$this->dbconnection);
+            $rlo = $this->db_pull->qlo('WCA_AMNoise', $this->tdh_amnoise->keyId, $this->fc, FALSE, $FreqLOW, $FreqHI, $pol);
             while($rowlo = @mysql_fetch_array($rlo)){
                 $freqarr[$arrct] = $rowlo[0];
                 $arrct += 1;
@@ -1542,12 +1354,7 @@ class WCA extends FEComponent{
             $this->_WCAs->Update();
             $imagepath = $imagedirectory . $imagename;
 
-
-            $qNumIF = "SELECT DISTINCT(FreqIF) FROM WCA_AMNoise
-            WHERE fkHeader = " . $this->tdh_amnoise->keyId . "
-            AND Pol = $pol
-            AND fkFacility = $this->fc;";
-            $rNumIF=@mysql_query($qNumIF,$this->dbconnection);
+            $rNumIF = $this->db_pull->q_other('NumIF', $this->tdh_amnoise->keyId, $this->fc, $pol);
             $NumIF = @mysql_num_rows($rNumIF);
 
 
@@ -1559,12 +1366,13 @@ class WCA extends FEComponent{
 
 
             $IFcount = 0;
-            $q="SELECT FreqIF,FreqLO,AMNoise FROM WCA_AMNoise
+           /* $q="SELECT FreqIF,FreqLO,AMNoise FROM WCA_AMNoise
             WHERE fkHeader = " . $this->tdh_amnoise->keyId . "
             AND Pol = $pol
             AND fkFacility = $this->fc
             ORDER BY FreqLO ASC, FreqIF ASC;";
-            $r=@mysql_query($q,$this->dbconnection);
+            $r=@mysql_query($q,$this->dbconnection);//*/
+            $r = $this->db_pull->q(10, $this->tdh_amnoise->keyId, $pol, $this->fc);
             while($row=@mysql_fetch_array($r)){
                 $stringData = "$row[0]\t$row[1]\t$row[2]\r\n";
                 fwrite($fh, $stringData);
@@ -1610,16 +1418,8 @@ class WCA extends FEComponent{
     public function Upload_PhaseNoise_file($datafile_name){
         //Test Data Header object
         //Delete any existing header records
-        $qtdh = "DELETE FROM TestData_header
-        WHERE fkFE_Components = $this->keyId
-        AND fkTestData_Type = 47
-        AND keyFacility = $this->fc;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
-        $qtdh = "DELETE FROM TestData_header
-        WHERE fkFE_Components = $this->keyId
-        AND fkTestData_Type = 48
-        AND keyFacility = $this->fc;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
+        $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_PhaseJitter', $this->fc);
+        $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_PhaseNoise', $this->fc);
         $this->tdh_phasenoise = new GenericTable();
         $this->tdh_phasenoise->NewRecord("TestData_header", 'keyId',$this->GetValue('keyFacility'),'keyFacility');
         $this->tdh_phasenoise->SetValue('fkTestData_Type',48);
@@ -1634,31 +1434,7 @@ class WCA extends FEComponent{
         $this->tdh_phasejitter->Update();
 
         $filecontents = file($datafile_name);
-        $qDelete_PN = "DELETE FROM WCA_PhaseNoise WHERE fkHeader = ".$this->tdh_phasenoise->keyId."
-        AND keyFacility = $this->fc;";
-        $rDelete_PN = @mysql_query($qDelete_PN,$this->dbconnection);
-
-        $once = 0;
-        for($i=0; $i<sizeof($filecontents); $i++) {
-
-            $line_data = trim($filecontents[$i]);
-            $RowArray   = explode(",", $line_data);
-            if (is_numeric(substr($RowArray[0],0,1)) == true){
-                if ($once ==0){
-                    $this->tdh_phasenoise->SetValue('TS',$RowArray[3]);
-                    $this->tdh_phasenoise->Update();
-                    $this->tdh_phasejitter->SetValue('TS',$RowArray[3]);
-                    $this->tdh_phasejitter->Update();
-                    $once = 1;
-                }
-                $qPN = "INSERT INTO WCA_PhaseNoise
-                (fkHeader,
-                FreqLO,Pol,CarrierOffset,Lf)
-                VALUES ('". $this->tdh_phasenoise->keyId  ."',
-                '$RowArray[4]','$RowArray[5]','$RowArray[6]','$RowArray[7]')";
-                $rPN = @mysql_query($qPN,$this->dbconnection);
-            }
-        }
+        $this->db_pull->del_ins('WCA_PhaseNoise', $filecontents, $this->tdh_phasenoise, $this->fc, $this->tdh_phasejitter);
         unlink($datafile_name);
         unset($tdh);
         //fclose($filecontents);
@@ -1674,28 +1450,21 @@ class WCA extends FEComponent{
 
 
         $loindex=0;
+        
+        $this->db_pull->qpj('delete', $this->tdh_phasejitter->keyId, $this->fc);
 
-        $qpjdel = "DELETE FROM WCA_PhaseJitter WHERE fkHeader = ".$this->tdh_phasenoise->keyId."
-        AND fkFacility = $this->fc;";
-        $rpjdel = @mysql_query($qpjdel,$this->dbconnection);
-
-        $qlo = "SELECT DISTINCT(FreqLO), Pol FROM WCA_PhaseNoise
-        WHERE fkHeader = " . $this->tdh_phasenoise->keyId . "
-        AND fkFacility = $this->fc
-        ORDER BY FreqLO ASC;";
-        $rlo = @mysql_query($qlo, $this->dbconnection);
-
-
+        $rlo = $this->db_pull->qlo('WCA_PhaseNoise', $this->tdh_phasenoise, $this->fc);
 
         while ($rowlo = @mysql_fetch_array($rlo)){
             $lo = $rowlo[0];
             $pol = $rowlo[1];
-            $loarray[$loindex] = $lo;
             $jitterarray[$loindex] = $this->GetPhaseJitter($lo, $pol);
-
-            $qpj = "INSERT INTO WCA_PhaseJitter (fkHeader,LO,Jitter,pol,fkFacility)
-            VALUES (" . $this->tdh_phasejitter->keyId . ", $lo, $jitterarray[$loindex],$pol,$this->fc);";
-            $rpj = @mysql_query($qpj,$this->dbconnection);
+			$values = array();
+			$values[] = $lo;
+			$values[] = $pol;
+			$values[] = $jitterarray[$loindex];
+			
+			$this->db_pull->qpj('insert', $this->tdh_phasejitter->keyId, $this->fc, $values);
 
 
             $loindex += 1;
@@ -1705,11 +1474,7 @@ class WCA extends FEComponent{
 
 
         //write data file from database
-        $qFindLO = "SELECT DISTINCT(FreqLO) FROM WCA_PhaseNoise
-        WHERE fkHeader = ".$this->tdh_phasenoise->keyId."
-        AND fkFacility = $this->fc
-        ORDER BY FreqLO ASC;";
-        $rFindLO = @mysql_query($qFindLO,$this->dbconnection);
+		$rFindLO = $this->db_pull->qFindLO('WCA_PhaseNoise', $this->tdh_phasenoise->keyId, $this->fc);
         $rowLO=@mysql_fetch_array($rFindLO);
 
         $datafile_count=0;
@@ -1718,13 +1483,14 @@ class WCA extends FEComponent{
                 $CurrentLO = @mysql_result($rFindLO,$i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
-                $q = "SELECT CarrierOffset,Lf FROM WCA_PhaseNoise
+               /* $q = "SELECT CarrierOffset,Lf FROM WCA_PhaseNoise
                 WHERE FreqLO = $CurrentLO
                 AND Pol = $j
                 AND fkHeader = ".$this->tdh_phasenoise->keyId."
                 AND fkFacility = $this->fc
                 ORDER BY CarrierOffset ASC;";
-                $r = @mysql_query($q,$this->dbconnection);
+                $r = @mysql_query($q,$this->dbconnection);//*/
+                $r = $this->db_pull->q(11, $this->tdh_phasenoise->keyId, $j, $this->fc, NULL, $CurrentLO);
 
                 if (@mysql_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "Pol $j, $CurrentLO GHz";
@@ -1810,14 +1576,15 @@ class WCA extends FEComponent{
         $sumtrap2 = 0;
 
 
-        $q = "SELECT CarrierOffset,FreqLO,Lf FROM WCA_PhaseNoise
+        /*$q = "SELECT CarrierOffset,FreqLO,Lf FROM WCA_PhaseNoise
         WHERE fkHeader = ". $this->tdh_phasenoise->keyId . "
         AND FreqLO = $LOfreq
         AND Pol = $pol
         AND fkFacility = $this->fc
         ORDER BY CarrierOffset ASC;";
 
-        $r = @mysql_query($q, $this->dbconnection);
+        $r = @mysql_query($q, $this->dbconnection);//*/
+        $r = $this->db_pull->q(12, $this->tdh_phasenoise->keyId, $pol, $this->fc, NULL, NULL, $LOfreq);
 
         $GbE_Carrier = $LOfreq * pow(10, 9);
         $GbE_Pole = 1875000;
@@ -1869,10 +1636,7 @@ class WCA extends FEComponent{
     public function Upload_OutputPower_file($datafile_name){
         //Test Data Header object
         //Delete any existing header records
-        $qtdh = "DELETE FROM TestData_header
-        WHERE fkFE_Components = $this->keyId
-        AND fkTestData_Type = 46;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
+        $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_OutputPower');
         $this->tdh_outputpower = new GenericTable();
         $this->tdh_outputpower->NewRecord("TestData_header", 'keyId',$this->GetValue('keyFacility'),'keyFacility');
         $this->tdh_outputpower->SetValue('fkTestData_Type',46);
@@ -1881,41 +1645,7 @@ class WCA extends FEComponent{
         $this->tdh_outputpower->Update();
 
         $filecontents = file($datafile_name);
-        $qDelete_OP = "DELETE FROM WCA_OutputPower
-        WHERE fkHeader = ". $this->tdh_outputpower->keyId . "
-        AND fkFacility = $this->fc;";
-        $rDelete_OP = @mysql_query($qDelete_OP,$this->dbconnection);
-
-        $once = 0;
-        for($i=0; $i<sizeof($filecontents); $i++) {
-            $line_data = trim($filecontents[$i]);
-            $RowArray   = explode(",", $line_data);
-            if (is_numeric(substr($RowArray[0],0,1)) == true){
-                if ($once == 0){
-                    $this->tdh_outputpower->SetValue('TS',$RowArray[3]);
-                    $this->tdh_outputpower->Update();
-                    $once = 1;
-                }
-                $PolTemp = $RowArray[6];
-                if (strtolower($RowArray[6])=="a"){
-                    $PolTemp = "0";
-                }
-                if (strtolower($RowArray[6])=="b"){
-                    $PolTemp = "1";
-                }
-
-                $qOP = "INSERT INTO WCA_OutputPower
-                (fkHeader,keyDataSet,
-                FreqLO,Power,Pol,
-                VD0,VD1,VG0,VG1,
-                fkFacility)
-                VALUES ('".$this->tdh_outputpower->keyId."','$RowArray[1]',
-                '$RowArray[4]','$RowArray[5]','$PolTemp',
-                '$RowArray[7]','$RowArray[8]','$RowArray[9]','$RowArray[10]',
-                '$this->fc')";
-                $rOP = @mysql_query($qOP,$this->dbconnection);
-            }
-        }
+        $this->db_pull->del_ins('WCA_OutputPower', $filecontents, $this->tdh_outputpower, $this->fc);
         unlink($datafile_name);
         unset($tdh);
         //fclose($filecontents);
@@ -1935,12 +1665,7 @@ class WCA extends FEComponent{
 
     public function Plot_OutputPower_vs_frequency(){
         $Band = $this->GetValue('Band');
-        $qTS = "SELECT VD0, VD1 FROM WCA_OutputPower
-        WHERE fkHeader = ". $this->tdh_outputpower->keyId . "
-        AND keyDataSet = 1
-        AND fkFacility = $this->fc
-        LIMIT 1;";
-        $rTS = @mysql_query($qTS,$this->dbconnection);
+        $rTS = $this->db_pull->q_other('TS', $this->tdh_outputpower->keyId, $this->fc);
         $rowTS=@mysql_fetch_array($rTS);
         $VD0=$rowTS[0];
         $VD1=$rowTS[1];
@@ -1971,13 +1696,7 @@ class WCA extends FEComponent{
                 unlink($data_file[$pol]);
             }
             $fh = fopen($data_file[$pol], 'w');
-            $qOP = "SELECT FreqLO,Power FROM WCA_OutputPower
-            WHERE Pol = $pol
-            AND fkHeader = ". $this->tdh_outputpower->keyId . "
-            AND keyDataSet = 1
-            AND fkFacility = $this->fc
-            ORDER BY FreqLO ASC;";
-            $rOP = @mysql_query($qOP,$this->dbconnection);
+            $rOP = $this->db_pull->q_other('OP', $this->tdh_outputpower->keyId, $this->fc, $pol);
             while($row=@mysql_fetch_array($rOP)){
                 $stringData = "$row[0]\t$row[1]\r\n";
                 fwrite($fh, $stringData);
@@ -1999,10 +1718,7 @@ class WCA extends FEComponent{
         fwrite($fh, "set yrange[0:]\r\n");
 
         //set xrange
-        $qx = "SELECT MAX(FreqLO) FROM WCA_OutputPower
-        WHERE fkHeader = ". $this->tdh_outputpower->keyId . "
-        AND fkFacility = $this->fc;";
-        $rx = @mysql_query($qx,$this->dbconnection);
+        $rx = $this->db_pull->q_other('x', $this->tdh_outputpower->keyId, $this->fc);
         $xMAX = @mysql_result($rx,0) + 1;
         fwrite($fh, "set xrange[:$xMAX]\r\n");
 
@@ -2011,73 +1727,16 @@ class WCA extends FEComponent{
 
         fwrite($fh, "set key outside\r\n");
 
-
-        switch ($Band) {
-            case 3:
-                fwrite($fh, "f2(x)=((x>91.8) && (x<108)) ? 1.6 : 1/0\r\n"); //max spec
-                $plot_string = "plot f2(x) title 'Spec' with lines lw 3";
-                break;
-
-            case 4:
-                fwrite($fh, "f2(x)=((x>66) && (x<75)) ? 30 : 1/0\r\n");//max safe
-                fwrite($fh, "f3(x)=((x>66.5) && (x<75)) ? 15 : 1/0\r\n");//min spec
-                fwrite($fh, "f4(x)=((x>66) && (x<78)) ? 30 : 1/0\r\n");//max spec
-                $plot_string = "plot f3(x) title 'Spec' with lines lw 3 lt 1";
-                $plot_string .= ", f4(x) notitle with lines lw 3 lt 1 ";
-                $plot_string .= ", f2(x) title 'Max Safe Operation' with lines lw 3 lt 2 ";
-                break;
-
-            case 5:
-                fwrite($fh, "f2(x)=((x>83) && (x<101.5)) ? 15 : 1/0\r\n"); //max spec
-                fwrite($fh, "f3(x)=((x>83) && (x<101.5)) ? 40 : 1/0\r\n");//max safe
-                $plot_string = "plot f2(x) title 'Spec' with lines lw 3";
-                $plot_string .= ", f3(x) title 'Max Safe Operation' with lines lw 3 ";
-                break;
-
-            case 6:
-                fwrite($fh, "f2(x)=((x>73.7) && (x<88.3)) ? 20 : 1/0\r\n");//max spec
-                fwrite($fh, "f3(x)=((x>73.7) && (x<88.3)) ? 40 : 1/0\r\n");//max safe
-                $plot_string = "plot f2(x) title 'Spec' with lines lw 3";
-                $plot_string .= ", f3(x) title 'Max Safe Operation' with lines lw 3 ";
-                break;
-            case 7:
-                fwrite($fh, "f2(x)=((x>93.3) && (x<108)) ? 12 : 1/0\r\n");//max spec
-                fwrite($fh, "f4(x)=((x>108) && (x<121.7)) ? 8 : 1/0\r\n");//max spec
-                fwrite($fh, "f5(x)=((x>93.3) && (x<121.7)) ? 40 : 1/0\r\n");//max safe
-
-                $plot_string = "plot f2(x) title 'Spec' with lines lw 3 lt 1";
-                $plot_string .= ", f4(x) title 'Spec' with lines lw 3 lt 1";
-                $plot_string .= ", f5(x) title 'Max Safe Operation' with lines lw 3 ";
-                break;
-            case 8:
-                fwrite($fh, "f4(x)=((x>65.5) && (x<70)) ? 90 : 1/0\r\n");//max spec 1
-                fwrite($fh, "f5(x)=((x>70) && (x<82)) ? 80 : 1/0\r\n");//max spec 2
-                fwrite($fh, "f6(x)=((x>65.5) && (x<82)) ? 90 : 1/0\r\n");//max safe
-
-                $plot_string = "plot f6(x) with lines lt 2 lw 3.2 title 'Max Safe Operation'";
-                $plot_string .= ", f4(x) title 'Spec' with lines lw 2.7 lt 1";
-                $plot_string .= ", f5(x) title 'Spec' with lines lw 3 lt 1";
-
-                break;
-
-            case 9:
-                fwrite($fh, "f2(x)=((x>67.3) && (x<79.1)) ? 100 : 1/0\r\n");
-                fwrite($fh, "f3(x)=((x>67.3) && (x<79.1)) ? 125 : 1/0\r\n");
-                $plot_string = "plot f2(x) title 'Spec' with lines lw 3";
-                $plot_string .= ", f3(x) title 'Max Safe Operation' with lines lw 3 ";
-                break;
-
-            case 10:
-                fwrite($fh, "f2(x)=((x>88) && (x<98)) ? 60 : 1/0\r\n");//max spec
-                fwrite($fh, "f3(x)=((x>98) && (x<105)) ? 80 : 1/0\r\n");//max spec
-
-                $plot_string = "plot f2(x) title 'Spec' with lines lw 4 lt 1";
-                $plot_string .= ", f3(x) title 'Spec' with lines lw 4 lt 1";
-                break;
-
-            default:
-                fwrite($fh, "f1(x)=((x>=25) && (x<=25.01)) ? 0 : 1/0\r\n");
-                $plot_string = "plot f1(x) notitle with lines lw 3";
+        $specs = $this->new_spec->getSpecs('wca', $Band);
+        if(is_array($specs['fwrite1'])) {
+	        $plot_string = "";
+	        for ($i=0; $i<count($specs['fwrite1']); $i++) {
+	        	fwrite($fh, $specs['fwrite1'][$i]);
+	        	$plot_string .= $specs['plot_string1'][$i];
+	        }
+        } else {
+        	fwrite($fh, $specs['fwrite1']);
+        	$plot_string = $specs['plot_string1'];
         }
 
         $plot_string .= ", '$data_file[0]' using 1:2 title 'Pol 0' with lines ";
@@ -2098,58 +1757,17 @@ class WCA extends FEComponent{
         $TS = $this->tdh_outputpower->GetValue('TS') ;
 
         //write data files from database
-        $spec_value_1 = 100;
-        $spec_description_1 = 'Spec';
-
-        $spec_value_2 = 0;
-        $spec_description_2 = '';
-        $enable_spec_2 = false;
-
         $Band = $this->GetValue('Band');
-        switch ($Band) {
-            case 3:
-                $spec_value_1 = 1.6;
-                break;
-            case 4:
-                $spec_value_1 = 15;
-                $spec_value_2 = 30;
-                $spec_description_1 = 'Spec < 75 GHz';
-                $spec_description_2 = 'Spec >= 75 GHz)';
-                $enable_spec_2 = true;
-                break;
-            case 5:
-                $spec_value_1 = 15;
-                break;
-            case 6:
-                $spec_value_1 = 20;
-                break;
-            case 7:
-                $spec_value_1 = 8;
-                break;
-            case 8:
-                $spec_value_1 = 80;
-                break;
-            case 9:
-                $spec_value_1 = 100;
-                break;
-            case 10:
-                $spec_value_1 = 60;
-                $spec_value_2 = 80;
-                $spec_description_1 = 'Spec < 98 GHz';
-                $spec_description_2 = 'Spec >= 98 GHz';
-                $enable_spec_2 = true;
-                break;
-        }
+        $specs = $this->new_spec->getSpecs('wca', $Band);
+        $spec_value_1 = $specs['spec_value_1'];
+        $spec_description_1 = $specs['spec_description_1'];
+
+        $spec_value_2 = $specs['spec_value_2'];
+        $spec_description_2 = $specs['spec_description_2'];
+        $enable_spec_2 = $specs['enable_spec_2'];
 
         $datafile_count=0;
-        $qFindLO = "SELECT DISTINCT(FreqLO) FROM WCA_OutputPower
-        WHERE fkHeader = ". $this->tdh_outputpower->keyId . "
-        AND keyDataSet <> 1
-        AND Pol = $pol
-        AND fkFacility = $this->fc
-        ORDER BY FreqLO ASC;";
-
-        $rFindLO = @mysql_query($qFindLO,$this->dbconnection);
+        $rFindLO = $this->db_pull->qFindLO('WCA_OutputPower', $this->tdh_outputpower->keyId, $this->fc, $pol, '<> 1');
         $rowLO=@mysql_fetch_array($rFindLO);
         $i=0;
         $data_file = array();
@@ -2159,7 +1777,7 @@ class WCA extends FEComponent{
                 $CurrentLO = @mysql_result($rFindLO,$i);
 
                 // TODO:   special meaining of keyDataSet for band 3?   Hmmm...
-                if ($Band != 3){
+                /*if ($Band != 3){
                     $q = "SELECT VD$pol,Power FROM WCA_OutputPower
                     WHERE Pol = $pol
                     AND fkHeader = ". $this->tdh_outputpower->keyId . "
@@ -2178,8 +1796,14 @@ class WCA extends FEComponent{
                     ORDER BY VD$pol ASC;";
                 }
 
-                $r = @mysql_query($q,$this->dbconnection);
-
+                $r = @mysql_query($q,$this->dbconnection);//*/
+                if($Band != 3) {
+                	$req = 13;
+                } else {
+                	$req = 14;
+                }
+                $r = $this->db_pull->q($req, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
+                
                 if (@mysql_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "$CurrentLO GHz";
                     $data_file[$datafile_count] = $this->writedirectory . "wca_op_vs_dv_".$i."_".$pol.".txt";
@@ -2261,13 +1885,7 @@ class WCA extends FEComponent{
         //write data files from database
 
         $datafile_count=0;
-        $qFindLO = "SELECT DISTINCT(FreqLO) FROM WCA_OutputPower
-        WHERE fkHeader = ". $this->tdh_outputpower->keyId . "
-        AND keyDataSet = 3
-        AND Pol = $pol
-        AND fkFacility = $this->fc
-        ORDER BY FreqLO ASC;";
-        $rFindLO = @mysql_query($qFindLO,$this->dbconnection);
+        $rFindLO = $this->db_pull->qFindLO('WCA_OutputPower', $this->tdh_outputpower->keyId, $this->fc, $pol, '= 3');
         $i=0;
         $data_file = array();
 
@@ -2275,7 +1893,7 @@ class WCA extends FEComponent{
             while ($rowLO = mysql_fetch_array($rFindLO)){
                 $CurrentLO = @mysql_result($rFindLO,$i);
 
-                $q = "SELECT VD$pol,Power FROM WCA_OutputPower
+                /*$q = "SELECT VD$pol,Power FROM WCA_OutputPower
                 WHERE Pol = $pol
                 AND fkHeader = ". $this->tdh_outputpower->keyId . "
                 AND keyDataSet = 3
@@ -2283,7 +1901,8 @@ class WCA extends FEComponent{
                 AND fkFacility = $this->fc
                 ORDER BY Power ASC, VD$pol ASC;";
 
-                $r = @mysql_query($q,$this->dbconnection);
+                $r = @mysql_query($q,$this->dbconnection);//*/
+                $r = $this->db_pull->q(15, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
 
 
                 if (@mysql_num_rows($r) > 1){
@@ -2379,54 +1998,17 @@ class WCA extends FEComponent{
         fwrite($fh, "set yrange[0:1]\r\n");
         fwrite($fh, "set key outside\r\n");
         $Band = $this->GetValue('Band');
-        switch ($Band) {
-            case 3:
-                fwrite($fh, "set xrange[0:1.6]\r\n");
-
-                fwrite($fh, "f1(x)=((x>=0.4) && (x<=1.6)) ? 0.5 : 1/0\r\n");
-                $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
-                break;
-            case 4:
-                fwrite($fh, "set xrange[0:30]\r\n");
-                fwrite($fh, "f1(x)=((x>=3.75) && (x<=30)) ? 0.25 : 1/0\r\n");
-                $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
-                break;
-            case 5:
-                fwrite($fh, "set xrange[0:15]\r\n");
-                fwrite($fh, "f1(x)=((x>=1) && (x<3)) ? 0.5 : 1/0\r\n");
-                fwrite($fh, "f2(x)=((x>=3) && (x<=15)) ? 0.3 : 1/0\r\n");
-                $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
-                $plot_string .= ", f2(x) title 'Spec' with lines lw 3 lt 1";
-                break;
-            case 6:
-                fwrite($fh, "set xrange[0:20]\r\n");
-                fwrite($fh, "f1(x)=((x>=5) && (x<=20)) ? 0.5 : 1/0\r\n");
-                $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
-                break;
-            case 7:
-                fwrite($fh, "set xrange[0:40]\r\n");
-                fwrite($fh, "f1(x)=((x>=1) && (x<=8)) ? 0.5 : 1/0\r\n");
-                $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
-                break;
-            case 8:
-                fwrite($fh, "set xrange[0:80]\r\n");
-                fwrite($fh, "f1(x)=((x>=20) && (x<=80)) ? 0.3 : 1/0\r\n");
-                $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
-                break;
-            case 9:
-                fwrite($fh, "set xrange[0:100]\r\n");
-                fwrite($fh, "f1(x)=((x>=25) && (x<=100)) ? 0.3 : 1/0\r\n");
-                $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
-                break;
-            case 10:
-                fwrite($fh, "set xrange[0:140]\r\n");
-                fwrite($fh, "f1(x)=((x>=20) && (x<=80)) ? 0.5 : 1/0\r\n");
-                $plot_string = "plot f1(x) title 'Spec' with lines lw 4";
-                break;
-            default:
-                fwrite($fh, "f1(x)=((x>=25) && (x<=25.01)) ? 0 : 1/0\r\n");
-                $plot_string = "plot f1(x) notitle with lines lw 3";
-
+        $specs = $this->new_spec->getSpecs('wca', $Band);
+        fwrite($fh, $specs['fwrite_set']);
+        if(is_array($specs['fwrite2'])) {
+	        $plot_string = '';
+	        for ($i=0; $i<count($specs['fwrite2']); $i++) {
+	        	fwrite($fh, $specs['fwrite2'][$i]);
+	        	$plot_string .= $specs['plot_string2'][$i];
+	        }
+        } else {
+        	fwrite($fh, $specs['fwrite2']);
+        	$plot_string = $specs['plot_string2'];
         }
 
         for ($i=0;$i<sizeof($data_file);$i++){
@@ -2467,10 +2049,7 @@ class WCA extends FEComponent{
         $PlotNeeded = false;
 
         if ($ImageURL == ""){
-            $qCheck = "SELECT * FROM $tableName
-            WHERE fkFE_Component = $this->keyId
-            AND fkFacility = $this->fc LIMIT 3;";
-            $rCheck = @mysql_query($qCheck,$this->dbconnection);
+            $rCheck = $this->db_pull->q_other('Check', $this->keyId, $this->fc, NULL, NULL, NULL, NULL, $tableName);
             if (@mysql_num_rows($rCheck) > 0){
                 $PlotNeeded = true;
             }

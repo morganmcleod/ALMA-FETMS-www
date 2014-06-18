@@ -14,6 +14,7 @@ $site_libraries = $site_root . "/libraries";
 $site_FEConfig = $site_root . "/FEConfig";
 $site_config_main = $site_root . "/config_main.php";
 $site_dbConnect = $site_root . "/dbConnect/dbConnect.php";
+$site_dBcode = $site_root . "/dBcode";
 
 // function to get the path to the classes directory:
 function site_get_classes() {

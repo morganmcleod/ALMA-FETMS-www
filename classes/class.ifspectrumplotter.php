@@ -6,6 +6,7 @@ require_once($site_classes . '/class.pwrspectools.php');
 require_once($site_classes . '/class.logger.php');
 require_once($site_FEConfig . '/HelperFunctions.php');
 require_once($site_classes . '/class.spec_functions.php');
+require_once($site_dBcode . '/ifspectrumdb.php');
 require_once($site_dbConnect);
 
 class IFSpectrumPlotter extends TestData_header{
@@ -33,12 +34,14 @@ class IFSpectrumPlotter extends TestData_header{
     var $TDHkeyString;            //String containing TestData_header keys ("304,308,309,etc", used to append to plots.
     var $logger;                   //Debugging logger.
     var $TS;                      //Timestamp string
-    
+
     var $new_spec;				  //Specifications class to be used throughout program
     var $test_type;				  //Test type to be used throughout program
+	var $db_pull;                 //IFSpectrumDB object
 
     public function __construct(){
-        $this->plotswversion = "1.0.24";
+        $this->plotswversion = "1.1.0";
+        // 1.1.0  ATB: moved database calls to dbCode/ifspectrumdb.php
         // 1.0.24 MTM: fixed inconsistency in the two queries in Display_TotalPowerTable
         // 1.0.23 MTM: fixes so we can run with E_NOTICE enabled
         // 1.0.22 MTM: fix "set...screen" commands to gnuplot
@@ -60,17 +63,22 @@ class IFSpectrumPlotter extends TestData_header{
         $this->DataSetBand = $Band;
         $this->DataSetGroup = $inDataSetGroup;
         $this->FEid = $inFEid;
-
         $this->dbConnection = site_getDbConnection();
         $this->FacilityCode = $infc;
-        
+
         $this->new_spec = new Specifications();
         $this->test_type = 'ifspectrum';
+		$db_pull = new IFSpectrumDB($this->dbConnection);
+
 
     //     $this->logger->NewLine();
     //     $this->logger->WriteLogFile('Initialize_IFSpectrum: fc=' . $this->FacilityCode . ' FEid=' . $this->FEid
     //                                   . ' band=' . $this->DataSetBand . ' group=' . $this->DataSetGroup);
 
+		$val = $db_pull->qTDH($this->DataSetBand, $this->FEid, $this->DataSetGroup);
+		$this->TDHkeys = $val[0];
+		$this->TS = $val[1];
+		/*
         $qTDH = "SELECT TestData_header.keyId, TestData_header.TS
                 FROM TestData_header, FE_Config
                 WHERE TestData_header.DataSetGroup = $this->DataSetGroup
@@ -88,7 +96,20 @@ class IFSpectrumPlotter extends TestData_header{
     //         $this->logger->WriteLogFile('Initialize_IFSpectrum: TDHkey=' . $this->TDHkeys[$count] . ' TS=' . $this->TS);
             $count += 1;
         }
+		*/
 
+		$val = $db_pull->qurl($this->TDHkeys);
+		$this->urls = $val[0];
+		$numurl = $val[1];
+
+		if ($numurl > 0) {
+			$val = $db_pull->qnf($this->TDHkeys);
+			$this->NoiseFloor = $val[0];
+			//$this->NoiseFloor->Initialize('TEST_IFSpectrum_NoiseFloor_Header',$db_pull->qnf($this->TDHkeys),'keyId');
+			$this->NoiseFloorHeader = $val[1];
+		}
+
+		/*
         //Initialize urls
         $qurl = "SELECT keyId, IFChannel FROM TEST_IFSpectrum_urls
                  WHERE((TEST_IFSpectrum_urls.fkHeader =  " . $this->TDHkeys[0] . ") ";
@@ -132,12 +153,13 @@ class IFSpectrumPlotter extends TestData_header{
     //         $this->logger->WriteLogFile('Initialize_IFSpectrum: NoiseFloorHeader=' . $this->NoiseFloorHeader);
 
         }//end if numurl > 0
-		
+		*/
         $specs = $this->new_spec->getSpecs($this->test_type, $this->DataSetBand);
-        
-        $this->fWindow_Low = $specs['fWindow_Low'];
-        $this->fWindow_High = $specs['fWindow_High'];
-        
+
+        $this->fWindow_Low = $specs['fWindow_Low'] * pow(10,9);
+        $this->fWindow_High = $specs['fWindow_high'] * pow(10,9);
+
+
         /*
         switch ($this->DataSetBand) {
             case "3":
@@ -194,7 +216,7 @@ class IFSpectrumPlotter extends TestData_header{
         require(site_get_config_main());
         $testmessage = "IF Spectrum FE" . $this->FrontEnd->GetValue('SN') . " Band " . $this->DataSetBand;
 
-        $url = '"' . $rootdir_url . 'FEConfig/ifspectrum/ifspectrumplots.php?fc=' . $fc
+        $url = '"' . $rootdir_url . 'FEConfig/ALMA-FETMS-www/FEConfig/ifspectrum/ifspectrumplots.php?fc=' . $fc
                    . '&fe=' . $this->FEid . '&b=' . $this->DataSetBand . '&g=' . $this->DataSetGroup . '"';
         $this->progressfile = CreateProgressFile($testmessage,'',$url);
         $this->progressfile_fullpath = $main_write_directory . $this->progressfile . ".txt";
@@ -275,7 +297,7 @@ class IFSpectrumPlotter extends TestData_header{
 
 
     public function Display_TotalPowerTable($in_ifchannel){
-
+		$db_pull = new IFSpectrumDB($this->dbConnection);
         echo "<div style = 'width:600px'>";
         echo "    <table id = 'table7' border = '1'>";
 
@@ -306,6 +328,9 @@ class IFSpectrumPlotter extends TestData_header{
                   <td style='border-bottom:solid 1px'>Total - In-Band</td>
               </tr>";
 
+		$rlo = $db_pull->qlo($this->TDHkeys, True, $ifchannel);
+
+		/*
         $qlo = "SELECT DISTINCT(FreqLO) FROM IFSpectrum_SubHeader
                 WHERE ((fkHeader = " . $this->TDHkeys[0] . ")";
 
@@ -319,6 +344,8 @@ class IFSpectrumPlotter extends TestData_header{
 
         $rlo = @mysql_query($qlo,$this->dbConnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
 
+		//$rlo = $db_pull->qlo($this->TDHkeys, true);
+		*/
         $rowcount = 0;
         while ($rowlo = @mysql_fetch_array($rlo)){
             $lo = $rowlo[0];
@@ -328,7 +355,7 @@ class IFSpectrumPlotter extends TestData_header{
                 } else {
                     $trclass = "";
                 }
-
+                /*
                 $q0 = "select IFSpectrum_SubHeader.FreqLO, ROUND(TEST_IFSpectrum_TotalPower.InBandPower,1)
                         from IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower
                         where IFSpectrum_SubHeader.FreqLO =$lo
@@ -338,12 +365,14 @@ class IFSpectrumPlotter extends TestData_header{
                         and IFSpectrum_SubHeader.IsIncluded = 1
                         and ((IFSpectrum_SubHeader.fkHeader =  " . $this->TDHkeys[0] . ") ";
 
+
                 //Display for all TDH keys
                 for ($iTDH=1;$iTDH<count($this->TDHkeys);$iTDH++){
                     //Iterate through each TDHkey value and generate power data for each one.
                     $q0 .= " OR (IFSpectrum_SubHeader.fkHeader =  " . $this->TDHkeys[$iTDH] . ") ";
                 }
                 $q0 .= ");";
+                echo "$q0 <br>";
                 $r0 = @mysql_query($q0,$this->dbConnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
 
                 $q15 = "select ROUND(TEST_IFSpectrum_TotalPower.InBandPower,1),
@@ -362,14 +391,27 @@ class IFSpectrumPlotter extends TestData_header{
                     $q15 .= " OR (IFSpectrum_SubHeader.fkHeader =  " . $this->TDHkeys[$iTDH] . ") ";
                 }
                 $q15 .= ");";
+                echo "$q15 <br>";
                 $r15 = @mysql_query($q15,$this->dbConnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-
 
                 $pwr_0 = round(@mysql_result($r0,0,1),1);
                 $pwr_15_inband = round(@mysql_result($r15,0,0),1);
 
                 $pwr_0 = number_format($pwr_0, 1, '.', '');
                 $pwr_15_inband = number_format($pwr_15_inband, 1, '.', '');
+                */
+                $select_0 = 'IFSpectrum_SubHeader.FreqLO, ROUND(TEST_IFSpectrum_TotalPower.InBandPower,1)';
+                $from_0 = 'IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower';
+                $where_0 = 'TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId and IFSpectrum_SubHeader.IsIncluded = 1';
+                $pwr_0 = round($db_pull->q_num($this->TDHkeys, $select_0, $from_0, $where_0, 0, 1, $ifchannel, $lo),1);
+                $pwr_0 = number_format($pwr_0, 1, '.', '');
+
+                $select_15 = 'ROUND(TEST_IFSpectrum_TotalPower.InBandPower,1), ROUND(TEST_IFSpectrum_TotalPower.TotalPower,1)';
+                $from_15 = 'IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower';
+                $where_15 = 'TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId and IFSpectrum_SubHeader.IsIncluded = 1';
+                $pwr_15_inband = round($db_pull->q_num($this->TDHkeys, $select_15, $from_15, $where_15, 15, 0, $ifchannel, $lo),1);
+                $pwr_15_inband = number_format($pwr_15_inband, 1, '.', '');
+
 
                 $inband_diff = abs($pwr_0 - $pwr_15_inband);
 
@@ -411,12 +453,14 @@ class IFSpectrumPlotter extends TestData_header{
                 "</td>";
 
                 // Computed and output the 15 dB gain total power:
-                $pwr_total = round(@mysql_result($r15,0,1),1);
+                $pwr_total = round($db_pull->q_num($this->TDHkeys, $select_15, $from_15, $where_15, 15, 1, $ifchannel, $lo),1);
+                //$pwr_total = round(@mysql_result($r15,0,1),1);
                 $pwr_total = number_format($pwr_total, 1, '.', '');
                 echo "<td><b>$pwr_total</b></td>";
 
                 // Compute the 15 dB difference between total and in-band power:
-                $pwrdiff = round(@mysql_result($r15,0,1) - @mysql_result($r15,0,0),1);
+                $pwrdiff = round(($db_pull->q_num($this->TDHkeys, $select_15, $from_15, $where_15, 15, 1, $ifchannel, $lo)) - ($db_pull->q_num($this->TDHkeys, $select_15, $from_15, $where_15, 15, 0, $ifchannel, $lo)),1);
+                //$pwrdiff = round(@mysql_result($r15,0,1) - @mysql_result($r15,0,0),1);
                 $pwrdiff = number_format($pwrdiff, 1, '.', '');
 
                 // Color the foreground red if there is more than 3 dB difference between total and in-band power:
@@ -446,6 +490,7 @@ class IFSpectrumPlotter extends TestData_header{
     }
 
     public function DisplayPowerVarFullBandTable(){
+    	$db_pull = new IFSpectrumDB($this->dbConnection);
         $band = $this->DataSetBand;
         echo "<div style='width:400px' border='1'>";
         echo "<table id = 'table7' border='1'>";
@@ -459,7 +504,7 @@ class IFSpectrumPlotter extends TestData_header{
         } else {
             echo "</tr>";
         }
-
+		/*
         $qlo  = "SELECT DISTINCT(FreqLO) FROM IFSpectrum_SubHeader
                  WHERE ((fkHeader = " . $this->TDHkeys[0] . ") ";
 
@@ -470,7 +515,8 @@ class IFSpectrumPlotter extends TestData_header{
 
     //    $this->logger->WriteLogFile('DisplayPowerVarFullBandTable: qlo=' . $qlo);
 
-        $rlo = @mysql_query($qlo,$this->dbConnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+        $rlo = @mysql_query($qlo,$this->dbConnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);*/
+        $rlo = $db_pull->qlo($this->TDHkeys);
         $rowcount = 0;
         while ($rowlo = @mysql_fetch_array($rlo)){
             $lo = $rowlo[0];
@@ -481,7 +527,7 @@ class IFSpectrumPlotter extends TestData_header{
                     $trclass = "";
                 }
                 echo "<tr class=$trclass><td style='border-right:solid 1px #000000;'><b>$lo</b></td>";
-                
+
                 $spec = $this->new_spec->getSpecs($this->test_type, $band);
                 $maxch = $spec['maxch'];
                 /*
@@ -490,7 +536,11 @@ class IFSpectrumPlotter extends TestData_header{
                 }
                 */
                 for ($ifchannel = 0; $ifchannel <= $maxch; $ifchannel++ ){
-
+					$select = "TEST_IFSpectrum_PowerVarFullBand.Power_dBm";
+					$from = "IFSpectrum_SubHeader, TEST_IFSpectrum_PowerVarFullBand";
+					$where = "IFSpectrum_SubHeader.IsPAI = 1
+							and TEST_IFSpectrum_PowerVarFullBand.fkSubHeader = IFSpectrum_SubHeader.keyId";
+                	/*
                     $q15 = "select TEST_IFSpectrum_PowerVarFullBand.Power_dBm
                             from IFSpectrum_SubHeader, TEST_IFSpectrum_PowerVarFullBand
                             where IFSpectrum_SubHeader.FreqLO =$lo
@@ -510,16 +560,17 @@ class IFSpectrumPlotter extends TestData_header{
 
                     $r15 = @mysql_query($q15,$this->dbConnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
 
-                    $pwr = round(@mysql_result($r15,0,0),1);
+                    $pwr = round(@mysql_result($r15,0,0),1);*/
+					$pwr = round($db_pull->q_num($this->TDHkeys, $select, $from, $where, 15, 0, $ifchannel, $lo),1);
                     $pwr = number_format($pwr, 1, '.', '');
 
                     $temp = $spec['pwr'];
                     if($pwr >= $temp) {
-                    	$bgcolor = $spec['bgcolor' . $temp];
-                    	$fontcolor = $spec['fontcolor' . $temp];
+                    	$bgcolor = $spec["bgcolor$temp"];
+                    	$fontcolor = $spec["fontcolor$temp"];
                     } else {
-                    	$bgcolor = $spec['bgcolor'];
-                    	$fontcolor = $spec['fontcolor'];
+                    	$bgcolor = "";
+                    	$fontcolor = $spec["fontcolor"];
                     }
                      /*
                     $bgcolor = "";
@@ -585,6 +636,7 @@ class IFSpectrumPlotter extends TestData_header{
     	//$this->logger->WriteLogFile('entering CreateTemporaryTables()');
 
     	$this->dbConnection2 = site_getDbConnection();
+    	$db_pull = new IFSpectrumDB($this->dbConnection2);
         //$this->logger->WriteLogFile("got site_getDbConnection()");
 
         //IF Spectrum
@@ -592,7 +644,7 @@ class IFSpectrumPlotter extends TestData_header{
         $r = @mysql_query($q,$this->dbConnection2) ; //or die("Query failed on class.testdata_header line " . __LINE__);
         $q = "DROP TABLE IF EXISTS TEMP_TEST_IFSpectrum_PowerVar;";
         $r = @mysql_query($q,$this->dbConnection2) ; //or die("Query failed on class.testdata_header line " . __LINE__);
-
+/*
         $q = "CREATE TEMPORARY TABLE IF NOT EXISTS TEMP_TEST_IFSpectrum_PowerVar (
               fkSubHeader INT,
               fkFacility INT,
@@ -601,11 +653,12 @@ class IFSpectrumPlotter extends TestData_header{
               Power_dBm DOUBLE,
               TS TIMESTAMP,
               INDEX(fkSubHeader)
-            );";
-        $r = @mysql_query($q,$this->dbConnection2) ; //or die("Query failed on class.testdata_header line " . __LINE__);
+            );"; */
+        $r = $db_pull->q_other('q1');
+        //$r = @mysql_query($q,$this->dbConnection2) ; //or die("Query failed on class.testdata_header line " . __LINE__);
 
         WriteINI($this->progressfile,'progress',6);
-
+/*
         $q = "CREATE TEMPORARY TABLE IF NOT EXISTS TEMP_IFSpectrum (
               fkSubHeader INT,
               fkFacility INT,
@@ -613,11 +666,13 @@ class IFSpectrumPlotter extends TestData_header{
               Power_dBm DOUBLE,
               INDEX (fkSubHeader)
             );";
-        $r = @mysql_query($q,$this->dbConnection2) ; //or die("Query failed on class.testdata_header line " . __LINE__);
+        */
+        $r = $db_pull->q_other('q2');
+        //$r = @mysql_query($q,$this->dbConnection2) ; //or die("Query failed on class.testdata_header line " . __LINE__);
 
         WriteINI($this->progressfile,'progress',12);
 
-
+/*
         //Get keyId for each IFSpectrum_SubHeader record
         $qtemp = "SELECT IFSpectrum_SubHeader.keyId
             FROM
@@ -638,7 +693,9 @@ class IFSpectrumPlotter extends TestData_header{
             $ifsubkeys[$tempcount] = $rowtemp['keyId'];
             $tempcount += 1;
         }
-
+        */
+        $ifsubkeys = $db_pull->qtemp($this->DataSetGroup, $this->DataSetBand, $this->FrontEnd->keyId);
+        /*
         $q = "INSERT INTO TEMP_IFSpectrum
             SELECT IFSpectrum.fkSubHeader,IFSpectrum.fkFacility,IFSpectrum.Freq_Hz,
             IFSpectrum.Power_dBm
@@ -650,17 +707,21 @@ class IFSpectrumPlotter extends TestData_header{
             $q .= " OR (IFSpectrum.fkSubHeader = $ifsubkeys[$i]) ";
         }
         $q .= ";";
-
-        $r = @mysql_query($q,$this->dbConnection2); //or die("Query failed on class.testdata_header line " . __LINE__);
+*/
+        $r = $db_pull->q_other('q3', $ifsubkeys);
+        //$r = @mysql_query($q,$this->dbConnection2); //or die("Query failed on class.testdata_header line " . __LINE__);
 
         WriteINI($this->progressfile,'progress',18);
     }
 
     public function DropTemporaryTables(){
+    	$db_pull = new IFSpectrumDB($this->dbConnection2);
         $q = "DROP TABLE TEMP_TEST_IFSpectrum_PowerVar;";
-        $r = @mysql_query($q,$this->dbConnection2);
+        $r = $db_pull->run_query($q);
+       	//$r = @mysql_query($q,$this->dbConnection2);
         $q = "DROP TABLE TEMP_IFSpectrum;";
-        $r = @mysql_query($q,$this->dbConnection2);
+        $r = $db_pull->run_query($q);
+        //$r = @mysql_query($q,$this->dbConnection2);
     }
 
     public function Plot_IFSpectrum_Data(){
@@ -721,6 +782,7 @@ class IFSpectrumPlotter extends TestData_header{
     }
 
     public function Plot_IFSpectrum_Spurious2D($IFChannel, $in_url = "spurious_url2d", $offsetamount = 10, $plotheight = 0, $show_ytics = -1){
+    	$db_pull = new IFSpectrumDB($this->dbConnection);
         $IFGain = 15;
         $imagedirectory = $this->writedirectory . 'tdh/';
         if (!file_exists($imagedirectory)){
@@ -740,10 +802,10 @@ class IFSpectrumPlotter extends TestData_header{
         $plot_title = "Spurious Noise, FE-".$this->FrontEnd->GetValue('SN').", Band $this->DataSetBand SN ";
         $plot_title .= $this->CCASN . " IF$IFChannel";
 
-       $spec = $this->new_spec->getSpecs($this->test_type, $this->DataSetBand);
-       $ifspec_low = $spec['ifspec_low'];
-       $ifspec_high = $spec['ifspec_high'];
-        
+		$spec = $this->new_spec->getSpecs($this->test_type, $this->DataSetBand);
+		$ifspec_low = $spec['ifspec_low'];
+		$ifspec_high = $spec['ifspec_high'];
+
         /*
         $ifspec_low = 4;
         $ifspec_high = 8;
@@ -760,7 +822,7 @@ class IFSpectrumPlotter extends TestData_header{
                 break;
         }
         */
-
+/*
         //Get Max and Min LO Values
         $qlo = "SELECT IFSpectrum_SubHeader.FreqLO
                 FROM IFSpectrum_SubHeader, TestData_header, FE_Config
@@ -772,12 +834,14 @@ class IFSpectrumPlotter extends TestData_header{
                 AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
                 AND FE_Config.fkFront_Ends = $this->FEid
                 AND TestData_header.DataSetGroup = $this->DataSetGroup
-                GROUP BY IFSpectrum_SubHeader.FreqLO ASC";
+                GROUP BY IFSpectrum_SubHeader.FreqLO ASC";//*/
 
     //    $this->logger->WriteLogFile('qlo=' . $qlo);
-
-        $rlo = @mysql_query($qlo,$this->dbConnection); // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+		$rlo = $db_pull->q_other('lo', NULL, $this->DataSetBand, $IFChannel, $this->FEid, $this->DataSetGroup);
+        //$rlo = $db_pull->run_query($qlo);
+        //$rlo = @mysql_query($qlo,$this->dbConnection); // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
         $ilo=0;
+        //$loarray = array();
         while ($rowlo = @mysql_fetch_array($rlo)){
             $loarray[$ilo] = $rowlo[0];
             $ilo += 1;
@@ -787,7 +851,7 @@ class IFSpectrumPlotter extends TestData_header{
         $lomax = $loarray[sizeof($loarray)-1];
 
         //Get number of IF subheaders
-        $qifsub = "SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
+        /*$qifsub = "SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
                    FROM IFSpectrum_SubHeader, TestData_header,FE_Config
                    WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
                    AND IFSpectrum_SubHeader.Band = $this->DataSetBand
@@ -797,12 +861,13 @@ class IFSpectrumPlotter extends TestData_header{
                    AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
                    AND FE_Config.fkFront_Ends = $this->FEid
                    AND TestData_header.DataSetGroup = $this->DataSetGroup
-                   ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";
+                   ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";//*/
 
     //    $this->logger->WriteLogFile('qifsub=' . $qifsub);
 
-
-        $rifsub = @mysql_query($qifsub,$this->dbConnection) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+		//$rifsub = $db_pull->run_query($qifsub);
+        //$rifsub = @mysql_query($qifsub,$this->dbConnection) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+        $rifsub = $db_pull->qifsub($this->DataSetBand, $IFChannel, $this->FEid, $this->DataSetGroup);
 
         // to accumulate the min and max power seen in any trace:
         $minpower = 999;
@@ -824,17 +889,20 @@ class IFSpectrumPlotter extends TestData_header{
 
             $ifsub = new GenericTable();
             $ifsub->Initialize('IFSpectrum_SubHeader',$rowifsub[0],'keyId', $this->FacilityCode,'fkFacility');
-
+/*
             $qdata = "SELECT Freq_Hz/1000000000,(Power_dBm + $offset) FROM TEMP_IFSpectrum
                       WHERE fkSubHeader = $rowifsub[0]
                       AND Freq_Hz > 12000000
                       ORDER BY Freq_Hz ASC;";
-            $rdata = @mysql_query($qdata,$this->dbConnection2) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+            //*/
 
+            $db_pull2 = new IFSpectrumDB($this->dbConnection2);
+            $rdata = $db_pull2->qdata(False, $rowifsub, $offset, NULL);
+            //$rdata = @mysql_query($qdata,$this->dbConnection2) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+            echo "rdata (line 900): $rdata <br>";
             // to accumulate max and min power in this trace:
             $mintrace = 999999;
             $maxtrace = -999999;
-
             //Write data to file:
             while ($rowdata = @mysql_fetch_array($rdata)){
                 $stringData = "$rowdata[0]\t$FreqLO\t$rowdata[1]\r\n";
@@ -997,13 +1065,14 @@ class IFSpectrumPlotter extends TestData_header{
 
         $image_url = $this->url_directory . "tdh/" . $this->TDHkeys[0] . "/IFSpectrum/$imagename";
 
-        $qurl = "SELECT keyId FROM TEST_IFSpectrum_urls
+       /* $qurl = "SELECT keyId FROM TEST_IFSpectrum_urls
                 WHERE fkHeader = " . $this->TDHkeys[0] . "
                 AND Band = $this->DataSetBand
                 AND IFChannel = $IFChannel
-                AND IFGain = $IFGain;";
+                AND IFGain = $IFGain;"; */
 
-        $rurl = @mysql_query($qurl,$this->dbConnection) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+        $rurl = $db_pull->q_other('url', NULL, $this->DataSetBand, $IFChannel, NULL, NULL, $this->TDHkeys, $IFGain);
+        //$rurl = @mysql_query($qurl,$this->dbConnection) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
         $ifs_id = @mysql_result($rurl,0);
         //$this->Initialize_IFSpectrum($this->FEid, $this->DataSetGroup, $this->FacilityCode, $this->DataSetBand);
 
@@ -1080,18 +1149,20 @@ class IFSpectrumPlotter extends TestData_header{
         $ps = new PwrSpecTool();
         $ps->dbconnection = $this->dbConnection2;
         $ps->fc = 40;
+        $db_pull = new IFSpectrumDB($this->dbConnection2);
 
         //Get all TestData_header keys for this dataset
         for ($iTDH=0;$iTDH<count($this->TDHkeys);$iTDH++){
             //Iterate through each TDHkey value and generate power data for each one.
             $keyTDH = $this->TDHkeys[$iTDH];
-
+/*
             $qifsub = "SELECT keyId FROM IFSpectrum_SubHeader
                        WHERE fkHeader = $keyTDH
                        AND IsIncluded = 1
-                       ORDER BY IFChannel ASC, FreqLO ASC;";
+                       ORDER BY IFChannel ASC, FreqLO ASC;";*/
 
-            $rifsub = @mysql_query($qifsub,$this->dbConnection2); // or die ('Query failed on class.testdata_header line 1278.');
+            $rifsub = $db_pull->q_other('ifsub', NULL, NULL, NULL, NULL, NULL, NULL, NULL, $keyTDH);
+            //$rifsub = @mysql_query($qifsub,$this->dbConnection2); // or die ('Query failed on class.testdata_header line 1278.');
             while ($rowifsub = @mysql_fetch_array($rifsub)){
                 $this->CheckForAbort();
                 if ($this->aborted != 1){
@@ -1124,13 +1195,18 @@ class IFSpectrumPlotter extends TestData_header{
                     }
 
                     WriteINI($this->progressfile,'message','Total and In-band power IF' . $ifsub->GetValue('IFChannel') . " $LO...");
+                    $temp1= $ifsub->keyId;
+                    $temp2=$this->fWindow_Low;
+                    $temp3= $this->fWindow_High;
                     $ps->powerTotalAndInBandPower($ifsub->keyId, $this->fWindow_Low, $this->fWindow_High);
-
-                    if ($ifsub->Band != 6){
+					WriteINI($this->progressfile, 'message', 'Power Variation Full Band IF' . $ifsub->GetValue('IFChannel') . "$LO...");
+                    //if ($ifsub->Band != 6){
+                    if ($this->DataSetBand != 6) {
                         $ps->PowerVarFullBand($ifsub->keyId,$this->fWindow_Low,$this->fWindow_High);
                     }
-                    if ($ifsub->Band == 6){
 
+                    //if ($ifsub->Band == 6){
+					if ($this->DataSetBand == 6) {
                         $ps->PowerVarFullBand($ifsub->keyId, 5  * pow(10,9), 10  * pow(10,9));
                     }
                     unset($ifsub);
@@ -1142,13 +1218,14 @@ class IFSpectrumPlotter extends TestData_header{
     }
 
     public function Plot_IFSpectrum_PowerVar($Band, $IFChannel, $td_header, $windowSize){
+    	$db_pull = new IFSpectrumDB($this->dbConnection);
         $b6case = 0;
         if (($this->DataSetBand == 6) && ($windowSize == 2 * pow(10,9))){
             $b6case = 1;
         }
 
         $windowSize_string = "2 GHz";
-        
+
         $spec = $this->new_spec->getSpecs($this->test_type, $this->DataSetBand);
         $spec_value = $spec['spec_value'];
 
@@ -1180,7 +1257,7 @@ class IFSpectrumPlotter extends TestData_header{
         //Write the data file
 
         //Get records from IFSpectrum_SubHeader
-        $qifsub = "SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
+        /*$qifsub = "SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
                     FROM
                     IFSpectrum_SubHeader, TestData_header,FE_Config
                     WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
@@ -1191,25 +1268,30 @@ class IFSpectrumPlotter extends TestData_header{
                     AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
                     AND FE_Config.fkFront_Ends = $this->FEid
                     AND TestData_header.DataSetGroup = $this->DataSetGroup
-                    ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";
+                    ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";*/
 
 
         //Get max power var
-        $rifsub = @mysql_query($qifsub,$this->dbConnection) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+        $rifsub = $db_pull->qifsub($this->DataSetBand, $IFChannel, $this->FEid, $this->DataSetGroup);
+        //$rifsub = @mysql_query($qifsub,$this->dbConnection) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
         $maxpowervar = -999;
         while ($rowifsub = @mysql_fetch_array($rifsub)){
-            $qmax = "SELECT MAX(Power_dBm) FROM TEMP_TEST_IFSpectrum_PowerVar
+            /*$qmax = "SELECT MAX(Power_dBm) FROM TEMP_TEST_IFSpectrum_PowerVar
                       WHERE fkSubHeader = $rowifsub[0]
-                      AND WindowSize_Hz = $windowSize;";
-            $rmax = @mysql_query($qmax, $this->dbConnection2)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                      AND WindowSize_Hz = $windowSize;";*/
+        	echo "$windowSize <br>";
+        	$rmax = $db_pull->q_other('max', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $rowifsub, $windowSize);
+        	echo "rmax (line 1276): $rmax <br>";
+           //$rmax = @mysql_query($qmax, $this->dbConnection2)  or die('Failed on query in dataplotter.php line ' . __LINE__);
             $tempmaxpowervar = round(@mysql_result($rmax,0,0),2);
 
             if ($tempmaxpowervar > $maxpowervar){
                 $maxpowervar = $tempmaxpowervar;
             }
         }
-
-        $rifsub = @mysql_query($qifsub,$this->dbConnection2) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+		$db_pull2 = new IFSpectrumDB($this->dbConnection2);
+		$rifsub = $db_pull2->qifsub($this->DataSetBand, $IFChannel, $this->FEid, $this->DataSetGroup);
+        //$rifsub = @mysql_query($qifsub,$this->dbConnection2) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
         $filecount = 0;
         $b6count = 0;
         $b6points = Array();
@@ -1227,11 +1309,13 @@ class IFSpectrumPlotter extends TestData_header{
 
             //Special case for band 6
             if ($b6case == 1){
-                $q6 = "SELECT MAX(Power_dBm), MIN(Power_dBm) FROM TEMP_IFSpectrum
+                /*$q6 = "SELECT MAX(Power_dBm), MIN(Power_dBm) FROM TEMP_IFSpectrum
                           WHERE fkSubHeader = $rowifsub[0]
                           AND Freq_Hz < 6000000000
-                          AND Freq_Hz > 5000000000;";
-                $r6 = @mysql_query($q6, $this->dbConnection2) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+                          AND Freq_Hz > 5000000000;";*/
+                //$r6 = @mysql_query($q6, $this->dbConnection2) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+                $r6 = $db_pull->q_other('6', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $rowifsub);
+                echo "r6 (line 1309): $r6 <br>";
                 $b6val = @mysql_result($r6,0,0) - @mysql_result($r6,0,1);
                 if ($b6val != 0){
                 $b6points[$b6count] = $b6val;
@@ -1244,12 +1328,15 @@ class IFSpectrumPlotter extends TestData_header{
                     $maxpowervar6 = $b6points[$im];
                 }
             }
-
+/*
             $qdata = "SELECT Freq_Hz,Power_dBm FROM TEMP_TEST_IFSpectrum_PowerVar
                       WHERE fkSubHeader = $rowifsub[0]
                       AND WindowSize_Hz = $windowSize
-                      ORDER BY Freq_Hz ASC;";
-            $rdata = @mysql_query($qdata,$this->dbConnection2) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
+                      ORDER BY Freq_Hz ASC;";*/
+
+            $rdata = $db_pull->qdata(True, $rowifsub, NULL, $windowSize);
+            echo "rdata (line 1329): $rdata <br>";
+            //$rdata = @mysql_query($qdata,$this->dbConnection2) ; // or die ('Query failed on class.dataplotter '. __LINE__ .'.');
             while ($rowdata = @mysql_fetch_array($rdata)){
                 $pval = $rowdata[1];
                 $fval = $rowdata[0] * pow (10,-9);
