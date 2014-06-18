@@ -1036,15 +1036,15 @@ function Band3_CCA_NT_results($td_keyID){
     //get specs
     $spec_names = array();
     for ($i=1; $i<6; $i++) {
-    	$spec_names[] = 'Bspec_bbTSSB' . $i . 'f';
-    	$spec_names[] = 'Bspec_bbTSSB' . $i . 's';
+    	$spec_names[] = 'Bspec_bbTSSB' . (string)$i . 'f';
+    	$spec_names[] = 'Bspec_bbTSSB' . (string)$i . 's';
     }
     //$specs=get_specs_by_spec_type ( 10 , $tdh->GetValue('Band') );
     $new_spec = new Specifications();
     $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
     $specs = array();
     for($i=1; $i<6; $i++){
-    	$specs[$spec['Bspec_bbTSSB' . $i . 'f']] = $spec['Bspec_bbTSSB' . $i . 's'];
+    	$specs[$spec['Bspec_bbTSSB' . (string)$i . 'f']] = $spec['Bspec_bbTSSB' . (string)$i . 's'];
     }
 
     
@@ -1154,7 +1154,7 @@ function Band3_CCA_NT_results($td_keyID){
     $last_sb = $row[1];
     $last_NT = $row[4];
     }
-
+    
     // calculate last average point
     $AVG_NT_Pol1_Sb2[] = array_sum($NT_Pol1_Sb2)/count($NT_Pol1_Sb2);
 
@@ -1163,7 +1163,7 @@ function Band3_CCA_NT_results($td_keyID){
         FROM `Noise_Temp_Band3_Results`
         WHERE fkHeader= $td_keyID";
     $r = @mysql_query($q,$tdh->dbconnection);
-
+	$TFETMS = array();
     while ($row = @mysql_fetch_array($r)){
             $TFETMS[$row[1]]=$row[0];
     }
@@ -1189,8 +1189,8 @@ function Band3_CCA_NT_results($td_keyID){
         echo "<td width = '300px'>".mon_data ($AVG_NT_Pol1_Sb1[$cnt])."</td>";
         echo "<td width = '300px'>".mon_data ($AVG_NT_Pol1_Sb2[$cnt])."</td>";
         $AVG =     mon_data (($AVG_NT_Pol0_Sb1[$cnt]+$AVG_NT_Pol0_Sb2[$cnt]+$AVG_NT_Pol1_Sb1[$cnt]+$AVG_NT_Pol1_Sb2[$cnt])/4);
-        $spec = $specs[$FREQ_LO] - 3;
-        $text=$new_spec->chkNumAgnstSpec( $AVG, "<", $spec);
+        $temp_spec = $specs[$FREQ_LO] - 3;
+        $text=$new_spec->chkNumAgnstSpec( $AVG, "<", $temp_spec);
         echo "<td width = '300px'>$text</td>";
         echo "<td width = '400px'>less than $spec</td>";
         $result = mon_data ($TFETMS[$FREQ_LO] - $AVG - 3);

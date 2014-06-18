@@ -40,7 +40,7 @@
 		* @return (array) returns a 2D array, where each subarray consists of 
 		* four values, the test type, band, spec type, and the specification, respectively.
 		*/
-		public function getSpecs($test_type, $Band, $spec_name=None) {
+		public function getSpecs($test_type, $Band, $spec_name = array()) {
 			if(!is_array($test_type)) {
 				$test_type = array($test_type);
 			}
@@ -54,13 +54,13 @@
 			//Sorts through each array to find the specification for each band for each test type.
 			
 			for($t=0; $t<$tLen; $t++) {
-				$filename = "../specs/" . $test_type[$t] . ".ini";
+				$filename = dirname(__FILE__) . "/../specs/" . $test_type[$t] . ".ini";
 				$test=parse_ini_file($filename,true);
 				for($b=0; $b<$bLen; $b++) {
 					$band = (string)$Band[$b];
 					$band = "Band" . $band;
 					$spec_names = array();
-					if($spec_name==None) {
+					if(empty($spec_name)) {
 						$temp = array_keys($test[$band]);
 						foreach ($temp as $a) {
 							$spec_names[] = $a;
@@ -157,7 +157,7 @@
 		 * $num is in range.
 		 */
 		public function numInRange($hi_range, $num, $lo_range) {
-			if ( ($num < $hi_range) && ($num > $low_range)) {
+			if ( ($num < $hi_range) && ($num > $lo_range)) {
 				$inspec = true;
 			} else {
 				$inspec = false;

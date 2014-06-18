@@ -1,29 +1,145 @@
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.spec_functions.php');
+require_once($site_classes . '/class.testdata_header.php');
+require_once($site_classes . '/class.generictable.php');
+require_once($site_classes . '/class.pwrspectools.php');
+require_once($site_classes . '/class.logger.php');
+require_once($site_FEConfig . '/HelperFunctions.php');
+require_once($site_dBcode . '/../dBcode/ifspectrumdb.php');
+require_once($site_dBcode . '/../dBcode/beameffdb.php');
+require_once($site_dbConnect);
 
 class test {
-	private $Band;
-	private $effColdLoadTemp;       // effective cold load temperature
-	private $default_IR;            // default image rejection to use if no CCA data available.
-	private $lowerIFLimit;          // lower IF limit
-	private $upperIFLimit;          // upper IF limit
-	private $NT_allRF_spec;         // spec which must me met at all points in the RF band
-	private $NT_80_spec;            // spec which must be met over 80% of the RF band
-	private $NT_B3Special_spec;     // special spec for band 3 average of averages
-	private $lower_80_RFLimit;      // lower RF limit for 80% spec
-	private $upper_80_RFLimit;      // upper RF limit for 80% spec
+	var $logger;
+	var $GNUPLOT_path;
+	var $writedirectory;
+	var $url_directory;
+	var $aborted;
+	var $DataSetBand;
+	var $DataSetGroup;
+	var $FEid;
+	var $dbConnection;
+	var $FacilityCode;
+	var $new_spec;
+	var $test_type;
+	var $db_pull;
+	var $TDHkeys;
+	var $TS;
+	var $urls;
+	var $NoiseFloor;
 
-	public function test() {}
+	public function __construct() {
+		require(site_get_config_main());
+		$this->logger = new Logger('IFSpectrumPlotter.php.txt', 'w');
+        $this->GNUPLOT_path = $GNUPLOT;
+        $this->writedirectory = $main_write_directory;
+        $this->url_directory = $main_url_directory;
+        //$swver = $this->plotswversion;
+        $this->aborted = 0;
+	}
 
+	public function beff_test($band) {
+		require(site_get_config_main());
+		$db = site_getDbConnection();
+		$db_pull = new BeamEffDB($db);
+		$new_spec = new Specifications();
+		
+		$rf = 139;
+		
+		$spec = $new_spec->getSpecs('beameff', 4);
+		if (count($spec['rf_cond']) > 1) {
+			$p0spec = $p1spec = $spec['pspec'];
+			for ($i=0; $i<count($spec['rf_cond']); $i+=2) {	
+				if ($spec['rf_cond'][$i] <= $rf && $rf <= $spec['rf_cond'][$i+1]) {
+					$p0spec = $spec['rf_val'][$i];
+					$p1spec = $spec['rf_val'][$i+1];
+				}
+			}
+		} else {
+			$p0spec = $p1spec = $spec['pspec'];
+		}
+		echo $p0spec;
+	}
+	
+	public function int_test($band) {
+		require(site_get_config_main());
+		require_once(site_get_classes() . '/class.frontend.php');
+		$this->DataSetBand = $band;
+		$this->dbConnection = site_getDbConnection();
+		$this->new_spec = new Specifications();
+		$this->test_type = 'ifspectrum';
+		$this->db_pull = new IFSpectrumDB($this->dbConnection);
+		
+		$val = $this->db_pull->qTDH(3,87,0);
+		$TDHkeys = $val[0];
+		$this->TS = $val[1];
+		
+		$val = $this->db_pull->qurl($TDHkeys);
+		$this->urls = $val[0];
+		$numurl = $val[1];
+		echo $this->urls[0]->keyId;
+		
+		if ($numurl > 0) {
+			//$val = $this->db_pull->qnf($this->TDHkeys);
+			$this->NoiseFloor = new GenericTable(); //$val[0];
+			$this->NoiseFloor->Initialize('TEST_IFSpectrum_NoiseFloor_Header',$this->db_pull->qnf($TDHkeys),'keyId');
+			$this->NoiseFloorHeader = $this->NoiseFloor->keyId; //$val[1];
+		}
+		
+		$select_0 = 'IFSpectrum_SubHeader.FreqLO, ROUND(TEST_IFSpectrum_TotalPower.InBandPower, 1)';
+		$from_0 = 'IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower';
+		$where_0 = 'TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId <br>and IFSpectrum_SubHeader.IsIncluded = 1';
+		$pwr = $this->db_pull->q_num($TDHkeys, $select_0, $from_0, $where_0, 0, 1, 0,92);
+		/*
+		$rifsub = $this->db_pull->qifsub(3, 0, 87, 0);
+		echo "$rifsub <br>";
+		$offset = 0;
+		while ($rowifsub = @mysql_fetch_array($rifsub)){
+			echo "$rowifsub[1] $rowifsub[2] <br>";
+			$rdata = $this->db_pull->qdata(False, $rowifsub, $offset, NULL);
+			echo $rdata . "<br>";
+			while ($rowdata = @mysql_fetch_array($rdata)) {
+				$stringData = "$rowdata[0]\t$rowdata[1]\r\n";
+				echo "$stringData <br>";
+			}
+			$offset += 10;
+		}
+		for($iTDH=0;$iTDH<count($TDHkeys);$iTDH++) {
+			$keyTDH = $TDHkeys[$iTDH];
+			$rifsub = $this->db_pull->q_other('ifsub',NULL,NULL,NULL,NULL,NULL,NULL,NULL,$keyTDH);
+			while ($rowifsub = @mysql_fetch_array($rifsub)) {
+				echo $rowifsub[0] . "<br>";
+			}
+		}
+		$rifsub = $this->db_pull->qifsub(3, 0, 87, 0);
+		while($rowifsub = @mysql_fetch_array($rifsub)) {
+			$rmax = $this->db_pull->q_other('max',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,$rowifsub, 31 * pow(10,6));
+			//echo "$rmax <br>";
+		}*/
+		
+		
+	}
+	
 	public function ntest($band) {
 		$new_spec = new Specifications();
-		$specs = $new_spec->getSpecs('ifspectrum', $band);
+		$rf = 135;
+		$p0spec = $p1spec = 0;
+		$spec = $new_spec->getSpecs('beameff', $band);
+		echo count($spec['rf_cond']);
+			if (count($spec['rf_cond']) > 0) {
+				$p0spec = $p1spec = $spec['pspec'];
+				for ($i=0; $i<count($spec['rf_cond']); $i+=2) {	
+					if ($spec['rf_cond'][$i] <= $rf && $rf <= $spec['rf_cond'][$i+1]) {
+						$p0spec = $spec['rf_val'][$i];
+						$p1spec = $spec['rf_val'][$i+1];
+					}
+				}
+			} else {
+				$p0spec = $p1spec = $spec['pspec'];
+			}
 		
-		$this->fWindow_Low = $specs['fWindow_Low'];
-		$this->fWindow_High = $specs['fWindow_high'];
-		
-		echo "$this->fWindow_Low $this->fWindow_High <br>";
+		echo $p0spec, $p1spec;
 	}
 	
 	public function new_test($Band) {
@@ -79,8 +195,9 @@ class test {
 $c = new test();
 $test_type = array('Yfactor');
 $band = 3;
+//$t = $c->beff_test($band);
 //$t = $c->test_flos($band);
 //$t = $c->new_test($band);
-$t = $c->ntest($band);
+$t = $c->int_test($band);
 //$t = $c->test_pt($test_type, $band);
 ?>
