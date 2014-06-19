@@ -39,10 +39,16 @@ class test {
         $this->aborted = 0;
 	}
 
-	public function beff_test($band) {
+	public function beff_test($test_type) {
 		require(site_get_config_main());
 		$db = site_getDbConnection();
-		$db_pull = new BeamEffDB($db);
+		
+		$q = "SELECT keyId FROM TestData_Types WHERE TestData_TableName = '" . $test_type ."'";
+		$r = @mysql_query($q, $db);
+		$row = @mysql_fetch_array($r);
+		echo "$row[0]<br>";
+		
+		/*$db_pull = new BeamEffDB($db);
 		$new_spec = new Specifications();
 		
 		$rf = 139;
@@ -59,7 +65,7 @@ class test {
 		} else {
 			$p0spec = $p1spec = $spec['pspec'];
 		}
-		echo $p0spec;
+		echo $p0spec;*/
 	}
 	
 	public function int_test($band) {
@@ -195,9 +201,9 @@ class test {
 $c = new test();
 $test_type = array('Yfactor');
 $band = 3;
-//$t = $c->beff_test($band);
+$t = $c->beff_test('FEIC_NoiseTemperature');
 //$t = $c->test_flos($band);
 //$t = $c->new_test($band);
-$t = $c->int_test($band);
+//$t = $c->int_test($band);
 //$t = $c->test_pt($test_type, $band);
 ?>

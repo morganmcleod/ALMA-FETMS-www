@@ -16,55 +16,58 @@ class IFSpectrumDB { //extends DBRetrieval {
 	var $dbConnection;
 	var $FacilityCode;
 
+	/**
+	 * Initialized class and creates database connection
+	 * 
+	 * @param $db- existing database connection
+	 */
 	public function IFSpectrumDB($db) {
 		require(site_get_config_main());
 		$this->dbConnection = $db;
 	}
 
+	/**
+	 * Runs a query
+	 * @param string $query- SQL query
+	 * 
+	 * @return Resource ID for query
+	 */
 	public function run_query($query) {
 		return @mysql_query($query, $this->dbConnection);
 	}
 
+	/**
+	 * 
+	 * @param array $TDHkeys
+	 * @param string $select- values desired
+	 * @param string $from- Table to find values
+	 * @param string $where- parameters for query
+	 * @param integer $num- Gain
+	 * @param integer $total- field to be retrieved
+	 * @param integer $ifchannel
+	 * @param integer $lo
+	 * @return float- pwr value
+	 */
 	public function q_num($TDHkeys, $select, $from, $where, $num, $total, $ifchannel, $lo) {
 		$q = "select $select from $from where IFSpectrum_SubHeader.FreqLO =$lo and IFSpectrum_SubHeader.IFGain = {$num} and $where and IFSpectrum_SubHeader.IFChannel =  $ifchannel and ((IFSpectrum_SubHeader.fkHeader =  " . $TDHkeys[0] . ") ";
-		/*
-		$q = "select ";
 		
-		$q .= $select . " from " . $from;
-		
-		$q .= " where IFSpectrum_SubHeader.FreqLO = $lo
-				 and IFSpectrum_SubHeader.IFGain = " . (string)$num .
-				" and " . $where . 
-				" and IFSpectrum_SubHeader.IFChannel = " . $ifchannel .
-				" and ((IFSpectrum_SubHeader.fkHeader =  " . $TDHkeys[0] . ") ";
-				*/
 		for($iTDH=1; $iTDH<count($TDHkeys); $iTDH++) {
 			$q .= "OR (IFSpectrum_SubHeader.fkHeader = " . $TDHkeys[$iTDH] . ") ";
 		}
 		$q .= ");"; 
-		/*
-		$q = "select IFSpectrum_SubHeader.FreqLO, ROUND(TEST_IFSpectrum_TotalPower.InBandPower,1)
-		from IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower
-		where IFSpectrum_SubHeader.FreqLO =$lo
-		and IFSpectrum_SubHeader.IFGain = 0
-		and IFSpectrum_SubHeader.IFChannel = $ifchannel
-		and TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId
-		and IFSpectrum_SubHeader.IsIncluded = 1
-		and ((IFSpectrum_SubHeader.fkHeader =  " . $TDHkeys[0] . ") ";
-		
-		 
-		//Display for all TDH keys
-		for ($iTDH=1;$iTDH<count($TDHkeys);$iTDH++){
-		//Iterate through each TDHkey value and generate power data for each one.
-			$q .= " OR (IFSpectrum_SubHeader.fkHeader =  " . $TDHkeys[$iTDH] . ") ";
-		}
-		$q .= ");";*/
-		//echo "$q <br>";
 		$r = $this->run_query($q);
 		$pwr = @mysql_result($r,0,$total);
 		return $pwr;
 	}
 
+	/**
+	 * 
+	 * @param unknown $Band
+	 * @param unknown $IFChannel
+	 * @param unknown $FEid
+	 * @param unknown $DataSetGroup
+	 * @return resource
+	 */
 	public function qifsub($Band, $IFChannel, $FEid, $DataSetGroup) {
 		$q ="SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
 			 FROM IFSpectrum_SubHeader, TestData_header,FE_Config
@@ -81,6 +84,13 @@ class IFSpectrumDB { //extends DBRetrieval {
 		return $this->run_query($q);
 	}
 	
+	/**
+	 * 
+	 * @param array $TDHkeys
+	 * @param boolean $ifchan- If IF Channel is desired in query (default = FALSE)
+	 * @param number $ifchannel (default = 0)
+	 * @return resource
+	 */
 	public function qlo($TDHkeys, $ifchan=false, $ifchannel=0) {
 		$qlo = "SELECT DISTINCT(FreqLO) FROM IFSpectrum_SubHeader
                 WHERE ((fkHeader = " . $TDHkeys[0] . ")";
@@ -100,81 +110,15 @@ class IFSpectrumDB { //extends DBRetrieval {
 		$rlo = $this->run_query($qlo);
 		 
 		return $rlo;
-		  /*
-		$rowcount = 0;
-		while ($rowlo = @mysql_fetch_array($rlo)) {
-			$lo = $rowlo[0];
-			if ($lo > 0) {
-				if ($rowcount % 2 == 0) {
-					$trclass = "alt";
-				} else {
-					$trclass = "";
-				}
-				
-				$pwr_0 = q_num($TDHkeys, 0, 1);
-				$pwr_15_inband = q_num($TDHkeys, 15, 0)
-				$pwr_total = q_num($TDHkeys, 15, 1);
-				$pwrdiff = $pwr_total - $pwr_15_inband;
-				$pwr_0 = number_format(round($pwr_0,1), 1, '.', '');
-				$pwr_15_inband = number_format(round($pwr_15_inband,1), 1, '.', '');
-				$pwr_total = number_format(round($pwr_total,1), 1, '.', '');
-				$pwrdiff = number_format(round($pwrdiff,1), 1, '.', '');
-				
-				$inband_diff = abs($pwr_0 - $pwr_15_inband);
-				
-				echo "<tr class = $trclass><td><b>$lo</b></td>";
-
-                // Color the background light red if the 0 dB and 15 dB results are not 15 +/- 1 dB apart:
-                $redHilite = FALSE;
-                if ($inband_diff < 14 || $inband_diff > 16)
-                    $redHilite = TRUE;
-
-                // Color the foreground red if the 0 dB gain value is >= -22 dBm:
-                $fontcolor = "#000000";
-                if ($pwr_0 > -22)
-                    $fontcolor = "#FF0000";
-
-                // Output the 0 dB gain in-band power.
-                // TODO:  This is totally screwy that we're getting the red highlighting from the "table7" span CSS:
-                echo "<td>";
-                if ($redHilite)
-                    echo "<span>";
-                echo "<font color='$fontcolor'>$pwr_0</font>";
-                if ($redHilite)
-                    echo "</span>";
-                echo "</td>";
-
-                // Color the foreground red if the 15 dB gain value is <= -22 dBm:
-                $fontcolor = "#000000";
-                if ($pwr_15_inband < -22)
-                    $fontcolor = "#FF0000";
-
-                // Output the 15 dB gain in-band power:
-                // TODO:  This is totally screwy that we're getting the red highlighting from the "table7" span CSS:
-                echo "<td style='border-left:solid 1px #000000;'>";
-                if ($redHilite)
-                    echo "<span>";
-                echo "<font color='$fontcolor'>$pwr_15_inband</font>";
-                if ($redHilite)
-                    echo "</span>";
-                "</td>";
-				
-				echo "<td><b>$pwr_total</b></td>";
-
-                // Color the foreground red if there is more than 3 dB difference between total and in-band power:
-                $fontcolor = "#000000";
-                if ($pwrdiff > 3)
-                    $fontcolor = "#ff0000";
-
-                // Output the total minus in-band difference:
-                echo "<td><font color = $fontcolor><b>$pwrdiff</b></font></td>";
-                echo "</tr>";
-
-                $rowcount += 1;
-			}
-		 }*/
 	}
 	
+	/**
+	 * 
+	 * @param integer $DataSetGroup
+	 * @param integer $DataSetBand
+	 * @param integer $keyId
+	 * @return array- IF Sub Keys
+	 */
 	public function qtemp($DataSetGroup, $DataSetBand, $keyId) {
 	
 		$qtemp = "SELECT IFSpectrum_SubHeader.keyId 
@@ -197,6 +141,14 @@ class IFSpectrumDB { //extends DBRetrieval {
 		return $ifsubkeys;
 	}
 
+	/**
+	 * 
+	 * @param boolean $powervar- If power variation is desired
+	 * @param array $row- previous query
+	 * @param integer $offset- Power_dBm offest (defaul = NULL)
+	 * @param integer $windowSize- window size (default = NULL)
+	 * @return resource
+	 */
 	public function qdata($powervar, $row, $offset = NULL, $windowSize = NULL) {
 		if($powervar) {
 			$qdata = "SELECT Freq_Hz,Power_dBm FROM TEMP_TEST_IFSpectrum_PowerVar
@@ -213,6 +165,21 @@ class IFSpectrumDB { //extends DBRetrieval {
 		return $this->run_query($qdata);
 	}
 	
+	/**
+	 * 
+	 * @param string $request- query desired
+	 * @param array $ifsubkeys (default = NULL)
+	 * @param integer $DataSetBand (default = NULL)
+	 * @param integer $IFChannel (default = NULL)
+	 * @param integer $FEid (default = NULL)
+	 * @param integer $DataSetGroup (default = NULL)
+	 * @param array $TDHkeys (default = NULL)
+	 * @param integer $IFGain (default = NULL)
+	 * @param integer $keyTDH (default = NULL)
+	 * @param array $row (default = NULL)
+	 * @param integer $windowSize (default = NULL)
+	 * @return resource
+	 */
 	public function q_other($request, $ifsubkeys = NULL, $DataSetBand = NULL, $IFChannel = NULL, $FEid = NULL, $DataSetGroup = NULL, $TDHkeys = NULL, $IFGain = NULL, $keyTDH = NULL, $row = NULL, $windowSize = NULL) {		
 		//echo "Request: $request, ifsubkeys: $ifsubkeys, Band: $DataSetBand, IFChannel: $IFChannel, FEid: $FEid, DataSetGroup: $DataSetGroup, TDHkeys: $TDHkeys, IFGain: $IFGain, keyTDH: $keyTDH, row: $row, WindowSize: $windowSize <br>";
 		
@@ -280,6 +247,11 @@ class IFSpectrumDB { //extends DBRetrieval {
 		return $this->run_query($q);
 	}
 	
+	/**
+	 * 
+	 * @param array $TDHkeys
+	 * @return array- Generic Table for noise floor and keyId for NoiseFloorHeader
+	 */
 	public function qurl($TDHkeys) {
 		$qurl = "SELECT keyId, IFChannel FROM TEST_IFSpectrum_urls
                  WHERE((TEST_IFSpectrum_urls.fkHeader =  " . $TDHkeys[0] . ") ";
@@ -306,6 +278,11 @@ class IFSpectrumDB { //extends DBRetrieval {
 		return array($urls, $numurl);//*/
 	}
 
+	/**
+	 * 
+	 * @param array $TDHkeys
+	 * @return array- GenericTable NoiseFloor and keyId NoiseFloorHeader
+	 */
 	public function qnf($TDHkeys) {
 		$qnf = "SELECT IFSpectrum_SubHeader.fkNoiseFloorHeader, IFSpectrum_SubHeader.Band
                     FROM TestData_header, IFSpectrum_SubHeader
@@ -322,6 +299,13 @@ class IFSpectrumDB { //extends DBRetrieval {
 		return array($NoiseFloor, $NoiseFloorHeader);
 	}
 
+	/**
+	 * 
+	 * @param integer $Band
+	 * @param integer $FEid
+	 * @param integer $DataSetGroup
+	 * @return array TDHKeys and TS
+	 */
 	public function qTDH($Band, $FEid, $DataSetGroup) {
 		require(site_get_config_main());
 		$qTDH = "SELECT TestData_header.keyId, TestData_header.TS

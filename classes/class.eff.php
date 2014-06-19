@@ -122,27 +122,15 @@ class eff {
 	public function Initialize_eff($in_fe_id, $in_fc) {
 		$this->fe_id = $in_fe_id;
 		$this->fc = $in_fc;
-		/*
-		 $qss = "SELECT keyId FROM ScanSetDetails WHERE fkFE_Config = $this->fe_id
-		ORDER BY band ASC, f ASC, tilt ASC, ScanSetNumber ASC;";
-		$rss = @mysql_query($qss,$this->dbconnection);
-		*/
 		$rss = $this->db_pull->qss(1, $this->fe_id, NULL, NULL, NULL, NULL);
 		$ssindex = 0;
 
 		while ($rowss = @mysql_fetch_array($rss)){
 			$ssid = $rowss[0];
-			//             echo "ssid= $ssid<br>";
 
 			$this->scansets[$ssindex] = new ScanSetDetails();
 			$this->scansets[$ssindex]->Initialize_ScanSetDetails($ssid, $this->fc);
 			$this->scansets[$ssindex]->RequestValues_ScanSetDetails();
-
-			//             echo "copol pol0: " . $this->scansets[$ssindex]->keyId_copol_pol0_scan . "<br>";
-			//             echo "copol pol1: " . $this->scansets[$ssindex]->keyId_copol_pol1_scan . "<br>";
-			//             echo "xpol pol0: " . $this->scansets[$ssindex]->keyId_xpol_pol0_scan . "<br>";
-			//             echo "xpol pol1: " . $this->scansets[$ssindex]->keyId_xpol_pol1_scan . "<br><br><br>";
-			//             echo "180 scan: " . $this->scansets[$ssindex]->keyId_180_scan . "<br><br><br>";
 
 			$ssindex += 1;
 		}
@@ -152,13 +140,7 @@ class eff {
 	public function Initialize_eff_SingleScanSet($in_keyId, $in_fc) {
 		$this->ssid = $in_keyId;
 		$this->fc = $in_fc;
-		/*
-		 $qss = "SELECT keyId, band, fkFE_Config
-		FROM ScanSetDetails WHERE keyId = $in_keyId
-		AND fkFacility = $this->fc;";
 
-		$rss = @mysql_query($qss,$this->dbconnection);
-		*/
 		$rss = $this->db_pull->qss(2, NULL, $in_keyId, NULL, $this->fc, NULL);
 		$this->band = @mysql_result($rss,0,1);
 		$this->fe_id = @mysql_result($rss,0,2);
@@ -167,23 +149,9 @@ class eff {
 		$this->scansets[0]->Initialize_ScanSetDetails($in_keyId, $this->fc);
 		$this->scansets[0]->RequestValues_ScanSetDetails();
 
-		//         echo "copol pol0: " . $this->scansets[0]->keyId_copol_pol0_scan . "<br>";
-		//         echo "copol pol1: " . $this->scansets[0]->keyId_copol_pol1_scan . "<br>";
-		//         echo "xpol pol0: " . $this->scansets[0]->keyId_xpol_pol0_scan . "<br>";
-		//         echo "xpol pol1: " . $this->scansets[0]->keyId_xpol_pol1_scan . "<br>";
-		//         echo "180 scan: " . $this->scansets[0]->keyId_180_scan . "<br><br><br>";
-
 		if ($this->scansets[0]->keyId_180_scan > 0)
 			$this->ReadyToProcess = 1;
-		/*
-		 $qeff = "SELECT * FROM BeamEfficiencies
-		WHERE fkScanDetails = ". $this->scansets[0]->keyId_copol_pol0_scan . ";";
 
-		$reff = @mysql_query($qeff,$this->dbconnection);
-		$numrows = @mysql_num_rows($reff);
-		if ($numrows > 0)
-			$this->Processed = 1;
-		*/
 		$this->Processed = $this->db_pull->qeff($this->scansets);
 
 		$this->NumberOfScanSets = 1;
@@ -193,30 +161,16 @@ class eff {
 		$this->fc = $in_fc;
 		$this->band = $band;
 		$this->fe_id = $in_fe_id;
-		/*
-		 $qss = "SELECT keyId FROM ScanSetDetails
-		WHERE fkFE_Config = $this->fe_id
-		AND band = $this->band
-		AND fkFacility = $this->fc
-		ORDER BY f ASC, tilt ASC, ScanSetNumber ASC;";
-		$rss = @mysql_query($qss,$this->dbconnection);
-		*/
+
 		$rss = $this->db_pull->qss(3, $this->fe_id, NULL, $this->band, $this->fc, NULL);
 		$ssindex = 0;
 
 		while ($rowss = @mysql_fetch_array($rss)){
 			$ssid = $rowss[0];
-			//             echo "ssid= $ssid<br>";
 
 			$this->scansets[$ssindex] = new ScanSetDetails();
 			$this->scansets[$ssindex]->Initialize_ScanSetDetails($ssid, $this->fc);
 			$this->scansets[$ssindex]->RequestValues_ScanSetDetails();
-
-			//             echo "copol pol0: " . $this->scansets[$ssindex]->keyId_copol_pol0_scan . "<br>";
-			//             echo "copol pol1: " . $this->scansets[$ssindex]->keyId_copol_pol1_scan . "<br>";
-			//             echo "xpol pol0: " . $this->scansets[$ssindex]->keyId_xpol_pol0_scan . "<br>";
-			//             echo "xpol pol1: " . $this->scansets[$ssindex]->keyId_xpol_pol1_scan . "<br>";
-			//             echo "180 scan: " . $this->scansets[$ssindex]->keyId_180_scan . "<br><br><br>";
 
 			$ssindex += 1;
 		}
@@ -274,16 +228,7 @@ class eff {
 
 	public function GetScanSideband($scanSetIdx) {
 		$scanSetId = $this->scansets[$scanSetIdx]->GetValue('keyId');
-		/*
-		 $qss = "SELECT sb FROM ScanDetails
-		WHERE fkScanSetDetails = $scanSetId
-		AND SourcePosition = 1
-		AND copol = 1
-		AND fkFacility = $this->fc
-		LIMIT 1;";
 
-		$rss = @mysql_query($qss,$this->dbconnection);
-		*/
 		$rss = $this->db_pull->qss(4, NULL, NULL, NULL, $this->fc, $scanSetId);
 		$rowss = @mysql_fetch_array($rss);
 		return $rowss[0];
@@ -568,15 +513,7 @@ class eff {
 		if (file_exists($nf_path)){
 			unlink($nf_path);
 		}
-		/*
-		 $nfhandle = fopen($nf_path,'w');
-		$q = "SELECT x,y,amp,phase FROM BeamListings_nearfield WHERE fkScanDetails = $scan_id;";
-		$r = @mysql_query($q,$this->dbconnection);
-		while ($row = @mysql_fetch_array($r)){
-		fwrite($nfhandle,"$row[0]\t$row[1]\t$row[2]\t$row[3]\r\n");
-		}
-		fclose($nfhandle);
-		*/
+
 		$this->db_pull->q(TRUE, $nf_path, $scan_id);
 	}
 
@@ -584,15 +521,7 @@ class eff {
 		if (file_exists($ff_path)){
 			unlink($ff_path);
 		}
-		/*
-		 $ffhandle = fopen($ff_path,'w');
-		$q = "SELECT x,y,amp,phase FROM BeamListings_farfield WHERE fkScanDetails = $scan_id;";
-		$r = @mysql_query($q,$this->dbconnection);
-		while ($row = @mysql_fetch_array($r)){
-		fwrite($ffhandle,"$row[0]\t$row[1]\t$row[2]\t$row[3]\r\n");
-		}
-		fclose($ffhandle);
-		*/
+
 		$this->db_pull->q(FALSE, $ff_path, $scan_id);
 	}
 
@@ -647,18 +576,7 @@ class eff {
 				$keyScanDetails = $ini_array[$key]['keyscandetails'];
 
 				//Delete any existing efficiency record for this scan
-				/*
-				 $qdelete = "DELETE FROM BeamEfficiencies
-				WHERE fkScanDetails = $keyScanDetails;";
-				$rdelete = @mysql_query($qdelete,$this->dbconnection);
-				*/
 				$rdelete = $this->db_pull->qdelete($keyScanDetails, NULL);
-				/*
-				 $qs = "Select keyBeamEfficiencies FROM BeamEfficiencies
-				WHERE fkScanDetails = $keyScanDetails;";
-
-				$rds = @mysql_query($qs,$this->dbconnection);
-				*/
 				$rds = $this->db_pull->q_other('s', $keyScanDetails, NULL);
 				$beameffID = @mysql_result($rds,0);
 				$beameff = new GenericTable;
@@ -768,12 +686,6 @@ class eff {
 				echo "$key; keyscandetails=$keyScanDetails<br>";
 
 				//Delete any existing efficiency record for this scan
-				/*
-				$qdelete = "DELETE FROM BeamEfficiencies
-				WHERE fkScanDetails = $keyScanDetails
-				AND fkFacility = $this->fc;";
-				$rdelete = @mysql_query($qdelete,$this->dbconnection);
-				*/
 				$rdelete = $this->db_pull->qdelete($keyScanDetails, $this->fc);
 
                 $beameff = new GenericTable;
@@ -876,8 +788,6 @@ class eff {
         $this->Display_DefocusEff();
 
         $this->Display_PointingAngleDiff();
-        //$this->Display_PhaseCenterOffset(0);
-        //$this->Display_PhaseCenterOffset(1);
         $this->Display_PointingAngleDiff();
         $this->Display_PointingAngleDiff();
         $this->Display_PointingAngleDiff();
@@ -1111,40 +1021,6 @@ class eff {
 			} else {
 			$p0spec = $p1spec = $spec['pspec'];
             	}
-
-            	/*
-            	switch ($this->band) {
-            	case 3:
-            	$p0spec = $p1spec = 99.0;
-            		break;
-            		case 4:
-            		$p0spec = $p1spec = 98.7;
-            		 if (134.0 <= $rf && $rf < 138.0) {
-            		$p0spec = 98.4;     // special case in pol0 only for FEND-40.02.04.00-0236-C-CRE
-            		$p1spec = 99.0;
-            		} else if (138.0 <= $rf && $rf <= 158.0) {
-            		$p0spec = $p1spec = 99.0;
-            		}
-            		break;
-            		case 6:
-            		$p0spec = $p1spec = 96.84;
-            		if (219.0 <= $rf && $rf <= 231.0)
-            			$p0spec = $p1spec = 99.0;
-            		else if (231.0 < $rf && $rf <= 262.0)
-            			$p0spec = $p1spec = 98.42;
-            		break;
-            		case 8:
-            		$p0spec = $p1spec = 98.4;
-            		if (491.0 <= $rf && $rf <= 495.0)
-            			$p0spec = $p1spec = 98.0;
-            		break;
-            		case 9:
-            		$p0spec = $p1spec = 97.5;
-            		break;
-            		default:
-            		$p0spec = $p1spec = 99.5;
-            		break;
-            		}*/
 
             		echo "<tr>";
             		echo "<td>" . $rf . "</td>";
@@ -1722,19 +1598,7 @@ function Display_DefocusEff(){
                 			}
 
                 			function Display_ScanSetDBInfo($scanset,$scandetails){
-                			/*
-                			$timedisp = strftime("%a",strtotime($scanset->GetValue('TS'))) . " " .  $scanset->GetValue('TS');
-
-                			echo "<table bgcolor='#ffff99' border='0' cellpadding = '0.1'><tr>
-
-                			<tr><td><font size = '0.5'>";
-                			echo "ScanSetDetails.keyId=$scanset->keyId, ";
-                			echo "ScanDetails.keyId=$scandetails->keyId, ";
-                			echo "FEConfig.keyFEConfig=" . $scanset->GetValue('fkFE_Config');
-                			//echo "<br>" . $scanset->GetValue('TS');
-                			echo "<br>" . $timedisp;
-                			echo "</td></tr></font></table><br>";
-                			*/
+ 
 
                 			}
                 			function CalculateSquint(){

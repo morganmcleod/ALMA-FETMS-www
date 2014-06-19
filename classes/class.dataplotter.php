@@ -898,15 +898,7 @@ class DataPlotter extends GenericTable{
             //SB 0, 1 or 2
             for ($i=0;$i<=4;$i++){
                 $DataSeriesName = "dataarr[$i]";
-/*
-                $q = "SELECT TimeValue,$dataarr[$i] FROM TEST_Repeatability
-                    WHERE fkHeader = $TestData_Id
-                    ORDER BY TimeValue ASC;";
 
-                echo $q . "<br>";
-                //echo "q3 = $q<br>";
-                $r = @mysql_query($q,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-//*/
 				$r = $this->db_pull->q(1, $TestData_Id, NULL, $dataarr[$i]);
                 if (@mysql_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "$dataarr[$i]";
@@ -997,16 +989,7 @@ class DataPlotter extends GenericTable{
         $band = $this->TestDataHeader->GetValue('Band');
 
         if ($band != 9 && $band != 10) {
-        	/*
-            $q = "SELECT MIN(tilt), MAX(tilt), MIN(power_pol0_chA), MIN(power_pol0_chB),
-            MIN(power_pol1_chA),MIN(power_pol1_chB),
-            MAX(power_pol0_chA),MAX(power_pol0_chB),
-            MAX(power_pol1_chA),MAX(power_pol1_chB)
-            FROM TEST_Workmanship_Amplitude
-                WHERE fkHeader = $TestData_Id
-                AND fkFacility = $this->fc;";
-            $r = @mysql_query($q,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-            //*/
+
             $r = $this->db_pull->q(2, $TestData_Id, $this->fc);
 
 
@@ -1017,15 +1000,6 @@ class DataPlotter extends GenericTable{
             $ampmax = max(@MYSQL_RESULT($r,0,6),@MYSQL_RESULT($r,0,7),@MYSQL_RESULT($r,0,8),@MYSQL_RESULT($r,0,9)) + 0.1;
 
         } else {
-        /*    $q = "SELECT MIN(tilt), MAX(tilt), MIN(power_pol0_chA),
-            MIN(power_pol1_chA),
-            MAX(power_pol0_chA),
-            MAX(power_pol1_chA)
-            FROM TEST_Workmanship_Amplitude
-                WHERE fkHeader = $TestData_Id
-                AND fkFacility = $this->fc;";
-            $r = @mysql_query($q,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-//*/
 			$r = $this->db_pull->q(3, $TestData_Id, $this->fc);
             $tiltmin = @MYSQL_RESULT($r,0,0) - 10;
             $tiltmax = @MYSQL_RESULT($r,0,1) + 10;
@@ -1033,15 +1007,7 @@ class DataPlotter extends GenericTable{
             $ampmin = min(@MYSQL_RESULT($r,0,2),@MYSQL_RESULT($r,0,3)) - 0.1;
             $ampmax = max(@MYSQL_RESULT($r,0,4),@MYSQL_RESULT($r,0,5)) + 0.1;
         }
-/*
-        $q = "SELECT tilt,power_pol0_chA,power_pol0_chB,
-        power_pol1_chA,power_pol1_chB
-        FROM TEST_Workmanship_Amplitude
-            WHERE fkHeader = $TestData_Id
-            AND fkFacility = $this->fc
-            ORDER BY TS ASC;";
 
-        $r = @mysql_query($q,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);//*/
         $r = $this->db_pull(4, $TestData_Id, $this->fc);
         $plottitle = "Workmanship Amplitude";
         $data_file = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/wkm_amp_data.txt";
@@ -1157,21 +1123,11 @@ class DataPlotter extends GenericTable{
         $TestData_Id = $this->TestDataHeader->keyId;
 
         $datafile_count=0;
- /*       $q = "SELECT MIN(tilt), MAX(tilt)
-            FROM TEST_Workmanship_Phase
-            WHERE fkHeader = $TestData_Id
-            AND fkFacility = $this->fc;";
-        $r = @mysql_query($q,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);//*/
-        //echo $q . "<br>";
+
 		$r = $this->db_pull->q(5, $TestData_Id, $this->fc);
         $tiltmin = @MYSQL_RESULT($r,0,0) - 10;
         $tiltmax = @MYSQL_RESULT($r,0,1) + 10;
-/*
-        $qsh = "SELECT keyTEST_Workmanship_Phase_SubHeader
-        FROM TEST_Workmanship_Phase_SubHeader
-            WHERE fkHeader = $TestData_Id;";
-        $rsh = @mysql_query($qsh,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-        $subheader_id = @mysql_result($rsh,0,0);*/
+
         $subheader_id = $this->db_pull->q_other('sh', NULL, $TestData_Id);
         $wsub = new GenericTable();
         $wsub->Initialize('TEST_Workmanship_Phase_SubHeader',$subheader_id,'keyTEST_Workmanship_Phase_SubHeader');
@@ -1181,15 +1137,6 @@ class DataPlotter extends GenericTable{
 
 
         // Get array of phase values and unwrap, to determine offset value for plotting.
-/*
-        $q = "SELECT phase, tilt
-        FROM TEST_Workmanship_Phase
-            WHERE fkHeader = $TestData_Id
-            AND fkFacility = $this->fc
-            ORDER BY TS ASC;";
-
-        $l->WriteLogFile($q);
-        $r = @mysql_query($q,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);//*/
         $r = $this->db_pull->q(6 ,$TestData_Id, $this->fc, NULL, $l);
 
         if (@mysql_num_rows($r) > 1) {
@@ -1316,16 +1263,6 @@ class DataPlotter extends GenericTable{
             $data_file = $this->writedirectory . "polangle_data" . $this->TestDataHeader->keyId .".txt";
             $fh = fopen($data_file, 'w');
 
-            //$tdh = new GenericTable();
-            ////$tdh->Initialize('TestData_header',$td_header,'keyId');
-
-/*
-            $qdata = "SELECT angle,amp_pol0,phase_pol0,amp_pol1,phase_pol1
-                        FROM TEST_PolAngles
-                      WHERE fkHeader = $td_header
-                      AND fkFacility = $this->fc
-                      ORDER BY angle ASC;";
-            $rdata = @mysql_query($qdata,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);//*/
 
             $rdata = $this->db_pull->qdata(1, $td_header, $this->fc);
             while ($rowdata = @mysql_fetch_array($rdata)){
@@ -1412,30 +1349,9 @@ class DataPlotter extends GenericTable{
         }
 
         //Get CCA Serial Number
- /*       $qcca ="SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-        WHERE FE_ConfigLink.fkFE_Config = $this->FEcfg
-        AND FE_Components.fkFE_ComponentType = 20
-        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-        AND FE_Components.Band = " . $this->TestDataHeader->GetValue('Band') . "
-        AND FE_Components.keyFacility = $this->fc
-        AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-        ORDER BY Band ASC;";
-        $r = @mysql_query($qcca,$this->dbconnection);
-
-        $CCA_SN = @mysql_result($r,0,0);//*/
         $CCA_SN = $this->db_pull->qca('c', $this->FEcfg, $this->TestDataHeader, $this->fc);
 
         //Get WCA info
- /*       $qwca = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-        WHERE FE_ConfigLink.fkFE_Config = $this->FEcfg
-        AND FE_Components.fkFE_ComponentType = 11
-        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-        AND FE_Components.Band = " . $this->TestDataHeader->GetValue('Band') . "
-        AND FE_Components.keyFacility = $this->fc
-        AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-        GROUP BY Band ASC;";
-        $rwca = @mysql_query($qwca,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-        $WCA_SN = @mysql_result($rwca,0,0);//*/
         $WCA_SN = $this->db_pull->qca('w', $this->FEcfg, $this->TestDataHeader, $this->fc);
 
         $data_file = $this->writedirectory . "lolocktest_data" . $this->TestDataHeader->keyId . ".txt";
@@ -1444,13 +1360,6 @@ class DataPlotter extends GenericTable{
         $t = new Logger('CLASSDATAPLOTTER.txt');
 
         //Get Subheader key
- /*       $qsub = "SELECT MAX(keyId) FROM TEST_LOLockTest_SubHeader
-        WHERE fkHeader = ".$this->TestDataHeader->keyId."
-        AND TEST_LOLockTest_SubHeader.keyFacility = " . $this->TestDataHeader->getValue('keyFacility') . ";";
-        $rsub = @mysql_query($qsub,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-
-        $t->WriteLogFile($qsub);
-        $subheader_id = @mysql_result($rsub,0,0);//*/
         $subheader_id = $this->db_pull->q_other('sub', $t, NULL, $this->TestDataHeader);
 
         //Array of LO frequencies where lock was lost
@@ -1478,24 +1387,6 @@ class DataPlotter extends GenericTable{
             $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ". $this->TestDataHeader->GetValue('fkFE_Config');
 
             // query to get data
- /*           $qdata = "SELECT TEST_LOLockTest.LOFreq,
-            TEST_LOLockTest.PhotomixerCurrent,
-            TEST_LOLockTest.PLLRefTotalPower
-            FROM FE_Config
-            LEFT JOIN TestData_header ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
-            LEFT JOIN TEST_LOLockTest_SubHeader ON TEST_LOLockTest_SubHeader.`fkHeader` = `TestData_header`.`keyId`
-            LEFT JOIN TEST_LOLockTest ON TEST_LOLockTest_SubHeader.`keyId` = TEST_LOLockTest.fkHeader
-            WHERE TestData_header.Band = " . $this->TestDataHeader->GetValue('Band')."
-            AND TestData_header.fkTestData_Type= 57
-            AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup')."
-            AND TEST_LOLockTest.IsIncluded = 1
-            AND FE_Config.fkFront_Ends = ($qfe)
-            GROUP BY TEST_LOLockTest.LOFreq ASC;";
-        }
-
-        $t->WriteLogFile($qdata);
-
-        $rdata = @mysql_query($qdata,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__); //*/
         $rdata = $this->db_pull->qdata(2, $td_header, NULL, $t, $this->TestDataHeader);
         $UnlocksFound = 0;
         $count = 0;
@@ -1559,10 +1450,6 @@ class DataPlotter extends GenericTable{
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
         $this->TestDataHeader->Update();
 
-
-/*        $qURL = "UPDATE TestData_header SET PlotURL = '$image_url' WHERE keyId = $td_header;";
-        $rURL = @mysql_query($qURL,$this->dbconnection);
-//*/
 		$this->db_pull->q_other('URL', $t, NULL, NULL, $image_url, $td_header);
 
         $t->WriteLogFile($qURL);
@@ -1577,16 +1464,6 @@ class DataPlotter extends GenericTable{
             $plot_label_1 =" set label 'TestData_header.keyId: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
             $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
         } else {
-        /*    $q = "SELECT `TestData_header`.keyID, `TestData_header`.TS,`TestData_header`.`fkFE_Config`,`TestData_header`.Meas_SWVer
-            FROM FE_Config
-            LEFT JOIN `TestData_header` ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
-            WHERE TestData_header.Band = " . $this->TestDataHeader->GetValue('Band')."
-            AND TestData_header.fkTestData_Type= " . $this->TestDataHeader->GetValue('fkTestData_Type')."
-            AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup')."
-            AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ".$this->TestDataHeader->GetValue('fkFE_Config').")
-            ORDER BY `TestData_header`.keyID DESC";
-
-            $r = @mysql_query($q, $this->dbconnection);//*/
             $r = $this->db_pull->q(7, NULL, NULL, NULL, NULL, $this->TestDataHeader);
 
             $cnt = 0; //initialize counter
