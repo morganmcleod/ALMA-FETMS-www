@@ -956,7 +956,7 @@ function Band3_NT_results($td_keyID){
     $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
     $specs = array();
     for($i=1; $i<6; $i++){
-    	$specs[$spec['Bspec_bbTSSB' . $i . 'f']] = $spec['Bspec_bbTSSB' . $i . 's'];
+    	$specs[$spec['Bspec_bbTSSB' . (string)$i . 'f']] = $spec['Bspec_bbTSSB' . (string)$i . 's'];
     }
 
     
@@ -1192,7 +1192,7 @@ function Band3_CCA_NT_results($td_keyID){
         $temp_spec = $specs[$FREQ_LO] - 3;
         $text=$new_spec->chkNumAgnstSpec( $AVG, "<", $temp_spec);
         echo "<td width = '300px'>$text</td>";
-        echo "<td width = '400px'>less than $spec</td>";
+        echo "<td width = '400px'>less than $temp_spec</td>";
         $result = mon_data ($TFETMS[$FREQ_LO] - $AVG - 3);
         echo "<td width = '300px'>$result</td>";
         echo "</tr>";
