@@ -14,10 +14,8 @@ switch ($_SERVER['SERVER_NAME']) {
         break;
 
     default:
-        $dbname     = 'alma_feic';
-        $dbserver   = 'sql5.cv.nrao.edu';
-        $dbusername = 'na_feic';
-        $dbpassword = 'qSfUO65a';
+        // database credentials are kept in the /conf/ directory, not in the webserver document root:
+        require_once("/home/safe.nrao.edu/conf/mtm-dbConnect.conf");
         break;
 }
 
