@@ -12,17 +12,35 @@ require_once($site_dbConnect);
 class DPdb{ //extends DBRetrieval{ 
 	var $dbConnection;
 
+	/**
+	 * Initializes class and creates database connection
+	 * 
+	 * @param $dB- existing database connection
+	 */
 	public function DPdb($dB) {
 		require(site_get_config_main());
 		$this->dbConnection = $dB;
 	}
 
+	/**
+	 * 
+	 * @param string $query- SQL query
+	 * 
+	 * @return resource Id for SQL query
+	 */
 	public function run_query($query) {
 		return @mysql_query($query, $this->dbConnection);
 	}
 	
 	
-	
+	/**
+	 * 
+	 * @param string $temp- w or c
+	 * @param $FEcfg
+	 * @param $TestDataHeader
+	 * @param integer $fc
+	 * @return array- results from query
+	 */
 	public function qca($temp, $FEcfg, $TestDataHeader, $fc) {
 		$type = 0;
 		if ($temp == 'c') {
@@ -45,6 +63,15 @@ class DPdb{ //extends DBRetrieval{
 		return @mysql_result($r, 0, 0);
 	}
 	
+	/**
+	 * 
+	 * @param string $request
+	 * @param $t- table (default = NULL)
+	 * @param $TestData_Id (default = NULL)
+	 * @param $TestDataHeader (default = NULL)
+	 * @param string $image_url (default = NULL)
+	 * @param string $td_header (default = NULL)
+	 */
 	public function q_other($request, $t=NULL, $TestData_Id=NULL, $TestDataHeader=NULL, $image_url=NULL, $td_header=NULL) {
 		if ($request == 'sh') {
 			$q = "SELECT keyTEST_Workmanship_Phase_SubHeader 
@@ -69,6 +96,15 @@ class DPdb{ //extends DBRetrieval{
 		}
 	}
 	
+	/**
+	 * 
+	 * @param integer $occur- occurance that function is called
+	 * @param  $td_header
+	 * @param $fc (default = NULL)
+	 * @param $t- table (default = NULL)
+	 * @param $TestDataHeader (default = NULL)
+	 * @return resource
+	 */
 	public function qdata($occur, $td_header, $fc = NULL, $t=NULL, $TestDataHeader=NULL) {
 		if ($occur == 1) {
 			$q = "SELECT angle,amp_pol0,phase_pol0,amp_pol1,phase_pol1 
@@ -104,7 +140,16 @@ class DPdb{ //extends DBRetrieval{
 		}
 		return $this->run_query($q);
 	}
-	
+	 /**
+	  * 
+	  * @param integer $occur- occurance which function is called
+	  * @param $TestData_Id (default = NULL)
+	  * @param $fc (default = NULL)
+	  * @param $data (default = NULL)
+	  * @param $l- logger (default = NULL)
+	  * @param $TestDataHeader (default = NULL)
+	  * @return resource
+	  */
 	public function q($occur, $TestData_Id=NULL, $fc=NULL, $data=NULL, $l=NULL, $TestDataHeader=NULL) {
 		if ($occur==1) {
 			$q = "SELECT TimeValue,$data 

@@ -77,6 +77,13 @@ class TestData_header extends GenericTable{
         parent::NewRecord('TestData_header','keyId',$in_fc,'keyFacility');
     }
 
+    public function getTestDataTypeNum($test_type) {
+    	$q = "SELECT keyId FROM TestData_Types WHERE TestData_TableName = '" . $test_type ."'";
+    	$r = @mysql_query($q, $this->dbconnection);
+    	$value = @mysql_fetch_array($r);
+    	return $value[0];
+    }
+    
     public function RequestValues_TDH() {
         if ($this->GetValue('fkTestData_Type') == 7){
             //IF Spectrum, Get noisefloor key

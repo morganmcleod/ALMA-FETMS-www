@@ -1092,13 +1092,7 @@ class WCA extends FEComponent{
             for ($i=0;$i<=sizeof($rowLO);$i++){
                 $CurrentLO = @mysql_result($rFindLO,$i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
-/*
-                $q = "SELECT Time,AllanVar FROM WCA_AmplitudeStability
-                WHERE FreqLO = $CurrentLO
-                AND Pol = $j
-                AND fkHeader = " . $this->tdh_ampstab->keyId . "
-                ORDER BY Time ASC;";
-                $r = @mysql_query($q,$this->dbconnection);//*/
+
                 $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $j, NULL, NULL, $CurrentLO);
 
                 if (@mysql_num_rows($r) > 1){
@@ -1140,7 +1134,6 @@ class WCA extends FEComponent{
         $imagename = "WCA_AmplitudeStability_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/$imagename";
 
-        //echo "PlotURL = $image_url<br>";
         $this->tdh_ampstab->SetValue('PlotURL',"$image_url");
         $this->tdh_ampstab->Update();
         unset($tdh);
@@ -1155,7 +1148,6 @@ class WCA extends FEComponent{
         fwrite($fh, "set terminal png size 900,500\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
-        //fwrite($fhc, "set label '$TS' at screen 0.5, 0.95\r\n");
         fwrite($fh, "set grid\r\n");
         fwrite($fh, "set log xy\r\n");
         fwrite($fh, "set key outside\r\n");
@@ -1163,11 +1155,9 @@ class WCA extends FEComponent{
         fwrite($fh, "set xlabel 'Allan Time, T (=Integration, Tau)'\r\n");
 
         $ymax = pow(10,-5);
-        //fwrite($fh, "set yrange [:0.0001]\r\n");
         fwrite($fh, "set yrange [:$ymax]\r\n");
 
         fwrite($fh, "f1(x)=((x>500) && (x<100000)) ? 0.00000009 : 1/0\r\n");
-        //fwrite($fh, "f2(x)=((x>299999) && (x<350000)) ? 0.000001 : 1/0\r\n");
         fwrite($fh, "f2(x)=((x>290000) && (x<350000)) ? 0.000001 : 1/0\r\n");
         $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
         $plot_string .= ", f2(x) title 'Spec' with points pt 5 pointsize 1";
@@ -1213,8 +1203,6 @@ class WCA extends FEComponent{
 
 
     public function Plot_AMNoise_DSB(){
-        //echo "AMNoise id= $this->tdhid_amnoise<br>";
-
         $TS = $this->tdh_amnoise->GetValue('TS');
         $Band = $this->GetValue('Band');
         $spec_value = 10;
@@ -1258,11 +1246,6 @@ class WCA extends FEComponent{
                 $amnzarr[1][$arrct]=$row[1];
                 $arrct += 1;
             }
-            //echo $qFreqLO . "<br>";
-            //echo "Array test...<br>";
-            //echo count($amnzarr[0]) . "<br>";
-            //echo "0: ".$amnzarr[0][5]."<br>";
-            //echo "1: ".$amnzarr[1][5]."<br>";
 
             $arrct = 0;
             $rlo = $this->db_pull->qlo('WCA_AMNoise', $this->tdh_amnoise->keyId, $this->fc, FALSE, $FreqLOW, $FreqHI, $pol);
@@ -1281,9 +1264,7 @@ class WCA extends FEComponent{
 
             for ($i = 0; $i < count($freqarr); $i++){
                 $avgamnz = $this->GetAvgAMNoise($amnzarr, $freqarr[$i]);
-                //echo "Freq, avg= $freqarr[$i], $avgamnz<br>";
                 $stringData = "$freqarr[$i]\t$avgamnz\r\n";
-                //echo $stringData . "<br>";
                 fwrite($fh, $stringData);
                 if ($avgamnz > 9){
                     $plotmax = "12";
@@ -1366,12 +1347,6 @@ class WCA extends FEComponent{
 
 
             $IFcount = 0;
-           /* $q="SELECT FreqIF,FreqLO,AMNoise FROM WCA_AMNoise
-            WHERE fkHeader = " . $this->tdh_amnoise->keyId . "
-            AND Pol = $pol
-            AND fkFacility = $this->fc
-            ORDER BY FreqLO ASC, FreqIF ASC;";
-            $r=@mysql_query($q,$this->dbconnection);//*/
             $r = $this->db_pull->q(10, $this->tdh_amnoise->keyId, $pol, $this->fc);
             while($row=@mysql_fetch_array($r)){
                 $stringData = "$row[0]\t$row[1]\t$row[2]\r\n";
@@ -1483,13 +1458,6 @@ class WCA extends FEComponent{
                 $CurrentLO = @mysql_result($rFindLO,$i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
-               /* $q = "SELECT CarrierOffset,Lf FROM WCA_PhaseNoise
-                WHERE FreqLO = $CurrentLO
-                AND Pol = $j
-                AND fkHeader = ".$this->tdh_phasenoise->keyId."
-                AND fkFacility = $this->fc
-                ORDER BY CarrierOffset ASC;";
-                $r = @mysql_query($q,$this->dbconnection);//*/
                 $r = $this->db_pull->q(11, $this->tdh_phasenoise->keyId, $j, $this->fc, NULL, $CurrentLO);
 
                 if (@mysql_num_rows($r) > 1){
@@ -1520,11 +1488,6 @@ class WCA extends FEComponent{
         $imagename = "WCA_PhaseNoise_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $imagename;
 
-        /*
-         $this->tdh->SetValue('PlotURL',"$image_url");
-        $tdh->Update();
-        unset($tdh);
-        */
 
 
         $plot_title = "WCA Band" . $this->GetValue('Band') . " SN" . $this->GetValue('SN') . " Phase Noise ($TS)";
@@ -1576,14 +1539,6 @@ class WCA extends FEComponent{
         $sumtrap2 = 0;
 
 
-        /*$q = "SELECT CarrierOffset,FreqLO,Lf FROM WCA_PhaseNoise
-        WHERE fkHeader = ". $this->tdh_phasenoise->keyId . "
-        AND FreqLO = $LOfreq
-        AND Pol = $pol
-        AND fkFacility = $this->fc
-        ORDER BY CarrierOffset ASC;";
-
-        $r = @mysql_query($q, $this->dbconnection);//*/
         $r = $this->db_pull->q(12, $this->tdh_phasenoise->keyId, $pol, $this->fc, NULL, NULL, $LOfreq);
 
         $GbE_Carrier = $LOfreq * pow(10, 9);
@@ -1776,27 +1731,6 @@ class WCA extends FEComponent{
             while ($rowLO = mysql_fetch_array($rFindLO)){
                 $CurrentLO = @mysql_result($rFindLO,$i);
 
-                // TODO:   special meaining of keyDataSet for band 3?   Hmmm...
-                /*if ($Band != 3){
-                    $q = "SELECT VD$pol,Power FROM WCA_OutputPower
-                    WHERE Pol = $pol
-                    AND fkHeader = ". $this->tdh_outputpower->keyId . "
-                    AND keyDataSet = 2
-                    AND FreqLO = $CurrentLO
-                    AND fkFacility = $this->fc
-                    ORDER BY VD$pol ASC;";
-                }
-                if ($Band == 3){
-                    $q = "SELECT VD$pol,Power FROM WCA_OutputPower
-                    WHERE Pol = $pol
-                    AND fkHeader = ". $this->tdh_outputpower->keyId . "
-                    AND keyDataSet <> 1
-                    AND FreqLO = $CurrentLO
-                    AND fkFacility = $this->fc
-                    ORDER BY VD$pol ASC;";
-                }
-
-                $r = @mysql_query($q,$this->dbconnection);//*/
                 if($Band != 3) {
                 	$req = 13;
                 } else {
@@ -1892,16 +1826,6 @@ class WCA extends FEComponent{
         if ($rFindLO) {
             while ($rowLO = mysql_fetch_array($rFindLO)){
                 $CurrentLO = @mysql_result($rFindLO,$i);
-
-                /*$q = "SELECT VD$pol,Power FROM WCA_OutputPower
-                WHERE Pol = $pol
-                AND fkHeader = ". $this->tdh_outputpower->keyId . "
-                AND keyDataSet = 3
-                AND FreqLO = $CurrentLO
-                AND fkFacility = $this->fc
-                ORDER BY Power ASC, VD$pol ASC;";
-
-                $r = @mysql_query($q,$this->dbconnection);//*/
                 $r = $this->db_pull->q(15, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
 
 

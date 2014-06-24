@@ -9,15 +9,30 @@ require_once($site_dbConnect);
 class BeamEffDB { //extends DBRetrieval {
 	var $dbConnection;
 	
+	/**
+	 * Initializes class and creates database connection
+	 * 
+	 * @param $db- existing database connection
+	 */
 	public function BeamEffDB($db) {
 		require(site_get_config_main());
 		$this->dbConnection = $db;
 	}
-	
+	 /**
+	  * @param string $query- SQL query
+	  * 
+	  * @return Resource Id for SQL query
+	  */
 	public function run_query($query) {
 		return @mysql_query($query, $this->dbConnection);
 	}
 	
+	/**
+	 * @param integer $keyScanDetails
+	 * @param integer $fc (default = NULL)
+	 * 
+	 * @return resource
+	 */
 	public function qdelete($keyScanDetails, $fc=NULL) {
 		$q = "DELETE FROM BeamEfficiencies WHERE fkScanDetails = $keyScanDetails";
 		if(!is_null($fc)) {
@@ -26,6 +41,13 @@ class BeamEffDB { //extends DBRetrieval {
 		return $this->run_query($q);
 	}
 	
+	/**
+	 * @param string $request- s or n
+	 * @param integer $keyScanDetails (default = NULL)
+	 * @param integer $band (default = NULL)
+	 * 
+	 * @return resource
+	 */
 	public function q_other($request, $keyScanDetails=NULL, $band=NULL) {
 		$q = '';
 		if ($request == 's') {
@@ -38,7 +60,13 @@ class BeamEffDB { //extends DBRetrieval {
 		
 		return $this->run_query($q);
 	}
-	
+	 /**
+	  * @param boolean $near- nearfield or farfield
+	  * @param string $path- $fh
+	  * @param integer $scan_id
+	  * 
+	  * @return none
+	  */
 	public function q($near, $path, $scan_id) {
 		$handle = fopen($path,'w');
 		$q = '';
@@ -54,7 +82,11 @@ class BeamEffDB { //extends DBRetrieval {
 		fclose($handle);
 		
 	}
-	
+	 /**
+	  * @param array $scansets
+	  * 
+	  * @return integer- 0 or 1 stating if processed
+	  */
 	public function qeff($scansets) {
 		$qeff = "SELECT * FROM BeamEfficiencies
                  WHERE fkScanDetails = ". $scansets[0]->keyId_copol_pol0_scan . ";";
@@ -69,7 +101,16 @@ class BeamEffDB { //extends DBRetrieval {
 	}
 	
 	
-	
+	/**
+	 * @param integer $occur- occurance function is called
+	 * @param integer $fe_id (default = NULL)
+	 * @param integer $in_keyId (default = NULL)
+	 * @param integer $band (default = NULL)
+	 * @param integer $fc (default = NULL)
+	 * @param integer $scanSetId (default = NULL)
+	 * 
+	 * @return resource
+	 */
 	public function qss($occur, $fe_id=NULL, $in_keyId=NULL, $band=NULL, $fc=NULL, $scanSetId=NULL) {
 		$q = "";
 		if($occur==1) {

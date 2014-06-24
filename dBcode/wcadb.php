@@ -9,15 +9,34 @@ require_once($site_classes . '/class.frontend.php');
 class WCAdb { //extends DBRetrieval {
 	var $dbconnection;
 
+	/**
+	 * Initializes class and creates database connection
+	 * 
+	 * @param $db- existing database connection
+	 */
 	public function WCAdb($db) {
 		require(site_get_config_main());
 		$this->dbconnection = $db;
 	}
 
+	/**
+	 * @param string $query- SQL query to be passed to database
+	 * 
+	 * @return Resource ID- results from query
+	 */
 	public function run_query($query) {
 		return @mysql_query($query, $this->dbconnection);
 	}
 	
+	/**
+	 * 
+	 * @param string $action- indicates if query will select , delete, or insert values from the database 
+	 * @param integer $keyId
+	 * @param integer $fc (default = NULL)
+	 * @param array $values- integers representing LO, Jitter, and pol. (default = NULL)
+	 * 
+	 * @return resource for query results in action is select.
+	 */
 	public function qpj($action, $keyId, $fc=NULL, $values=NULL) {
 		$q = '';
 		if($action == 'select') {
@@ -34,6 +53,17 @@ class WCAdb { //extends DBRetrieval {
 		}
 	}
 	
+	/**
+	 * 
+	 * @param string $request- indicates which query is desired
+	 * @param integer $keyId (default = NULL)
+	 * @param integer $fc (default = NULL)
+	 * @param integer $pol (default = NULL)
+	 * @param integer $FreqLO (default = NULL)
+	 * @param integer $FreqHI (default = NULL)
+	 * @param array $keys- values representing old and new keyIds (default = NULL)
+	 * @param array or string $values - values representing VGP or table (default = NULL)
+	 */
 	public function q_other($request, $keyId=NULL, $fc=NULL, $pol=NULL, $FreqLO=NULL, $FreqHI=NULL, $keys=NULL, $values=NULL) {
 		if($request == 'WCA') {
 			$q = "SELECT keyId FROM WCAs WHERE fkFE_Component = $keyId LIMIT 1;";
@@ -77,6 +107,17 @@ class WCAdb { //extends DBRetrieval {
 		return $this->run_query($q);
 	}	
 	
+	/**
+	 * 
+	 * @param integer $occur- occurance of query request
+	 * @param integer $keyId (default = NULL)
+	 * @param integer $pol (default = NULL)
+	 * @param integer $fc (default = NULL)
+	 * @param integer $FormatTDHListArr- tdhArray value from FormatTDHList (default = NULL)
+	 * @param integer $CurrentLO (default = NULL)
+	 * @param integer $LOfreq (default = NULL)
+	 * 
+	 */
 	public function q($occur, $keyId=NULL, $pol=NULL, $fc=NULL, $FormatTDHListArr=NULL, $CurrentLO=NULL, $LOfreq=NULL) {
 		if($occur == 1) {
 			$q = "SELECT keyId FROM LOParams WHERE fkComponent = $keyId ORDER BY FreqLO ASC;";
@@ -114,6 +155,17 @@ class WCAdb { //extends DBRetrieval {
 		return $this->run_query($q);
 	}
 	
+	/**
+	 * 
+	 * @param string $test_type- TestData_Type desired
+	 * @param integer $keyId
+	 * @param integer $fc
+	 * @param boolean $get_pol (default = NULL)
+	 * @param integer $FreqLOW (default = NULL)
+	 * @param integer $FreqHI (default = NULL)
+	 * @param integer $pol (default = NULL)
+	 * @return resource
+	 */
 	public function qlo($test_type, $keyId, $fc, $get_pol=TRUE, $FreqLOW=NULL, $FreqHI=NULL, $pol=NULL) {
 		$q = "SELECT DISTINCT(FreqLO)";
 		if($get_pol) {
@@ -133,6 +185,15 @@ class WCAdb { //extends DBRetrieval {
 		return $this->run_query($q);
 	}
 	
+	/**
+	 * 
+	 * @param string $test_type- TestData_Type desired
+	 * @param integer $keyId
+	 * @param integer $fc (default = NULL)
+	 * @param integer $pol (default = NULL)
+	 * @param integer $kDSet_comp- keyDataSet (default = NULL)
+	 * @return resource
+	 */
 	public function qFindLO($test_type, $keyId, $fc=NULL, $pol=NULL, $kDSet_comp=NULL) {
 		$q = "SELECT DISTINCT(FreqLO) FROM $test_type WHERE fkHeader = $keyId";
 		if(!is_null($kDSet_comp)) {
@@ -148,6 +209,12 @@ class WCAdb { //extends DBRetrieval {
 		return $this->run_query($q);
 	}
 
+	/**
+	 * 
+	 * @param integer $keyId
+	 * @param string $test_type- TestData_Type desired
+	 * @param boolean $comp- fkFE_Components? (default = NULL)
+	 */
 	public function qDel($keyId, $test_type, $comp = FALSE) {
 		$q = "DELETE FROM $test_type WHERE ";
 		if($comp) {
@@ -163,6 +230,14 @@ class WCAdb { //extends DBRetrieval {
 		$this->run_query($q);
 	}
 	
+	/**
+	 * 
+	 * @param string $request- Table desired
+	 * @param array $filecontents
+	 * @param TestData_header $object- tdh desired (ex. tdh_ampstab)
+	 * @param integer $fc (default = NULL)
+	 * @param TestData_header $other_object- if additional tdh desired (default = NULL)
+	 */
 	public function del_ins($request, $filecontents, $object, $fc=NULL, $other_object=NULL) {
 		$qdel = "DELETE FROM $request WHERE fkHeader = $object->keyId";
 		if($request == "WCA_MaxSafePower") {
@@ -257,6 +332,14 @@ class WCAdb { //extends DBRetrieval {
 		}
 	}
 	
+	/**
+	 * 
+	 * @param string $action- select or delete
+	 * @param integer $keyId
+	 * @param string $test_type- TestData_Type desired
+	 * @param integer $fc (default = NULL)
+	 * @return resource
+	 */
 	public function qtdh($action, $keyId, $test_type, $fc=NULL) {
 		if($action == 'select') {
 			$q = "SELECT keyId FROM TestData_header WHERE fkFE_Components = $keyId and fkTestData_Type = ";
@@ -265,6 +348,7 @@ class WCAdb { //extends DBRetrieval {
 		} else {
 			$q = "";
 		}
+
 		if ($test_type == 'WCA_PhaseJitter') {
 			$q .= "47";
 		} elseif($test_type == 'WCA_AmplitudeStability') {
