@@ -77,10 +77,11 @@ function plotRF($plt, $band, $pol, $sb, $y) {
 	$att[] = "lines lt 1 lw 3 title 'FEIC Meas Pol0 USB'";
 	$att[] = "lines lt 3 title 'Cart Group Meas Pol0 USB'";
 	$att[] = "points lt -1 axes x1y2 title 'Diff relative to Spec'";
-	$ylim = array();
-	$ylim[] = 0;
-	$ylim[] = $y;
-	$plt->generate_plots($band, $data, $att, $ylim);
+	$ylim = array(0, $y, 0, 120);
+	$title = "Receiver Noise Temperature, 5-10 GHz IF, FE SN61, CCA6-61 WCA6-09, Pol $pol Sb$sb";
+	$saveas = "Band$band Pol$pol Sb$sb RF";
+	$labels = array("RF (GHz)", "Tssb Corrected (K)", "Difference from Spec (%)");
+	$plt->generate_plots($band, $data, $att, $ylim, $title, $saveas, $labels, FALSE);
 }
 
 /**
@@ -103,19 +104,19 @@ function plotIF($plt, $band, $y) {
 	$att[] = "lines lt 3 lw 1 title 'Pol1sb1'";
 	$att[] = "lines lt 4 lw 1 title 'Pol1sb2'";
 	$ylim = array(0,$y);//149.6);//*/
-	$plt->generate_plots($band, $data, $att, $ylim);
+	$title = "Receiver Noise Temperature Tssb corrected, FE SN61, CCA6-61 WCA6-09";
+	$saveas = "Band$band IF";;
+	$labels = array("IF (GHz)", "Tssb (K)");
+	$plt->generate_plots($band, $data, $att, $ylim, $title, $saveas, $labels, TRUE);
 }
 
-$command = escapeshellcmd('plot_data.py');
-$output = shell_exec($command);
-echo $output;
-band6('rf', 0, 1);
+band6('if', 0, 1);
 ?>
 <html>
 <body>
 <div>
 <br>
-<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/explot.png">
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band6 Pol0 Sb1.png">
 <br>
 </div>
 </body>

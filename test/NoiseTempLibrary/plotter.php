@@ -26,12 +26,16 @@ class plotter{
 	 * 						One independent variable, any number of dependent variables
 	 * 						(Ex. array('RF_usb', 'Tssb_corr01', 'Trx', 'diff'))
 	 * @param array $line_att- Strings to tell GNUPLOT how data should be presented (Ex. lines ... title '...')
-	 * @param array $ylim- Lower and upper y limit for plot
 	 * note: $data should have one more element than $line_att
-	 * 
+	 * @param array $ylim- Lower and upper y limit for plot (If two axes desired, list y1 limits then y2 limits)
+	 * @param string $title
+	 * @param string $saveas- name of png file to save plot as. (Do NOT include .png)
+	 * @param array $labels- Axes labels, list x label first, then all y labels desired.
+	 * @param boolean $plotSpec- True if specs are desired in plot.
+	 *  
 	 * TODO: Allow more customability options
 	 */
-	public function generate_plots($band, $data_types, $line_att, $ylim) {
+	public function generate_plots($band, $data_types, $line_att, $ylim, $title, $saveas, $labels, $plotSpec) {
 		$data = $this->data;
 		$new_specs = new Specifications();
 		$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
@@ -64,23 +68,28 @@ class plotter{
 				}
 			}
 			//array_multisort($x, $y);
-			
+			$spec_files = $main_write_directory . "NoiseTempLibrary/specData.txt";
 			$temp_data_file = $main_write_directory . "NoiseTempLibrary/temp_data$count.txt";
 			$f_temp = fopen($temp_data_file, 'w');
+			$fSpec = fopen($spec_files, 'w');
 			for ($j=0; $j<count($x); $j++) {
 				if (array_key_exists($j-1, $x)) {
 					if($order == 'asc' && ($x[$j] < $x[$j-1])) {
 						fwrite($f_temp, "\n");
+						fwrite($fSpec, "\n");
 					} 
 					if($order == 'desc'&& ($x[$j] > $x[$j-1])) {
 						fwrite($f_temp, "\n");
+						fwrite($fSpec, "\n");
 					}
 				}
 				if($y[$j] > 0) {
 					fwrite($f_temp, $x[$j] . "\t" . $y[$j] . "\n");
+					fwrite($fSpec, $x[$j] . "\t" . $specs['NT20'] . "\t" . $specs['NT80'] . "\n");
 				}
 			}
 			fclose($f_temp);
+			fclose($fSpec);
 			$i++;
 			$count++;
 		}
@@ -92,12 +101,15 @@ class plotter{
 		$plot_code = "";
 		//Think about adding parameters for plot attributes
 		$plot_code .= "set terminal png size 900,600 crop\n";
-		$plot_code .= "set output '" . $main_write_directory . "NoiseTempLibrary/explot.png'\n";
-		$plot_code .= "set xlabel '" . $xlabel . "'\n";
-		$plot_code .= "set ylabel 'Tssb corrected (K)'\n";
-		$plot_code .= "set y2label 'Difference from Spec(%)'\n";
-		$plot_code .= "set y2tics\n";
-		$plot_code .= "set y2range [0:120]\n";
+		$plot_code .= "set output '" . $main_write_directory . "NoiseTempLibrary/$saveas.png'\n";
+		$plot_code .= "set title '" . $title . "'\n";
+		$plot_code .= "set xlabel '" . $labels[0] . "'\n";
+		$plot_code .= "set ylabel '" . $labels[1] . "'\n";
+		if(count($ylim)>2) {
+			$plot_code .= "set y2label '" . $labels[2] . "'\n";
+			$plot_code .= "set y2tics\n";
+			$plot_code .= "set y2range [$ylim[2]:$ylim[3]]\n";
+		}
 		$plot_code .= "set key outside\n";
 		$plot_code .= "set bmargin\n";
 		$plot_code .= "set yrange [$ylim[0]:$ylim[1]]\n";
@@ -107,6 +119,12 @@ class plotter{
 			$plot_code .= " using 1:2 with $line_att[$k],";
 		}
 		$plot_code = substr($plot_code, 0, -1);
+		if($plotSpec) {
+			$plot_code .= ",'" . $main_write_directory . "NoiseTempLibrary/specData.txt'";
+			$plot_code .= "using 1:2 with lines lt -1 lw 3 title '" . $specs['NT20'] . " K (100%)'";
+			$plot_code .= ",'" . $main_write_directory . "NoiseTempLibrary/specData.txt'";
+			$plot_code .= "using 1:3 with lines lt 0 lw 1 title '" . $specs['NT80'] . " K (80%)'";
+		}
 		$f = fopen($plotter, 'w');
 		fwrite($f, $plot_code);
 		fclose($f);
