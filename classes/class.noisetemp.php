@@ -157,7 +157,7 @@ class NoiseTemperature extends TestData_header{
             $this->CalculateBand10AvgNT();
 
         $this->LoadAndWriteCCANoiseTempData();
-
+        
         $this->MakePlotFooterLabels();
 
         $this->DrawPlotTrVsIF();
@@ -208,6 +208,7 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger->WriteLogFile("CCA FE_Component key query: $q");
         while ($row = @mysql_fetch_array($r)) {
             // append to the array of CCA component keys:
+            $temp = $row[0];
             $this->CCA_componentKeys[] = $row[0];
         }
         $this->NT_Logger->WriteLogFile("CCA FE_Component key: $this->CCA_componentKeys[0]");
@@ -418,7 +419,8 @@ class NoiseTemperature extends TestData_header{
 
         function Tssb_Corr($TrUncorr, $IRdB) {
             // correct Tr for image rejection
-            return $TrUncorr * (1 + pow(10, -abs($IRdB) / 10));
+            $temp = $TrUncorr * (1 + pow(10, -abs($IRdB) / 10));
+            return $temp;
         }
 
         // total number of rows in data set:
@@ -505,9 +507,9 @@ class NoiseTemperature extends TestData_header{
                     // correct the data using image correction
                     //Tssb, corrected (K)
                     $Pol0Sb1_Tr = Tssb_Corr($Pol0Sb1_Tr, $IR_0_1);
-                    $Pol0Sb1_Tr = Tssb_Corr($Pol0Sb1_Tr, $IR_0_2);
-                    $Pol1Sb2_Tr = Tssb_Corr($Pol0Sb1_Tr, $IR_1_1);
-                    $Pol1Sb2_Tr = Tssb_Corr($Pol0Sb1_Tr, $IR_1_1);
+                    $Pol0Sb2_Tr = Tssb_Corr($Pol0Sb2_Tr, $IR_0_2);
+                    $Pol1Sb1_Tr = Tssb_Corr($Pol1Sb1_Tr, $IR_1_1);
+                    $Pol1Sb2_Tr = Tssb_Corr($Pol1Sb2_Tr, $IR_1_2);
                 }
 
                 // save to data array:
