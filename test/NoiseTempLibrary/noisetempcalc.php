@@ -2,6 +2,7 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
 require_once($site_classes . '/class.spec_functions.php');
+require_once($site_NT . '/NT_db.php');
 
 	interface noisetemp {
 		public  function __construct();
@@ -18,117 +19,220 @@ require_once($site_classes . '/class.spec_functions.php');
 		var $band;
 		var $dataSetGroup;
 		var $db;
+		var $keyId;
+		var $fc; //keyFacility
+		var $SN; //serial number
+		var $CCA_componentKeys;
+		var $IR; // IR Data
+		var $rx; //Receiver data
+		var $dbPull;
 		
 		public function __construct(){}
+
 		
-		public function setParams($band, $dataSetGroup) {
+		/**
+		 * Sets initial parameters for data retrieval
+		 * 
+		 * @param integer $band
+		 * @param integer $dataSetGroup
+		 * @param integer $keyId
+		 * @param integer $fc
+		 * @param integer $sn
+		 */
+		public function setParams($band, $dataSetGroup, $keyId, $fc, $sn) {
 			$this->band = $band;
 			$this->dataSetGroup = $dataSetGroup;
+			$this->keyId = $keyId;
+			$this->fc = $fc;
+			$this->SN = $sn;
+			
+			$new_specs = new Specifications();
+			$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
+			$dbPull = new NT_db();
+			$this->specs = $specs;
+			$this->dbPull = $dbPull;
+			
 			require(site_get_config_main());
 			$this->db = site_getDbConnection();
 		}
 		
-		public function testDataRet() {
+		/**
+		 * Retrieves noise temperature data (LO Frequency, Center IF, ambient temperature,
+		 * and Y factors) from database.
+		 * Places all data into $this-> data, keys are data attributes.
+		 */
+		public function getData() {
 			$band = $this->band;
-			$dataSetGroup = $this->dataSetGroup;
+			$dataSetGroup = $this->dataSetGroup; //different query if dataSetGroup != 0??
 		
-			$new_specs = new Specifications();
-			$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
-		
+			$this->data = $this->dbPull->qdata($this->keyId, $this->fc);
 			
-			//Selects data based on band and dataSetGroup (TestData_Type = 58 for FEIC_NoiseTemperature)
-			$qkeyId = "SELECT keyId FROM TestData_header WHERE Band = $band AND fkTestData_Type = 58 AND DataSetGroup = $dataSetGroup";
-			$rkeyId = @mysql_query($qkeyId, $this->db);
-			$keyIds = array();
-			while($row = @mysql_fetch_array($rkeyId)) {
-				$keyIds[] = $row[0];
-			}
-			
-			//Gets fkSub_Header for keyIds
-			$q = "SELECT keyId FROM Noise_Temp_SubHeader WHERE ";
-			foreach($keyIds as $k) {
-				$q .= "fkHeader = $k OR ";
-			}
-			$q = substr($q, 0, -3);
-			$r = @mysql_query($q, $this->db);
-			$keys = array();
-			while($row = @mysql_fetch_array($r)) {
-				$keys[]= $row[0];
-			}
-			
-			//Pulls data
-			$q = "SELECT FreqLO, CenterIF, TAmbient, Pol0Sb1YFactor, Pol0Sb2YFactor, Pol1Sb1YFactor, Pol1Sb2YFactor FROM Noise_Temp WHERE IsIncluded=1 AND (";
-			foreach($keys as $k) {
-				$q .= "fkSub_Header = $k OR ";
-			}
-			$q = substr($q, 0, -3) . ") ORDER BY FreqLO ASC, CenterIF ASC";
-			$r = @mysql_query($q, $this->db);
-			$data = array();
-			while($row = @mysql_fetch_array($r)) {
-				$values = array (
-						'FreqLO' => $row[0], 
-						'CenterIF' => $row[1], 
-						'TAmbient' => $row[2], 
-						'Pol0Sb1YFactor' => $row[3], 
-						'Pol0Sb2YFactor' => $row[4], 
-						'Pol1Sb1YFactor' => $row[5], 
-						'Pol1Sb2YFactor' => $row[6],);
-				$data[] = $values;
-				/*$keys = array_keys($values);
-				$vals = array_values($values);
-				for ($i=0; $i<count($keys); $i++) {
-					echo "$keys[$i]: $vals[$i] <br>";
-				}	//*/	
-			}
-			
-			$this->data = $data;
-			$this->specs = $specs;
 		}
 		
+		/**
+		 * Finds Uncorrected receiver temperature.
+		 * 
+		 * @param float $Tamb- ambient temperature
+		 * @param float $CLTemp- cold load temerature from specs
+		 * @param float $Y- Yfactor
+		 */
 		public function Trx_Uncorr($TAmb, $CLTemp, $Y) {
 			return ($TAmb - $CLTemp * $Y) / ($Y - 1);
 		}
 		
+		/**
+		 * Finds corrected noise temperature.
+		 * 
+		 * @param float $trx- uncorrected receiver temperature (from Trx_Uncorr())
+		 * @param float $IR- Image rejection data, found by getIRData()
+		 * @return corrected noise temperature value.
+		 */
 		public function Tssb_Corr($trx, $IR) {
-			return $trx * (1 + pow(10, (-abs($IR)) / 10));
-		}
+			$temp = $trx * (1 + pow(10, (-abs($IR)) / 10));
+			return $temp;
+		}		
 		
-		public function print_data() {
-			echo "<table border='1'>";
-			$keys = array_keys($this->data[0]);
-			echo "<tr>";
-			for ($i=0; $i<count($keys); $i++) {
-				echo "<td>" . $keys[$i] . "</td>";
-			}
-			echo "</tr>";
-			foreach ($this->data as $d) {
-				echo "<tr>";
-				for ($i=0; $i<count($keys); $i++) {
-					echo "<td>" . $d[$keys[$i]] . "</td>";
+		/**
+		 * Retrieves image rejection data from database using parameters set in setParams()
+		 * MUST call getCCAkeys() first for CCA_componentKeys!!!
+		 * Saves data to $this->IR, containing RF and IR for each pol and sb
+		 */
+		public function getIRData() {
+			$specs = $this->specs;
+			
+			$IR_01 = array();
+			$IR_02 = array();
+			$IR_11 = array();
+			$IR_12 = array();
+			$RF_01 = array();
+			$RF_02 = array();
+			$RF_11 = array();
+			$RF_12 = array();
+			
+			$r = $this->dbPull->qIR($this->fc);
+			
+			$count = 0;
+			while ($row = @mysql_fetch_array($r)) {
+				$count++;
+				if ($row[2] == 0) {
+					if($row[3] == 1) {
+						$RF_01[] = $row[0] + $row[1];
+						$temp = $row[4];
+						if($temp == FALSE) {
+							$IR_01[] = $specs['defImgRej'];
+						} else {
+							$IR_01[] = $temp;
+						}
+					} else {
+						$RF_02[] = $row[0] - $row[1];
+						$temp = $row[4];
+						if($temp == FALSE) {
+							$IR_02 = $specs['defImgRej'];
+						} else {
+							$IR_02[] = $temp;
+						}
+					}
+				} else {
+					if($row[3] == 1) {
+						$RF_11[] = $row[0] + $row[1];
+						$temp = $row[4];
+						if($temp == FALSE) {
+							$IR_11 = $specs['defImgRej'];
+						} else {
+							$IR_11[] = $temp;
+						}
+					} else {
+						$RF_12[] = $row[0] - $row[1];
+						$temp= $row[4];
+						if($temp == FALSE) {
+							$IR_12 = $specs['defImgRej'];
+						} else {
+							$IR_12[] = $temp;
+						}
+					}
 				}
-				echo "</tr>";
 			}
-			echo "</table>";
+			$this->IR = array('RF_01' => $RF_01, 'IR_01' => $IR_01, 
+								'RF_02' => $RF_02, 'IR_02' => $IR_02, 
+								'RF_11' => $RF_11, 'IR_11' => $IR_11, 
+								'RF_12' => $RF_12, 'IR_12' => $IR_12);
 		}
-		
+		 /**
+		  * Uses Trx_Uncorr() and Tssb_Corr() to calculate noise temperature for each pol and sb.
+		  * Saves calculations to $this->data.
+		  */
 		public function calcNoiseTemp() {
 			$data = $this->data;
 			$specs = $this->specs;
 			
 			$new_data = array();
 			foreach ($data as $d) {
-				$d['Trx_uncorr00'] = $this->Trx_Uncorr($d['TAmbient'], $specs['CLTemp'], $d['Pol0Sb1YFactor']);
-				$d['Trx_uncorr02'] = $this->Trx_Uncorr($d['TAmbient'], $specs['CLTemp'], $d['Pol0Sb2YFactor']);
-				$d['Trx_uncorr11'] = $this->Trx_Uncorr($d['TAmbient'], $specs['CLTemp'], $d['Pol1Sb1YFactor']);
-				$d['Trx_uncorr12'] = $this->Trx_Uncorr($d['TAmbient'], $specs['CLTemp'], $d['Pol1Sb2YFactor']);
-				$d['Tssb_corr00'] = $this->Tssb_Corr($d['Trx_uncorr00'], $specs['defImgRej']);
-				$d['Tssb_corr02'] = $this->Tssb_Corr($d['Trx_uncorr02'], $specs['defImgRej']);
-				$d['Tssb_corr11'] = $this->Tssb_Corr($d['Trx_uncorr11'], $specs['defImgRej']);
-				$d['Tssb_corr12'] = $this->Tssb_Corr($d['Trx_uncorr12'], $specs['defImgRej']);
+				$t_uncorr01 = $this->Trx_Uncorr($d['TAmbient'], $specs['CLTemp'], $d['Pol0Sb1YFactor']);
+				$t_uncorr02 = $this->Trx_Uncorr($d['TAmbient'], $specs['CLTemp'], $d['Pol0Sb2YFactor']);
+				$t_uncorr11 = $this->Trx_Uncorr($d['TAmbient'], $specs['CLTemp'], $d['Pol1Sb1YFactor']);
+				$t_uncorr12 = $this->Trx_Uncorr($d['TAmbient'], $specs['CLTemp'], $d['Pol1Sb2YFactor']);
+				$index = array_search($d['RF_usb'], $this->IR['RF_01']);
+				$d['Tssb_corr01'] = $this->Tssb_Corr($t_uncorr01, $this->IR['IR_01'][$index]);
+				$index = array_search($d['RF_lsb'], $this->IR['RF_02']);
+				$d['Tssb_corr02'] = $this->Tssb_Corr($t_uncorr02, $this->IR['IR_02'][$index]);
+				$index = array_search($d['RF_usb'], $this->IR['RF_11']);
+				$d['Tssb_corr11'] = $this->Tssb_Corr($t_uncorr11, $this->IR['IR_11'][$index]);
+				$index = array_search($d['RF_lsb'], $this->IR['RF_12']);
+				$d['Tssb_corr12'] = $this->Tssb_Corr($t_uncorr12, $this->IR['IR_12'][$index]);
 						
 				$new_data[] = $d;
 			}
 			$this->data = $new_data;
+		}
+		
+		/**
+		 * Pulls CCA_componentKeys from database using parameters set in setParams()
+		 */
+		public function getCCAkeys() {
+			$this->dbPull->qkeys($this->SN, $this->band, $this->fc);
+		}
+		
+		/**
+		 * Retrieves CCA data (receiver temperatures) from database
+		 * Saves data to $this->data
+		 */
+		public function getSpecData() {					
+			$r = $this->dbPull->qSpec($this->fc);
+			
+			$Trx01 = array();
+			$Trx02 = array();
+			$Trx11 = array();
+			$Trx12 = array();
+			$data_usb = array();
+			$data_lsb = array();
+			
+			$count = 0;
+			while ($row = @mysql_fetch_array($r)) {
+				$count++;
+				$NT_spec = $this->specs['NT80'];
+				if ($this->band == 3 && $row[0] == 104) {
+					$NT_spec = $this->specs['B3exSpec'];
+				}
+				
+				$LO = $row[0];
+				$IF = $row[1];
+				$Trx = $row[4];
+				$pol = $row[2];
+				$sb = $row[3];
+				for ($i=0; $i<count($this->data); $i++) {
+					$d = $this->data[$i];
+					if($d['FreqLO'] == $LO & $d['CenterIF'] == $IF) {
+						$key1 = "Tssb_corr$pol$sb";
+						$key2 = "Trx$pol$sb";
+						$key3 = "diff$pol$sb";
+						$diff = 100 * abs($d[$key1]- $Trx) / $NT_spec;
+						$d[$key2] = $Trx;
+						$d[$key3] = $diff;
+						$this->data[$i] = $d;
+						break;
+					}
+				}
+			}
 		}
 		
 	}
