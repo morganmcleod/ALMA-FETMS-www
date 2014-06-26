@@ -110,13 +110,26 @@ function plotIF($plt, $band, $y) {
 	$plt->generate_plots($band, $data, $att, $ylim, $title, $saveas, $labels, TRUE);
 }
 
-band6('if', 0, 1);
+band3('rf', 0, 1);
 ?>
 <html>
 <body>
 <div>
 <br>
-<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band6 Pol0 Sb1.png">
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band6 Pol0 Sb1 RF.png">
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band6 Pol0 Sb2 RF.png">
+<br>
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band6 Pol1 Sb1 RF.png">
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band6 Pol1 Sb2 RF.png">
+<br>
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band3 Pol0 Sb1 RF.png">
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band3 Pol0 Sb2 RF.png">
+<br>
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band3 Pol1 Sb1 RF.png">
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band6 Pol1 Sb2 RF.png">
+<br>
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band6 IF.png">
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band3 IF.png">
 <br>
 </div>
 </body>
