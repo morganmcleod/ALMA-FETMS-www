@@ -32,14 +32,16 @@ class plotter{
 	 * @param string $saveas- name of png file to save plot as. (Do NOT include .png)
 	 * @param array $labels- Axes labels, list x label first, then all y labels desired.
 	 * @param boolean $plotSpec- True if specs are desired in plot.
+	 * @param boolean $average- True if average desired from y variable.
 	 *  
-	 * TODO: Allow more customability options
 	 */
-	public function generate_plots($band, $data_types, $line_att, $ylim, $title, $saveas, $labels, $plotSpec) {
+	public function generate_plots($band, $data_types, $line_att, $ylim, $title, $saveas, $labels, $plotSpec, $average) {
 		$data = $this->data;
 		$new_specs = new Specifications();
 		$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
 		require(site_get_config_main());
+		
+		//Removes data that don't lay within IF limits.
 		$iflim = in_array('RF_usb', $data_types) || in_array('RF_lsb', $data_types);
 		if ($iflim) {
 			$new_data = array();
@@ -50,11 +52,16 @@ class plotter{
 			}
 			$data = $new_data;
 		}
+		
+		//Writes data and specs to files 
 		$i = 1;
 		$count = 0;
 		while($i<count($data_types)) {
 			$x = array();
 			$y = array();
+			
+			//Determines if data is increasing or decreasing to put spaces between RF values.
+			//Assumes data is sorted by RF, then IF.
 			$order = '';
 			if ($data[0][$data_types[0]] > $data[1][$data_types[0]]) {
 				$order = 'desc';
@@ -67,13 +74,36 @@ class plotter{
 					$y[] = $d[$data_types[$i]];
 				}
 			}
-			//array_multisort($x, $y);
+			
+			//Calculates average based on first datatype
+			//Assumes data is sorted by first datatype.
+			if ($average) {
+				$new_x = array();
+				$averages = array();
+				$temp_x = array($x[0]);
+				$temp_y = array($y[0]);
+				for ($j=1; $j<count($x); $j++) {
+					if ($x[$j] == $x[$j-1]) {
+						$temp_x[] = $x[$j];
+						$temp_y[] = $y[$j];
+					} else {
+						$averages[] = array_sum($temp_y) / count($temp_y);
+						$new_x[] = array_sum($temp_x) / count($temp_x);
+						$temp_x = array($x[$j]);
+						$temp_y = array($y[$j]);
+					}
+				}
+				$x = $new_x;
+				$y = $averages;				
+			}
+
 			$spec_files = $main_write_directory . "NoiseTempLibrary/specData.txt";
 			$temp_data_file = $main_write_directory . "NoiseTempLibrary/temp_data$count.txt";
 			$f_temp = fopen($temp_data_file, 'w');
 			$fSpec = fopen($spec_files, 'w');
 			for ($j=0; $j<count($x); $j++) {
 				if (array_key_exists($j-1, $x)) {
+					//Writes blank line if different RF value.
 					if($order == 'asc' && ($x[$j] < $x[$j-1])) {
 						fwrite($f_temp, "\n");
 						fwrite($fSpec, "\n");
@@ -92,14 +122,12 @@ class plotter{
 			fclose($fSpec);
 			$i++;
 			$count++;
-		}
-		
-		$xlabel = substr($data_types[0], 0, strpos($data_types[0],'_'));
+		}	
 
 		$plotter = $main_write_directory . 'NoiseTempLibrary/plot_script.txt';
 			
 		$plot_code = "";
-		//Think about adding parameters for plot attributes
+		//Creates script file for GNUPLOT
 		$plot_code .= "set terminal png size 900,600 crop\n";
 		$plot_code .= "set output '" . $main_write_directory . "NoiseTempLibrary/$saveas.png'\n";
 		$plot_code .= "set title '" . $title . "'\n";

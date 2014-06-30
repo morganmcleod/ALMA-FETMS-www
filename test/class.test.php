@@ -16,7 +16,7 @@ function band3 ($plot, $pol, $sb) {
 	$NT->getCCAkeys();
 	$NT->getIRData();
 	$NT->calcNoiseTemp();
-	$NT->getSpecData();
+	$NT->getCCANTData();
 	$plt->setData($NT->data, $NT->rx);
 	$plt->print_data();
 	$plt->save_data();
@@ -42,7 +42,7 @@ function band6 ($plot, $pol, $sb) {
 	$NT->getCCAkeys();
 	$NT->getIRData();
 	$NT->calcNoiseTemp();
-	$NT->getSpecData();
+	$NT->getCCANTData();
 	$plt->setData($NT->data, $NT->rx);
 	$plt->print_data();
 	$plt->save_data();
@@ -81,7 +81,7 @@ function plotRF($plt, $band, $pol, $sb, $y) {
 	$title = "Receiver Noise Temperature, 5-10 GHz IF, FE SN61, CCA6-61 WCA6-09, Pol $pol Sb$sb";
 	$saveas = "Band$band Pol$pol Sb$sb RF";
 	$labels = array("RF (GHz)", "Tssb Corrected (K)", "Difference from Spec (%)");
-	$plt->generate_plots($band, $data, $att, $ylim, $title, $saveas, $labels, FALSE);
+	$plt->generate_plots($band, $data, $att, $ylim, $title, $saveas, $labels, FALSE, FALSE);
 }
 
 /**
@@ -107,10 +107,23 @@ function plotIF($plt, $band, $y) {
 	$title = "Receiver Noise Temperature Tssb corrected, FE SN61, CCA6-61 WCA6-09";
 	$saveas = "Band$band IF";;
 	$labels = array("IF (GHz)", "Tssb (K)");
-	$plt->generate_plots($band, $data, $att, $ylim, $title, $saveas, $labels, TRUE);
+	$plt->generate_plots($band, $data, $att, $ylim, $title, $saveas, $labels, TRUE, FALSE);
 }
 
-band3('rf', 0, 1);
+band6('if', 0, 1);
+/*
+$data = array('FreqLO' => 92, 'CenterIF' => 4, 'TAmbient' => 249.35, 'Pol0Sb1YFactor' => 1, 'Pol0Sb2YFactor' => 1, 'Pol1Sb1YFactor' => 1, 'Pol1Sb2YFactor' => 1, 'RF_usb' => 96, 'RF_lsb' => 88);
+$NT = new NTCalc();
+$plt = new plotter();
+$NT->setParams(3, 0, 256, 40, 60);
+$NT->getData();
+$NT->data[0] = $data;
+$NT->getCCAkeys();
+$NT->getIRData();
+$NT->calcNoiseTemp();
+$NT->getCCANTData();
+$plt->setData($NT->data, $NT->rx);
+$plt->print_data();//*/
 ?>
 <html>
 <body>

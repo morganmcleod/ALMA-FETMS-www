@@ -77,7 +77,11 @@ require_once($site_NT . '/NT_db.php');
 		 * @param float $Y- Yfactor
 		 */
 		public function Trx_Uncorr($TAmb, $CLTemp, $Y) {
-			return ($TAmb - $CLTemp * $Y) / ($Y - 1);
+			if ($Y == 1) {
+				return NULL;
+			} else {
+				return ($TAmb - $CLTemp * $Y) / ($Y - 1);
+			}
 		}
 		
 		/**
@@ -186,6 +190,32 @@ require_once($site_NT . '/NT_db.php');
 		}
 		
 		/**
+		 * 
+		 * @param array $params- array of values to search for. Keys need to be the same as in $this->data.
+		 * 
+		 * @return string
+		 */
+		public function findIndex($params) {
+			$keys = array_keys($params);
+			$vals = array_values($params);
+
+			$index = -1;
+			for($j=0; $j<count($this->data); $j++) {
+				$cont = TRUE;
+				for ($i=0; $i<count($keys); $i++) {
+					if ($this->data[$j][$keys[$i]] != $vals[$i]) {
+						$cont = FALSE;
+					}
+				}
+				if($cont) {
+					$index = $j;
+					break;
+				}
+			}
+			return $index;
+		}
+		
+		/**
 		 * Pulls CCA_componentKeys from database using parameters set in setParams()
 		 */
 		public function getCCAkeys() {
@@ -196,8 +226,8 @@ require_once($site_NT . '/NT_db.php');
 		 * Retrieves CCA data (receiver temperatures) from database
 		 * Saves data to $this->data
 		 */
-		public function getSpecData() {					
-			$r = $this->dbPull->qSpec($this->fc);
+		public function getCCANTData() {					
+			$r = $this->dbPull->qcca($this->fc);
 			
 			$Trx01 = array();
 			$Trx02 = array();
@@ -219,7 +249,17 @@ require_once($site_NT . '/NT_db.php');
 				$Trx = $row[4];
 				$pol = $row[2];
 				$sb = $row[3];
-				for ($i=0; $i<count($this->data); $i++) {
+				$params = array('FreqLO' => $LO, 'CenterIF' => $IF);
+				$index = $this->findIndex($params);
+				if($index >= 0) {
+					$key1 = "Tssb_corr$pol$sb";
+					$key2 = "Trx$pol$sb";
+					$key3 = "diff$pol$sb";
+					$diff = 100 * abs($this->data[$index][$key1] - $Trx) / $NT_spec;
+					$this->data[$index][$key2] = $Trx;
+					$this->data[$index][$key3] = $diff;
+				}
+				/*for ($i=0; $i<count($this->data); $i++) {
 					$d = $this->data[$i];
 					if($d['FreqLO'] == $LO & $d['CenterIF'] == $IF) {
 						$key1 = "Tssb_corr$pol$sb";
@@ -231,7 +271,7 @@ require_once($site_NT . '/NT_db.php');
 						$this->data[$i] = $d;
 						break;
 					}
-				}
+				}//*/
 			}
 		}
 		

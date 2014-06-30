@@ -111,7 +111,7 @@ require_once($site_classes . '/class.spec_functions.php');
 		 * 
 		 * @return resource
 		 */
-		public function qSpec($fc) {
+		public function qcca($fc) {
 			$CCA_componentKeys = $this->CCA_componentKeys;
 			$cnt = 0;
 			$compKey = '';
