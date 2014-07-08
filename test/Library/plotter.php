@@ -7,7 +7,7 @@ require_once($site_classes . '/class.spec_functions.php');
  * 
  * @author Aaron Beaudoin
  * 
- * Example code:
+ * Example code to plot noise temperature:
  * $plt = new plotter(); //initializes plotter class
  * $plt->setParams($data, 'NoiseTempLibrary', 6) //$data can be obtained through loadData() or calc classes.
  * //Initializes data structure, saves files to NoiseTempLibrary, and retrieves specs for band6
@@ -15,14 +15,14 @@ require_once($site_classes . '/class.spec_functions.php');
  * $plt->print_data //Print data to table in browser.
  * 
  * $plt->plotSize(900, 600); //Plot size with width 900, height 600
- * $plt->plotOutput('Band6 Pol0 Sb1 RF'); //output file name
+ * $plt->plotOutput('Band6 Pol0 Sb1 RF'); //output file name, defaults format to png.
  * $plt->plotTitle('Receiver Noise Temperature Tssb corrected, FE SN61, CCA6-61 WCA6-09'); //plot title
  * $plt->plotLabels(array('x' => 'LO (GHz)', 'y' => 'Tssb Corrected (K)', 'y2' => 'Difference from Spec (%)')); //Axes labels
  * $plt->plotYAxis(array('ymin' => 0, 'ymax' => 149.6, 'y2min' => 0, 'y2max' => 120)); //Y-axes ranges
  * $plt->checkIFLim('CenterIF'); //Removes data that doesn't meet IF specifications
- * $plt->createTempFile('RF_usb', 'Tssb_corr01', 'RF_usb', 0); //Creates files for lines
- * $plt->createTempFile('RF_usb', 'Trx01', 'RF_usb', 1);
- * $plt->createTempFile('RF_usb', 'diff01', 'RF_usb', 2);
+ * $plt->createTempFile('RF_usb', 'Tssb_corr01', 0); //Creates files for lines
+ * $plt->createTempFile('RF_usb', 'Trx01', 1);
+ * $plt->createTempFile('RF_usb', 'diff01', 2);
  * $att = array();													//Line attributes to be passed to plotData()
  * $att[] = "lines lt 1 lw 3 title 'FEIC Meas Pol0 USB'";
  * $att[] = "lines lt 3 title 'Cart Group Meas Pol0 USB'";
@@ -32,6 +32,41 @@ require_once($site_classes . '/class.spec_functions.php');
  * system("$GNUPLOT $plt->plotter"); //creates plots and save to file name given by plotOutput
  *  
  * 
+ * Example code to plot IF Spectrum Spurious Noise:
+ * $plt = new plotter();
+ * $plt->setParams($data, 'IFSpectrumLibrary', 6);
+ * 
+ * $LO = array('221', '225', '229', '233', '237', '241', '245', '249', '253', '257', '261', '265'); //Each LO value to be plotted
+ * //MUST MATCH UP WITH LO VALUES IN DATA
+ * $plt->getSpuriousNoise($LO); //Creates temp data files with IF frequencies and powers. Each file corresponds to a LO frequency
+ * //$plt->getSpuriousExpanded($LO) //Use instead of getSpuriousNoise($LO) if expanded plots are desired.
+ * $plt->plotSize(900, 600); //Use 900, 1500 for expanded plots
+ * $plt->plotOutput('Band6 Spurious IF0');
+ * $plt->plotTitle('Spurious Noise, FE-61, Band 6 SN 61 IF0');
+ * $plt->plotGrid(); //Adds grid lines to plot
+ * $plt->plotKey(FALSE); //Takes legend out of plot
+ * $plt->plotBMargin(7);
+ * 
+ * $y2tics = array();
+ * $ytics = array(); //for expanded plots
+ * $att = array();
+ * $count = 1;
+ * foreach ($LO as $L) { //sets ytics values and locations and sets line parameters
+ *    $y2tics[$L] = $plt->spurVal[$L];
+ *    //$y2tics[$L] = $plt->spurVal[$L][0]; //for expanded plots, use instead of previous line
+ *    //$ytics[$L] = $plt->spurVal[$L]; //for expanded plots
+ *    $att[] = "lines lt $count title '" . $L . " GHz'";
+ *    $count++;
+ * }
+ * $plt->plotYTics(array('ytics' => FALSE, 'y2tics' => $y2tics));
+ * //$plt->plotYTics(array('ytics' => $ytics, 'y2tics' => $y2tics)); //for expanded plots, use instead of previous line
+ * $plt->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Power (dB)'));
+ * $plt->plotArrows(); //plots vertical lines in IF specs window
+ * 
+ * $plt->plotData($att, count($att));
+ * $plt->setPlotter($plt->genPlotCode());
+ * system("$GNUPLOT $plt->plotter");
+ * 
  */
 class plotter{
 	var $data;
@@ -39,6 +74,8 @@ class plotter{
 	var $specs;
 	var $plotAtt;
 	var $plotter;
+	var $spurVal;
+	var $band;
 	
 	/**
 	 * IF Spectrum plotter
@@ -59,8 +96,14 @@ class plotter{
 		$this->data = $data;
 		$this->dir = $dir;
 		$new_specs = new Specifications();
-		$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
+		if ($dir == 'NoiseTempLibrary') {
+			$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
+		}
+		if ($dir == 'IFSpectrumLibrary') {
+			$specs = $new_specs->getSpecs('ifspectrum', $band);
+		}		
 		$this->specs = $specs;
+		$this->band = $band;
 	}
 
 
@@ -311,11 +354,13 @@ class plotter{
 
 	/**
 	 * Loads saved data from previous work
+	 * 
+	 * @param $band
 	 * @return 2d array- data structure used in the rest of the library
 	 */
 	public function loadData() {
 		require(site_get_config_main());
-		$file_path = $main_write_directory . "$this->dir/data.txt";
+		$file_path = $main_write_directory . $this->dir . "/data" . $this->band . ".txt";
 		$file = file($file_path);
 		$keys = explode("\t", $file[0]);
 		$data = array();
@@ -336,7 +381,7 @@ class plotter{
 	 */
 	public function save_data() {
 		require(site_get_config_main());
-		$file_path = $main_write_directory . "$this->dir/data.txt";
+		$file_path = $main_write_directory . "$this->dir/data" . $this->band . ".txt";
 			
 		$data = $this->data;
 		$keys = array_keys($data[0]);
@@ -417,24 +462,105 @@ class plotter{
 	}
 	
 	/**
+	 * Creates temp data files to be used to plot spurious noise for a given band and IF channel.
+	 * @param array $LO- LO frequencies used in data.
+	 */
+	public function getSpuriousNoise($LO) {
+		$min = 1000;
+		$max = -1000;
+		$old_data = $this->data;
+		for ($i=0; $i<count($LO); $i++) {
+			$tempData = array();
+			foreach ($old_data as $d) {
+				if ($d['FreqLO'] == $LO[$i]) {
+					$tempData[] = $d;
+					if($d['Power_dBm'] < $min) {
+						$min = $d['Power_dBm'];
+					}
+					if($d['Power_dBm'] > $max) {
+						$max = $d['Power_dBm'];
+					}
+				}
+			}
+			$this->data = $tempData;
+			$this->createTempFile('Freq_Hz', 'Power_dBm', $i);
+			$this->spurVal[$LO[$i]] = $tempData[count($tempData) - 1]['Power_dBm'];
+			$this->data = $old_data;
+		}
+		$this->spurVal['ymin'] = $min;
+		$this->spurVal['ymax'] = $max;
+	}
+	
+	/**
+	 * Same as getSpuriousNoise, but adds an offset for expanded plots and changes ytics
+	 * 
+	 * @param array $LO- LO frequencies used in data.
+	 */
+	public function getSpuriousExpanded($LO) {
+		$wmin = 1000;
+		$wmax = -1000;
+		$old_data = $this->data;
+		$offset = 0;
+		for ($i=0; $i<count($LO); $i++) {
+			$tempData = array();
+			$min = 1000;
+			$max = -1000;
+			foreach ($old_data as $d) {
+				if ($d['FreqLO'] == $LO[$i]) {
+					$temp = $d;
+					$temp['Power_dBm'] += $offset;
+					$tempData[] = $temp;
+					if($temp['Power_dBm'] < $wmin) {
+						$wmin = $temp['Power_dBm'];
+					}
+					if($temp['Power_dBm'] > $wmax) {
+						$wmax = $temp['Power_dBm'];
+					}
+					if($temp['Power_dBm'] < $min) {
+						$min = $temp['Power_dBm'];
+					}
+					if($temp['Power_dBm'] > $max) {
+						$max = $temp['Power_dBm'];
+					}
+				}
+			}
+			$this->data = $tempData;
+			$this->createTempFile('Freq_Hz', 'Power_dBm', $i);
+			$this->spurVal[$LO[$i]] = array(round($min, 2), round($max, 2));
+			$offset += 25;
+			$this->data = $old_data;
+		}
+		$this->spurVal['ymin'] = $wmin;
+		$this->spurVal['ymax'] = $wmax;
+	}
+	
+	/**
 	 * Writes data to temp_data#.txt files to be used in plotting script generation.
 	 * @param array $xvar- independent variable
 	 * @param array $yvar- dependent variable
 	 * @param string $sortBy- key for independent variable
 	 * @param int $count- occurance in which function is called.
+	 * @param array $specs- List of desired specs to be plotted. Defaults to NULL if specs not desired in plot.
+	 * @param boolean $average- True if average values desired. Defaults to FALSE.
 	 */
-	public function createTempFile($xvar, $yvar, $sortBy, $count) {
+	public function createTempFile($xvar, $yvar, $count, $average = FALSE) {
 		require(site_get_config_main());
 		$x = array();
 		$y = array();
 	
-		$order = $this->findOrder($sortBy);
+		$order = $this->findOrder($xvar);
 	
 		foreach ($this->data as $d) {
 			if (isset($d[$yvar])) {
 				$x[] = $d[$xvar];
 				$y[] = $d[$yvar];
 			}
+		}
+		
+		if($average) {
+			$new_data = $this->averageData($x, $y);
+			$x = $new_data[0];
+			$y = $new_data[1];
 		}
 	
 		$temp_data_file = $main_write_directory . "$this->dir/temp_data$count.txt";
@@ -447,11 +573,70 @@ class plotter{
 			if ($order == 'desc' && ($x[j] > $x[$j-1])) {
 				fwrite($f, "\n");
 			}
-			if ($y[$j] > 0) {
+			if ($y[$j] > -250) {
 				fwrite($f, $x[$j] . "\t" . $y[$j] . "\n");
 			}
 		}
 		fclose($f);
+	}
+	
+	/**
+	 * Creates temp file for spec data to be plotted.
+	 * @param string $xvar- Independent variable
+	 * @param array $specs- Specs desired in plot.
+	 * @param array $lineAtt- Attributes for each spec line.
+	 */
+	public function createSpecsFile ($xvar, $specs, $lineAtt) {
+		require(site_get_config_main());
+		
+		$x = array();
+		
+		$order = $this->findOrder($xvar);
+		
+		$this->checkIFLim('CenterIF');
+		foreach ($this->data as $d) {
+			$x[] = $d[$xvar];
+		}
+		
+		$spec_string = "";
+		foreach ($specs as $s) {
+			$spec_string .= "\t" . $this->specs[$s];
+		}
+		$spec_string .= "\n";
+		
+		$spec_files = $main_write_directory . "$this->dir/specData.txt";
+		$fspec = fopen($spec_files, 'w');
+		fwrite($fspec, $x[0] . $spec_string);
+		for ($j=1; $j<count($x); $j++) {
+			if($order == 'asc' && ($x[$j] < $x[$j-1])) {
+				fwrite($fspec, "\n");
+			} elseif ($order == 'desc' && ($x[j] > $x[$j-1])) {
+				fwrite($fspec, "\n");
+			} else {
+				fwrite($fspec, $x[$j] . $spec_string);
+			}
+		}
+		fclose($fspec);
+		$temp = "";
+		for ($j=0; $j<count($specs); $j++) {
+			$temp .= ",'" . $main_write_directory . $this->dir . "/specData.txt' using 1:" . (string)($j + 2) . " with ";
+			$temp .= $lineAtt[$j];
+		}
+		$this->plotAtt['specAtt'] = $temp;
+	}
+	
+	/**
+	 * plots vertical lines at IF limits from specs class.
+	 * 
+	 * MUST BE CALLED AFTER getSpuriousNoise/Expanded() AND setParams()
+	 * Only works for IFSpectrumLibrary
+	 */
+	public function plotArrows() {
+		$lo = $this->specs['ifspec_low'];
+		$hi = $this->specs['ifspec_high'];
+		
+		$this->plotAtt['arrow_lo'] = "set arrow 1 from $lo, " . $this->spurVal['ymin'] . " to $lo, " . $this->spurVal['ymax'] . " nohead lt -1 lw 2\n"; 
+		$this->plotAtt['arrow_hi'] = "set arrow 2 from $hi, " . $this->spurVal['ymin'] . " to $hi, " . $this->spurVal['ymax'] . " nohead lt -1 lw 2\n";
 	}
 	
 	/**
@@ -472,13 +657,57 @@ class plotter{
 	}
 	
 	/**
+	 * Shows grid lines in plot
+	 */
+	public function plotGrid() {
+		$this->plotAtt['grid'] = "set grid\n";
+	}
+	
+	/**
+	 * Places legend outside of plot
+	 */
+	public function plotKey($request) {
+		if($request == 'outside') {
+			$this->plotAtt['key'] = "set key outside\n";
+		}
+		if ($request == FALSE) {
+			$this->plotAtt['key'] = "set nokey\n";
+		}
+	}
+	
+	/**
+	 * set bmargin for plot
+	 * 
+	 * @param int $value- size of bmargin
+	 */
+	public function plotBMargin($value) {
+		$this->plotAtt['bmargin'] = "set bmargin $value\n";
+	}
+	
+	/**
+	 * Add additional labels to plot.
+	 * 
+	 * @param array $labels- Labels desired to be added to plot
+	 * @param 2d array $locs- x and y locations of each label
+	 * Ex. $locs = array(array(.01, .01), array(.01, .04))
+	 */
+	public function plotAddLabel($labels, $locs) {
+		$count = 0;
+		foreach ($labels as $l) {
+			$key = "label" . (string)($count + 1);
+			$this->plotAtt[$key] = "set label '" . $l . "' at screen " . $locs[$count][0] . ", " . $locs[$count][1] . "\n";
+			$count++;
+		}
+	}
+	
+	/**
 	 * Generates plot output file to be used in plotting script
 	 * @param string $saveas- name of output file
 	 * @param string $format- format of output file (defaults to png)
 	 */
 	public function plotOutput($saveas, $format = 'png') {
 		require(site_get_config_main());
-		$this->plotAtt['output'] = "set output '" . $main_write_directory . "$this->dir/$saveas.format'\n";
+		$this->plotAtt['output'] = "set output '" . $main_write_directory . "$this->dir/$saveas.$format'\n";
 	}
 	
 	/**
@@ -513,7 +742,7 @@ class plotter{
 	 * Keys are ytics, y2tics.
 	 * Each subarray should be set to an array of floats of desired ytic values,
 	 * or False indicating if tics should not be present
-	 * or empty idicating default tics should be present
+	 * or empty indicating default tics should be present
 	 */
 	public function plotYTics($ytics) {
 		if($ytics['ytics'] == FALSE) {
@@ -523,7 +752,7 @@ class plotter{
 			$temp = "set ytics (";
 			$LO = array_keys($ytic);
 			foreach($LO as $L) {
-				$temp .= "'0 dB' " . $ytic[$L] . ",";
+				$temp .= "'0 dB' " . $ytic[$L][0] . ",'" . (string)($ytic[$L][1] - $ytic[$L][0]) . " dB' " . $ytic[$L][1] . ",";
 			}
 			$temp = substr($temp, 0, -1);
 			$temp .= ")\n";
@@ -535,7 +764,7 @@ class plotter{
 				$temp = "set y2tics (";
 				$LO = array_keys($ytic);
 				foreach($LO as $L) {
-					$temp .= "'" . $L . " GHz' " . $ytics["$L"] . " ,";
+					$temp .= "'" . $L . " GHz' " . $ytic[$L] . " ,";
 				}
 				$temp = substr($temp, 0, -1);
 				$temp .= ")\n";
@@ -559,7 +788,14 @@ class plotter{
 			$temp .= " using 1:2 with $lineAtt[$k],";
 		}
 		$temp = substr($temp, 0, -1);
-		$this->plotAtt['plot'] = $temp;
+		
+		if(isset($this->plotAtt['specAtt'])) {
+			$add = $this->plotAtt['specAtt'];
+			$temp .= $add;
+			unset($this->plotAtt['specAtt']);
+		}
+		
+		$this->plotAtt['plot'] = $temp . "\n";
 	}
 	
 	/**

@@ -57,6 +57,43 @@ class IF_db {
 		$this->deleteTable();
 	}
 	
+	public function qpower($Band, $IFChannel, $FEid, $DataSetGroup, $wsize) {
+		$q ="SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
+		FROM IFSpectrum_SubHeader, TestData_header,FE_Config
+		WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
+		AND IFSpectrum_SubHeader.Band = $Band
+		AND IFSpectrum_SubHeader.IFChannel = $IFChannel
+		AND IFSpectrum_SubHeader.IFGain = 15
+		AND IFSpectrum_SubHeader.IsIncluded = 1
+		AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
+		AND FE_Config.fkFront_Ends = $FEid
+		AND TestData_header.DataSetGroup = $DataSetGroup
+		ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";
+		
+		$b6 = ($Band == 6);
+		$b6points = array();
+		$maxpowervar6 = -999;
+		
+		$r = $this->run_query($q);
+		$maxpowervar = -999;
+		
+		$count = 0;
+		$data_file = array();
+		$FreqLO = array();
+		
+		while ($row = @mysql_fetch_array($r)) {
+			$qmax = "SELECT MAX(Power_dBm) FROM TEMP_TEST_IFSpectrum_PowerVar WHERE fkSubHeader = $row[0] AND WindowSize_Hz = $wsize;";
+			$rmax = $this->run_query($qmax);
+			$temp = round(@mysql_result($rmax, 0, 0), 2);
+			
+			if ($temp > $maxpowervar) {
+				$maxpowervar = $temp;
+			}
+			
+			$FreqLO[$count] = $row[1];
+		}
+	}
+	
 	public function createTable($DataSetGroup, $Band, $FEid) {
 		$q = "CREATE TEMPORARY TABLE IF NOT EXISTS TEMP_IFSpectrum (
 				 fkSubHeader INT,

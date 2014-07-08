@@ -21,10 +21,6 @@ require_once($site_IF . '/IF_db.php');
 		
 		public function __construct() {}
 		
-		/*public function __destruct() {
-			$this->dbPull->deleteTable();
-		}*/
-		
 		public function setParams ($Band, $IFChannel, $FEid, $DataSetGroup) {
 			$this->Band = $Band;
 			$this->IFChannel = $IFChannel;
@@ -43,13 +39,13 @@ require_once($site_IF . '/IF_db.php');
 			//$this->dbPull->createTable($DataSetGroup, $Band, $FEid);
 		}
 		
-		public function deleteTempTable() {
-			$this->dbPull->deleteTable();
-		}
-		
 		public function getSpuriousData() {
 			$data = $this->dbPull->qdata($this->Band, $this->IFChannel, $this->FEid, $this->DataSetGroup);
 			$this->data = $data;
+		}
+		
+		public function getPowerData() {
+			
 		}
 	}
 ?>
