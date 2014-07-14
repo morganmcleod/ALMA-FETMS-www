@@ -76,6 +76,7 @@ class plotter{
 	var $plotter;
 	var $spurVal;
 	var $band;
+	var $LO;
 	
 	/**
 	 * IF Spectrum plotter
@@ -358,9 +359,9 @@ class plotter{
 	 * @param $band
 	 * @return 2d array- data structure used in the rest of the library
 	 */
-	public function loadData() {
+	public function loadData($fileName) {
 		require(site_get_config_main());
-		$file_path = $main_write_directory . $this->dir . "/data" . $this->band . ".txt";
+		$file_path = $main_write_directory . $this->dir . "/$fileName.txt";
 		$file = file($file_path);
 		$keys = explode("\t", $file[0]);
 		$data = array();
@@ -368,7 +369,9 @@ class plotter{
 			$values = explode("\t", $file[$i]);
 			$d = array();
 			for ($j=0; $j<count($keys); $j++) {
-				$d[$keys[$j]] = $values[$j];
+				if($values[$j] != "\n") {
+					$d[$keys[$j]] = $values[$j];
+				}
 			}
 			$data[] = $d;
 		}
@@ -379,9 +382,9 @@ class plotter{
 	 * Saves data in txt file for use in generate_plots()
 	 * Note: If data value doesn't exist, prints NULL
 	 */
-	public function save_data() {
+	public function save_data($saveas) {
 		require(site_get_config_main());
-		$file_path = $main_write_directory . "$this->dir/data" . $this->band . ".txt";
+		$file_path = $main_write_directory . "$this->dir/$saveas.txt";
 			
 		$data = $this->data;
 		$keys = array_keys($data[0]);
@@ -465,13 +468,14 @@ class plotter{
 	 * Creates temp data files to be used to plot spurious noise for a given band and IF channel.
 	 * @param array $LO- LO frequencies used in data.
 	 */
-	public function getSpuriousNoise($LO) {
+	public function getSpuriousNoise() {
+		$LO = $this->LO;
 		$min = 1000;
 		$max = -1000;
-		$old_data = $this->data;
+		$oldData = $this->data;
 		for ($i=0; $i<count($LO); $i++) {
 			$tempData = array();
-			foreach ($old_data as $d) {
+			foreach ($oldData as $d) {
 				if ($d['FreqLO'] == $LO[$i]) {
 					$tempData[] = $d;
 					if($d['Power_dBm'] < $min) {
@@ -485,10 +489,30 @@ class plotter{
 			$this->data = $tempData;
 			$this->createTempFile('Freq_Hz', 'Power_dBm', $i);
 			$this->spurVal[$LO[$i]] = $tempData[count($tempData) - 1]['Power_dBm'];
-			$this->data = $old_data;
+			$this->data = $oldData;
 		}
 		$this->spurVal['ymin'] = $min;
 		$this->spurVal['ymax'] = $max;
+	}
+	
+	/**
+	 * Creates temporary files to be used to plot power variation data.
+	 * @param array $LO- LO frequencies of data.
+	 */
+	public function getPowerVar() {
+		$LO = $this->LO;
+		$oldData = $this->data;
+		for ($i=0; $i<count($LO); $i++) {
+			$tempData = array();
+			foreach($oldData as $d) {
+				if ($d['FreqLO'] == $LO[$i]) {
+					$tempData[] = $d;
+				}
+			}
+			$this->data = $tempData;
+			$this->createTempFile('Freq_Hz', 'Power_dBm', $i);
+			$this->data = $oldData;
+		}
 	}
 	
 	/**
@@ -496,16 +520,17 @@ class plotter{
 	 * 
 	 * @param array $LO- LO frequencies used in data.
 	 */
-	public function getSpuriousExpanded($LO) {
+	public function getSpuriousExpanded() {
+		$LO = $this->LO;
 		$wmin = 1000;
 		$wmax = -1000;
-		$old_data = $this->data;
+		$oldData = $this->data;
 		$offset = 0;
 		for ($i=0; $i<count($LO); $i++) {
 			$tempData = array();
 			$min = 1000;
 			$max = -1000;
-			foreach ($old_data as $d) {
+			foreach ($oldData as $d) {
 				if ($d['FreqLO'] == $LO[$i]) {
 					$temp = $d;
 					$temp['Power_dBm'] += $offset;
@@ -527,8 +552,8 @@ class plotter{
 			$this->data = $tempData;
 			$this->createTempFile('Freq_Hz', 'Power_dBm', $i);
 			$this->spurVal[$LO[$i]] = array(round($min, 2), round($max, 2));
-			$offset += 25;
-			$this->data = $old_data;
+			$offset += 32;
+			$this->data = $oldData;
 		}
 		$this->spurVal['ymin'] = $wmin;
 		$this->spurVal['ymax'] = $wmax;
@@ -586,14 +611,16 @@ class plotter{
 	 * @param array $specs- Specs desired in plot.
 	 * @param array $lineAtt- Attributes for each spec line.
 	 */
-	public function createSpecsFile ($xvar, $specs, $lineAtt) {
+	public function createSpecsFile ($xvar, $specs, $lineAtt, $checkIF = TRUE) {
 		require(site_get_config_main());
 		
 		$x = array();
 		
 		$order = $this->findOrder($xvar);
 		
-		$this->checkIFLim('CenterIF');
+		if ($checkIF) {
+			$this->checkIFLim('CenterIF');
+		}
 		foreach ($this->data as $d) {
 			$x[] = $d[$xvar];
 		}
@@ -625,6 +652,21 @@ class plotter{
 		$this->plotAtt['specAtt'] = $temp;
 	}
 	
+	public function findLOs() {
+		$data = $this->data;
+		
+		$LOs = array();
+		foreach($data as $d) {
+			if(in_array($d['FreqLO'], $LOs)) {
+				continue;
+			} else {
+				$LOs[] = $d['FreqLO'];
+			}
+		}
+		
+		$this->LO = $LOs;
+	}
+	
 	/**
 	 * plots vertical lines at IF limits from specs class.
 	 * 
@@ -652,8 +694,13 @@ class plotter{
 	 * @param int $xwin- Width of plot in pixels
 	 * @param int $ywin- Height of plot in pixels
 	 */
-	public function plotSize ($xwin, $ywin) {
-		$this->plotAtt['size'] = "set terminal png size $xwin,$ywin crop\n";
+	public function plotSize ($xwin, $ywin, $crop = TRUE) {
+		$temp = "set terminal png size $xwin,$ywin";
+		if($crop) {
+			$temp .= " crop";
+		}
+		$temp .= "\n";
+		$this->plotAtt['size'] = $temp;
 	}
 	
 	/**
@@ -665,6 +712,9 @@ class plotter{
 	
 	/**
 	 * Places legend outside of plot
+	 * 
+	 * @param string/ boolean $request- where should plot be placed
+	 * 'outside' for outside, FALSE if plot should not be shown
 	 */
 	public function plotKey($request) {
 		if($request == 'outside') {

@@ -19,8 +19,19 @@ require_once($site_IF . '/IF_db.php');
 		var $FEid;
 		var $DataSetGroup;
 		
+		/**
+		 * Constructor
+		 */
 		public function __construct() {}
 		
+		/**
+		 * Sets parameters of class
+		 * 
+		 * @param int $Band
+		 * @param int $IFChannel
+		 * @param int $FEid
+		 * @param int $DataSetGroup
+		 */
 		public function setParams ($Band, $IFChannel, $FEid, $DataSetGroup) {
 			$this->Band = $Band;
 			$this->IFChannel = $IFChannel;
@@ -39,13 +50,37 @@ require_once($site_IF . '/IF_db.php');
 			//$this->dbPull->createTable($DataSetGroup, $Band, $FEid);
 		}
 		
+		public function createTables() {
+			
+		}
+		
+		/**
+		 * Gets spurious noise data
+		 */
 		public function getSpuriousData() {
 			$data = $this->dbPull->qdata($this->Band, $this->IFChannel, $this->FEid, $this->DataSetGroup);
 			$this->data = $data;
+			//$this->dbPull->deleteTable();
 		}
 		
-		public function getPowerData() {
-			
+		/**
+		 * Gets power variation data 
+		 * @param float $fwin- Window size
+		 */
+		public function getPowerData($fwin, $tables = FALSE) {
+			if ($tables) {
+				$this->dbPull->createTable($this->DataSetGroup, $this->Band, $this->FEid);
+			}
+			$data = $this->dbPull->qpower($this->DataSetGroup, $this->IFChannel, $this->Band, $this->FEid, $fwin);
+			$this->data = $data;
+		}
+		
+		/**
+		 * Deletes temporary tables used to get spurious noise and power variation data.
+		 * MUST BE CALLED!!!
+		 */
+		public function deleteTables() {
+			$this->dbPull->deleteTable();
 		}
 	}
 ?>

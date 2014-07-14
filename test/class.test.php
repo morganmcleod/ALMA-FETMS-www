@@ -157,44 +157,68 @@ function plotIFSpectrum($plt, $band, $ifchannel) {
 }
 
 require(site_get_config_main());
+
+//$IF = new IFCalc();
+$dsb = 2;
+$band = 3;
+$ifchannel = 0;
+$feid = 87;
+$keyId = 256;
+$fc = 40;
+$sn = 60;
+/*
+$fwin = 31 * pow(10,6);
+//$fwin = 2 * pow(10,9);
+$win = "31 MHz";
+//$win = "2 GHz";
+$IF->setParams($band, $ifchannel, $feid, $dsb);
+$IF->deleteTables();
+$IF->getSpuriousData();
+//$IF->getPowerData($fwin);
+$IF->deleteTables();//*/
+
 $plt = new plotter();
-$plt->setParams(NULL, 'IFSpectrumLibrary', 3);
-$plt->data = $plt->loadData();
+$plt->setParams(NULL, 'NoiseTempLibrary', $band);
+//$plt->data = $plt->loadData("PowerVarBand" . $band . "_$win");
+$plt->data = $plt->loadData('data3');
 $plt->print_data();
+$plt->save_data("NTDataBand$band");
 
-$LO = array('92', '96', '100', '104', '108');
-$plt->getSpuriousExpanded($LO);
-$plt->plotSize(900, 1500);
-$plt->plotOutput('Band3 Spurious Expanded IF0');
-$plt->plotTitle('Spurious Noise, FE-61, Band 3 SN 60 IF0');
-$plt->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Power(dB)'));
+/*
+$plt->findLOs();
+$plt->getPowerVar();
+
+$plt->plotSize(900, 600);
+$plt->plotOutput('PowerVarBand3_2 GHz');
+$plt->plotTitle('Power Variation 2 GHz Window: FE-61, Band 3 SN 60, IF0');
 $plt->plotGrid();
-$plt->plotKey(FALSE);
+$plt->plotKey('outside');
 $plt->plotBMargin(7);
+//$plt->specs['spec_value'] = 1.35; //Set for 31 MHz window
+$plt->createSpecsFile('Freq_Hz', array('spec_value'), array("lines lt -1 lw 5 title 'Spec'"), FALSE);
+$plt->plotLabels(array('x' => 'Center of Window (GHz)', 'y' => 'Power Variation in Window (dB)'));
+$plt->plotYAxis(array('ymin' => 0, 'ymax' => 7));
 
-$y2tics = array();
-$ytics = array();
-$att = array();
 $count = 1;
-foreach ($LO as $L) {
-	$y2tics[$L] = $plt->spurVal[$L][0];
-	$ytics[$L] = $plt->spurVal[$L];
-	$att[] = "lines lt $count title '" . $L . "GHz'";
+$att = array();
+foreach ($plt->LO as $L) {
+	$att[] = "lines lt $count title '" . $L . " GHz'";
 	$count++;
 }
-$plt->plotYTics(array('ytics' => $ytics, 'y2tics' => $y2tics));
-$plt->plotArrows();
 
 $plt->plotData($att, count($att));
 $plt->setPlotter($plt->genPlotCode());
 system("$GNUPLOT $plt->plotter");
+//*/
+//$plt->print_data();
+
 
 ?>
 <html>
 <body>
 <div>
 <br>
-<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/IFSpectrumLibrary/3spuriousIF0.png">
+<img alt="plot" src="http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/IFSpectrumLibrary/PowerVarBand3_31MHz.png">
 <br>
 </div>
 </body>
