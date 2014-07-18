@@ -514,6 +514,8 @@ class IFSpectrumPlotter extends TestData_header{
 		$spec = $this->new_spec->getSpecs($this->test_type, $this->DataSetBand);
 		$ifspec_low = $spec['ifspec_low'];
 		$ifspec_high = $spec['ifspec_high'];
+		$temp = $this->FEid;
+		$temp1 = $this->DataSetGroup;
 
 		$rlo = $db_pull->q_other('lo', NULL, $this->DataSetBand, $IFChannel, $this->FEid, $this->DataSetGroup);
         $ilo=0;

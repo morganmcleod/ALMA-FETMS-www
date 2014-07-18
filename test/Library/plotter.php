@@ -2,6 +2,7 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
 require_once($site_classes . '/class.spec_functions.php');
+require_once($site_IF . '/IF_db.php');
 
 /**
  * 
@@ -79,7 +80,7 @@ class plotter{
 	var $LO;
 	
 	/**
-	 * IF Spectrum plotter
+	 * Constructor
 	 */
 	public function __construct() {}
 
@@ -93,7 +94,7 @@ class plotter{
 	 * NoiseTempLibrary, IFSpectrumLibrary, ...
 	 * @param int $band
 	 */
-	public function setParams($data, $dir, $band) {
+	public function setParams($data, $dir = '', $band = 0) {
 		$this->data = $data;
 		$this->dir = $dir;
 		$new_specs = new Specifications();
@@ -107,7 +108,119 @@ class plotter{
 		$this->band = $band;
 	}
 
-
+	/**
+	 * Prints power variation and total and in-band power tables to browser.
+	 * Assumes band has already been initialized.
+	 * 
+	 * @param int $DataSetGroup
+	 * @param int $FEid
+	 */
+	public function powerTables($DataSetGroup, $FEid) {
+		$IF = new IFCalc();
+		$IF->setParams($this->band, 0, $FEid, $DataSetGroup);
+		$powVar = $IF->getPowVarData();
+		
+		$oldData = $this->data;
+		
+		$this->data = $powVar;
+		$this->findLOs();
+		$tempdata = array();
+		foreach ($this->LO as $L) {
+			$temp = array();
+			foreach ($this->data as $d) {
+				if ($d['FreqLO'] == $L) {
+					$temp[] = $d;
+				}
+			}
+			$add = array('<b>LO (GHz)' => $L);
+			foreach($temp as $t) {
+				$add["<b>IF" . $t['IF']] = $t['value'];
+			}
+			$tempdata[] = $add;
+		}
+		$this->data = $tempdata;
+		
+		echo "<div style='width:400px' border='1'> <table id = 'table7' border = '1'>";
+		echo "<tr><th colspan = '5'>Band $this->band Power Variation Full Band</th></tr>";
+		$this->print_data();
+		echo "</table></div>";
+		
+		
+		for ($if=0; $if<=3; $if++) {
+			echo "<div style = 'width:600px'>";
+			echo "<table id = 'table7' border = '1'>";
+			echo "<tr><th colspan = '5'>Band $this->band Total and In-Band Power</th></tr>";
+			echo "<tr><th colspan = '5'><b>IF Channel $if</b></th></tr>";
+			echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
+			
+			$IF->IFChannel = $if;
+			$this->data = $IF->getTotPowData();
+			$this->findLOs();
+			$newData = array();
+			foreach ($this->data as $d) {
+				$temp = array();
+				$temp["LO (GHz)"] = "<b>" . $d['FreqLO'] . "</b>";
+				$temp['In-Band (dBm)'] = $d['pwr0'];
+				$temp['In-Band (dBm) '] = $d['pwr15'];
+				$temp['Total (dBm)'] = $d['pwrT'];
+				$temp['Total - In-Band'] = $d['pwrdiff'];
+				$newData[] = $temp;
+			}
+			$this->data = $newData;
+			$this->print_data();
+			echo "</table></div>";
+		}
+		
+		$this->data = $oldData;
+	}
+	
+	/**
+	 * Plots band 6, 2 GHz case for power variation. 
+	 * 
+	 * @param int $IFChannel
+	 * @param int $FEid
+	 * @param int $DataSetGroup
+	 * @param array $lineAtt- Strings indicating parameters for each line to be plotted.
+	 * @param int $count- number of lines to be plotted, number of files created by createTempFile()
+	 */
+	public function band6powervar($IFChannel, $FEid, $DataSetGroup, $lineAtt, $count) {
+		require(site_get_config_main());
+		
+		$this->plotYAxis(array('ymin' => 0, 'ymax' => 9));
+		$this->plotXAxis(array('xmin' => 5, 'xmax' => 9.2));
+		
+		$this->plotAtt['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
+		$this->plotAtt['fspec2'] = "f2(x) = ((x > 7) && (x < 9)) ? 7 : 1/0\n";
+		
+		$dbpull = new IF_db();
+		$b6points = $dbpull->q6($this->band, $IFChannel, $FEid, $DataSetGroup);
+		
+		$bmax = 5.52;
+		$bmin = 5.45;
+		for ($i=0; $i<count($b6points); $i++) {
+			$temp = "fb6_$i(x)=((x>$bmin) && (x<$bmax)) ? $b6points[$i] : 1/0\r\n";
+			$this->plotAtt["b6$i"] = $temp;
+		}
+		
+		$temp = "plot fb6_0(x) with linespoints notitle pt 5 lt 1, '" . $main_write_directory . "$this->dir/temp_data0.txt'";
+		$temp .= " using 1:2 with $lineAtt[0],";
+		for ($k=1; $k<$count; $k++) {
+			$temp .= " fb6_$k(x) with linespoints notitle pt 5 lt " . (string)($k + 1) . ", ";
+			$temp .= "'" .$main_write_directory . "$this->dir/temp_data$k.txt'";
+			$temp .= " using 1:2 with $lineAtt[$k],";
+		}
+		$temp .= " f1(x) title 'Spec' with lines lt -1 lw 5,";
+		$temp .= " f2(x) notitle with lines lt -1 lw 5";
+		
+		if(isset($this->plotAtt['specAtt'])) {
+			$add = $this->plotAtt['specAtt'];
+			$temp .= $add;
+			unset($this->plotAtt['specAtt']);
+		}
+		
+		$this->plotAtt['plot'] = $temp . "\n";
+	}
+	
 	/**
 	 *
 	 *@param int $band- band being plotted, used to get specs
@@ -328,11 +441,15 @@ class plotter{
 	}//*/
 
 	/**
-	 * Prints data in HTML table to browser
+	 * Prints data in HTML table to browser. 
+	 * MUST initialize HTML table prior to call.
+	 * ex: echo "<table border = '1'>";
+	 * 	   print_data();
+	 *     echo "</table>;
 	 * Note: If data value doesn't exist, prints NULL
 	 */
 	public function print_data() {
-		echo "<table border='1'>";
+		//echo "<table border='1'>";
 		$keys = array_keys($this->data[0]);
 		echo "<tr>";
 		for ($i=0; $i<count($keys); $i++) {
@@ -350,7 +467,7 @@ class plotter{
 			}
 			echo "</tr>";
 		}
-		echo "</table>";
+		//echo "</table>";
 	}
 
 	/**
@@ -652,6 +769,11 @@ class plotter{
 		$this->plotAtt['specAtt'] = $temp;
 	}
 	
+	/**
+	 * Finds LO values to be used by getPowerVar(), getSpuriousNoise(), and getSpuriousExpanded()
+	 * 
+	 * Requires LO values to be in 'FreqLO' column
+	 */
 	public function findLOs() {
 		$data = $this->data;
 		
@@ -783,6 +905,19 @@ class plotter{
 		
 		if (isset($ylims['y2min'])) {
 			$this->plotAtt['y2range'] = "set y2range [". $ylims['y2min'] . ":" . $ylims['y2max'] . "]\n";
+		}
+	}
+	
+	/**
+	 * Generates plot X-axis limits to be used in plotting script
+	 * @param array $xlims- min and max values for x-axis
+	 * Keys should be xmin,xmax,x2min,x2max. Only include desired keys.
+	 */
+	public function plotXAxis($xlims) {
+		$this->plotAtt['xrange'] = "set xrange [". $xlims['xmin']. ":" . $xlims['xmax'] . "]\n";
+	
+		if (isset($xlims['x2min'])) {
+			$this->plotAtt['x2range'] = "set x2range [". $xlims['x2min'] . ":" . $xlims['x2max'] . "]\n";
 		}
 	}
 	

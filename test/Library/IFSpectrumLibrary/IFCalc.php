@@ -50,8 +50,29 @@ require_once($site_IF . '/IF_db.php');
 			//$this->dbPull->createTable($DataSetGroup, $Band, $FEid);
 		}
 		
+		/**
+		 * Creates temporary tables TEMP_IFSpectrum and TEMP_TEST_IFSpectrum_PowerVar 
+		 */
 		public function createTables() {
-			
+			$this->dbPull->createTable($this->DataSetGroup, $this->Band, $this->FEid);
+		}
+		
+		/**
+		 * Gets power variation table data.
+		 * 
+		 * @return array- Power variation data
+		 */
+		public function getPowVarData() {
+			return $this->dbPull->qPowVar($this->DataSetGroup, $this->Band, $this->FEid);
+		}
+		
+		/**
+		 * Get total and in-band power data.
+		 * 
+		 * @return array- Total and in-band power data.
+		 */
+		public function getTotPowData() {
+			return $this->dbPull->qPowTot($this->DataSetGroup, $this->Band, $this->FEid, $this->IFChannel);
 		}
 		
 		/**
@@ -67,10 +88,7 @@ require_once($site_IF . '/IF_db.php');
 		 * Gets power variation data 
 		 * @param float $fwin- Window size
 		 */
-		public function getPowerData($fwin, $tables = FALSE) {
-			if ($tables) {
-				$this->dbPull->createTable($this->DataSetGroup, $this->Band, $this->FEid);
-			}
+		public function getPowerData($fwin) {
 			$data = $this->dbPull->qpower($this->DataSetGroup, $this->IFChannel, $this->Band, $this->FEid, $fwin);
 			$this->data = $data;
 		}

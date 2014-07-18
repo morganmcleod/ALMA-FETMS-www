@@ -27,6 +27,9 @@ require_once($site_NT . '/NT_db.php');
 		var $rx; //Receiver data
 		var $dbPull;
 		
+		/**
+		 * Constructor
+		 */
 		public function __construct(){}
 
 		

@@ -35,19 +35,7 @@ class IF_db {
 	public function qdata($Band, $IFChannel, $FEid, $DataSetGroup, $offsetamount = 10) {
 		$this->createTable($DataSetGroup, $Band, $FEid);
 		
-		$q ="SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
-		FROM IFSpectrum_SubHeader, TestData_header,FE_Config
-		WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
-		AND IFSpectrum_SubHeader.Band = $Band
-		AND IFSpectrum_SubHeader.IFChannel = $IFChannel
-		AND IFSpectrum_SubHeader.IFGain = 15
-		AND IFSpectrum_SubHeader.IsIncluded = 1
-		AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
-		AND FE_Config.fkFront_Ends = $FEid
-		AND TestData_header.DataSetGroup = $DataSetGroup
-		ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";
-		
-		$r = $this->run_query($q);
+		$r = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup);
 		
 		$offset = 0;
 		$data = array();
@@ -89,48 +77,16 @@ class IF_db {
 		$newSpec = new Specifications();
 		$specs = $newSpec->getSpecs('ifspectrum', $Band);
 		
-		$b6case = ($Band == 6);
-		
 		$fmin = $specs['fWindow_Low'] * pow (10, 9);
 		$fmax = $specs['fWindow_high'] * pow(10, 9);
 		$this->createPowVar($DataSetGroup, $Band, $FEid, $fmin, $fmax, $fwin);
 		
-		$qkeys ="SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
-		FROM IFSpectrum_SubHeader, TestData_header,FE_Config
-		WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
-		AND IFSpectrum_SubHeader.Band = $Band
-		AND IFSpectrum_SubHeader.IFChannel = $IFChannel
-		AND IFSpectrum_SubHeader.IFGain = 15
-		AND IFSpectrum_SubHeader.IsIncluded = 1
-		AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
-		AND FE_Config.fkFront_Ends = $FEid
-		AND TestData_header.DataSetGroup = $DataSetGroup
-		ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";
-		
-		$rkeys = $this->run_query($qkeys);
+		$rkeys = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup);
 		
 		$b6count = 0;
 		$b6points = array();
 		$maxpow6 = -999;
 		while($rowkeys = @mysql_fetch_array($rkeys)) {
-			if($b6case) {
-				$q6 = "SELECT MAX(Power_dBm), MIN(Power_dBm) 
-				FROM TEMP_IFSpectrum WHERE fkSubHeader = $rowkeys[0] 
-				AND Freq_Hz < 6000000000 AND Freq_Hz > 5000000000;";
-				
-				$r6 = $this->run_query($q6);
-				$b6val = @mysql_result($r6, 0, 0) - @mysql_result($r6, 0, 1);
-				if ($b6val != 0) {
-					$b6points[$b6count] = $b6val;
-					$b6count++;
-				}
-			}
-			
-			for ($i=0; $i<count($b6points); $i++) {
-				if ($b6points[$i] > $maxpow6) {
-					$maxpow6 = $b6points[$i];
-				}
-			}
 			
 			$qvar = "SELECT Freq_Hz, Power_dBm FROM TEMP_TEST_IFSpectrum_PowerVar 
 					WHERE WindowSize_Hz = $fwin 
@@ -143,14 +99,9 @@ class IF_db {
 				$freq = $rowvar[0] / pow(10, 9);
 				$pow = $rowvar[1];
 				
-				if($b6case) {
-					if ($freq < 6) {
+				if ($Band == 6 && $fwin == 2 * pow(10,9)) {
+					if ($freq < 7) {
 						$pow = "-1";
-					}
-					if (($freq >= 7) && ($freq <= 9)) {
-						if ($pow > $maxpow6) {
-							$maxpow6 = $pow;
-						}
 					}
 				}
 				
@@ -160,18 +111,221 @@ class IF_db {
 				}
 			}
 		}
-		if ($b6case) {
-			$maxpow = $maxpow6;
-			$tempData = array();
-			foreach($data as $d) {
-				if((($d['Freq_Hz'] > 5.45) && ($d['Freq_Hz'] < 5.52)) || ($d['Freq_Hz'] > 7)) {
-					$tempData[] = $d;
-				}
-			}
-			$data = $tempData;
-		}
 		return $data;
 		
+	}
+	
+	/**
+	 * Returns power variation between 5 and 6 GHz for band 6 case.
+	 * 
+	 * @param int $Band
+	 * @param int $IFChannel
+	 * @param int $FEid
+	 * @param int $DataSetGroup
+	 * @return array- Power variation values for band 6 case.
+	 */
+	public function q6 ($Band, $IFChannel, $FEid, $DataSetGroup) {
+		$r = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup);
+		
+		$b6points = array();
+		while($row = @mysql_fetch_array($r)) {
+			$q6 = "SELECT MAX(Power_dBm), MIN(Power_dBm)
+			FROM IFSpectrum WHERE fkSubHeader = $row[0]
+			AND Freq_Hz < 6000000000 AND Freq_Hz > 5000000000;";
+			
+			$r6 = $this->run_query($q6);
+			$b6val = @mysql_result($r6, 0, 0) - @mysql_result($r6, 0, 1);
+			if ($b6val != 0) {
+			$b6points[] = $b6val;
+			}
+		}
+				
+		return $b6points;
+	}
+	
+	/**
+	 * Finds data for total and in-band power table.
+	 * 
+	 * @param int $DataSetGroup
+	 * @param int $Band
+	 * @param int $FEid
+	 * @param int $if
+	 * @return 2d array- columns are LO, IF, power.
+	 */
+	public function qPowTot($DataSetGroup, $Band, $FEid, $if) {
+		$new_specs = new Specifications();
+		$specs = $new_specs->getSpecs('ifspectrum', $Band);
+		
+		$tdh = $this->qtdh($DataSetGroup, $Band, $FEid);
+		
+		$select0 = 'IFSpectrum_SubHeader.FreqLO, ROUND(TEST_IFSpectrum_TotalPower.InBandPower,1)';
+		$from0 = 'IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower';
+		$where0 = 'TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId and IFSpectrum_SubHeader.IsIncluded = 1';
+		$select15 = 'ROUND(TEST_IFSpectrum_TotalPower.InBandPower,1), ROUND(TEST_IFSpectrum_TotalPower.TotalPower,1)';
+		$from15 = 'IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower';
+		$where15 = 'TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId and IFSpectrum_SubHeader.IsIncluded = 1';
+		$data = array();
+		$rlo = $this->qlo($tdh, $if);
+		while ($row = @mysql_fetch_array($rlo)) {
+			$lo = $row[0];
+			if ($lo > 0) {
+				$d = array('FreqLO' => $lo);
+				$pwr0 = round($this->qpow($tdh, $select0, $from0, $where0, 0, 1, $if, $lo), 1);
+				$pwr15 = round($this->qpow($tdh, $select15, $from15, $where15, 15, 0, $if, $lo), 1);
+				$pwrT = round($this->qpow($tdh, $select15, $from15, $where15, 15, 1, $if, $lo), 1);
+				$pwrdiff = $pwrT - $pwr15;
+				
+				$pwr0 = number_format($pwr0, 1, '.', '');
+				$pwr15 = number_format($pwr15, 1, '.', '');
+				$pwrT = number_format($pwrT, 1, '.', '');
+				$pwrdiff = number_format($pwrdiff, 1, '.', '');
+				
+				$diff = abs($pwr0 - $pwr15);
+				
+				$red = FALSE;
+				if ($diff < 14 || $diff > 16) {
+					$red = TRUE;
+				}
+				
+				$tstr = "";
+				if ($red) {
+					$tstr .= "<span>";
+				}
+				if ($pwr0 > -22) {
+					$tstr .= "<font color='#FF0000'>$pwr0</font>";
+				} else {
+					$tstr .= "<font color='#000000'>$pwr0</font>";
+				}
+				if ($red) {
+					$tstr .= "</span>";
+				}
+				
+				$d['pwr0'] = $tstr;
+				
+				$tstr = "";
+				if ($red) {
+					$tstr .= "<span>";
+				}
+				if ($pwr15 < -22) {
+					$tstr .= "<font color='#FF0000'>$pwr15</font>";
+				} else {
+					$tstr .= "<font color='#000000'>$pwr15</font>";
+				}
+				if ($red) {
+					$tstr .= "</span>";
+				}
+				$d['pwr15'] = $tstr;
+								
+				$d['pwrT'] = "<b>$pwrT</b>";
+				
+				if ($pwrdiff > 3) {
+					$d['pwrdiff'] = "<font color = '#ff0000'><b>$pwrdiff</b></font>";
+				} else {
+					$d['pwrdiff'] = "<font color = '#000000'><b>$pwrdiff</b></font>";
+				}
+				
+				$data[] = $d;
+			}
+		}
+		return $data;
+	}
+	
+	/**
+	 * Finds data for power variation tables.
+	 * 
+	 * @param int $DataSetGroup
+	 * @param int $Band
+	 * @param int $FEid
+	 * 
+	 * @return 2d array- columns are LO, in-band power for 0 and 15 gain, total power and power diff
+	 * formatted to be placed in table.
+	 */
+	public function qPowVar($DataSetGroup, $Band, $FEid) {
+		$new_specs = new Specifications();
+		$specs = $new_specs->getSpecs('ifspectrum', $Band);
+		
+		$tdh = $this->qtdh($DataSetGroup, $Band, $FEid);
+		
+		$select = "TEST_IFSpectrum_PowerVarFullBand.Power_dBm";
+		$from = "IFSpectrum_SubHeader, TEST_IFSpectrum_PowerVarFullBand";
+		$where = "IFSpectrum_SubHeader.IsPAI = 1
+							and TEST_IFSpectrum_PowerVarFullBand.fkSubHeader = IFSpectrum_SubHeader.keyId";
+		$data = array();
+		$rlo = $this->qlo($tdh);
+		while ($row = @mysql_fetch_array($rlo)) {
+			$lo = $row[0];
+			if ($lo > 80) {
+				$max = $specs['maxch'];
+				
+				for($if=0; $if<=$max; $if++) {	
+					$pwr = round($this->qpow($tdh, $select, $from, $where, 15, 0, $if, $lo), 1);
+					$pwr = number_format($pwr, 1, '.', '');
+					
+					$temp = $specs['pwr'];
+					if ($pwr >= $temp) {
+						$fontcolor = $specs["fontcolor$temp"];
+					} else {
+						$fontcolor = $specs['fontcolor'];
+					}
+					
+					$tstr = "<font color = $fontcolor><b>$pwr</b></font>";
+					
+					$data[] = array('FreqLO' => $lo, 'IF' => $if, 'value' => $tstr);
+				}
+			}
+		}
+		return $data;
+	}
+	
+	/**
+	 * Helper function that returns power values for tables.
+	 * 
+	 * @param array $TDHkeys
+	 * @param string $select- Values to select
+	 * @param string $from- Table to select from
+	 * @param string $where- Query parameters
+	 * @param int $num- Gain
+	 * @param int $total- field to be retrieved
+	 * @param int $ifchannel
+	 * @param int $lo
+	 * 
+	 * @return float- power value
+	 */
+	public function qpow($TDHkeys, $select, $from, $where, $num, $total, $ifchannel, $lo) {
+		$q = "select $select from $from where IFSpectrum_SubHeader.FreqLO =$lo and IFSpectrum_SubHeader.IFGain = {$num} and $where and IFSpectrum_SubHeader.IFChannel =  $ifchannel and ((IFSpectrum_SubHeader.fkHeader =  " . $TDHkeys[0] . ") ";
+		
+		for($iTDH=1; $iTDH<count($TDHkeys); $iTDH++) {
+			$q .= "OR (IFSpectrum_SubHeader.fkHeader = " . $TDHkeys[$iTDH] . ") ";
+		}
+		$q .= ");";
+		$r = $this->run_query($q);
+		$pwr = @mysql_result($r,0,$total);
+		return $pwr;
+	}
+	
+	/**
+	 * Helper functin that finds LO values given TDH keys and IF Channel (optional).
+	 * 
+	 * @param unknown $TDHkeys
+	 * @param string $ifchan
+	 * @param number $ifchannel
+	 */
+	public function qlo($TDHkeys, $ifchannel = -1) {
+		$qlo = "SELECT DISTINCT(FreqLO) FROM IFSpectrum_SubHeader
+                WHERE ((fkHeader = " . $TDHkeys[0] . ")";
+		
+		for ($iTDH=1; $iTDH < count($TDHkeys); $iTDH++) {
+			$qlo .= " OR (fkHeader =  " . $TDHkeys[$iTDH] . ") ";
+		}
+		
+		$qlo .= ")";
+		
+		if ($ifchannel >= 0) {
+			$qlo .=  " AND IFChannel = $ifchannel";
+		}
+		$qlo .= " AND IsIncluded = 1 ORDER BY FreqLO ASC;";
+		
+		return $this->run_query($qlo);
 	}
 	
 	/**
@@ -248,15 +402,7 @@ class IF_db {
             );"; 
 		$this->run_query($qcreate);
 		
-		$qtdhkeys = "SELECT TestData_header.keyId
-		FROM TestData_header, FE_Config
-		WHERE TestData_header.DataSetGroup = $DataSetGroup
-		AND TestData_header.fkTestData_Type = 7
-		AND TestData_header.Band = $Band
-		AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
-		AND FE_Config.fkFront_Ends = $FEid
-		ORDER BY TestData_header.keyId ASC";
-		$rtdhkeys = $this->run_query($qtdhkeys);
+		$rtdhkeys = $this->qtdh($DataSetGroup, $Band, $FEid);
 		$tdh = array();
 		while($rowtdhkeys = @mysql_fetch_array($rtdhkeys)) {
 			$tdh[] = $rowtdhkeys[0];
@@ -366,6 +512,60 @@ class IF_db {
 				$this->run_query($qins);
 			}
 		}
+	}
+	
+	/**
+	 * Helper function that finds keyIds.
+	 * 
+	 * @param int $Band
+	 * @param int $IFChannel
+	 * @param int $FEid
+	 * @param int $DataSetGroup
+	 * 
+	 * @return resource- Resource to query results.
+	 */
+	public function qkeys($Band, $IFChannel, $FEid, $DataSetGroup) {
+		$q = "SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId 
+		FROM IFSpectrum_SubHeader, TestData_header,FE_Config 
+		WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId 
+		AND IFSpectrum_SubHeader.Band = $Band 
+		AND IFSpectrum_SubHeader.IFChannel = $IFChannel 
+		AND IFSpectrum_SubHeader.IFGain = 15 
+		AND IFSpectrum_SubHeader.IsIncluded = 1 
+		AND TestData_header.fkFE_Config = FE_Config.keyFEConfig 
+		AND FE_Config.fkFront_Ends = $FEid 
+		AND TestData_header.DataSetGroup = $DataSetGroup 
+		ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";
+		
+		return $this->run_query($q);
+	}
+	
+	/**
+	 * Helper function that finds TDH Keys
+	 * @param int $DataSetGroup
+	 * @param int $Band
+	 * @param int $FEid
+	 * 
+	 * @return array- Test Data Header keys
+	 */
+	public function qtdh($DataSetGroup, $Band, $FEid) {
+		$q = "SELECT TestData_header.keyId 
+		FROM TestData_header, FE_Config 
+		WHERE TestData_header.DataSetGroup = $DataSetGroup 
+		AND TestData_header.fkTestData_Type = 7 
+		AND TestData_header.Band = $Band 
+		AND TestData_header.fkFE_Config = FE_Config.keyFEConfig 
+		AND FE_Config.fkFront_Ends = $FEid 
+		ORDER BY TestData_header.keyId ASC";
+		
+		$r = $this->run_query($q);
+		
+		$tdh = array();
+		while ($row = @mysql_fetch_array($r)) {
+			$tdh[] = $row[0];
+		}
+		
+		return $tdh;
 	}
 	
 	/**

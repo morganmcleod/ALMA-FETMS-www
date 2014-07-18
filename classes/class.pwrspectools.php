@@ -54,14 +54,22 @@ class PwrSpecTool{
                  FROM TEMP_IFSpectrum WHERE fkSubHeader = $fkSubHeader
                  AND fkFacility = $this->fc
                  order BY Freq_Hz ASC; ";
+        
+        $temp = $fkSubHeader;
+        $temp1 = $this->fc;
         //$this->logger->WriteLogFile($qnew);
         $rnew = @mysql_query($qnew,$this->dbconnection) or die ('Query failed on class.pwrspectools line 59.') ;
+        while($row = @mysql_fetch_array($rnew)) {
+        	$temp = $row[0];
+        	$temp1 = $row[1];
+        }
+        
         $indexval = 1;
         $maxval = 999999999999;
         $minval = $maxval;
         $loval = 999999999999;
         $hival = $loval;
-
+        
         while ($row = @mysql_fetch_array($rnew)){
 
             $ifarray[$indexval] = $row[0];
