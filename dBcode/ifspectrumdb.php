@@ -135,6 +135,7 @@ class IFSpectrumDB { //extends DBRetrieval {
 		$tempcount = 0;
 		while($rowtemp = @mysql_fetch_array($rtemp)) {
 			$ifsubkeys[$tempcount] = $rowtemp['keyId'];
+			$temp = $ifsubkeys[$tempcount];
 			$tempcount += 1;
 		}
 		

@@ -712,7 +712,7 @@ class plotter{
 			if ($order == 'asc' && ($x[$j] < $x[$j-1])) {
 				fwrite($f, "\n");
 			}
-			if ($order == 'desc' && ($x[j] > $x[$j-1])) {
+			if ($order == 'desc' && ($x[$j] > $x[$j-1])) {
 				fwrite($f, "\n");
 			}
 			if ($y[$j] > -250) {
