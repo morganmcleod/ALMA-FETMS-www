@@ -6,6 +6,11 @@ require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.cryostat.php');
 require_once($site_classes . '/class.dataplotter.php');
 require_once($site_classes . '/class.wca.php');
+require_once($site_NT . '/noisetempcalc.php');
+require_once($site_IF . '/IFCalc.php');
+require_once($site_root . '/test/Library/plotter.php');
+require_once($site_classes . '/class.spec_functions.php');
+
 require_once($site_dbConnect);
 
 class TestData_header extends GenericTable{
@@ -378,10 +383,132 @@ class TestData_header extends GenericTable{
 
         case "58":
             //FEIC Noise Temperature
-            $nztemp = new NoiseTemperature();
+            require(site_get_config_main());
+        	$db = site_getDbConnection();
+            $band = $this->GetValue('Band');
+            $dsg = $this->GetValue('DataSetGroup');
+            $fc = $this->GetValue('keyFacility');
+            
+            $q = "SELECT keyId FROM Noise_Temp_SubHeader
+            WHERE fkHeader = $this->keyId AND keyFacility = $fc
+            order by keyId ASC;" ;
+            $r = @mysql_query($q, $db);
+            $keyId = @mysql_result($r, 0, 0);
+            
+            $q ="SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config 
+		        WHERE FE_ConfigLink.fkFE_Config = " . $this->GetValue('fkFE_Config'). " 
+		        AND FE_Components.fkFE_ComponentType = 20 
+		        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId 
+		        AND FE_Components.Band = " . $this->GetValue('Band') . " 
+		        AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') ." 
+		        AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility 
+		        ORDER BY Band ASC;"; 
+            $r = @mysql_query($q, $db);
+            $sn = @mysql_result($r, 0, 0);
+            
+            $ns = new Specifications();
+            $specs = $ns->getSpecs('FEIC_NoiseTemperature', $band);
+            $ymax = $specs['NT20'] * 1.1;
+            
+            $NT = new NTCalc();
+            $NT->setParams($band, $dsg, $keyId, $fc, $sn);
+            $NT->getCCAkeys();
+            $NT->getData();
+            $NT->getIRData();
+            $NT->calcNoiseTemp();
+            $NT->getCCANTData();
+            $plt = new plotter();
+            $plt->setParams($NT->data, 'NoiseTempLibrary', $band);
+            for ($pol=0; $pol<=1; $pol++) {
+            	for ($sb=1; $sb<=2; $sb++) {
+            		if ($sb == 1) {
+            			$sideband = 'USB';
+            			$xvar = 'RF_usb';
+            		}
+            		if ($sb == 2) {
+            			$xvar = 'RF_lsb';
+            			$sideband = 'LSB';
+            		}
+            		$yvar = "$pol$sb";
+            			
+            		$plt->plotSize(900, 600);
+            		$saveas = "Band$band Pol$pol Sb$sb RF";
+            		$plt->plotOutput($saveas);
+            		$plt->plotTitle('Receiver Noise Temperature Tssb corrected');
+            		$plt->plotLabels(array('x' => 'LO (GHz)', 'y' => 'Tssb Corrected (K)', 'y2' => 'Difference from Spec (%)'));
+            		$plt->plotYAxis(array('ymin' => 0, 'ymax' => $ymax, 'y2min' => 0, 'y2max' => 120));
+            		$plt->checkIFLim('CenterIF');
+            		$plt->createTempFile($xvar, "Tssb_corr$yvar", 0);
+            		$plt->createTempFile($xvar, "Trx$yvar", 1);
+            		$plt->createTempFile($xvar, "diff$yvar", 2);
+            		$att = array();
+            		$att[] = "lines lt 1 lw 3 title 'FEIC Meas Pol$pol $sideband'";
+            		$att[] = "lines lt 3 title 'Car Group Meas Pol$pol $sideband'";
+            		$att[] = "points lt -1 axes x1y2 title 'Diff relative to Spec'";
+            		$plt->plotData($att, count($att));
+            		$plt->setPlotter($plt->genPlotCode());
+            		system("$GNUPLOT $plt->plotter");
+            	}
+            }
+            
+            $plt->resetPlotter();
+            $plt->setParams($NT->data, 'NoiseTempLibrary', $band);
+            $plt->plotSize(900, 600);
+            $saveas = "Band$band IF";
+			$plt->plotOutput($saveas);
+			$plt->plotTitle('Receiver Noise Temperature Tssb Corrected');
+			$plt->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Tssb (K)'));
+			$plt->plotYAxis(array('ymin' => 0, 'ymax' => $ymax));
+			$plt->plotKey('outside');
+			$plt->plotBMargin(6);
+			$plt->createTempFile('CenterIF', 'Tssb_corr01', 0);
+			$plt->createTempFile('CenterIF', 'Tssb_corr02', 1);
+			$plt->createTempFile('CenterIF', 'Tssb_corr11', 2);
+			$plt->createTempFile('CenterIF', 'Tssb_corr12', 3);
+			$new_specs = new Specifications();
+			$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
+			$plt->createSpecsFile('CenterIF', array('NT20', 'NT80'), array("lines lt -1 lw 3 title '" . $specs['NT20'] . " K (100%)'", "lines lt 0 lw 1 title '" . $specs['NT80'] . " K (80%)'"), TRUE);
+			$att = array();
+			$att[] = "lines lt 1 lw 1 title 'Pol0sb1'";
+			$att[] = "lines lt 2 lw 1 title 'Pol0sb2'";
+			$att[] = "lines lt 3 lw 1 title 'Pol1sb1'";
+			$att[] = "lines lt 4 lw 1 title 'Pol1sb2'";
+			$plt->plotData($att, count($att));
+			$plt->setPlotter($plt->genPlotCode());
+			system("$GNUPLOT $plt->plotter");
+			
+			if ($band != 3) {
+				$plt->resetPlotter();
+				$plt->plotSize(900, 600);
+				$saveas = "Band$band Avg RF";
+				$plt->plotOutput($saveas);
+				$plt->plotTitle('Receiver Noise Temperature Tssb Corrected');
+				$plt->plotLabels(array('x' => 'LO (GHz)', 'y' => 'Average Tssb (K)'));
+				$plt->plotYAxis(array('ymin' => 0, 'ymax' => $ymax));
+				$plt->plotKey('outside');
+				$plt->plotBMargin(6);
+				$plt->checkIFLim('CenterIF');
+				$plt->createTempFile('FreqLO', 'Tssb_corr01', 0, TRUE);
+				$plt->createTempFile('FreqLO', 'Tssb_corr02', 1, TRUE);
+				$plt->createTempFile('FreqLO', 'Tssb_corr11', 2, TRUE);
+				$plt->createTempFile('FreqLO', 'Tssb_corr12', 3, TRUE);
+				$new_specs = new Specifications();
+				$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
+				$plt->createSpecsFile('FreqLO', array('NT80'), array("lines lt -1 lw 3 title ' " . $specs['NT80'] . " K (80%)"));
+				$att = array();
+				$att[] = "linespoints lt 1 lw 1 title 'Pol0sb1'";
+				$att[] = "linespoints lt 2 lw 1 title 'Pol0sb2'";
+				$att[] = "linespoints lt 3 lw 1 title 'Pol1sb1'";
+				$att[] = "linespoints lt 4 lw 1 title 'Pol1sb2'";
+				$plt->plotData($att, count($att));
+				$plt->setPlotter($plt->genPlotCode());
+				system("$GNUPLOT $plt->plotter");
+			}
+        	
+            /*$nztemp = new NoiseTemperature();
             $nztemp->Initialize_NoiseTemperature($this->keyId,$this->GetValue('keyFacility'));
             $nztemp->DrawPlot();
-            unset($nztemp);
+            unset($nztemp);//*/
             break;
 
         case "59":

@@ -79,6 +79,7 @@ require_once($site_IF . '/IF_db.php');
 		 * Gets spurious noise data
 		 */
 		public function getSpuriousData() {
+			$this->createTables();
 			$data = $this->dbPull->qdata($this->Band, $this->IFChannel, $this->FEid, $this->DataSetGroup);
 			$this->data = $data;
 			//$this->dbPull->deleteTable();
@@ -89,6 +90,7 @@ require_once($site_IF . '/IF_db.php');
 		 * @param float $fwin- Window size
 		 */
 		public function getPowerData($fwin) {
+			$this->dbPull->createPowVar($this->DataSetGroup, $this->Band, $this->FEid, $this->specs['fWindow_Low'], $this->specs['fWindow_high'], $fwin);
 			$data = $this->dbPull->qpower($this->DataSetGroup, $this->IFChannel, $this->Band, $this->FEid, $fwin);
 			$this->data = $data;
 		}

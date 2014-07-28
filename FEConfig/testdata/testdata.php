@@ -20,6 +20,11 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.cca_image_rejection.php');
 require_once($site_classes . '/class.finelosweep.php');
 require_once($site_classes . '/class.noisetemp.php');
+require_once($site_NT . '/noisetempcalc.php');
+require_once($site_root . '/test/Library/plotter.php');
+require_once($site_NT . '/noisetempcalc.php');
+require_once($site_IF . '/IFCalc.php');
+require_once($site_root . '/test/Library/plotter.php');
 
 
 $fc = $_REQUEST['fc'];
@@ -376,10 +381,21 @@ function Display_Plot($td){
             break;
         case 58:
             //Noise Temperature
-            $nztemp = new NoiseTemperature();
+            require(site_get_config_main());
+            $band = $td->GetValue('Band');
+            for ($sb=1; $sb <= 2; $sb++) {
+            	for ($pol=0; $pol <= 1; $pol++) {
+            		echo "<img src= 'http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band$band Pol$pol Sb$sb RF.png'><br><br>";
+            	}
+            }
+            echo "<img src = 'http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band$band IF.png'><br><br>";
+            if ($band != 3) {
+				echo "<img src = 'http://webtest.cv.nrao.edu/php/ntc/ws-atb/test_datafiles/NoiseTempLibrary/Band$band Avg RF.png'><br><br>";
+			}
+            /*$nztemp = new NoiseTemperature();
             $nztemp->Initialize_NoiseTemperature($td->keyId,$td->GetValue('keyFacility'));
             $nztemp->DisplayPlots();
-            unset($nztemp);
+            unset($nztemp);//*/
             break;
         case 38:
             //CCA Image Rejection

@@ -108,6 +108,10 @@ class plotter{
 		$this->band = $band;
 	}
 
+	public function resetPlotter() {
+		$this->plotAtt = array();
+	}
+	
 	/**
 	 * Prints power variation and total and in-band power tables to browser.
 	 * Assumes band has already been initialized.
@@ -115,7 +119,7 @@ class plotter{
 	 * @param int $DataSetGroup
 	 * @param int $FEid
 	 */
-	public function powerTables($DataSetGroup, $FEid) {
+	public function powerVarTables($DataSetGroup, $FEid) {
 		$IF = new IFCalc();
 		$IF->setParams($this->band, 0, $FEid, $DataSetGroup);
 		$powVar = $IF->getPowVarData();
@@ -139,37 +143,40 @@ class plotter{
 			$tempdata[] = $add;
 		}
 		$this->data = $tempdata;
-		
 		echo "<div style='width:400px' border='1'> <table id = 'table7' border = '1'>";
 		echo "<tr><th colspan = '5'>Band $this->band Power Variation Full Band</th></tr>";
 		$this->print_data();
 		echo "</table></div>";
+		$this->data = $oldData;
+	}	
 		
+	public function powerTotTables($DataSetGroup, $FEid, $if) {		
+		$IF = new IFCalc();
+		$IF->setParams($this->band, 0, $FEid, $DataSetGroup);
 		
-		for ($if=0; $if<=3; $if++) {
-			echo "<div style = 'width:600px'>";
-			echo "<table id = 'table7' border = '1'>";
-			echo "<tr><th colspan = '5'>Band $this->band Total and In-Band Power</th></tr>";
-			echo "<tr><th colspan = '5'><b>IF Channel $if</b></th></tr>";
-			echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
-			
-			$IF->IFChannel = $if;
-			$this->data = $IF->getTotPowData();
-			$this->findLOs();
-			$newData = array();
-			foreach ($this->data as $d) {
-				$temp = array();
-				$temp["LO (GHz)"] = "<b>" . $d['FreqLO'] . "</b>";
-				$temp['In-Band (dBm)'] = $d['pwr0'];
-				$temp['In-Band (dBm) '] = $d['pwr15'];
-				$temp['Total (dBm)'] = $d['pwrT'];
-				$temp['Total - In-Band'] = $d['pwrdiff'];
-				$newData[] = $temp;
-			}
-			$this->data = $newData;
-			$this->print_data();
-			echo "</table></div>";
+		echo "<div style = 'width:600px'>";
+		echo "<table id = 'table7' border = '1'>";
+		echo "<tr><th colspan = '5'>Band $this->band Total and In-Band Power</th></tr>";
+		echo "<tr><th colspan = '5'><b>IF Channel $if</b></th></tr>";
+		echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
+		
+		$IF->IFChannel = $if;
+		$oldData = $this->data;
+		$this->data = $IF->getTotPowData();
+		$this->findLOs();
+		$newData = array();
+		foreach ($this->data as $d) {
+			$temp = array();
+			$temp["LO (GHz)"] = "<b>" . $d['FreqLO'] . "</b>";
+			$temp['In-Band (dBm)'] = $d['pwr0'];
+			$temp['In-Band (dBm) '] = $d['pwr15'];
+			$temp['Total (dBm)'] = $d['pwrT'];
+			$temp['Total - In-Band'] = $d['pwrdiff'];
+			$newData[] = $temp;
 		}
+		$this->data = $newData;
+		$this->print_data();
+		echo "</table></div>";
 		
 		$this->data = $oldData;
 	}
@@ -496,7 +503,7 @@ class plotter{
 	}
 	
 	/**
-	 * Saves data in txt file for use in generate_plots()
+	 * Saves data in txt file for later use.
 	 * Note: If data value doesn't exist, prints NULL
 	 */
 	public function save_data($saveas) {

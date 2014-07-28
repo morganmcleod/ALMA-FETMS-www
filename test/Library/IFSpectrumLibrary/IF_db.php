@@ -402,11 +402,7 @@ class IF_db {
             );"; 
 		$this->run_query($qcreate);
 		
-		$rtdhkeys = $this->qtdh($DataSetGroup, $Band, $FEid);
-		$tdh = array();
-		while($rowtdhkeys = @mysql_fetch_array($rtdhkeys)) {
-			$tdh[] = $rowtdhkeys[0];
-		}
+		$tdh = $this->qtdh($DataSetGroup, $Band, $FEid);
 		
 		$keyIds = array();
 		foreach ($tdh as $t) {
