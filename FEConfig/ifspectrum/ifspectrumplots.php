@@ -110,15 +110,15 @@ echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Su
 
 if ($drawPlots == 1){
 	require(site_get_config_main());
+	ini_set('memory_limit', '384M');
 	$ns = new Specifications();
 	$specs = $ns->getSpecs('ifspectrum', $band);
-	if ($band == 6){
-		$ymax = 9;
-	} else {
-		$ymax = $specs['spec_value'] + 1;
-	}
+	$trueSpec = $specs['spec_value'];
 	
 	$IF = new IFCalc();
+	$IF->setParams($band, NULL, $FEid, $DataSetGroup);
+	$IF->deleteTables();
+	$IF->createTables();
 	$plt = new plotter();
 	//$if = 0;
 	for ($if=0; $if<=3; $if++) {
@@ -126,9 +126,12 @@ if ($drawPlots == 1){
 		$IF->setParams($band, $if, $FEid, $DataSetGroup);
 		$IF->deleteTables();
 		$IF->getSpuriousData();//*/
+		$IF->IFChannel = $if;
+		$IF->getSpuriousData();
 		
-		$plt->setParams(NULL, 'IFSpectrumLibrary', $band);
-		$plt->data = $plt->loadData("SpuriousNoiseBand$band" . "_IF$if");
+		$plt->setParams($IF->data, 'IFSpectrumLibrary', $band);
+		//$plt->data = $plt->loadData("SpuriousNoiseBand$band" . "_IF$if");
+		$plt->save_data("SpuriousNoiseBand$band" . "_IF$if");
 		
 		$plt->findLOs();
 		$plt->getSpuriousNoise();
@@ -184,8 +187,18 @@ if ($drawPlots == 1){
 		$plt->resetPlotter();
 		$fwin = 2 * pow(10, 9);
 		$win = "2 GHz";
+		$specs['spec_value'] = $trueSpec;
+		if ($band == 6){
+			$ymax = 9;
+		} else {
+			$ymax = $specs['spec_value'] + 1;
+		}
 		
-		$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
+		$IF->data = array();
+		$IF->getPowerData($fwin);
+		$plt->data = $IF->data;
+		//$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
+		$plt->save_data("PowerVarBand$band" . "_$win" . "_IF$if");
 		
 		$plt->getPowerVar();
 		$plt->plotSize(900, 600);
@@ -216,7 +229,11 @@ if ($drawPlots == 1){
 		$win = "31 MHz";
 		$plt->resetPlotter();
 		
-		$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
+		$IF->data = array();
+		$IF->getPowerData($fwin);
+		$plt->data = $IF->data;
+		//$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
+		$plt->save_data("PowerVarBand$band" . "_$win" . "_IF$if");
 		
 		$plt->getPowerVar();
 		$plt->plotSize(900, 600);
@@ -240,8 +257,11 @@ if ($drawPlots == 1){
 		$plt->plotData($att, count($att));
 		$plt->setPlotter($plt->genPlotCode());
 		system("$GNUPLOT $plt->plotter");
+		
+		$plt->resetPlotter();
 	}
-	//$IF->deleteTables();
+	$IF->deleteTables();
+	ini_set('memory_limit', '128M');
 }
 
 ?>

@@ -79,7 +79,6 @@ require_once($site_IF . '/IF_db.php');
 		 * Gets spurious noise data
 		 */
 		public function getSpuriousData() {
-			$this->createTables();
 			$data = $this->dbPull->qdata($this->Band, $this->IFChannel, $this->FEid, $this->DataSetGroup);
 			$this->data = $data;
 			//$this->dbPull->deleteTable();
