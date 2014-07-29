@@ -55,6 +55,10 @@ require_once($site_IF . '/IF_db.php');
 		 */
 		public function createTables() {
 			$this->dbPull->createTable($this->DataSetGroup, $this->Band, $this->FEid);
+			$fwin = 31 * pow(10, 6);
+			$this->dbPull->createPowVar($this->DataSetGroup, $this->Band, $this->FEid, $this->specs['fWindow_Low'] * pow(10, 9), $this->specs['fWindow_high'] * pow(10, 9), $fwin);
+			$fwin = 2 * pow(10, 9);
+			$this->dbPull->createPowVar($this->DataSetGroup, $this->Band, $this->FEid, $this->specs['fWindow_Low'] * pow(10, 9), $this->specs['fWindow_high'] * pow(10, 9), $fwin);
 		}
 		
 		/**
@@ -89,7 +93,6 @@ require_once($site_IF . '/IF_db.php');
 		 * @param float $fwin- Window size
 		 */
 		public function getPowerData($fwin) {
-			$this->dbPull->createPowVar($this->DataSetGroup, $this->Band, $this->FEid, $this->specs['fWindow_Low'], $this->specs['fWindow_high'], $fwin);
 			$data = $this->dbPull->qpower($this->DataSetGroup, $this->IFChannel, $this->Band, $this->FEid, $fwin);
 			$this->data = $data;
 		}

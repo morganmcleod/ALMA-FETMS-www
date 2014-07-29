@@ -33,8 +33,6 @@ class IF_db {
 	 * @return 2d array- data for spurious noise, where columns are 'Freq_LO', 'Freq_Hz', and 'Power_dBm'
 	 */
 	public function qdata($Band, $IFChannel, $FEid, $DataSetGroup, $offsetamount = 10) {
-		$this->createTable($DataSetGroup, $Band, $FEid);
-		
 		$r = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup);
 		
 		$offset = 0;
@@ -60,7 +58,6 @@ class IF_db {
 		}
 		return $data;
 	}
-	
 	/**
 	 * Finds power variation data
 	 * 
@@ -79,7 +76,7 @@ class IF_db {
 		
 		$fmin = $specs['fWindow_Low'] * pow (10, 9);
 		$fmax = $specs['fWindow_high'] * pow(10, 9);
-		$this->createPowVar($DataSetGroup, $Band, $FEid, $fmin, $fmax, $fwin);
+		//$this->createPowVar($DataSetGroup, $Band, $FEid, $fmin, $fmax, $fwin);
 		
 		$rkeys = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup);
 		
@@ -404,7 +401,7 @@ class IF_db {
 		
 		$tdh = $this->qtdh($DataSetGroup, $Band, $FEid);
 		
-		$keyIds = array();
+		/*$keyIds = array();
 		foreach ($tdh as $t) {
 			$qkeyid = "SELECT keyId FROM IFSpectrum_SubHeader
 				WHERE fkHeader = $t
@@ -414,7 +411,20 @@ class IF_db {
 			while($rowkeyid = @mysql_fetch_array($rkeyid)) {
 				$keyIds[] = $rowkeyid[0];
 			}
+		}//*/
+		
+		$keyIds = array();
+		$qkeyid = "SELECT keyId FROM IFSpectrum_SubHeader 
+					WHERE (fkHeader = $tdh[0] ";
+		for ($i=0; $i<count($tdh); $i++) {
+			$qkeyid .= "OR fkHeader = $tdh[$i] ";
 		}
+		$qkeyid .= ") AND IsIncluded = 1 
+					ORDER BY IFChannel ASC, FreqLO ASC";
+		$rkeyid = $this->run_query($qkeyid);
+		while($rowkeyid = @mysql_fetch_array($rkeyid)) {
+			$keyIds[] = $rowkeyid[0];
+		}//*/
 		
 		$flo = $fmin + ($fwin / 2);
 		$fhi = $fmax - ($fwin / 2);
@@ -438,26 +448,30 @@ class IF_db {
 			while ($rowpow = @mysql_fetch_array($rpow)) {
 				$freq[$index] = $rowpow[1];
 				$pow[$index] = $rowpow[0];
-				$temp = abs($rowpow[1] - $fmin);
-				if($temp < $min) {
-					$min = $temp;
+				$tmin = abs($rowpow[1] - $fmin);
+				$tmax = abs($rowpow[1] - $fmax);
+				$tlo = abs($rowpow[1] - $flo);
+				$thi = abs($rowpow[1] - $fhi);
+				
+				if($tmin < $min) {
+					$min = $tmin;
 					$imin = $index;
 				}
 				
-				$temp = abs($rowpow[1] - $fmax);
-				if ($temp < $max) {
-					$max = $temp;
+				
+				if ($tmax < $max) {
+					$max = $tmax;
 					$imax = $index;
 				}
 					
-				$temp = abs($rowpow[1] - $flo);
-				if ($temp < $lo) {
-					$lo = $temp;
+				
+				if ($tlo < $lo) {
+					$lo = $tlo;
 					$ilo = $index - 1;
 				}
-				$temp = abs($rowpow[1] - $fhi);
-				if ($temp < $hi) {
-					$hi = $temp;
+				
+				if ($thi < $hi) {
+					$hi = $thi;
 					$ihi = $index - 1;
 				}
 				$index += 1;

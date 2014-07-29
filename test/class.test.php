@@ -294,8 +294,16 @@ function cleanData($data) {
 	}
 	return $newData;
 }
+$IF = new IFCalc();
+$IF->setParams(3, NULL, 87, 0);
+$IF->deleteTables();
+$IF->createTables();
 
-spuriousNoise(3, 2);
+$IF->IFChannel = 0;
+$fwin = 2 * pow(10, 9);
+$IF->getPowerData($fwin);
+
+//spuriousNoise(3, 2);
 /*
 $band = 6;
 if ($band == 3) {
