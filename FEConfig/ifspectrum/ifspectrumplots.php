@@ -88,7 +88,7 @@ if ($drawPlots == 1){
 	$plt = new plotter();
 	
 	// Create plots for spurious noise, spurious noise expanded, and power variation for every IF.
-	for ($if=2; $if<=3; $if++) {
+	for ($if=0; $if<=3; $if++) {
 		$IF->IFChannel = $if;
 		$IF->getSpuriousData(); // Gets spurious noise data from database
 		
