@@ -1,4 +1,31 @@
 <?php
+
+/**
+ * ALMA - Atacama Large Millimeter Array
+ * (c) Associated Universities Inc., 2006
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ *
+ * @author Aaron Beaudoin
+ * Version 1.0 (07/30/2014)
+ *
+ *
+ * Example code can be found in /test/class.test.php
+ *
+ */
+
 require_once(dirname(__FILE__) . '/../../../SiteConfig.php');
 require_once($site_dbConnect);
 require_once($site_classes . '/class.spec_functions.php');
@@ -33,13 +60,14 @@ class IF_db {
 	 * @return 2d array- data for spurious noise, where columns are 'Freq_LO', 'Freq_Hz', and 'Power_dBm'
 	 */
 	public function qdata($Band, $IFChannel, $FEid, $DataSetGroup, $offsetamount = 10) {
-		$r = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup);
+		$r = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup); // Gets Test Data Header keys
 		
 		$offset = 0;
 		$data = array();
 		while ($row = @mysql_fetch_array($r)) {
-			$FreqLO = $row[1];
+			$FreqLO = $row[1]; // LO Frequency
 			$TDHkey = $row[2];
+			// Gets IF frequency and Power data from database
 			$qdata = "SELECT Freq_Hz/1000000000,(Power_dBm + $offset)
 				FROM TEMP_IFSpectrum WHERE fkSubHeader = $row[0]
 				AND Freq_Hz > 12000000
@@ -47,8 +75,8 @@ class IF_db {
 			$rdata = $this->run_query($qdata);
 			
 			while($rowdata = @mysql_fetch_array($rdata)) {
-				$Freq_Hz = $rowdata[0];
-				$pow = $rowdata[1];
+				$Freq_Hz = $rowdata[0]; // IF frequency
+				$pow = $rowdata[1]; // Power
 				$d = array('FreqLO' => $FreqLO,
 						   'Freq_Hz' => $Freq_Hz,
 						   'Power_dBm' => $pow);
@@ -76,15 +104,11 @@ class IF_db {
 		
 		$fmin = $specs['fWindow_Low'] * pow (10, 9);
 		$fmax = $specs['fWindow_high'] * pow(10, 9);
-		//$this->createPowVar($DataSetGroup, $Band, $FEid, $fmin, $fmax, $fwin);
 		
-		$rkeys = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup);
+		$rkeys = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup); // Test Data Header Keys
 		
-		$b6count = 0;
-		$b6points = array();
-		$maxpow6 = -999;
 		while($rowkeys = @mysql_fetch_array($rkeys)) {
-			
+			// Gets IF frequency and power data for window size $fwin (2 * pow(10, 9) or 31 * pow(10, 6))
 			$qvar = "SELECT Freq_Hz, Power_dBm FROM TEMP_TEST_IFSpectrum_PowerVar 
 					WHERE WindowSize_Hz = $fwin 
 					AND fkSubHeader = $rowkeys[0] 
@@ -93,8 +117,8 @@ class IF_db {
 			$rvar = $this->run_query($qvar);
 			
 			while($rowvar = @mysql_fetch_array($rvar)) {
-				$freq = $rowvar[0] / pow(10, 9);
-				$pow = $rowvar[1];
+				$freq = $rowvar[0] / pow(10, 9); // IF frequency
+				$pow = $rowvar[1]; // power
 				
 				if ($Band == 6 && $fwin == 2 * pow(10,9)) {
 					if ($freq < 7) {
@@ -400,18 +424,6 @@ class IF_db {
 		$this->run_query($qcreate);
 		
 		$tdh = $this->qtdh($DataSetGroup, $Band, $FEid);
-		
-		/*$keyIds = array();
-		foreach ($tdh as $t) {
-			$qkeyid = "SELECT keyId FROM IFSpectrum_SubHeader
-				WHERE fkHeader = $t
-				AND IsIncluded = 1
-				ORDER BY IFChannel ASC, FreqLO ASC";
-			$rkeyid = $this->run_query($qkeyid);
-			while($rowkeyid = @mysql_fetch_array($rkeyid)) {
-				$keyIds[] = $rowkeyid[0];
-			}
-		}//*/
 		
 		$keyIds = array();
 		$qkeyid = "SELECT keyId FROM IFSpectrum_SubHeader 

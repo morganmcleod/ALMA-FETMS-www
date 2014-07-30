@@ -61,7 +61,7 @@ $ifspec = new IFSpectrumPlotter();
 $ifspec->Initialize_IFSpectrum($FEid,$DataSetGroup,$fc,$band);
 
 $feconfig = $ifspec->FrontEnd->feconfig->keyId;
-$fesn = $ifspec->FrontEnd->GetValue('SN');//*/
+$fesn = $ifspec->FrontEnd->GetValue('SN');
 
 // $ifSpectrupPlotsLogger -> WriteLogFile('feconfig=' . $feconfig . ' fesn=' . $fesn);
 
@@ -70,73 +70,36 @@ include "header_ifspectrum.php";
 
 echo "<body id = 'body3' onload='createIFSpectrumTabs($fc,$id,$FEid,$DataSetGroup,$band);' BGCOLOR='#19475E'>";
 
-/*
-if ($drawPlots == 1) {
-	$ifspec->CreateNewProgressFile($fc,$DataSetGroup);
-
-	echo "new file= " . $ifspec->progressfile;
-	echo  '<script type="text/javascript">window.location="../pbar/status.php?lf=' . $ifspec->progressfile . '";</script>';
-	//Show a spinner while plots are being drawn.
-
-    echo "<div id='spinner' style='position:absolute;
-            left:400px;
-            top:25px;'>
-            <font color = '#00ff00'><b>
-            &nbsp &nbsp &nbsp &nbsp
-            &nbsp &nbsp &nbsp &nbsp
-            &nbsp &nbsp &nbsp &nbsp
-            &nbsp &nbsp &nbsp &nbsp
-            &nbsp &nbsp &nbsp &nbsp
-            Drawing Plots...
-            </font></b></div>";
-
-	echo "<script type='text/javascript'>
-			var opts = {
-                lines: 12, // The number of lines to draw
-                length: 10, // The length of each line
-                width: 3, // The line thickness
-                radius: 10, // The radius of the inner circle
-                color: '#00ff00', // #rgb or #rrggbb
-                speed: 1, // Rounds per second
-                trail: 60, // Afterglow percentage
-                shadow: false, // Whether to render a shadow
-            };
-			var target = document.getElementById('spinner');
-			var spinner = new Spinner(opts).spin(target);
-		</script>";
-}//*/
-
 echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
 
 if ($drawPlots == 1){
 	require(site_get_config_main());
 	ini_set('memory_limit', '384M');
+	//Get specifications for plots
 	$ns = new Specifications();
 	$specs = $ns->getSpecs('ifspectrum', $band);
 	$trueSpec = $specs['spec_value'];
 	
+	//Initialize IF Spectrum calculation class.
 	$IF = new IFCalc();
 	$IF->setParams($band, NULL, $FEid, $DataSetGroup);
 	$IF->deleteTables();
 	$IF->createTables();
 	$plt = new plotter();
-	//$if = 0;
-	for ($if=0; $if<=3; $if++) {
-		/*
-		$IF->setParams($band, $if, $FEid, $DataSetGroup);
-		$IF->deleteTables();
-		$IF->getSpuriousData();//*/
+	
+	// Create plots for spurious noise, spurious noise expanded, and power variation for every IF.
+	for ($if=2; $if<=3; $if++) {
 		$IF->IFChannel = $if;
-		$IF->getSpuriousData();
+		$IF->getSpuriousData(); // Gets spurious noise data from database
 		
 		$plt->setParams($IF->data, 'IFSpectrumLibrary', $band);
-		//$plt->data = $plt->loadData("SpuriousNoiseBand$band" . "_IF$if");
-		$plt->save_data("SpuriousNoiseBand$band" . "_IF$if");
+		//$plt->data = $plt->loadData("SpuriousNoiseBand$band" . "_IF$if"); // Use if desired data is saved into txt files.
+		$plt->save_data("SpuriousNoiseBand$band" . "_IF$if"); //Saves data for later use.
 		
-		$plt->findLOs();
-		$plt->getSpuriousNoise();
-		$plt->plotSize(900, 600);
-		$plotOut = "Band$band Spurious IF$if";
+		$plt->findLOs(); //Finds LO frequencies over band.
+		$plt->getSpuriousNoise(); // Creates temporary files with spurious noise data to be used by GNUPLOT
+		$plt->plotSize(900, 600); // Sets plot size to 900 pixels x 600 pixels
+		$plotOut = "Band$band Spurious IF$if"; // Plot file name
 		$plt->plotOutput($plotOut);
 		$plt->plotTitle("Spurious Noise, FE-61, Band " . $band . "SN 61 IF$if");
 		$plt->plotGrid();
@@ -145,21 +108,23 @@ if ($drawPlots == 1){
 		$y2tics = array();
 		$att = array();
 		$count = 1;
+		// Sets 2nd y axis tick values using data created in getSpuriousNoise()
+		// Sets line attributes.
 		foreach ($plt->LO as $L) {
 			$y2tics[$L] = $plt->spurVal[$L];
 			$att[] = "lines lt $count title '" . $L . " GHz'";
 			$count++;
 		}
 		$plt->plotYTics(array('ytics' => FALSE, 'y2tics' => $y2tics));
-		$plt->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Power (dB)'));
-		$plt->plotArrows();
+		$plt->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Power (dB)')); // Set x and y axis labels
+		$plt->plotArrows(); // Creates vertical lines over IF range from specs ini file.
 		$plt->plotData($att, count($att));
-		$plt->setPlotter($plt->genPlotCode());
+		$plt->setPlotter($plt->genPlotCode()); // Generates and saves plotting script
 		system("$GNUPLOT $plt->plotter");
 		
-		$plt->resetPlotter();
+		$plt->resetPlotter(); // Resets attributes to be used by plotter.
 		
-		$plt->getSpuriousExpanded();
+		$plt->getSpuriousExpanded(); // Creates temporary files with spurious expanded noise data.
 		$plt->plotSize(900, 1500);
 		$plotOut = "Band$band Spurious Expanded IF$if";
 		$plt->plotOutput($plotOut);
@@ -185,9 +150,12 @@ if ($drawPlots == 1){
 		system("$GNUPLOT $plt->plotter");
 		
 		$plt->resetPlotter();
-		$fwin = 2 * pow(10, 9);
+		
+		$fwin = 2 * pow(10, 9); // Window size
 		$win = "2 GHz";
 		$specs['spec_value'] = $trueSpec;
+		
+		// Sets ymax limit
 		if ($band == 6){
 			$ymax = 9;
 		} else {
@@ -195,12 +163,12 @@ if ($drawPlots == 1){
 		}
 		
 		$IF->data = array();
-		$IF->getPowerData($fwin);
+		$IF->getPowerData($fwin); // Gets power variation from database for 2 GHz window
 		$plt->data = $IF->data;
 		//$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
 		$plt->save_data("PowerVarBand$band" . "_$win" . "_IF$if");
 		
-		$plt->getPowerVar();
+		$plt->getPowerVar(); // Creates temporary files for power variation over 2 GHz window plots
 		$plt->plotSize(900, 600);
 		$saveas = "PowerVarBand$band" . "_$win" . "_IF$if";
 		$plt->plotOutput($saveas);
@@ -217,7 +185,7 @@ if ($drawPlots == 1){
 			$att[] = "lines lt $count title '$L GHz'";
 			$count++;
 		}
-		if ($band == 6) {
+		if ($band == 6) { // Band 6 case
 			$plt->band6powervar($if, $FEid, $DataSetGroup, $att, count($att));
 		} else {
 			$plt->plotData($att, count($att));
@@ -225,12 +193,13 @@ if ($drawPlots == 1){
 		$plt->setPlotter($plt->genPlotCode());
 		system("$GNUPLOT $plt->plotter");
 		
-		$fwin = 31 * pow(10, 6);
-		$win = "31 MHz";
 		$plt->resetPlotter();
 		
+		$fwin = 31 * pow(10, 6); // Sets window size to 31 MHz
+		$win = "31 MHz";
 		$IF->data = array();
-		$IF->getPowerData($fwin);
+		$IF->getPowerData($fwin); // Gets power variation data for 31 MHz window from database
+		
 		$plt->data = $IF->data;
 		//$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
 		$plt->save_data("PowerVarBand$band" . "_$win" . "_IF$if");
@@ -260,7 +229,7 @@ if ($drawPlots == 1){
 		
 		$plt->resetPlotter();
 	}
-	$IF->deleteTables();
+	$IF->deleteTables(); // Deletes temporary tables.
 	ini_set('memory_limit', '128M');
 }
 

@@ -1,74 +1,35 @@
 <?php
+/**
+* ALMA - Atacama Large Millimeter Array
+* (c) Associated Universities Inc., 2006
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+* 
+* @author Aaron Beaudoin
+* Version 1.0 (07/30/2014)
+* 
+* 
+* Example code can be found in /test/class.test.php
+* 
+*/
+
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
 require_once($site_classes . '/class.spec_functions.php');
 require_once($site_IF . '/IF_db.php');
 
-/**
- * 
- * @author Aaron Beaudoin
- * 
- * Example code to plot noise temperature:
- * $plt = new plotter(); //initializes plotter class
- * $plt->setParams($data, 'NoiseTempLibrary', 6) //$data can be obtained through loadData() or calc classes.
- * //Initializes data structure, saves files to NoiseTempLibrary, and retrieves specs for band6
- * 
- * $plt->print_data //Print data to table in browser.
- * 
- * $plt->plotSize(900, 600); //Plot size with width 900, height 600
- * $plt->plotOutput('Band6 Pol0 Sb1 RF'); //output file name, defaults format to png.
- * $plt->plotTitle('Receiver Noise Temperature Tssb corrected, FE SN61, CCA6-61 WCA6-09'); //plot title
- * $plt->plotLabels(array('x' => 'LO (GHz)', 'y' => 'Tssb Corrected (K)', 'y2' => 'Difference from Spec (%)')); //Axes labels
- * $plt->plotYAxis(array('ymin' => 0, 'ymax' => 149.6, 'y2min' => 0, 'y2max' => 120)); //Y-axes ranges
- * $plt->checkIFLim('CenterIF'); //Removes data that doesn't meet IF specifications
- * $plt->createTempFile('RF_usb', 'Tssb_corr01', 0); //Creates files for lines
- * $plt->createTempFile('RF_usb', 'Trx01', 1);
- * $plt->createTempFile('RF_usb', 'diff01', 2);
- * $att = array();													//Line attributes to be passed to plotData()
- * $att[] = "lines lt 1 lw 3 title 'FEIC Meas Pol0 USB'";
- * $att[] = "lines lt 3 title 'Cart Group Meas Pol0 USB'";
- * $att[] = "points lt -1 axes x1y2 title 'Diff relative to Spec'";
- * $plt->plotData($att, 3); //Creates plot code using temp_data files
- * $plt->setPlotter($plt->genPlotCode()); //creates plotting script and writes to file.
- * system("$GNUPLOT $plt->plotter"); //creates plots and save to file name given by plotOutput
- *  
- * 
- * Example code to plot IF Spectrum Spurious Noise:
- * $plt = new plotter();
- * $plt->setParams($data, 'IFSpectrumLibrary', 6);
- * 
- * $LO = array('221', '225', '229', '233', '237', '241', '245', '249', '253', '257', '261', '265'); //Each LO value to be plotted
- * //MUST MATCH UP WITH LO VALUES IN DATA
- * $plt->getSpuriousNoise($LO); //Creates temp data files with IF frequencies and powers. Each file corresponds to a LO frequency
- * //$plt->getSpuriousExpanded($LO) //Use instead of getSpuriousNoise($LO) if expanded plots are desired.
- * $plt->plotSize(900, 600); //Use 900, 1500 for expanded plots
- * $plt->plotOutput('Band6 Spurious IF0');
- * $plt->plotTitle('Spurious Noise, FE-61, Band 6 SN 61 IF0');
- * $plt->plotGrid(); //Adds grid lines to plot
- * $plt->plotKey(FALSE); //Takes legend out of plot
- * $plt->plotBMargin(7);
- * 
- * $y2tics = array();
- * $ytics = array(); //for expanded plots
- * $att = array();
- * $count = 1;
- * foreach ($LO as $L) { //sets ytics values and locations and sets line parameters
- *    $y2tics[$L] = $plt->spurVal[$L];
- *    //$y2tics[$L] = $plt->spurVal[$L][0]; //for expanded plots, use instead of previous line
- *    //$ytics[$L] = $plt->spurVal[$L]; //for expanded plots
- *    $att[] = "lines lt $count title '" . $L . " GHz'";
- *    $count++;
- * }
- * $plt->plotYTics(array('ytics' => FALSE, 'y2tics' => $y2tics));
- * //$plt->plotYTics(array('ytics' => $ytics, 'y2tics' => $y2tics)); //for expanded plots, use instead of previous line
- * $plt->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Power (dB)'));
- * $plt->plotArrows(); //plots vertical lines in IF specs window
- * 
- * $plt->plotData($att, count($att));
- * $plt->setPlotter($plt->genPlotCode());
- * system("$GNUPLOT $plt->plotter");
- * 
- */
 class plotter{
 	var $data;
 	var $dir;
@@ -108,12 +69,15 @@ class plotter{
 		$this->band = $band;
 	}
 
+	/**
+	 * Resets all plot attributes to allow for new plot.
+	 */
 	public function resetPlotter() {
 		$this->plotAtt = array();
 	}
 	
 	/**
-	 * Prints power variation and total and in-band power tables to browser.
+	 * Displays power variation table to browser.
 	 * Assumes band has already been initialized.
 	 * 
 	 * @param int $DataSetGroup
@@ -150,6 +114,14 @@ class plotter{
 		$this->data = $oldData;
 	}	
 		
+	/**
+	 * Displays the total and in-band power table for IF Output Spectrum.
+	 * Assumes band has already been initialized.
+	 * 
+	 * @param int $DataSetGroup
+	 * @param int $FEid
+	 * @param int $if
+	 */
 	public function powerTotTables($DataSetGroup, $FEid, $if) {		
 		$IF = new IFCalc();
 		$IF->setParams($this->band, 0, $FEid, $DataSetGroup);
