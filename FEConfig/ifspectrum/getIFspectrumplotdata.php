@@ -33,6 +33,12 @@ $ifs->Initialize_IFSpectrum($FEid,$DataSetGroup,$fc,$band);
 
 echo "<div style='background-color:#6C7070;width:1000px;'>";
 
+$feconfig = $ifs->FrontEnd->feconfig_latest;
+
+$dbpull = new IF_db();
+$temp = $dbpull->qtdh($DataSetGroup, $band, $FEid, TRUE);
+$TS = $temp[1];
+
 switch($tabtype){
     case 1:
         //Info tab was selected
@@ -172,7 +178,7 @@ switch($tabtype){
         echo "<div style='height:750px'><br><br>";
       	$plt = new plotter();
 		$plt->setParams(NULL, 'IFSpectrumLibrary', $band);
-		$plt->powerTotTables($DataSetGroup, $FEid, 0);
+		$plt->powerTotTables($DataSetGroup, $FEid, 0, $feconfig, $TS);
         echo "<br><br><br></div>";
         break;
 
@@ -181,7 +187,7 @@ switch($tabtype){
         echo "<div style='height:750px'><br><br>";
         $plt = new plotter();
 		$plt->setParams(NULL, 'IFSpectrumLibrary', $band);
-		$plt->powerTotTables($DataSetGroup, $FEid, 1);
+		$plt->powerTotTables($DataSetGroup, $FEid, 1, $feconfig, $TS);
         echo "<br><br><br></div>";
         break;
 
@@ -191,7 +197,7 @@ switch($tabtype){
         //$ifs->Display_TotalPowerTable(2);
         $plt = new plotter();
         $plt->setParams(NULL, 'IFSpectrumLibrary', $band);
-        $plt->powerTotTables($DataSetGroup, $FEid, 2);
+        $plt->powerTotTables($DataSetGroup, $FEid, 2, $feconfig, $TS);
         echo "<br><br><br></div>";
         break;
 
@@ -201,7 +207,7 @@ switch($tabtype){
         //$ifs->Display_TotalPowerTable(3);
         $plt = new plotter();
         $plt->setParams(NULL, 'IFSpectrumLibrary', $band);
-        $plt->powerTotTables($DataSetGroup, $FEid, 3);
+        $plt->powerTotTables($DataSetGroup, $FEid, 3, $feconfig, $TS);
         echo "<br><br><br></div>";
         break;
 
@@ -210,7 +216,7 @@ switch($tabtype){
         echo "<div style='height:750px'><br><br><br><br>";
         $plt = new plotter();
         $plt->setParams(NULL, 'IFSpectrumLibrary', $band);
-        $plt->powerVarTables($DataSetGroup, $FEid);
+        $plt->powerVarTables($DataSetGroup, $FEid, $feconfig, $TS);
         //$ifs->DisplayPowerVarFullBandTable();
         echo "<br><br><br></div>";
         break;

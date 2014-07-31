@@ -343,15 +343,89 @@ function noiseTempRFAvg($band) {
  * @param int $DataSetGroup
  * @param int $if
  */
-function powerVar($Band, $IFChannel, $FEid, $DataSetGroup, $if) {
+function powerVar($band, $IFChannel, $FEid, $DataSetGroup) {
+	$labels = array();
+	$dbpull = new IF_db();
+	$temp = $dbpull->qtdh($DataSetGroup, $band, $FEid, TRUE);
+	$keys = $temp[0];
+	$TS = $temp[1];
+	$temp = "TestData_header.keyId: $keys[0]";
+	for ($i=1; $i<count($keys); $i++) {
+		$temp .= ", $keys[$i]";
+	}
+	$labels[] = $temp;
+	
+	$temp = "$TS, FE Configuration ###; TestData_header.DataSetGroup: $DataSetGroup; IFSpectrum Ver. $IF->version";
+	$labels[] = $temp;
+	require(site_get_config_main());
 	$IF = new IFCalc();
-	$IF->setParams($Band, $IFChannel, $FEid, $DataSetGroup);
-	$IF->deleteTables();
+	$IF->setParams($band, $IFChannel, $FEid, $DataSetGroup);
+	/*$IF->deleteTables();
 	$IF->createTables();
-	$IF->getPowerData(31 * pow(10, 6));
+	$IF->getPowerData(31 * pow(10, 6));//*/
 	
 	$plt = new plotter();
-	$plt->setParams($IF->data, 'IFSpectrumLibrary', $Band);
+	$plt->setParams(NULL, 'IFSpectrumLibrary', $band);
+	$if = $IFChannel;
+	
+	$fwin = 2 * pow(10, 9); // Window size
+	$win = "2 GHz";
+	$trueSpec = $plt->specs['spec_value']; //Resets spec value to original value
+	
+	// Sets ymax limit
+	if ($band == 6){
+		$ymax = 9;
+	} else {
+		$ymax = $plt->specs['spec_value'] + 1;
+	}
+	
+	//$IF->data = array();
+	//$IF->getPowerData($fwin); // Gets power variation from database for 2 GHz window
+	//$plt->data = $IF->data;
+	$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
+	//$plt->save_data("PowerVarBand$band" . "_$win" . "_IF$if");
+	
+	$plt->findLOs(); //Finds LO frequencies over band.
+	$plt->getPowerVar(); // Creates temporary files for power variation over 2 GHz window plots
+	$plt->plotSize(900, 600);
+	$saveas = "PowerVarBand$band" . "_$win" . "_IF$if";
+	$plt->plotOutput($saveas);
+	$plt->plotTitle("Power Variation $win Window: FE-61, Band $band SN 61, IF$if");
+	$plt->plotGrid();
+	$plt->createSpecsFile('Freq_Hz', array('spec_value'), array("lines lt -1 lw 5 title 'Spec'"), FALSE);
+	$plt->plotLabels(array('x' => 'Center of Window (GHz)', 'y' => 'Power Variation in Window (dB)'));
+	$plt->plotBMargin(7);
+	$plt->plotKey('outside');
+	$plt->plotYAxis(array('ymin' => 0, 'ymax' => $ymax));
+	$att = array();
+	$count = 1;
+	foreach ($plt->LO as $L) {
+		$att[] = "lines lt $count title '$L GHz'";
+		$count++;
+	}
+	if ($band == 6) { // Band 6 case
+		$plt->plotAddLabel($labels, array(array(0.01, 0.01), array(0.01, 0.04)));
+		$plt->band6powervar($if, $FEid, $DataSetGroup, $att, count($att));
+	} else {
+		$temp = "Max Power Variation: $IF->maxvar dB";
+		$labels[] = $temp;
+		$plt->plotAddLabel($labels, array(array(0.01, 0.01), array(0.01, 0.04), array(0.01, 0.07)));
+		$plt->plotData($att, count($att));
+	}
+	$plt->setPlotter($plt->genPlotCode());
+	system("$GNUPLOT $plt->plotter");
+	
+	$plt->resetPlotter();
+	
+	$fwin = 31 * pow(10, 6); // Sets window size to 31 MHz
+	$win = "31 MHz";
+	//$IF->data = array();
+	//$IF->getPowerData($fwin); // Gets power variation data for 31 MHz window from database
+	
+	//$plt->data = $IF->data;
+	$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
+	//$plt->save_data("PowerVarBand$band" . "_$win" . "_IF$if");
+	
 	$plt->getPowerVar();
 	$plt->plotSize(900, 600);
 	$saveas = "PowerVarBand$band" . "_$win" . "_IF$if";
@@ -375,38 +449,15 @@ function powerVar($Band, $IFChannel, $FEid, $DataSetGroup, $if) {
 	$plt->setPlotter($plt->genPlotCode());
 	system("$GNUPLOT $plt->plotter");
 	
-	$IF->data = array();
-	$IF->getPowerData(2 * pow(10, 9));
 	$plt->resetPlotter();
-	$plt->data = $IF->data;
-	
-	$plt->getPowerVar();
-	$plt->plotSize(900, 600);
-	$saveas = "PowerVarBand$band" . "_$win" . "_IF$if";
-	$plt->plotOutput($saveas);
-	$plt->plotTitle("Power Variation $win Window: FE-61, Band $band SN 61, IF$if");
-	$plt->plotGrid();
-	$plt->createSpecsFile('Freq_Hz', array('spec_value'), array("lines lt -1 lw 5 title 'Spec'"), FALSE);
-	$plt->plotLabels(array('x' => 'Center of Window (GHz)', 'y' => 'Power Variation in Window (dB)'));
-	$plt->plotBMargin(7);
-	$plt->plotKey('outside');
-	$plt->plotYAxis(array('ymin' => 0, 'ymax' => $ymax));
-	$att = array();
-	$count = 1;
-	foreach ($plt->LO as $L) {
-		$att[] = "lines lt $count title '$L GHz'";
-		$count++;
-	}
-	if ($band == 6) {
-		$plt->band6powervar($if, $FEid, $DataSetGroup, $att, count($att));
-	} else {
-		$plt->plotData($att, count($att));
-	}
-	$plt->setPlotter($plt->genPlotCode());
-	system("$GNUPLOT $plt->plotter");
+	$plt->specs['spec_value'] = $trueSpec;
 }
 
-
-
+$band = 6;
+$FEid = 87;
+$DataSetGroup = 2;
+for ($if=0; $if<=3; $if++) {
+	powerVar($band, $if, $FEid, $DataSetGroup);
+}
 
 ?>

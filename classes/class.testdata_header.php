@@ -306,10 +306,6 @@ class TestData_header extends GenericTable{
     }
 
     public function DrawPlot(){
-
-        $plt = new DataPlotter();
-        $plt->Initialize_DataPlotter($this->keyId,$this->dbconnection,$this->GetValue('keyFacility'));
-
         //Determine which type of plot to draw...
         switch ($this->GetValue('fkTestData_Type')) {
         case "43":
@@ -421,6 +417,12 @@ class TestData_header extends GenericTable{
             $NT->getCCANTData(); // Gets cartridge manufacturer data.
             $plt = new plotter();
             $plt->setParams($NT->data, 'NoiseTempLibrary', $band);
+            
+            $labels = array();
+            $temp = "TestData_header.keyId: $this->keyId, Version: $plt->version";
+            $labels[] = $temp;
+            $temp = $this->GetValue('TS') . ", FE Configuration " . $this->GetValue('fkFE_Config') . ", TcoldEff=" . $specs['CLTemp'] . " K";
+            $labels[] = $temp;
             // Creates noise temp vs. LO freq plots for polarizations 0 and 1 and sidebands 1 and 2 for each polarization (4 plots)
             for ($pol=0; $pol<=1; $pol++) {
             	for ($sb=1; $sb<=2; $sb++) {
@@ -438,16 +440,18 @@ class TestData_header extends GenericTable{
             		$saveas = "Band$band Pol$pol Sb$sb RF"; // Plot file name
             		$plt->plotOutput($saveas);
             		$plt->plotTitle('Receiver Noise Temperature Tssb corrected'); // Plot title
-            		$plt->plotLabels(array('x' => 'LO (GHz)', 'y' => 'Tssb Corrected (K)', 'y2' => 'Difference from Spec (%)')); // Axis labels
+            		$plt->plotLabels(array('x' => 'RF (GHz)', 'y' => 'Tssb Corrected (K)', 'y2' => 'Difference from Spec (%)')); // Axis labels
             		$plt->plotYAxis(array('ymin' => 0, 'ymax' => $ymax, 'y2min' => 0, 'y2max' => 120)); // Y axis limits
             		$plt->checkIFLim('CenterIF'); // Deletes data that aren't in IF limits from specifications.
             		$plt->createTempFile($xvar, "Tssb_corr$yvar", 0); // Creates temp file for LO sideband vs corrected temperature
             		$plt->createTempFile($xvar, "Trx$yvar", 1); // Creates temp file for LO sideband vs cartridge data
             		$plt->createTempFile($xvar, "diff$yvar", 2); // Creates temp file for percent difference.
+            		$plt->plotBMargin(6);
             		$att = array(); // Line attributes
             		$att[] = "lines lt 1 lw 3 title 'FEIC Meas Pol$pol $sideband'";
             		$att[] = "lines lt 3 title 'Car Group Meas Pol$pol $sideband'";
             		$att[] = "points lt -1 axes x1y2 title 'Diff relative to Spec'";
+            		$plt->plotAddLabel($labels, array(array(0.01, 0.01), array(0.01, 0.04)));
             		$plt->plotData($att, count($att));
             		$plt->setPlotter($plt->genPlotCode());
             		system("$GNUPLOT $plt->plotter");
@@ -478,6 +482,7 @@ class TestData_header extends GenericTable{
 			$att[] = "lines lt 2 lw 1 title 'Pol0sb2'";
 			$att[] = "lines lt 3 lw 1 title 'Pol1sb1'";
 			$att[] = "lines lt 4 lw 1 title 'Pol1sb2'";
+			$plt->plotAddLabel($labels, array(array(0.01, 0.01), array(0.01, 0.04)));
 			$plt->plotData($att, count($att));
 			$plt->setPlotter($plt->genPlotCode());
 			system("$GNUPLOT $plt->plotter");
@@ -506,6 +511,7 @@ class TestData_header extends GenericTable{
 				$att[] = "linespoints lt 2 lw 1 title 'Pol0sb2'";
 				$att[] = "linespoints lt 3 lw 1 title 'Pol1sb1'";
 				$att[] = "linespoints lt 4 lw 1 title 'Pol1sb2'";
+				$plt->plotAddLabel($labels, array(array(0.01, 0.01), array(0.01, 0.04)));
 				$plt->plotData($att, count($att));
 				$plt->setPlotter($plt->genPlotCode());
 				system("$GNUPLOT $plt->plotter");

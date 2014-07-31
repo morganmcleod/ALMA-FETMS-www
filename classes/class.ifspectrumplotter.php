@@ -907,8 +907,8 @@ class IFSpectrumPlotter extends TestData_header{
                 echo "r6 (line 1309): $r6 <br>";
                 $b6val = @mysql_result($r6,0,0) - @mysql_result($r6,0,1);
                 if ($b6val != 0){
-                $b6points[$b6count] = $b6val;
-                $b6count += 1;
+               		$b6points[$b6count] = $b6val;
+                	$b6count += 1;
                 }
             }
 

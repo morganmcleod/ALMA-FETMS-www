@@ -107,6 +107,7 @@ class IF_db {
 		
 		$rkeys = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup); // Test Data Header Keys
 		
+		$maxvar = -999;
 		while($rowkeys = @mysql_fetch_array($rkeys)) {
 			// Gets IF frequency and power data for window size $fwin (2 * pow(10, 9) or 31 * pow(10, 6))
 			$qvar = "SELECT Freq_Hz, Power_dBm FROM TEMP_TEST_IFSpectrum_PowerVar 
@@ -120,6 +121,10 @@ class IF_db {
 				$freq = $rowvar[0] / pow(10, 9); // IF frequency
 				$pow = $rowvar[1]; // power
 				
+				if ($pow > $maxvar) {
+					$maxvar = $pow;
+				}
+				
 				if ($Band == 6 && $fwin == 2 * pow(10,9)) {
 					if ($freq < 7) {
 						$pow = "-1";
@@ -132,7 +137,7 @@ class IF_db {
 				}
 			}
 		}
-		return $data;
+		return array($data, $maxvar);
 		
 	}
 	
@@ -149,19 +154,41 @@ class IF_db {
 		$r = $this->qkeys($Band, $IFChannel, $FEid, $DataSetGroup);
 		
 		$b6points = array();
+		$maxvar = -999;
 		while($row = @mysql_fetch_array($r)) {
-			$q6 = "SELECT MAX(Power_dBm), MIN(Power_dBm)
-			FROM IFSpectrum WHERE fkSubHeader = $row[0]
-			AND Freq_Hz < 6000000000 AND Freq_Hz > 5000000000;";
+			$q6 = "SELECT MAX(Power_dBm), MIN(Power_dBm) 
+					FROM IFSpectrum WHERE fkSubHeader = $row[0] 
+					AND Freq_Hz < 6000000000 AND Freq_Hz > 5000000000;";
 			
 			$r6 = $this->run_query($q6);
 			$b6val = @mysql_result($r6, 0, 0) - @mysql_result($r6, 0, 1);
 			if ($b6val != 0) {
-			$b6points[] = $b6val;
+				$b6points[] = $b6val;
+				if ($b6val > $maxvar) {
+					$maxvar = $b6val;
+				}
 			}
+			$fwin = 2 * pow(10, 9);
+			$qdata = "SELECT Power_dBm, Freq_Hz FROM TEMP_TEST_IFSpectrum_PowerVar 
+						WHERE fkSubHeader = $row[0] 
+						AND WindowSize_Hz = $fwin 
+						ORDER BY Freq_Hz ASC;";
+			$rdata = $this->run_query($qdata);
+			while ($rowdata = @mysql_fetch_array($rdata)) {
+				$pval = $rowdata[0];
+				$fval = $rowdata[1] * pow(10, -9);
+				if ($fval < 6) {
+					$pval = "-1";
+				}
+				if ($fval >= 7 && $fval <= 9) {
+					if ($pval > $maxvar) {
+						$maxvar = $pval;
+					}
+				}
+			}	
 		}
 				
-		return $b6points;
+		return array($b6points, $maxvar);
 	}
 	
 	/**
@@ -570,8 +597,8 @@ class IF_db {
 	 * 
 	 * @return array- Test Data Header keys
 	 */
-	public function qtdh($DataSetGroup, $Band, $FEid) {
-		$q = "SELECT TestData_header.keyId 
+	public function qtdh($DataSetGroup, $Band, $FEid, $ts = FALSE) {
+		$q = "SELECT TestData_header.keyId, TestData_header.TS
 		FROM TestData_header, FE_Config 
 		WHERE TestData_header.DataSetGroup = $DataSetGroup 
 		AND TestData_header.fkTestData_Type = 7 
@@ -583,11 +610,16 @@ class IF_db {
 		$r = $this->run_query($q);
 		
 		$tdh = array();
+		$TS = 0;
 		while ($row = @mysql_fetch_array($r)) {
 			$tdh[] = $row[0];
+			$TS = $row[1];
 		}
-		
-		return $tdh;
+		if ($ts) {
+			return array($tdh, $TS);
+		} else {
+			return $tdh;
+		}
 	}
 	
 	/**

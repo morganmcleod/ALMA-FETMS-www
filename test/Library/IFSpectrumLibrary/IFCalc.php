@@ -46,6 +46,8 @@ require_once($site_IF . '/IF_db.php');
 		var $IFChannel;
 		var $FEid;
 		var $DataSetGroup;
+		var $version;
+		var $maxvar;
 		
 		/**
 		 * Constructor
@@ -74,6 +76,8 @@ require_once($site_IF . '/IF_db.php');
 			
 			require(site_get_config_main());
 			$this->db = site_getDbConnection();
+			
+			$this->version = "1.0";
 			
 			//$this->dbPull->createTable($DataSetGroup, $Band, $FEid);
 		}
@@ -121,7 +125,9 @@ require_once($site_IF . '/IF_db.php');
 		 * @param float $fwin- Window size
 		 */
 		public function getPowerData($fwin) {
-			$data = $this->dbPull->qpower($this->DataSetGroup, $this->IFChannel, $this->Band, $this->FEid, $fwin);
+			$temp = $this->dbPull->qpower($this->DataSetGroup, $this->IFChannel, $this->Band, $this->FEid, $fwin);
+			$data = $temp[0];
+			$this->maxvar = $temp[1];
 			$this->data = $data;
 		}
 		

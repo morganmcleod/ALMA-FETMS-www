@@ -39,6 +39,7 @@ class plotter{
 	var $spurVal;
 	var $band;
 	var $LO;
+	var $version;
 	
 	/**
 	 * Constructor
@@ -67,6 +68,7 @@ class plotter{
 		}		
 		$this->specs = $specs;
 		$this->band = $band;
+		$this->version = "1.0";
 	}
 
 	/**
@@ -83,7 +85,7 @@ class plotter{
 	 * @param int $DataSetGroup
 	 * @param int $FEid
 	 */
-	public function powerVarTables($DataSetGroup, $FEid) {
+	public function powerVarTables($DataSetGroup, $FEid, $feconfig, $TS) {
 		$IF = new IFCalc();
 		$IF->setParams($this->band, 0, $FEid, $DataSetGroup);
 		$powVar = $IF->getPowVarData();
@@ -110,6 +112,9 @@ class plotter{
 		echo "<div style='width:400px' border='1'> <table id = 'table7' border = '1'>";
 		echo "<tr><th colspan = '5'>Band $this->band Power Variation Full Band</th></tr>";
 		$this->print_data();
+		echo "<tr><th colspan = '5'>Front End Configuration: $feconfig</th></tr>";
+		echo "<tr><th colspan = '5'>Version $this->version</th></tr>";
+		echo "<tr><th colspan = '5'>Meas Date: $TS</th></tr>";
 		echo "</table></div>";
 		$this->data = $oldData;
 	}	
@@ -122,7 +127,7 @@ class plotter{
 	 * @param int $FEid
 	 * @param int $if
 	 */
-	public function powerTotTables($DataSetGroup, $FEid, $if) {		
+	public function powerTotTables($DataSetGroup, $FEid, $if, $feconfig, $ts) {		
 		$IF = new IFCalc();
 		$IF->setParams($this->band, 0, $FEid, $DataSetGroup);
 		
@@ -148,6 +153,9 @@ class plotter{
 		}
 		$this->data = $newData;
 		$this->print_data();
+		echo "<tr><th colspan = '5'>Front End Configuration: $feconfig</th></tr>";
+		echo "<tr><th colspan = '5'>Version $this->version</th></tr>";
+		echo "<tr><th colspan = '5'>Meas Date: $ts</th></tr>";
 		echo "</table></div>";
 		
 		$this->data = $oldData;
@@ -172,7 +180,11 @@ class plotter{
 		$this->plotAtt['fspec2'] = "f2(x) = ((x > 7) && (x < 9)) ? 7 : 1/0\n";
 		
 		$dbpull = new IF_db();
-		$b6points = $dbpull->q6($this->band, $IFChannel, $FEid, $DataSetGroup);
+		$temp = $dbpull->q6($this->band, $IFChannel, $FEid, $DataSetGroup);
+		$b6points = $temp[0];
+		$maxvar = $temp[1];
+		
+		$this->plotAtt["label3"] = "set label 'Max Power Variation: " . round($maxvar, 2) . " dB' at screen 0.01, 0.07\n";
 		
 		$bmax = 5.52;
 		$bmin = 5.45;
@@ -846,7 +858,7 @@ class plotter{
 		$count = 0;
 		foreach ($labels as $l) {
 			$key = "label" . (string)($count + 1);
-			$this->plotAtt[$key] = "set label '" . $l . "' at screen " . $locs[$count][0] . ", " . $locs[$count][1] . "\n";
+			$this->plotAtt[$key] = "set label '" . $l . "' at screen " . (string)$locs[$count][0] . ", " . (string)$locs[$count][1] . "\n";
 			$count++;
 		}
 	}
