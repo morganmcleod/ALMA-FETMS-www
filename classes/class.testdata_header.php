@@ -423,9 +423,13 @@ class TestData_header extends GenericTable{
             $labels[] = $temp;
             $temp = $this->GetValue('TS') . ", FE Configuration " . $this->GetValue('fkFE_Config') . ", TcoldEff=" . $specs['CLTemp'] . " K";
             $labels[] = $temp;
+            $sbmax = 2;
+            if ($band == 9 || $band == 10) {
+            	$sbmax = 1;
+            }
             // Creates noise temp vs. LO freq plots for polarizations 0 and 1 and sidebands 1 and 2 for each polarization (4 plots)
             for ($pol=0; $pol<=1; $pol++) {
-            	for ($sb=1; $sb<=2; $sb++) {
+            	for ($sb=1; $sb<=$sbmax; $sb++) {
             		if ($sb == 1) {
             			$sideband = 'USB';
             			$xvar = 'RF_usb';
