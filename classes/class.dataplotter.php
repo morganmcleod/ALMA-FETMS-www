@@ -780,7 +780,7 @@ class DataPlotter extends GenericTable{
                     $DataSeriesName = "Pol $pol SB $sb IJ";
 
                     $q = "SELECT VJ,IJ FROM CCA_TEST_IVCurve
-                    	WHERE FreqLO = $CurrentLO
+                        WHERE FreqLO = $CurrentLO
                         AND Pol = $pol
                         AND SB = $sb
                         AND fkHeader = $TestData_Id
@@ -899,7 +899,7 @@ class DataPlotter extends GenericTable{
             for ($i=0;$i<=4;$i++){
                 $DataSeriesName = "dataarr[$i]";
 
-				$r = $this->db_pull->q(1, $TestData_Id, NULL, $dataarr[$i]);
+                $r = $this->db_pull->q(1, $TestData_Id, NULL, $dataarr[$i]);
                 if (@mysql_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "$dataarr[$i]";
                     //$data_file[$datafile_count] = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/cca_datafiles/cca_as_data_".$i."_".$j.".txt";
@@ -1000,7 +1000,7 @@ class DataPlotter extends GenericTable{
             $ampmax = max(@MYSQL_RESULT($r,0,6),@MYSQL_RESULT($r,0,7),@MYSQL_RESULT($r,0,8),@MYSQL_RESULT($r,0,9)) + 0.1;
 
         } else {
-			$r = $this->db_pull->q(3, $TestData_Id, $this->fc);
+            $r = $this->db_pull->q(3, $TestData_Id, $this->fc);
             $tiltmin = @MYSQL_RESULT($r,0,0) - 10;
             $tiltmax = @MYSQL_RESULT($r,0,1) + 10;
 
@@ -1124,7 +1124,7 @@ class DataPlotter extends GenericTable{
 
         $datafile_count=0;
 
-		$r = $this->db_pull->q(5, $TestData_Id, $this->fc);
+        $r = $this->db_pull->q(5, $TestData_Id, $this->fc);
         $tiltmin = @MYSQL_RESULT($r,0,0) - 10;
         $tiltmax = @MYSQL_RESULT($r,0,1) + 10;
 
@@ -1450,7 +1450,7 @@ class DataPlotter extends GenericTable{
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
         $this->TestDataHeader->Update();
 
-		$this->db_pull->q_other('URL', $t, NULL, NULL, $image_url, $td_header);
+        $this->db_pull->q_other('URL', $t, NULL, NULL, $image_url, $td_header);
 
         $t->WriteLogFile($qURL);
 

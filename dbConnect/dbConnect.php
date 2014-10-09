@@ -13,14 +13,17 @@ switch ($_SERVER['SERVER_NAME']) {
         require_once("/home/webtest.cv.nrao.edu/conf/mtm-dbConnect.conf");
         break;
 
-    default:
+    case "safe.nrao.edu":
         // database credentials are kept in the /conf/ directory, not in the webserver document root:
         require_once("/home/safe.nrao.edu/conf/mtm-dbConnect.conf");
         break;
+
+    default:
+        die ("Unknown database credentials for server'" . $_SERVER['SERVER_NAME'] . "'");
 }
 
 $db = mysql_pconnect($dbserver, $dbusername, $dbpassword)
-OR die ('Could not connect to MySQL: ' . mysql_connect_error() );
+OR die ('Could not connect to MySQL: ' . mysql_error() );
 mysql_select_db($dbname, $db);
 
 function site_getDbConnection() {

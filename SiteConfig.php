@@ -15,6 +15,8 @@ $site_FEConfig = $site_root . "/FEConfig";
 $site_config_main = $site_root . "/config_main.php";
 $site_dbConnect = $site_root . "/dbConnect/dbConnect.php";
 $site_dBcode = $site_root . "/dBcode";
+$site_NT = $site_classes . "/NoiseTempLibrary";
+$site_IF = $site_classes . "/IFSpectrumLibrary";
 
 // function to get the path to the classes directory:
 function site_get_classes() {

@@ -28,11 +28,11 @@
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_NT . '/noisetempcalc.php');
 require_once($site_IF . '/IFCalc.php');
-require_once($site_root . '/test/Library/plotter.php');
+require_once($site_classes . '/plotter.php');
 
 /**
  * Creates spurious noise plots
- * 
+ *
  * @param int $band
  * @param int $if
  */
@@ -81,14 +81,14 @@ function spuriousNoise($band, $if) {
 	$plt->plotData($att, count($att));
 	$plt->setPlotter($plt->genPlotCode());
 	system("$GNUPLOT $plt->plotter");
-	
+
 	echo "$plotOut <br>";
 	//}
 }
 
 /**
  * Creates spurious noise expanded data for every IF
- * 
+ *
  * @param int $band
  */
 function spuriousExpanded($band) {
@@ -137,14 +137,14 @@ function spuriousExpanded($band) {
 		$plt->plotData($att, count($att));
 		$plt->setPlotter($plt->genPlotCode());
 		system("$GNUPLOT $plt->plotter");
-		
+
 		echo "$plotOut <br>";
 	}
 }
 
 /**
  * Creates corrected noise temperature vs. LO plots
- * 
+ *
  * @param int $band
  */
 function noiseTempRF($band) {
@@ -183,9 +183,9 @@ function noiseTempRF($band) {
 				$sideband = 'LSB';
 			}
 			$yvar = "$pol$sb";
-			
+
 			$plt->setParams($NT->data, 'NoiseTempLibrary', $band);
-			
+
 			$plt->plotSize(900, 600);
 			$saveas = "Band$band Pol$pol Sb$sb RF";
 			$plt->plotOutput($saveas);
@@ -203,21 +203,21 @@ function noiseTempRF($band) {
 			$plt->plotData($att, count($att));
 			$plt->setPlotter($plt->genPlotCode());
 			system("$GNUPLOT $plt->plotter");
-			
+
 			echo "$saveas <br>";
 		}
-	}		
+	}
 }
 
 /**
  * Creates corrected noise temperature vs. IF plots
- * 
+ *
  * @param int $band
  */
 function noiseTempIF($band) {
 	$NT = new NTCalc();
 	$plt = new plotter();
-	
+
 	require(site_get_config_main());
 	$NT = new NTCalc();
 	$plt = new plotter();
@@ -241,9 +241,9 @@ function noiseTempIF($band) {
 	$NT->getIRData();
 	$NT->calcNoiseTemp();
 	$NT->getCCANTData();
-	
+
 	$plt->setParams($NT->data, 'NoiseTempLibrary', $band);
-	
+
 	$plt->plotSize(900, 600);
 	$saveas = "Band$band IF";
 	$plt->plotOutput($saveas);
@@ -267,23 +267,23 @@ function noiseTempIF($band) {
 	$plt->plotData($att, count($att));
 	$plt->setPlotter($plt->genPlotCode());
 	system("$GNUPLOT $plt->plotter");
-	
+
 	echo "$saveas <br>";
 }
 
 /**
  * Creates average corrected noise temperature vs. LO plots
- * 
+ *
  * @param int $band
  */
 function noiseTempRFAvg($band) {
 	$NT = new NTCalc();
 	$plt = new plotter();
-	
+
 	require(site_get_config_main());
 	$NT = new NTCalc();
 	$plt = new plotter();
-	
+
 	if ($band == 3) {
 		$keyId = 256;
 		$sn = 60;
@@ -294,7 +294,7 @@ function noiseTempRFAvg($band) {
 		$sn = 61;
 		$ymax = 149.6;
 	}
-	
+
 	$dsg = 0;
 	$fc = 40;
 	$NT->setParams($band, $dsg, $keyId, $fc, $sn);
@@ -303,9 +303,9 @@ function noiseTempRFAvg($band) {
 	$NT->getIRData();
 	$NT->calcNoiseTemp();
 	$NT->getCCANTData();
-	
+
 	$plt->setParams($NT->data, 'NoiseTempLibrary', $band);
-	
+
 	$plt->plotSize(900, 600);
 	$saveas = "Band$band Avg RF";
 	$plt->plotOutput($saveas);
@@ -330,13 +330,15 @@ function noiseTempRFAvg($band) {
 	$plt->plotData($att, count($att));
 	$plt->setPlotter($plt->genPlotCode());
 	system("$GNUPLOT $plt->plotter");
-	
+
 	echo "$saveas <br>";
 }
 
+if (defined('EXCLUDE0')) {
+
 /**
  * Creates power variation window plots for 2GHz window and 31 MHz window for a single IF.
- * 
+ *
  * @param int $Band
  * @param int $IFChannel
  * @param int $FEid
@@ -354,7 +356,7 @@ function powerVar($band, $IFChannel, $FEid, $DataSetGroup) {
 		$temp .= ", $keys[$i]";
 	}
 	$labels[] = $temp;
-	
+
 	$temp = "$TS, FE Configuration ###; TestData_header.DataSetGroup: $DataSetGroup; IFSpectrum Ver. $IF->version";
 	$labels[] = $temp;
 	require(site_get_config_main());
@@ -363,28 +365,28 @@ function powerVar($band, $IFChannel, $FEid, $DataSetGroup) {
 	/*$IF->deleteTables();
 	$IF->createTables();
 	$IF->getPowerData(31 * pow(10, 6));//*/
-	
+
 	$plt = new plotter();
 	$plt->setParams(NULL, 'IFSpectrumLibrary', $band);
 	$if = $IFChannel;
-	
+
 	$fwin = 2 * pow(10, 9); // Window size
 	$win = "2 GHz";
 	$trueSpec = $plt->specs['spec_value']; //Resets spec value to original value
-	
+
 	// Sets ymax limit
 	if ($band == 6){
 		$ymax = 9;
 	} else {
 		$ymax = $plt->specs['spec_value'] + 1;
 	}
-	
+
 	//$IF->data = array();
 	//$IF->getPowerData($fwin); // Gets power variation from database for 2 GHz window
 	//$plt->data = $IF->data;
 	$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
 	//$plt->save_data("PowerVarBand$band" . "_$win" . "_IF$if");
-	
+
 	$plt->findLOs(); //Finds LO frequencies over band.
 	$plt->getPowerVar(); // Creates temporary files for power variation over 2 GHz window plots
 	$plt->plotSize(900, 600);
@@ -414,18 +416,18 @@ function powerVar($band, $IFChannel, $FEid, $DataSetGroup) {
 	}
 	$plt->setPlotter($plt->genPlotCode());
 	system("$GNUPLOT $plt->plotter");
-	
+
 	$plt->resetPlotter();
-	
+
 	$fwin = 31 * pow(10, 6); // Sets window size to 31 MHz
 	$win = "31 MHz";
 	//$IF->data = array();
 	//$IF->getPowerData($fwin); // Gets power variation data for 31 MHz window from database
-	
+
 	//$plt->data = $IF->data;
 	$plt->data = $plt->loadData("PowerVarBand$band" . "_$win" . "_IF$if");
 	//$plt->save_data("PowerVarBand$band" . "_$win" . "_IF$if");
-	
+
 	$plt->getPowerVar();
 	$plt->plotSize(900, 600);
 	$saveas = "PowerVarBand$band" . "_$win" . "_IF$if";
@@ -448,7 +450,7 @@ function powerVar($band, $IFChannel, $FEid, $DataSetGroup) {
 	$plt->plotData($att, count($att));
 	$plt->setPlotter($plt->genPlotCode());
 	system("$GNUPLOT $plt->plotter");
-	
+
 	$plt->resetPlotter();
 	$plt->specs['spec_value'] = $trueSpec;
 }
@@ -458,6 +460,8 @@ $FEid = 87;
 $DataSetGroup = 2;
 for ($if=0; $if<=3; $if++) {
 	powerVar($band, $if, $FEid, $DataSetGroup);
+}
+
 }
 
 ?>

@@ -20,12 +20,9 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.cca_image_rejection.php');
 require_once($site_classes . '/class.finelosweep.php');
 require_once($site_classes . '/class.noisetemp.php');
-require_once($site_NT . '/noisetempcalc.php');
-require_once($site_root . '/test/Library/plotter.php');
+require_once($site_classes . '/plotter.php');
 require_once($site_NT . '/noisetempcalc.php');
 require_once($site_IF . '/IFCalc.php');
-require_once($site_root . '/test/Library/plotter.php');
-
 
 $fc = $_REQUEST['fc'];
 

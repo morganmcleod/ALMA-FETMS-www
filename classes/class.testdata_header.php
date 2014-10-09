@@ -8,7 +8,7 @@ require_once($site_classes . '/class.dataplotter.php');
 require_once($site_classes . '/class.wca.php');
 require_once($site_NT . '/noisetempcalc.php');
 require_once($site_IF . '/IFCalc.php');
-require_once($site_root . '/test/Library/plotter.php');
+require_once($site_classes . '/plotter.php');
 require_once($site_classes . '/class.spec_functions.php');
 
 require_once($site_dbConnect);
@@ -88,7 +88,7 @@ class TestData_header extends GenericTable{
     	$value = @mysql_fetch_array($r);
     	return $value[0];
     }
-    
+
     public function RequestValues_TDH() {
         if ($this->GetValue('fkTestData_Type') == 7){
             //IF Spectrum, Get noisefloor key
@@ -384,30 +384,30 @@ class TestData_header extends GenericTable{
             $band = $this->GetValue('Band');
             $dsg = $this->GetValue('DataSetGroup');
             $fc = $this->GetValue('keyFacility');
-            
+
             // Gets keyIds
             $q = "SELECT keyId FROM Noise_Temp_SubHeader
             WHERE fkHeader = $this->keyId AND keyFacility = $fc
             order by keyId ASC;" ;
             $r = @mysql_query($q, $db);
             $keyId = @mysql_result($r, 0, 0);
-            
+
             // Gets FE serial number
-            $q ="SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config 
-		        WHERE FE_ConfigLink.fkFE_Config = " . $this->GetValue('fkFE_Config'). " 
-		        AND FE_Components.fkFE_ComponentType = 20 
-		        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId 
-		        AND FE_Components.Band = " . $this->GetValue('Band') . " 
-		        AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') ." 
-		        AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility 
-		        ORDER BY Band ASC;"; 
+            $q ="SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
+		        WHERE FE_ConfigLink.fkFE_Config = " . $this->GetValue('fkFE_Config'). "
+		        AND FE_Components.fkFE_ComponentType = 20
+		        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
+		        AND FE_Components.Band = " . $this->GetValue('Band') . "
+		        AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') ."
+		        AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
+		        ORDER BY Band ASC;";
             $r = @mysql_query($q, $db);
             $sn = @mysql_result($r, 0, 0);
-            
+
             $ns = new Specifications();
             $specs = $ns->getSpecs('FEIC_NoiseTemperature', $band);
             $ymax = $specs['NT20'] * 1.1; // upper y limit for plots
-            
+
             $NT = new NTCalc();
             $NT->setParams($band, $dsg, $keyId, $fc, $sn);
             $NT->getCCAkeys(); // Gets CCA Keys from database, must be called before getIRData()
@@ -417,7 +417,7 @@ class TestData_header extends GenericTable{
             $NT->getCCANTData(); // Gets cartridge manufacturer data.
             $plt = new plotter();
             $plt->setParams($NT->data, 'NoiseTempLibrary', $band);
-            
+
             $labels = array();
             $temp = "TestData_header.keyId: $this->keyId, Version: $plt->version";
             $labels[] = $temp;
@@ -439,7 +439,7 @@ class TestData_header extends GenericTable{
             			$sideband = 'LSB';
             		}
             		$yvar = "$pol$sb";
-            			
+
             		$plt->plotSize(900, 600); // Plot size 900 pixels x 600 pixels
             		$saveas = "Band$band Pol$pol Sb$sb RF"; // Plot file name
             		$plt->plotOutput($saveas);
@@ -461,9 +461,9 @@ class TestData_header extends GenericTable{
             		system("$GNUPLOT $plt->plotter");
             	}
             }
-            
+
             $plt->resetPlotter();
-            
+
             $plt->setParams($NT->data, 'NoiseTempLibrary', $band);
             $plt->plotSize(900, 600);
             $saveas = "Band$band IF";
@@ -479,7 +479,7 @@ class TestData_header extends GenericTable{
 			$plt->createTempFile('CenterIF', 'Tssb_corr12', 3); // Creates temp file for IF frequency vs corrected temp for pol 1 sb 2
 			$new_specs = new Specifications();
 			$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
-			// Creates temp file to plot 100% and 80 % RF specifications 
+			// Creates temp file to plot 100% and 80 % RF specifications
 			$plt->createSpecsFile('CenterIF', array('NT20', 'NT80'), array("lines lt -1 lw 3 title '" . $specs['NT20'] . " K (100%)'", "lines lt 0 lw 1 title '" . $specs['NT80'] . " K (80%)'"), TRUE);
 			$att = array();
 			$att[] = "lines lt 1 lw 1 title 'Pol0sb1'";
@@ -490,7 +490,7 @@ class TestData_header extends GenericTable{
 			$plt->plotData($att, count($att));
 			$plt->setPlotter($plt->genPlotCode());
 			system("$GNUPLOT $plt->plotter");
-			
+
 			// Creates average RF vs. corrected temp (Excludes band 3)
 			if ($band != 3) {
 				$plt->resetPlotter();
@@ -520,7 +520,7 @@ class TestData_header extends GenericTable{
 				$plt->setPlotter($plt->genPlotCode());
 				system("$GNUPLOT $plt->plotter");
 			}
-        	
+
             break;
 
         case "59":
