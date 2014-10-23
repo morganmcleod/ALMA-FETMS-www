@@ -25,17 +25,27 @@ require_once($site_classes . '/class.spec_functions.php');
 class GnuplotWrapper {
     protected $data;            // 2D array of data for the plot
     protected $outputDir;       // Ouptut directory for the plot and its work files
+    protected $outputFileName;  // Filename of the output plot
     protected $band;            // What ALMA cartridge band this plot is for
     protected $specs;           // Array of spec values as returned from class Specifications
     protected $plotAttribs;     // Named attributes for the plot
     protected $commandFile;     // The command filename to pass to Gnuplot
+    protected $gnuplot;         // Gnuplot command on this system.
     protected $swVersion;       // Software verision of this class
 
     /**
      * Constructor
      */
     public function __construct() {
+        $this->swVersion = '1.1';
+        /*
+         * Version 1.1 Modifications and refactoring Morgan McLeod
+         * Version 1.0 (07/30/2014) author Aaron Beaudoin
+         */
+        require(site_get_config_main());
         $this->resetPlotter();
+        $this->band = 0;
+        $this->specs = array();
         $a = func_get_args();
         $i = func_num_args();
         if ($i >= 1)
@@ -44,21 +54,16 @@ class GnuplotWrapper {
             $this->outputDir = $a[1];
         if ($i >= 3)
             $this->band = $a[2];
+        $this->gnuplot = $GNUPLOT;
     }
 
     /**
      * Resets all plot attributes to allow for new plot.
      */
     public function resetPlotter() {
-        $this->swVersion = '1.1';
-        /*
-         * Version 1.1 Modifications and refactoring Morgan McLeod
-         * Version 1.0 (07/30/2014) author Aaron Beaudoin
-         */
         $this->data = array();
         $this->outputDir = NULL;
-        $this->band = 0;
-        $this->specs = array();
+        $this->outputFileName = NULL;
         $this->plotAttribs = array();
         $this->commandFile = '';
     }
@@ -91,11 +96,10 @@ class GnuplotWrapper {
     /**
      * Load the specs for the plot.
      *
-     * @param string $test_type: name of specifications category to load from class Specifications.     *
+     * @param array $specs: array loaded load from class Specifications.
      */
-    public function setSpecs($test_type) {
-        $specProvider = new Specifications();
-        $specs = $specProvider->getSpecs($test_type, $this->band);
+    public function setSpecs($specs) {
+        $this->specs = $specs;
     }
 
     /**
@@ -133,8 +137,7 @@ class GnuplotWrapper {
      * @return 2d array- data structure used in the rest of the library
      */
     public function loadData($fileName) {
-        require(site_get_config_main());
-        $file_path = $main_write_directory . $this->dir . "/$fileName";
+        $file_path = $this->outputDir . "/$fileName";
         $file = file($file_path);
         $keys = explode("\t", $file[0]);
         $data = array();
@@ -158,7 +161,7 @@ class GnuplotWrapper {
      */
     public function save_data($fileName) {
         require(site_get_config_main());
-        $file_path = $main_write_directory . "$this->dir/$fileName";
+        $file_path = "$this->outputDir/$fileName";
 
         $data = $this->data;
         $keys = array_keys($data[0]);
@@ -267,7 +270,7 @@ class GnuplotWrapper {
             $y = $new_data[1];
         }
 
-        $temp_data_file = $main_write_directory . "$this->dir/temp_data$count.txt";
+        $temp_data_file = "$this->outputDir/temp_data$count.txt";
         $f = fopen ($temp_data_file, 'w');
         fwrite($f, $x[0] . "\t" . $y[0] . "\n");
         for ($j=1; $j<count($x); $j++) {
@@ -310,7 +313,7 @@ class GnuplotWrapper {
         }
         $spec_string .= "\n";
 
-        $spec_files = $main_write_directory . "$this->dir/specData.txt";
+        $spec_files = "$this->outputDir/specData.txt";
         $fspec = fopen($spec_files, 'w');
         fwrite($fspec, $x[0] . $spec_string);
         for ($j=1; $j<count($x); $j++) {
@@ -325,7 +328,7 @@ class GnuplotWrapper {
         fclose($fspec);
         $temp = "";
         for ($j=0; $j<count($specs); $j++) {
-            $temp .= ",'" . $main_write_directory . $this->dir . "/specData.txt' using 1:" . (string)($j + 2) . " with ";
+            $temp .= ",'" . $this->outputDir . "/specData.txt' using 1:" . (string)($j + 2) . " with ";
             $temp .= $lineAtt[$j];
         }
         $this->plotAttribs['specAtt'] = $temp;
@@ -406,8 +409,16 @@ class GnuplotWrapper {
      * @param string $format- format of output file (defaults to png)
      */
     public function plotOutput($fileName, $format = 'png') {
-        require(site_get_config_main());
-        $this->plotAttribs['output'] = "set output '" . $main_write_directory . "$this->dir/$fileName.$format'\n";
+        $this->outputFileName = "$fileName.$format";
+        $this->plotAttribs['output'] = "set output '" . "$this->outputDir/$this->outputFileName'\n";
+    }
+
+    /**
+     * Return the full filename to be used for output.  Suitable for embedding in a URL.
+     * This prevents the calling code from specifying whether it is .png, .jpg, etc.
+     */
+    public function getOutputFileName() {
+        return $this->outputFileName;
     }
 
     /**
@@ -495,10 +506,9 @@ class GnuplotWrapper {
      * @param int $count- number of lines to be plotted, number of files created by createTempFile()
      */
     public function plotData($lineAtt, $count) {
-        require(site_get_config_main());
         $temp = "plot ";
         for ($k=0; $k<$count; $k++) {
-            $temp .= "'" .$main_write_directory . "$this->dir/temp_data$k.txt'";
+            $temp .= "'" . "$this->outputDir/temp_data$k.txt'";
             $temp .= " using 1:2 with $lineAtt[$k],";
         }
         $temp = substr($temp, 0, -1);    // remove final comma
@@ -530,12 +540,20 @@ class GnuplotWrapper {
      * @param string $plot_code- entire script to be passed to GNUPLOT. Can be generated by genPlotCode()
      */
     public function setPlotter($plot_code) {
-        require(site_get_config_main());
-        $this->commandFile = $main_write_directory . "$this->dir/plot_script.txt";
+        $this->commandFile = "$this->outputDir/plot_script.txt";
         $f = fopen($this->commandFile, 'w');
         fwrite($f, $plot_code);
         fclose($f);
     }
+
+    /**
+     * Generate the plotting script and execute it.
+     */
+    public function doPlot() {
+        $this->setPlotter($this->genPlotCode()); // Generates and saves plotting script
+        system("$this->gnuplot $this->commandFile > $this->outputDir/std_output.txt");
+    }
+
 }
 
 ?>

@@ -384,46 +384,29 @@ class IF_db {
 	 * @param int $FEid
 	 */
 	public function createTable($DataSetGroup, $Band, $FEid) {
-		$q = "DROP TABLE IF EXISTS TEMP_IFSpectrum ;";
+		$q = "DROP TEMPORARY TABLE IF EXISTS TEMP_IFSpectrum ;";
 		$this->run_query($q);
-		$qcreate = "CREATE TEMPORARY TABLE IF NOT EXISTS TEMP_IFSpectrum (
-				 fkSubHeader INT,
-				 fkFacility INT,
-				 Freq_Hz DOUBLE,
-				 Power_dBm DOUBLE,
-				 INDEX (fkSubHeader)
-				 );";
+
+		$qcreate = "CREATE TEMPORARY TABLE TEMP_IFSpectrum (
+		    fkSubHeader INT,
+		    fkFacility INT,
+		    Freq_Hz DOUBLE,
+		    Power_dBm DOUBLE,
+		    INDEX (fkSubHeader)) ";
+
+		$qcreate .= "SELECT IFSpectrum.fkSubHeader, IFSpectrum.fkFacility, IFSpectrum.Freq_Hz, IFSpectrum.Power_dBm
+		    FROM FE_Config, TestData_header, IFSpectrum_SubHeader LEFT JOIN IFSpectrum
+		    ON IFSpectrum_SubHeader.keyId = IFSpectrum.fkSubHeader
+		    AND IFSpectrum_SubHeader.keyFacility = IFSpectrum.fkFacility
+		    WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
+		    AND TestData_header.keyFacility = FE_Config.keyFacility
+		    AND TestData_header.keyId = IFSpectrum_SubHeader.fkHeader
+    		AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
+    		AND FE_Config.fkFront_Ends = $FEid
+    		AND TestData_header.Band = $Band AND TestData_header.fkTestData_Type = 7
+    		AND IFSpectrum_SubHeader.IsIncluded = 1 AND TestData_header.DataSetGroup = $DataSetGroup ;";
+
 		$this->run_query($qcreate);
-
-		$qtemp = "SELECT IFSpectrum_SubHeader.keyId
-		FROM IFSpectrum_SubHeader, TestData_header, FE_Config
-		WHERE IFSpectrum_SubHeader.fkHeader =  TestData_header.keyId
-		AND IFSpectrum_SubHeader.IsIncluded =  1 AND TestData_header.DataSetGroup = $DataSetGroup
-		AND TestData_header.Band = $Band AND TestData_header.fkTestData_Type = 7
-		AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
-		AND FE_Config.fkFront_Ends = " . $FEid;
-
-		$ifsubkeys = '';
-
-		$rtemp = $this->run_query($qtemp, $this->db);
-		$tempcount = 0;
-		while($rowtemp = @mysql_fetch_array($rtemp)) {
-			$ifsubkeys[$tempcount] = $rowtemp['keyId'];
-			$tempcount += 1;
-		}
-
-		$qins = "INSERT INTO TEMP_IFSpectrum
-		SELECT IFSpectrum.fkSubHeader,IFSpectrum.fkFacility,IFSpectrum.Freq_Hz,
-		IFSpectrum.Power_dBm
-		FROM IFSpectrum WHERE (IFSpectrum.fkSubHeader = $ifsubkeys[0]) ";
-
-		for ($i=1;$i<count($ifsubkeys);$i++){
-			$qins .= " OR (IFSpectrum.fkSubHeader = $ifsubkeys[$i]) ";
-		}
-		$qins .= ";";
-
-		$this->run_query($qins);
-
 	}
 
 	/**
@@ -438,9 +421,9 @@ class IF_db {
 	 * @param int $fc- key facility number
 	 */
 	public function createPowVar($DataSetGroup, $Band, $FEid, $fmin, $fmax, $fwin, $fc = 40) {
-		$q = "DROP TABLE IF EXISTS TEMP_TEST_IFSpectrum_PowerVar;";
+		$q = "DROP TEMPORARY TABLE IF EXISTS TEMP_TEST_IFSpectrum_PowerVar;";
 		$this->run_query($q);
-		$qcreate = "CREATE TEMPORARY TABLE IF NOT EXISTS TEMP_TEST_IFSpectrum_PowerVar (
+		$qcreate = "CREATE TEMPORARY TABLE TEMP_TEST_IFSpectrum_PowerVar (
 				 fkSubHeader INT,
 				 fkFacility INT,
 				 WindowSize_Hz DOUBLE,
@@ -467,6 +450,7 @@ class IF_db {
 
 		$flo = $fmin + ($fwin / 2);
 		$fhi = $fmax - ($fwin / 2);
+		$imax = $imin = $ilo = $ihi = 0;
 
 		foreach($keyIds as $k) {
 			$qpow = "SELECT Power_dBm, Freq_Hz FROM TEMP_IFSpectrum

@@ -41,23 +41,31 @@ class IFSpectrumPlotter2 extends GnuplotWrapper {
         $this->plotGrid();
         $this->plotKey(FALSE);
         $this->plotBMargin(7);
+        $ytics = array();
         $y2tics = array();
         $att = array();
         $ltIndex = 1;
         // Sets 2nd y axis tick values using data created in getSpuriousNoise()
         // Sets line attributes.
-        foreach ($this->$loValues as $lo) {
-            $y2tics[$lo] = $this->spurVal[$lo];
+        foreach ($this->loValues as $lo) {
+            if (!$expanded) {
+                $y2tics[$lo] = $this->spurVal[$lo];
+            } else {
+                $ytics[$lo] = $this->spurVal[$lo];
+                $y2tics[$lo] = $this->spurVal[$lo][0];
+            }
             $att[] = "lines lt $ltIndex title '" . $lo . " GHz'";
             $ltIndex++;
         }
-        $this->plotYTics(array('ytics' => FALSE, 'y2tics' => $y2tics));
+        if (!$expanded) {
+            $ytics = FALSE;
+        }
+        $this->plotYTics(array('ytics' => $ytics, 'y2tics' => $y2tics));
         $this->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Power (dB)')); // Set x and y axis labels
         $this->plotArrows(); // Creates vertical lines over IF range from specs ini file.
-        $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.01), array(0.01, 0.04)));
+        $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.04), array(0.01, 0.01)));
         $this->plotData($att, count($att));
-        $this->setPlotter($this->genPlotCode()); // Generates and saves plotting script
-        system("$GNUPLOT $this->commandFile");
+        $this->doPlot();
     }
 
     /**
@@ -72,7 +80,7 @@ class IFSpectrumPlotter2 extends GnuplotWrapper {
         // find unique LO frequencies in the data set:
         $this->findLOs();
         // Create temporary files for power variation over 2 GHz window plots:
-        $plotter->getPowerVar();
+        $this->getPowerVar();
         $this->plotSize(900, 600); // pixels
 
         if ($win31MHz)
@@ -86,27 +94,26 @@ class IFSpectrumPlotter2 extends GnuplotWrapper {
         $this->plotLabels(array('x' => 'Center of Window (GHz)', 'y' => 'Power Variation in Window (dB)'));
         $this->plotBMargin(7);
         $this->plotKey('outside');
-        $ymax = ($$this->band == 6) ? 9 : $this->specs['spec_value'] + 1;
+        $ymax = ($this->band == 6) ? 9 : $this->specs['spec_value'] + 1;
         $this->plotYAxis(array('ymin' => 0, 'ymax' => $ymax));
         $att = array();
         $ltIndex = 1;
-        foreach ($this->$loValues as $lo) {
+        foreach ($this->loValues as $lo) {
             $att[] = "lines lt $ltIndex title '$lo GHz'";
             $ltIndex++;
         }
-        if ($band == 6) {
+        if ($this->band == 6) {
             // Special band 6 power variation plot:
-            $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.01), array(0.01, 0.04)));
+            $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.04), array(0.01, 0.01)));
             $this->band6powervar($if, $FEid, $dataSetGroup, $att, count($att));
         } else {
-            $temp = "Max Power Variation: " . round($IF->maxvar, 2) . " dB";
+            $temp = "Max Power Variation: "; // . round($IF->maxvar, 2) . " dB";
             $TDHdataLabels[] = $temp;
-            $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.01), array(0.01, 0.04), array(0.01, 0.07)));
+            $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.07), array(0.01, 0.04), array(0.01, 0.01)));
             array_pop($TDHdataLabels);
             $this->plotData($att, count($att));
         }
-        $this->setPlotter($plotter->genPlotCode());
-        system("$GNUPLOT $this->commandFile");
+        $this->doPlot();
     }
 
     /**

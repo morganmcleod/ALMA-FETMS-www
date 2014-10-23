@@ -58,7 +58,13 @@ $fesn = $ifspec->FrontEnd->GetValue('SN');
 $ccasn = $ifspec->FrontEnd->ccas[$band]->GetValue('SN');
 
 $title = "IF Spectrum Band $band DataSet $DataSetGroup";
+
 include "header_ifspectrum.php";
+
+if ($drawPlots == 1) {
+    $ifspec->CreateNewProgressFile($fc,$DataSetGroup);
+//    echo '<script type="text/javascript">window.location="../pbar/status.php?lf=' . $ifspec->progressfile . '";</script>';
+}
 
 echo "<body id = 'body3' onload='createIFSpectrumTabs($fc,$id,$FEid,$DataSetGroup,$band);' BGCOLOR='#19475E'>";
 
