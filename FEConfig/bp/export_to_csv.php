@@ -4,8 +4,7 @@ require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
 
-$fc = $_REQUEST['fc'];
-
+$fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '';
 
 if (isset($_REQUEST['keyheader'])){
     $TestData_header_keyId = $_REQUEST['keyheader'];
@@ -88,20 +87,23 @@ if (isset($_REQUEST['ssdid'])){
     echo "!ScanDetails.keyId=$ssdid\r\n";
     echo "\r\n\r\n";
 
-
-
     $q = "SHOW COLUMNS FROM BeamListings_farfield;";
     $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)){
+    while($row = mysql_fetch_array($r)) {
         echo $row[0] . ",";
     }
     echo "\r\n";
 
     $q = "SELECT * FROM BeamListings_farfield WHERE fkScanDetails = $ssdid;";
     $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)){
-        for ($i=0;$i<count($row);$i++){
-            echo "$row[$i],";
+    while($row = mysql_fetch_array($r, MYSQL_NUM)) {
+        $first = true;
+        foreach($row as $cell) {
+            if ($first)
+                $first = false;
+            else
+                echo ", ";
+            echo $cell;
         }
         echo "\r\n";
     }
