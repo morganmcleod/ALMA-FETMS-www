@@ -1427,7 +1427,7 @@ class eff {
         echo "<div style='width:950px'>";
         echo "<table id = 'table1' border='1'>";
 
-        echo "<tr class = 'alt'><th colspan = 7>Scan Information Band $this->band    (". $this->scansets[0]->GetValue('TS')   . ")</th></tr>";
+        echo "<tr class = 'alt'><th colspan = 8>Scan Information Band $this->band    (". $this->scansets[0]->GetValue('TS')   . ")</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>pol</th>
@@ -1435,7 +1435,7 @@ class eff {
             <th>Date/Time</th>
             <th>File Name</th>
             <th>Amp/Phase Drift</th>
-            <th>key</th>
+            <th colspan = 2>Export CSV</th>
             </tr>";
 
         $count = 0;
@@ -1449,8 +1449,8 @@ class eff {
             echo "<td width = '30px'>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
             echo "<td width = '30px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
             echo "<td width = '80px'>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td width='200px'>" . strftime("%a",strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS'))) . " "
-                                      . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS') . "</td>";
+            echo "<td width ='200px'>" . strftime("%a",strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS'))) . " "
+                                       . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS') . "</td>";
 
             $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('nsi_filename');
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
@@ -1459,9 +1459,12 @@ class eff {
             echo "<td>" . $nsi_filename ."</a></td>";
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ampdrift'),2) . " dB, "
                         . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('phasedrift'),2) . " deg</td>";
-            echo "<td width='50px'><a href='export_to_csv.php?ssdid="
-                . $this->scansets[$scanSetIdx]->Scan_copol_pol0->keyId . "'>"
-                . $this->scansets[$scanSetIdx]->Scan_copol_pol0->keyId . "</a></td></tr>";
+
+            echo "<td><a href='export_to_csv.php?ssdid="
+                . $this->scansets[$scanSetIdx]->Scan_copol_pol0->keyId . "'>copol</a></td>";
+
+            echo "<td><a href='export_to_csv.php?ssdid="
+                . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->keyId . "'>xpol</a></td></tr>";
 
             $count +=1;
             $trclass = '';
@@ -1483,12 +1486,15 @@ class eff {
             echo "<td>" . $nsi_filename ."</a></td>";
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ampdrift'),2) . " dB, "
                         . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('phasedrift'),2) . " deg</td>";
-            echo "<td width='50px'><a href='export_to_csv.php?ssdid=" .
-            $this->scansets[$scanSetIdx]->Scan_copol_pol1->keyId . "'>" .
-            $this->scansets[$scanSetIdx]->Scan_copol_pol1->keyId . "</a></td></tr>";
+
+            echo "<td><a href='export_to_csv.php?ssdid="
+                . $this->scansets[$scanSetIdx]->Scan_copol_pol1->keyId . "'>copol</a></td>";
+
+            echo "<td><a href='export_to_csv.php?ssdid="
+                . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->keyId . "'>xpol</a></td></tr>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='7'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
+        echo "<tr><td colspan='8'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
             . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
