@@ -129,24 +129,25 @@ class IFSpectrum_db {
 	}
 
 	/**
-	 * Helper function to fetch a subset of IFSpectrum_SubHeader for the given FE, band, IF channel, and group.
-	 * Only returns data where IFGain = 15 dB.
+	 * Helper function to fetch a subset of IFSpectrum_SubHeader for the given FE, band,
+	 *  IF channel, group, and IFGain.
 	 *
 	 * @param int $Band
 	 * @param int $IFChannel
 	 * @param int $FEid
 	 * @param int $DataSetGroup
+	 * @param int $IFGain
 	 *
 	 * @return resource- Resource to query results.
 	 */
-	private function getSubHeaderKeys($Band, $IFChannel, $FEid, $DataSetGroup) {
+	private function getSubHeaderKeys($Band, $IFChannel, $FEid, $DataSetGroup, $IFGain = 15) {
 	    $q = "SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
 	    FROM IFSpectrum_SubHeader, TestData_header, FE_Config
 	    WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
 	    AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
 	    AND IFSpectrum_SubHeader.Band = $Band
 	    AND IFSpectrum_SubHeader.IFChannel = $IFChannel
-	    AND IFSpectrum_SubHeader.IFGain = 15
+	    AND IFSpectrum_SubHeader.IFGain = $IFGain
 	    AND IFSpectrum_SubHeader.IsIncluded = 1
 	    AND FE_Config.fkFront_Ends = $FEid
 	    AND TestData_header.DataSetGroup = $DataSetGroup
@@ -154,5 +155,108 @@ class IFSpectrum_db {
 
 	    return $this->run_query($q);
 	}
+
+	/**
+	 * Helper function that finds TestData_Header keys for the given parameters.
+	 * @param int $DataSetGroup
+	 * @param int $Band
+	 * @param int $FEid
+	 *
+	 * @return array(
+	 *     [1] => string TS of newest key found
+	 *     [0] => array of TDK keys
+	 * )
+	 */
+	public function getTestDataHeaderKeys($DataSetGroup, $Band, $FEid) {
+	    $q = "SELECT TestData_header.keyId, TestData_header.TS
+	    FROM TestData_header, FE_Config
+	    WHERE TestData_header.DataSetGroup = $DataSetGroup
+	    AND TestData_header.fkTestData_Type = 7
+	    AND TestData_header.Band = $Band
+	    AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
+	    AND FE_Config.fkFront_Ends = $FEid
+	    ORDER BY TestData_header.keyId ASC";
+
+	    $r = $this->run_query($q);
+
+	    $tdh = array();
+	    $TS = 0;
+	    while ($row = @mysql_fetch_array($r)) {
+    	    $tdh[] = $row[0];
+    	    $TS = $row[1];
+    	}
+   	    return array($TS, $tdh);
+	}
+
+	/**
+	 * Load all the plot URLs connected to the given list of $TDHkeys
+	 *
+	 * @param array $TDHkeys
+	 * @return array (
+	 *     [0] => integer number of URLs objects in list,
+	 *     [1] => array of GenericTable objects for the TEST_IFSpectrum_urls table
+	 * )
+	 */
+	public function getPlotURLs($TDHkeys) {
+	    $qurl = "SELECT keyId, IFChannel FROM TEST_IFSpectrum_urls
+	    WHERE TEST_IFSpectrum_urls.fkHeader in (";
+	    for ($iTDH=0; $iTDH<count($TDHkeys); $iTDH++) {
+	        if ($iTDH > 0)
+	            $qurl .= ",";
+	        $qurl .= $TDHkeys[$iTDH];
+	    }
+	    $qurl .= ") ORDER BY IFChannel ASC;";
+
+	    $urls = array();
+	    $rurl = $this->run_query($qurl);
+	    $numurl = @mysql_num_rows($rurl);
+
+	    while ($rowurl = @mysql_fetch_array($rurl)) {
+	        $ifchannel = $rowurl[1];
+	        $urls[$ifchannel] = new GenericTable();
+	        $urls[$ifchannel] -> Initialize('TEST_IFSpectrum_urls', $rowurl[0], 'keyId', 40, 'fkFacility');
+	    }
+	    return array($numurl, $urls);
+	}
+
+	/**
+	 * Load the noise floor headers connected to the given $TDH key
+	 *
+	 * @param array $TDHkeys
+	 * @return array (
+	 *     [0] => keyId NoiseFloorHeader,
+	 *     [1] => GenericTable TEST_IFSpectrum_NoiseFloor_Header
+	 * )
+	 */
+	public function getNoiseFloorHeaders($TDH) {
+	    $qnf = "SELECT IFSpectrum_SubHeader.fkNoiseFloorHeader, IFSpectrum_SubHeader.Band
+	    FROM TestData_header, IFSpectrum_SubHeader
+	    WHERE TestData_header.keyId = " . $TDH .
+	    " AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
+	    AND TestData_header.keyId = IFSpectrum_SubHeader.fkHeader LIMIT 1";
+
+	    $rnf = $this->run_query($qnf);
+	    $keyNF = @mysql_result($rnf,0,0);
+
+	    $NFHeader = new GenericTable();
+	    $NFHeader -> Initialize('TEST_IFSpectrum_NoiseFloor_Header', $keyNF, 'keyId');
+	    $keyNF = $NoiseFloor->keyId;
+
+	    return array($keyNF, $NFHeader);
+	}
+
+	/**
+	 * Load IF spectrum data for processing into plots:
+	 */
+	public function getSpectrumData($TDHkeys, $IFChannel, $IFGain) {
+	    $q = "SELECT
+
+
+	`fkSubHeader` INT(20) UNSIGNED NOT NULL DEFAULT '0',
+	`fkFacility` INT(11) NOT NULL DEFAULT '40',
+	`Freq_Hz` BIGINT(20) NOT NULL DEFAULT '0',
+	`Power_dBm`
+	}
+
 }
 ?>

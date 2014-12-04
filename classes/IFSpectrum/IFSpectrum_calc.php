@@ -30,13 +30,27 @@ interface IFSpectrum_calc_itf {
      * array(
      *     [0] => Array(
      *          'LO_GHz' => float,    // LO frequencies
-     *          'Freq_Hz' => float,   // Spectrum analyzer IF centers
-     *          'Power_dBm' => float  // Spectrum analyzer power measurements
+     *          'Freq_Hz' => float,   // Spectrum analyzer IF center
+     *          'Power_dBm' => float  // Spectrum analyzer power measurement
      *     )
      *     [1] => Array...
      * )
      */
     public function setData($data);
+
+    /**
+     * Assign noise floor trace to use for correcting data traces.
+     *
+     * @param $data array must have the same number of points as the per-LO traces.  Structure is:
+     * array(
+     *     [0] => Array(
+     *          'Freq_Hz' => float,   // Spectrum analyzer IF center
+     *          'Power_dBm' => float  // Spectrum analyzer power measurement
+     *     )
+     *     [1] => Array...
+     * )
+     */
+    public function setNoiseFloorData($nfData);
 
     /**
      * Get an array of distinct LOs in the data set.
@@ -99,17 +113,18 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
     private $noiseFloorData;
     private $cablePad;            // dB of pad in cable to compensate for.
 
-    const BAD_LO = -999;          // GHz
-    const HUGE_POWER = 999;       // dBm
-    const TINY_POWER = -999;      // dBm
+    const BAD_LO = -999;          // GHz  Invalid value for LO
+    const HUGE_POWER = 999;       // dBm  Invalid big value for power
+    const TINY_POWER = -999;      // dBm  Invalid small value for power
+    const TINY_DBM = 1.0e-9;      // dBm  Minimum result to return when subtracting noise floor.
     const MIN_IF_BIN = 3.0e6;     // Hz   We assume the analyzer bins are 3 MHz.
-    const DFLT_CABLEPAD = 6.0;    // dB
     const LOW_IF_CUTOFF = 10.0e6; // exlude power from below 10 MHz from total power calc.
+    const DFLT_CABLEPAD = 6.0;    // dB   Assumed cable pad to compensate for.
 
     /**
      * Constructor
      *
-     * @param $data structure shown above.
+     * @param $data structure shown for setData in interface above.
      */
     public function IFSpectrum_calc($data = false) {
         $this->cablePad = self::DEFAULT_CABLEPAD;
@@ -121,11 +136,20 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
     /**
      * Asssign new data.
      *
-     * @param $data structure shown above.
+     * @param $data structure shown in interface above.
      */
     public function setData($data) {
         $this->data = $data;
         $this->sortData();
+    }
+
+    /**
+     * Assign noise floor trace to use for correcting data traces.
+     *
+     * @param $data structure shown in interface above.
+     */
+    public function setNoiseFloorData($nfData) {
+        $this->noiseFloorData = $nfData;
     }
 
     /**
@@ -406,7 +430,7 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
             $output[] = array(
                     'LO_GHz' => $LO,
                     'pTotal_dBm' => 10 * log($total, 10),
-                    'pInBand_dBm' => 10 * log($inBand,10)
+                    'pInBand_dBm' => 10 * log($inBand, 10)
             );
         }
 
@@ -456,9 +480,51 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
         return $output;
     }
 
+    /**
+     * Modify the internal data array by subtracting the noise floor.
+     */
     private function subtractNoiseFloor() {
-    }
+        if (empty($this->data))
+            return;
+        if (empty($this->noiseFloorData))
+            return;
 
+        // We assume that the $noiseFloorData array has the same number and of points
+        //  at the same Freq_Hz indexes as each of the LO sections of $data.
+
+        // Loop for all rows:
+        $nfIndex = 0;
+        $size = count($this->data);
+        $lastLO = self::BAD_LO;
+        for ($index = 0; $index < size; $index++) {
+            $row = $this->data[$index];
+            $LO = $row['LO_GHz'];
+            $PW = $row['Power_dBm'];
+            // if new LO seen:
+            if ($LO != $lastLO) {
+                // make make it the new current LO:
+                $lastLO = $LO;
+                // reset the index into the noise floor data:
+                $nfIndex = 0;
+            }
+
+            // Convert the spectrum data and noise floor data into milliwatts:
+            $P = pow(10, $PW / 10);
+            $floor = pow(10, $this->noiseFloorData[$nfIndex]['Power_dBm'] / 10);
+
+            // Subtract the noise floor:
+            if ($P <= $floor)
+                // if we can't subtract the floor from the power level, just use a tiny quantity of power.
+                $P = self::TINY_DBM;
+            else
+                $P -= $floor;
+
+            // Stuff the result back into the spectrum data:
+            $this->data[$index]['Power_dBm'] = 10 * log($P, 10);
+            // Increment the noise floor data index for the next loop iter:
+            $nfIndex++;
+        }
+    }
 }
 
 ?>

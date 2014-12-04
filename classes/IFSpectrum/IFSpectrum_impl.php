@@ -20,23 +20,23 @@
  */
 
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
-require_once($site_dbConnect);
 require_once($site_FEConfig . '/HelperFunctions.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.logger.php');
 require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.spec_functions.php');
-require_once($site_classes . '/IFSpectrum/IFSpectrum_plot.php');
+require_once($site_classes . '/IFSpectrum/IFSpectrum_calc.php');
 require_once($site_classes . '/IFSpectrum/IFSpectrum_db.php');
+require_once($site_classes . '/IFSpectrum/IFSpectrum_plot.php');
 
 class IFSpectrum_impl extends TestData_header {
     var $plotter;                 //class IFSpectrum_plot
-    var $logger;                  //debugging logger
-    var $dbConnection;            //mySQL connection
-    var $ifSpectrumDb;            //class IFSpectrumDB
-    var $ifCalc;                  //IFCalc object
+    var $ifCalc;                  //class IFSpectrum_calc
+    var $ifSpectrumDb;            //class IFSpectrum_db
     var $specProvider;		      //class Specifications
+    var $logger;                  //debugging logger
+
     var $specs;                   //array of specs loaded from specProvider
     var $FrontEnd;                //class FrontEnd
 
@@ -56,7 +56,7 @@ class IFSpectrum_impl extends TestData_header {
     var $TS;                      //timestamp string for this dataSetGroup
     var $plotURLs;                //array of plot URLs for this dataSetGroup
 
-    var $NoiseFloor;              //Noise floor data
+    var $keyNoiseFloor;           //keyId for the noise floor header
     var $NoiseFloorHeader;        //Record from TEST_IFSpectrum_NoiseFloor_Header
 
     var $fWindow_Low;             //low end of in-band IF
@@ -73,7 +73,8 @@ class IFSpectrum_impl extends TestData_header {
     var $swVersion;               //software version string for this class.
 
     public function __construct(){
-        $this->swVersion = "1.2.0";
+        $this->swVersion = "1.3.0";
+        // 1.3.0  MTM: still refactoring with new IFSpectrum_calc, _db, and _plot classes.
         // 1.2.0  MTM: refactoring from Aaron's new plotter classes.
         // 1.1.0  ATB: moved database calls to dbCode/ifspectrumdb.php
         // 1.0.24 MTM: fixed inconsistency in the two queries in Display_TotalPowerTable
@@ -82,8 +83,8 @@ class IFSpectrum_impl extends TestData_header {
         // 1.0.21 MTM: fix font color for Total and In-band power table.
         //        Fix using/displaying wrong noise floor profile for total and inband.
         require(site_get_config_main());
-        $this->plotter = new IFSpectrumPlotter2();
-        $this->logger = new Logger('IFSpectrumPlotter.php.txt', 'w');
+        $this->plotter = new IFSpectrum_plot();
+        $this->logger = new Logger('IFSpectrum_impl.txt', 'w');
         $this->GNUPLOT_path = $GNUPLOT;
         $this->writedirectory = $main_write_directory;
         $this->url_directory = $main_url_directory;
@@ -96,16 +97,14 @@ class IFSpectrum_impl extends TestData_header {
         $this->band = $band;
         $this->FacilityCode = $fc;
 
-        // initialize IF spectrum database class:
-        $this->dbConnection = site_getDbConnection();
-        $this->ifSpectrumDb = new IFSpectrumDB($this->dbConnection);
+        // initialize IF spectrum database object:
+        $this->ifSpectrumDb = new IFSpectrum_db();
 
-        // initialize IF spectrum calculation class.
-        $this->ifCalc = new IFCalc();
-        $this->ifCalc->setParams($this->band, NULL, $this->FEid, $this->dataSetGroup);
+        // initialize IF spectrum calculation object:
+        $this->ifCalc = new IFSpectrum_calc();
 
-        // create the IFSpectrumPlotter2 object:
-        $this->plotter = new IFSpectrumPlotter2();
+        // create the IF spectrum plotter object:
+        $this->plotter = new IFSpectrum_plot();
         $this->plotter->setParams($this->writedirectory, $this->band);
 
         // load the specifications which apply to this band:
@@ -114,25 +113,25 @@ class IFSpectrum_impl extends TestData_header {
         $this->plotter->setSpecs($this->specs);
 
         // load test data header keys:
-        $val = $this->ifSpectrumDb->qTDH($this->band, $this->FEid, $this->dataSetGroup);
-        $this->TDHkeys = $val[0];
-        $this->TS = $val[1];
+        $val = $this->ifSpectrumDb -> getTestDataHeaderKeys($this->band, $this->FEid, $this->dataSetGroup);
+        $this->TS = $val[0];
+        $this->TDHkeys = $val[1];
 
         // make test data header keys string:
-        $this->TDHkeyString = $this->TDHkeys[0];
-        for ($iTDH=1; $iTDH<count($this->TDHkeys); $iTDH++){
+        $this->TDHkeyString = $this -> TDHkeys[0];
+        for ($iTDH=1; $iTDH<count($this -> TDHkeys); $iTDH++){
             $this->TDHkeyString .= ", " . $this->TDHkeys[$iTDH];
         }
 
         // load plot URLs:
-        $val = $this->ifSpectrumDb->qurl($this->TDHkeys);
-        $this->plotURLs = $val[0];
-        $numurl = $val[1];
+        $val = $this->ifSpectrumDb->getPlotURLs($this->TDHkeys);
+        $numurl = $val[0];
+        $this->plotURLs = $val[1];
 
         // load noise floor and noise floor header data applicable to the plots:
         if ($numurl > 0) {
-            $val = $this->ifSpectrumDb->qnf($this->TDHkeys);
-            $this->NoiseFloor = $val[0];
+            $val = $this->ifSpectrumDb -> getNoiseFloorHeaders($this -> TDHkeys[0]);
+            $this->$keyNoiseFloor = $val[0];
             $this->NoiseFloorHeader = $val[1];
         }
 
@@ -171,11 +170,10 @@ class IFSpectrum_impl extends TestData_header {
         $this->progressfile_fullpath = $main_write_directory . $this->progressfile . ".txt";
     }
 
-    public function DisplayTDHinfo(){
+    public function DisplayTDHinfo() {
         //Display information for all TestData_header records
-        echo "<br><br>
-        <div style='height:900px;width:900px'>
-        <table id = 'table1' border = '1'>";
+        echo "<br><br><div style='height:900px;width:900px'>";
+        echo "<table id = 'table1' border = '1'>";
         echo "<tr class = 'alt'><th colspan='3'>IF Spectrum data sets for TestData_header.dataSetGroup $this->dataSetGroup</th></tr>";
         echo "<tr><th>Key</th><th>Timestamp</th><th>Notes</th></tr>";
 
@@ -197,7 +195,7 @@ class IFSpectrum_impl extends TestData_header {
         echo "</table></div>";
     }
 
-    public function Display_TotalPowerTable($ifChannel){
+    public function Display_TotalPowerTable($ifChannel) {
         $this->plotter->powerTotTables($this->dataSetGroup, $this->FEid, $ifChannel, $this->FrontEnd->feconfig_latest, $this->TS, $this->TDHdataLabels);
     }
 
