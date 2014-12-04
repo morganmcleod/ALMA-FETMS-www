@@ -22,18 +22,9 @@
  *
  */
 
-class IFSpectrum_calc {
-    private $data;
-    private $noiseFloorData;
-    private $cablePad;
-
-    const BAD_LO = -999;        // GHz
-    const HUGE_POWER = 999;     // dBm
-    const TINY_POWER = -999;    // dBm
-    const MIN_IF_BIN = 3.0e6;   // Hz   We assume the analyzer bins are 3 MHz.
-
+interface IFSpectrum_calc_itf {
     /**
-     * Constructor
+     * Asssign new data.
      *
      * @param $data structure is:
      * array(
@@ -45,24 +36,102 @@ class IFSpectrum_calc {
      *     [1] => Array...
      * )
      */
-    public function IFSpectrum_calc($data) {
-        setData($data);
+    public function setData($data);
+
+    /**
+     * Get an array of distinct LOs in the data set.
+     */
+    public function getLOs();
+
+    /**
+     * Compute the in-band power variation vs. IF center frequency for all LOs.
+     *
+     * @param float $fMin Lower in-band IF in Hz
+     * @param float $fMax Upper in-band IF in Hz
+     * @param float $fWindow Moving window size for the power varation calculation, Hz.
+     * @return array(
+     *     [0] => array(
+     *         'LO_GHz' => float,    // An LO frequency
+     *         'Freq_Hz' => float,   // A center IF pertaining to the LO
+     *         'pVar_dB' => float    // Max-min power seen in the window around Freq_Hz.
+     *     )
+     *     [1] => array...
+     *
+     */
+    public function getPowerVarWindow($fMin = 4.0e9, $fMax = 8.0e9, $fWindow = 2.0e9);
+
+    /**
+     * Compute the full-band power variation and min/max powers seen for all LOs.
+     *
+     * @param float $fMin Lower in-band IF in Hz
+     * @param float $fMax Upper in-band IF in Hz
+     * @return array(
+     *     [0] => array(
+     *         'LO_GHz' => float,
+     *         'pVar_dB' => float,
+     *         'pMin_dBm' => float,
+     *         'pMax_dBm' => float
+     *     )
+     *     [1] => array...
+     * }
+     */
+    public function getPowerVarFullBand($fMin = 4.0e9, $fMax = 8.0e9);
+
+    /**
+     * Compute the total and in-band power for all LOs.
+     * @param float $fMin Lower in-band IF in Hz
+     * @param float $fMax Upper in-band IF in Hz
+     * @return array(
+     *     [0] => array(
+     *         'LO_GHz' => float,
+     *         'pTotal_dBm' => float,
+     *         'pInBand_dBm' => float
+     *     )
+     *     [1] => array...
+     */
+    public function getTotalAndInBandPower($fMin = 4.0e9, $fMax = 8.0e9);
+
+}
+
+
+class IFSpectrum_calc implements IFSpectrum_calc_itf {
+    private $data;                // same structure as for setData()
+    private $noiseFloorData;
+    private $cablePad;            // dB of pad in cable to compensate for.
+
+    const BAD_LO = -999;          // GHz
+    const HUGE_POWER = 999;       // dBm
+    const TINY_POWER = -999;      // dBm
+    const MIN_IF_BIN = 3.0e6;     // Hz   We assume the analyzer bins are 3 MHz.
+    const DFLT_CABLEPAD = 6.0;    // dB
+    const LOW_IF_CUTOFF = 10.0e6; // exlude power from below 10 MHz from total power calc.
+
+    /**
+     * Constructor
+     *
+     * @param $data structure shown above.
+     */
+    public function IFSpectrum_calc($data = false) {
+        $this->cablePad = self::DEFAULT_CABLEPAD;
+        $rhis->$noiseFloorData = array();
+        if ($data)
+            $this->setData($data);
     }
 
     /**
      * Asssign new data.
      *
-     * @param $data structure given above.
+     * @param $data structure shown above.
      */
     public function setData($data) {
         $this->data = $data;
-        $sortData();
+        $this->sortData();
     }
 
     /**
      * Sort the data ascending by LO_GHz, Freq_Hz.
      */
-    public function sortData() {
+    private function sortData() {
         function cmp(array $a, array $b) {
             if ($a[0] != $b[0])
                 return $a[0] - $b[0];
@@ -107,7 +176,7 @@ class IFSpectrum_calc {
      *     [1] => Array...
      * )
      */
-    public function getLORanges() {
+    private function getLORanges() {
         if (empty($this->data))
             return false;
 
@@ -152,15 +221,7 @@ class IFSpectrum_calc {
      * @param float $fMin Lower in-band IF in Hz
      * @param float $fMax Upper in-band IF in Hz
      * @param float $fWindow Moving window size for the power varation calculation, Hz.
-     *
-     * @return array(
-     *     [0] => array(
-     *         'LO_GHz' => float,    // An LO frequency
-     *         'Freq_Hz' => float,   // A center IF pertaining to the LO
-     *         'pVar_dB' => float    // Max-min power seen in the window around Freq_Hz.
-     *     )
-     *     [1] => array...
-     *
+     * @return data structure shown in interface above.
      */
     public function getPowerVarWindow($fMin = 4.0e9, $fMax = 8.0e9, $fWindow = 2.0e9) {
         if (empty($this->data))
@@ -194,6 +255,12 @@ class IFSpectrum_calc {
      * Compute the in-band power variation vs. IF center frequency
      *  for a range of internal data structure indexes
      *
+     * @param integer $minIndex Lower bound of range
+     * @param integer $maxIndex Upper bound of range
+     * @param float $fMin Lower in-band IF in Hz
+     * @param float $fMax Upper in-band IF in Hz
+     * @param float $fWindow Window size in Hz
+     *
      * @return array(
      *     [0] => array(
      *         'Freq_Hz' => float,
@@ -201,12 +268,6 @@ class IFSpectrum_calc {
      *     )
      *     [1] => array...
      * }
-     *
-     * @param integer $minIndex
-     * @param integer $maxIndex
-     * @param float $fMin
-     * @param float $fMax
-     * @param float $fWindow
      */
     private function getPowerVarWindowForRange($minIndex, $maxIndex, $fMin = 4.0e9, $fMax = 8.0e9, $fWindow = 2.0e9) {
         $output = array();
@@ -218,7 +279,7 @@ class IFSpectrum_calc {
         if ($fMin > $fMax)
             return false;
 
-        if ($fWindow <= this::MIN_IF_BIN)
+        if ($fWindow <= self::MIN_IF_BIN)
             return false;
 
         // compute lower and upper center frequencies:
@@ -249,8 +310,8 @@ class IFSpectrum_calc {
         // loop the window center from the lower to upper index:
         for ($iCenter = $iLower; $iCenter <= $iUpper; $iCenter++) {
             $fCenter = $this->data[$iCenter]['Freq_Hz'];
-            $mindB = this::HUGE_POWER;
-            $maxdB = this::TINY_POWER;
+            $mindB = self::HUGE_POWER;
+            $maxdB = self::TINY_POWER;
             // loop across the window around the moving center:
             $iWinMin = $iCenter - $iSpan;
             $iWinMax = $iCenter + $iSpan;
@@ -273,28 +334,25 @@ class IFSpectrum_calc {
     }
 
     /**
-     * Compute the full-band power variation and min/max powers seen
-     *  for every LO frequency.
+     * Compute the full-band power variation and min/max powers seen for all LOs.
      *
-     * output structure is:
-     * array(
-     *     [0] => array(
-     *         'LO_GHz' => float,
-     *         'pVar_dB' => float,
-     *         'pMin_dBm' => float,
-     *         'pMax_dBm' => float
-     *     )
-     *     [1] => array...
-     * }
-     *
-     * @param float $fMin
-     * @param float $fMax
+     * @param float $fMin Lower in-band IF in Hz
+     * @param float $fMax Upper in-band IF in Hz
+     * @return data structure shown in interface above.
      */
     public function getPowerVarFullBand($fMin = 4.0e9, $fMax = 8.0e9) {
+        // helper function to append a record to the output:
+        function appendResult(&$output, $outputRec) {
+            // compute the power difference and append:
+            $outputRec[1] = $outputRec[3] - $outputRec[2];
+            $output[] = $outputRec;
+        }
+
         if (empty($this->data))
             return false;
 
         $output = array();
+        // record structure to accumulate min and max for each LO:
         $newRec = array(
             'LO_GHz' => self::BAD_LO,
             'pVar_dB' => 0,
@@ -303,20 +361,25 @@ class IFSpectrum_calc {
         );
         $outputRec = $newRec;
 
+        // loop on all rows:
         foreach($this->data as $row) {
             $LO = $row['LO_GHz'];
             $IF = $row['Freq_Hz'];
             $PW = $row['Power_dBm'];
 
+            // for each new LO seen:
             if ($LO != $outputRec[0]) {
+                // if the previous LO seen is not our start token:
                 if ($outputRec[0] != self::BAD_LO) {
-                    $outputRec[1] = $outputRec[3] - $outputRec[2];
-                    $output[] = $outputRec;
+                    // output the previous LO record:
+                    appendResult(&$output, $outputRec);
                 }
+                // reset the output record to accumulate for the next LO:
                 $outputRec = $newRec;
                 $outputRec[0] = $LO;
             }
 
+            // accumulate min and max powers seen for the current LO:
             if ($fMin <= $IF && $IF <= $fMax) {
                 if ($PW < $outputRec[2])
                     $outputRec[2] = $PW;
@@ -325,9 +388,75 @@ class IFSpectrum_calc {
             }
         }
         // output data for the last LO:
-        $outputRec[1] = $outputRec[3] - $outputRec[2];
-        $output[] = $outputRec;
+        appendResult(&$output, $outputRec);
         return $output;
+    }
+
+    /**
+     * Compute total and in-band power for all LOs.
+     *
+     * @param float $fMin Lower in-band IF in Hz
+     * @param float $fMax Upper in-band IF in Hz
+     * @return data structure shown in interface above.
+     */
+    public function getTotalAndInBandPower($fMin = 4.0e9, $fMax = 8.0e9) {
+        // helper function to append a record to the output:
+        function appendResult(&$output, $LO, $total, $inband) {
+            // accumulated powers converted back to dBm:
+            $output[] = array(
+                    'LO_GHz' => $LO,
+                    'pTotal_dBm' => 10 * log($total, 10),
+                    'pInBand_dBm' => 10 * log($inBand,10)
+            );
+        }
+
+        if (empty($this->data))
+            return false;
+
+        // save the existing data in a temp variable:
+        $tempData = $this->data;
+
+        // subtract the noise floor from the data set:
+        $this->subtractNoiseFloor();
+
+        $output = array();
+
+        $total = 0;
+        $inBand = 0;
+        $lastLO = self::BAD_LO;
+
+        // loop on all rows:
+        foreach($this->data as $row) {
+            $LO = $row['LO_GHz'];
+            $IF = $row['Freq_Hz'];
+            $PW = $row['Power_dBm'];
+            // for each new LO seen:
+            if ($LO != $lastLO) {
+                // if the previous LO seen is not our start token:
+                if ($lastLO != self::BAD_LO) {
+                    // output a record with the accumulated powers:
+                    appendResult($output, $LO, $total, $inBand);
+                }
+                // reset our accumulators:
+                $lastLO = $LO;
+                $total = 0;
+                $inBand = 0;
+            }
+            // convert dBm to mW:
+            $P = pow(10, ($PW + $this->cablePad) / 10);
+            // accumulate total power, typically not including below 10 MHz:
+            if ($IF >= self::LOW_IF_CUTOFF)
+                $total += $P;
+            // accumulate in-band power:
+            if ($fMin <= $IF && $IF <= $fMax)
+                $inBand += $P;
+        }
+        // output the record for the last LO:
+        appendResult($output, $LO, $total, $inBand);
+        return $output;
+    }
+
+    private function subtractNoiseFloor() {
     }
 
 }
