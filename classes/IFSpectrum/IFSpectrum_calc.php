@@ -29,7 +29,7 @@ interface IFSpectrum_calc_itf {
      * @param $data structure is:
      * array(
      *     [0] => Array(
-     *          'LO_GHz' => float,    // LO frequencies
+     *          'LO_GHz' => float,    // LO frequency
      *          'Freq_Hz' => float,   // Spectrum analyzer IF center
      *          'Power_dBm' => float  // Spectrum analyzer power measurement
      *     )
@@ -104,6 +104,15 @@ interface IFSpectrum_calc_itf {
      *     [1] => array...
      */
     public function getTotalAndInBandPower($fMin = 4.0e9, $fMax = 8.0e9);
+
+    /**
+     * Apply offsets in dB to the power levels in dBm of subsequent LO traces.
+     *  This is a utility for plotting, to spread out the traces for display on a single Y scale.
+     *
+     * @param float $offset Amount to offset each LO trace from the previous.
+     * @return none.  Modifies the internal data array.
+     */
+    public function applyPowerLevelOffsets($offset);
 
 }
 
@@ -523,6 +532,39 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
             $this->data[$index]['Power_dBm'] = 10 * log($P, 10);
             // Increment the noise floor data index for the next loop iter:
             $nfIndex++;
+        }
+    }
+
+    /**
+     * Apply offsets in dB to the power levels in dBm of subsequent LO traces.
+     *  This is a utility for plotting, to spread out the traces for display on a single Y scale.
+     *
+     * @param float $offset Amount to offset each LO trace from the previous.
+     * @return none.  Modifies the internal data array.
+     */
+    public function applyPowerLevelOffsets($offset) {
+        if (empty($this->data))
+            return;
+
+        // to accumulate offset of all prev. LOs:
+        $totalOffset = 0;
+
+        // Loop for all rows:
+        $size = count($this->data);
+        $lastLO = self::BAD_LO;
+        for ($index = 0; $index < size; $index++) {
+            $row = $this->data[$index];
+            $LO = $row['LO_GHz'];
+            $PW = $row['Power_dBm'];
+            // if new LO seen:
+            if ($LO != $lastLO) {
+                // make make it the new current LO:
+                $lastLO = $LO;
+                // increase the total offset amount:
+                $totalOffset += $offset;
+            }
+            // Apply the offset to the current row:
+            $this->data[$index][Power_dBm] = $PW + $totalOffset;
         }
     }
 }

@@ -91,10 +91,10 @@ class IFSpectrum_impl extends TestData_header {
         $this->aborted = 0;
     }
 
-    public function Initialize_IFSpectrum($FEid, $dataSetGroup, $fc, $band){
+    public function Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $fc) {
         $this->FEid = $FEid;
-        $this->dataSetGroup = $dataSetGroup;
         $this->band = $band;
+        $this->dataSetGroup = $dataSetGroup;
         $this->FacilityCode = $fc;
 
         // initialize IF spectrum database object:
@@ -105,7 +105,7 @@ class IFSpectrum_impl extends TestData_header {
 
         // create the IF spectrum plotter object:
         $this->plotter = new IFSpectrum_plot();
-        $this->plotter->setParams($this->writedirectory, $this->band);
+        $this->plotter -> setParams($this->writedirectory, $this->band);
 
         // load the specifications which apply to this band:
         $this->specProvider = new Specifications();
@@ -118,20 +118,22 @@ class IFSpectrum_impl extends TestData_header {
         $this->TDHkeys = $val[1];
 
         // make test data header keys string:
-        $this->TDHkeyString = $this -> TDHkeys[0];
-        for ($iTDH=1; $iTDH<count($this -> TDHkeys); $iTDH++){
-            $this->TDHkeyString .= ", " . $this->TDHkeys[$iTDH];
+        $this->TDHkeyString = "";
+        foreach ($this->TDHkeys as $key) {
+            if ($this->TDHkeyString)
+                $this->TDHkeyString .= ", ";
+            $this->TDHkeyString .= $key;
         }
 
         // load plot URLs:
-        $val = $this->ifSpectrumDb->getPlotURLs($this->TDHkeys);
+        $val = $this->ifSpectrumDb -> getPlotURLs($this->TDHkeys);
         $numurl = $val[0];
         $this->plotURLs = $val[1];
 
         // load noise floor and noise floor header data applicable to the plots:
         if ($numurl > 0) {
             $val = $this->ifSpectrumDb -> getNoiseFloorHeaders($this -> TDHkeys[0]);
-            $this->$keyNoiseFloor = $val[0];
+            $this->keyNoiseFloor = $val[0];
             $this->NoiseFloorHeader = $val[1];
         }
 
@@ -155,8 +157,8 @@ class IFSpectrum_impl extends TestData_header {
 
         // load the CCA serial number:
         $this->CCASN = 0;
-        if ($this->FrontEnd->ccas[$this->band]->keyId != ''){
-            $this->CCASN = $this->FrontEnd->ccas[$this->band]->GetValue('SN');
+        if ($this->FrontEnd -> ccas[$this->band] -> keyId != ''){
+            $this->CCASN = $this->FrontEnd -> ccas[$this->band] -> GetValue('SN');
         }
     }
 
@@ -196,11 +198,130 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     public function Display_TotalPowerTable($ifChannel) {
-        $this->plotter->powerTotTables($this->dataSetGroup, $this->FEid, $ifChannel, $this->FrontEnd->feconfig_latest, $this->TS, $this->TDHdataLabels);
+        $data = $this->ifSpectrumDb -> getTotalAndInBandPower($FEid, $this->band, $this->dataSetGroup, $ifChannel);
+        if ($data) {
+            // TODO: add back in borders/shading.
+            echo "<div style = 'width:600px'>";
+            echo "<table id = 'table7' border = '1'>";
+            echo "<tr><th colspan = '5'>Band $this->band Total and In-Band Power</th></tr>";
+            echo "<tr><th colspan = '5'><b>IF Channel $ifChannel</b></th></tr>";
+            echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
+            echo "<tr><td>LO (GHz)</td><td>In-Band (dBm)</td><td>In-Band (dBm)</td><td>Total (dBm)</td><td>Total - In-Band</td></tr>";
+            foreach ($data as $row) {
+                $LO = $row['FreqLO'];
+                $pwr0 = round($row['pwr0'], 1);        // in-band power 0 dB gain
+                $pwr15 = round($row['pwr15'], 1);      // in-band power 15 dB gain
+                $pwrT = round($row['pwrT'], 1);        // total power 15 dB gain
+                $pwrDiff = round($row['pwrDiff'], 1);  // total - in-band 15 dB gain
+                $gainDiff = $pwr15 - $pwr0;            // in-band gain difference measured
+
+                // if the difference in gain is not 15 +/- 1 dB, color in red:
+                $red = ($gainDiff < 14 || $gainDiff > 16);
+
+                // LO column:
+                echo "<tr><td>$LO</td>";
+
+                // in-band 0 dB gain column:
+                echo "<td>";
+                if ($red)
+                    echo "<span>";
+                if ($pwr0 > -22)
+                    echo "<font color='#FF0000'>";
+                else
+                    echo "<font color='#000000'>";
+                echo "$pwr0</font>";
+                if ($red)
+                    echo "</span>";
+                echo "</td>";
+
+                // in-band 15 dB gain column:
+                echo "<td>";
+                if ($red)
+                    echo "<span>";
+                if ($pwr0 < -22)
+                    echo "<font color='#FF0000'>";
+                else
+                    echo "<font color='#000000'>";
+                echo "$pwr15</font>";
+                if ($red)
+                    echo "</span>";
+                echo "</td>";
+
+                // total 15 dB gain column:
+                echo "<td><b>$pwrT</b></td>";
+
+                // total - in-band column
+                echo "<td>";
+                if ($pwrDiff > 3)
+                    echo "<font color = '#ff0000'>";
+                else
+                    echo "<font color = '#000000'>";
+                echo "<b>$pwrDiff</b></font>";
+                echo "</td></tr>";
+
+            }
+            foreach ($TDHdataLabels as $label)
+                echo "<tr class = 'alt3'><th colspan = '5'>$label</th></tr>";
+            echo "</table></div>";
+        }
     }
 
     public function DisplayPowerVarFullBandTable(){
-        $this->plotter->powerVarTables($this->dataSetGroup, $this->FEid, $this->FrontEnd->feconfig_latest, $this->TS, $this->TDHdataLabels);
+        $data = $this->ifSpectrumDb -> getPowerVarFullBand($FEid, $this->band, $this->dataSetGroup);
+        if ($data) {
+            // TODO: add back in borders/shading.
+            echo "<div style='width:400px' border='1'>";
+            echo "<table id = 'table7' border='1'>";
+            echo "<tr class='alt'><th colspan = '5'>Band $this->band Power Variation Full Band</th></tr>";
+            echo "<tr class='alt3'><td style='border-right:solid 1px #000000;'><b>LO (GHz)</td>";
+            echo "<td><b>IF0</b></td>";
+            echo "<td><b>IF1</b></td>";
+            if ($band < 9){
+                echo "<td><b>IF2</b></td>";
+                echo "<td><b>IF3</b></td>";
+            }
+            echo "</tr>";
+
+            $maxVar = $this->specs['pwr'];
+            $okColor = $specs['fontcolor'];
+            $badColor = $specs["fontcolor$maxVar"];
+
+            foreach ($data as $row) {
+                $LO = $row['FreqLO'];
+                $pVar_IF0 = round($row['pVar_IF0'], 1);
+                $pVar_IF1 = round($row['pVar_IF1'], 1);
+                $pVar_IF2 = round($row['pVar_IF2'], 1);
+                $pVar_IF3 = round($row['pVar_IF3'], 1);
+                //TODO:   use number_format($pwr, 1, '.', ''); ?
+
+                // LO column:
+                echo "<tr><td>$LO</td>";
+
+                // IF0 column:
+                $fontcolor = ($pVar_IF0 > $maxVar) ? $badColor : $okColor;
+                echo "<td><font color = $fontcolor><b>$pVar_IF0</b></font></td>";
+
+                // IF1 column:
+                $fontcolor = ($pVar_IF1 > $maxVar) ? $badColor : $okColor;
+                echo "<td><font color = $fontcolor><b>$pVar_IF0</b></font></td>";
+
+                if ($this->band < 9) {
+                    // IF2 column:
+                    $fontcolor = ($pVar_IF2 > $maxVar) ? $badColor : $okColor;
+                    echo "<td><font color = $fontcolor><b>$pVar_IF2</b></font></td>";
+
+                    // IF3 column:
+                    $fontcolor = ($pVar_IF3 > $maxVar) ? $badColor : $okColor;
+                    echo "<td><font color = $fontcolor><b>$pVar_IF3</b></font></td>";
+                } else {
+                    echo "<td></td><td></td>";
+                }
+                echo "</tr>";
+            }
+            foreach ($TDHdataLabels as $label)
+                echo "<tr class = 'alt3'><th colspan = '5'>$label</th></tr>";
+            echo "</table></div>";
+        }
     }
 
     public function GeneratePlots(){
