@@ -175,13 +175,13 @@ class IFSpectrum_plot extends GnuplotWrapper {
     /**
      * Finds unique LO values in the data array.
      *
-     * Requires LO values to be in 'FreqLO' column
+     * Requires LO values to be in 'LO_GHz' column
      */
     public function findLOs() {
         $this->loValues = array();
         foreach($this->data as $row) {
-            if(!in_array($row['FreqLO'], $this->loValues)) {
-                $this->loValues[] = $row['FreqLO'];
+            if(!in_array($row['LO_GHz'], $this->loValues)) {
+                $this->loValues[] = $row['LO_GHz'];
             }
         }
     }
@@ -198,7 +198,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
         for ($i=0; $i<count($LO); $i++) {
             $tempData = array();
             foreach ($oldData as $row) {
-                if ($row['FreqLO'] == $LO[$i]) {
+                if ($row['LO_GHz'] == $LO[$i]) {
                     $tempData[] = $row;
                     if($row['Power_dBm'] < $min) {
                         $min = $row['Power_dBm'];
@@ -233,7 +233,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
             $min = 1000;
             $max = -1000;
             foreach ($oldData as $row) {
-                if ($row['FreqLO'] == $LO[$i]) {
+                if ($row['LO_GHz'] == $LO[$i]) {
                     $temp = $row;
                     $temp['Power_dBm'] += $offset;
                     $tempData[] = $temp;
@@ -274,22 +274,39 @@ class IFSpectrum_plot extends GnuplotWrapper {
     }
 
     /**
+     * Create a temporary file for power variation data in $output
+     *
+     * @param integer $fileIndex
+     * @param array $output
+     */
+    private function outputFilePowerVar($fileIndex, $output) {
+        $dataBak = $this->data;
+        $this->data = $output;
+        $this->createTempFile('Freq_Hz', 'pVar_dB', $fileIndex);
+        $this->data = $dataBak;
+    }
+
+    /**
      * Creates temporary files to be used to plot power variation data.
      */
     public function getPowerVar() {
-        $LO = $this->loValues;
-        $oldData = $this->data;
-        for ($i=0; $i<count($LO); $i++) {
-            $tempData = array();
-            foreach($oldData as $row) {
-                if ($row['FreqLO'] == $LO[$i]) {
-                    $tempData[] = $row;
+        $lastLO = false;
+        $fileIndex = 0;
+        $output = array();
+
+        foreach ($this->data as $row) {
+            $LO = $row['LO_GHz'];
+            if ($LO != $lastLO) {
+                if ($lastLO) {
+                    $this->outputFilePowerVar($fileIndex, $output);
+                    $output = array();
+                    $fileIndex++;
                 }
+                $lastLO = $LO;
             }
-            $this->data = $tempData;
-            $this->createTempFile('Freq_Hz', 'Power_dBm', $i);
+            $output[] = $row;
         }
-        $this->data = $oldData;
+        $this->outputFilePowerVar($fileIndex, $output);
     }
 }
 

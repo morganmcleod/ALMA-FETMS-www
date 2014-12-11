@@ -136,8 +136,8 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
      * @param $data structure shown for setData in interface above.
      */
     public function IFSpectrum_calc($data = false) {
-        $this->cablePad = self::DEFAULT_CABLEPAD;
-        $rhis->$noiseFloorData = array();
+        $this->cablePad = self::DFLT_CABLEPAD;
+        $this->noiseFloorData = array();
         if ($data)
             $this->setData($data);
     }
@@ -147,9 +147,10 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
      *
      * @param $data structure shown in interface above.
      */
-    public function setData($data) {
+    public function setData($data, $sortData = false) {
         $this->data = $data;
-        $this->sortData();
+        if ($sortData)
+            $this->sortData();
     }
 
     /**
@@ -166,10 +167,10 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
      */
     private function sortData() {
         function cmp(array $a, array $b) {
-            if ($a[0] != $b[0])
-                return $a[0] - $b[0];
+            if ($a['LO_GHz'] != $b['LO_GHz'])
+                return $a['LO_GHz'] - $b['LO_GHz'];
             else
-                return $a[1] - $b[1];
+                return $a['Freq_Hz'] - $b['Freq_Hz'];
         }
         usort($this->data, "cmp");
     }
@@ -235,10 +236,9 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
                 // Save the new LO and its min index:
                 $outputRec['LO_GHz'] = $LO;
                 $outputRec['minIndex'] = $index;
-            } else {
-                // Same LO as previously so increas the max index:
-                $outputRec['maxIndex'] = $index;
             }
+            // Same LO as previously so increas the max index:
+            $outputRec['maxIndex'] = $index;
             // increment for the next iteration:
             $index++;
         }
@@ -265,12 +265,12 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
         // get all the LO frequencies and their data ranges:
         $LORanges = $this->getLORanges();
         foreach ($LORanges as $range) {
-            $LO = $LORanges['LO_GHz'];
-            $minIndex = $LORanges['minIndex'];
-            $maxIndex = $LORanges['maxIndex'];
+            $LO = $range['LO_GHz'];
+            $minIndex = $range['minIndex'];
+            $maxIndex = $range['maxIndex'];
 
             // get the power variation plot points for each range, corresponding to one LO:
-            $pvarPoints = getPowerVarWindowForRange($minIndex, $maxIndex, $fMin, $fMax, $fWindow);
+            $pvarPoints = $this->getPowerVarWindowForRange($minIndex, $maxIndex, $fMin, $fMax, $fWindow);
 
             // Append all the points to the output array:
             foreach ($pvarPoints as $row) {
@@ -319,26 +319,21 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
         $fLower = $fMin + ($fWindow / 2);
         $fUpper = $fMax - ($fWindow / 2);
 
-        // find the first index greater than or equal to the lower center frequency:
-        $iLower = $minIndex;
-        while ($this->data[$iLower]['Freq_Hz'] < $fLower) {
-            $iLower++;
-            // fail if we hit the other end of the range:
-            if ($iLower > $maxIndex)
-                return false;
-        }
+        // find the index of the lower center frequency:
+        $iLower = $this->findWindowEdge($minIndex, $maxIndex, $fLower, false);
+        if ($iLower === false)
+            return false;
 
         // find the index of the upper center frequency:
-        $iUpper = $maxIndex;
-        while ($this->data[$iUpper]['Freq_Hz'] > $fUpper) {
-            $iUpper--;
-            // fail if we hit the other end of the range:
-            if ($iUpper < $minIndex)
-                return false;
-        }
+        $iUpper = $this->findWindowEdge($minIndex, $maxIndex, $fUpper, true);
+        if ($iUpper === false)
+            return false;
 
-        // compute the window size in indexes above and below the window centers:
-        $iSpan = $iLower - $minIndex;
+        // find the index of the lower window edge:
+        $iLowerWindow = $this->findWindowEdge($minIndex, $iLower, $fMin, false);
+
+        // assuming the frequency data is evenly spaced, find the window span in index counts:
+        $iSpan = $iLower - $iLowerWindow;
 
         // loop the window center from the lower to upper index:
         for ($iCenter = $iLower; $iCenter <= $iUpper; $iCenter++) {
@@ -364,6 +359,44 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
             );
         }
         return $output;
+    }
+
+    /**
+     * Find the lower bound of $findFreq in the specified range:
+     *  first index where $findFreq >= Freq_Hz
+     *  If $reverse is true, find the upper bound:
+     *  last index where $findFreq <= Freq_Hz
+     *
+     * @param integer $minIndex of range to search
+     * @param integer $maxIndex of range to search
+     * @param float $findFreq Freq_Hz to find in range
+     * @param boolean $reverse true if searching down from $maxIndex
+     * @return index value or false if not found.
+     */
+    private function findWindowEdge($minIndex, $maxIndex, $findFreq, $reverse) {
+        $index = (!$reverse) ? $minIndex : $maxIndex;
+        $done = false;
+        while (!$done) {
+            $freq = $this->data[$index]['Freq_Hz'];
+            if (!$reverse) {
+                if ($freq >= $findFreq)
+                    $done = true;
+                else {
+                    $index++;
+                    if ($index > $maxIndex)
+                        return false;
+                }
+            } else {
+                if ($freq <= $findFreq)
+                    $done = true;
+                else {
+                    $index--;
+                    if ($index < $minIndex)
+                        return false;
+                }
+            }
+        }
+        return $index;
     }
 
     /**

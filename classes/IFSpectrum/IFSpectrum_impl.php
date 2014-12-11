@@ -48,10 +48,10 @@ class IFSpectrum_impl extends TestData_header {
     var $FEid;                    //Front_Ends.keyId value
     var $dataSetGroup;            //TestData_header.dataSetGroup value for this set of traces
     var $band;                    //band number for the data set to plot
-    var $FacilityCode;            //facility code for database access
+    var $facilityCode;            //facility code for database access
 
     var $TDHkeys;                 //array of TestData_header.keyId values for this dataSetGroup
-    var $TDHkeyString;            //string containing TestData_header keys for plot labels ("304,308,309,etc")
+    var $TDHkeyString;            //string containing TestData_header keys for plot labels ("304, 308, 309, etc.")
     var $TDHdataLabels;           //labels shown at the bottom of each plot
     var $TS;                      //timestamp string for this dataSetGroup
     var $plotURLs;                //array of plot URLs for this dataSetGroup
@@ -66,6 +66,7 @@ class IFSpectrum_impl extends TestData_header {
     var $progressfile;            //ini file to store progress information during plot procedure.
     var $progressfile_fullpath;   //full path of progressfile.ini
 
+    private $imagedirectory;      //directory for files and image output
     private $imagename;           //file name for image output
     private $imagepath;           //full path to image output file
     private $image_url;           //full URL to image output
@@ -95,7 +96,7 @@ class IFSpectrum_impl extends TestData_header {
         $this->FEid = $FEid;
         $this->band = $band;
         $this->dataSetGroup = $dataSetGroup;
-        $this->FacilityCode = $fc;
+        $this->facilityCode = $fc;
 
         // initialize IF spectrum database object:
         $this->ifSpectrumDb = new IFSpectrum_db();
@@ -113,9 +114,8 @@ class IFSpectrum_impl extends TestData_header {
         $this->plotter->setSpecs($this->specs);
 
         // load test data header keys:
-        $val = $this->ifSpectrumDb -> getTestDataHeaderKeys($this->band, $this->FEid, $this->dataSetGroup);
-        $this->TS = $val[0];
-        $this->TDHkeys = $val[1];
+        $this->TDHkeys = $this->ifSpectrumDb -> getTestDataHeaderKeys($this->FEid, $this->band, $this->dataSetGroup);
+        $this->TS = $this->ifSpectrumDb -> getLastTS();
 
         // make test data header keys string:
         $this->TDHkeyString = "";
@@ -143,7 +143,7 @@ class IFSpectrum_impl extends TestData_header {
 
         // load FrontEnd info:
         $this->FrontEnd = new FrontEnd();
-        $this->FrontEnd->Initialize_FrontEnd($this->FEid, $this->FacilityCode);
+        $this->FrontEnd->Initialize_FrontEnd($this->FEid, $this->facilityCode);
 
         // make the data labels which go at the bottom of every plot:
         $this->TDHdataLabels = array();
@@ -165,11 +165,34 @@ class IFSpectrum_impl extends TestData_header {
     public function CreateNewProgressFile() {
         //Create progress update ini file
         require(site_get_config_main());
-        $testmessage = "IF Spectrum FE" . $this->FrontEnd->GetValue('SN') . " Band " . $this->band;
-        $url = '"' . $rootdir_url . 'FEConfig/ALMA-FETMS-www/FEConfig/ifspectrum/ifspectrumplots.php?fc='
-        . $this->FacilityCode . '&fe=' . $this->FEid . '&b=' . $this->band . '&g=' . $this->dataSetGroup . '"';
+        $testmessage = "IF Spectrum FE-" . $this->FrontEnd->GetValue('SN') . " Band " . $this->band;
+        $url = '"' . $rootdir_url . 'FEConfig/ifspectrum/ifspectrumplots.php?fc='
+            . $this->facilityCode . '&fe=' . $this->FEid . '&b=' . $this->band . '&g=' . $this->dataSetGroup . '"';
         $this->progressfile = CreateProgressFile($testmessage, '', $url);
         $this->progressfile_fullpath = $main_write_directory . $this->progressfile . ".txt";
+    }
+
+    public function DeleteProgressFile() {
+        unlink($this->progressfile_fullpath);
+    }
+
+    private function ReportProgress($percent, $msg) {
+        WriteINI($this->progressfile, 'progress', round($percent, 1));
+        WriteINI($this->progressfile, 'message', $msg);
+    }
+
+    private function UpdateProgressImageUrl() {
+        WriteINI($this->progressfile, 'image', $this->image_url);
+    }
+
+    public function ProgressCheckForAbort(){
+        $ini_array = parse_ini_file($this->progressfile_fullpath);
+        $this->aborted = $ini_array['abort'];
+        if ($this->aborted == 1){
+            WriteINI($this->progressfile,'message',"Aborted.");
+            return true;
+        }
+        return false;
     }
 
     public function DisplayTDHinfo() {
@@ -187,7 +210,7 @@ class IFSpectrum_impl extends TestData_header {
                 $trclass = "";
             }
             $t = new TestData_header();
-            $t->Initialize_TestData_header($this->TDHkeys[$i], $this->FacilityCode, 0);
+            $t->Initialize_TestData_header($this->TDHkeys[$i], $this->facilityCode, 0);
             echo "<tr class = $trclass>";
             echo "<td>" . $t->keyId . "</td>";
             echo "<td>" . $t->GetValue('TS') . "</td>";
@@ -198,7 +221,7 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     public function Display_TotalPowerTable($ifChannel) {
-        $data = $this->ifSpectrumDb -> getTotalAndInBandPower($FEid, $this->band, $this->dataSetGroup, $ifChannel);
+        $data = $this->ifSpectrumDb -> getTotalAndInBandPower($this->FEid, $this->band, $this->dataSetGroup, $ifChannel);
         if ($data) {
             // TODO: add back in borders/shading.
             echo "<div style = 'width:600px'>";
@@ -238,7 +261,7 @@ class IFSpectrum_impl extends TestData_header {
                 echo "<td>";
                 if ($red)
                     echo "<span>";
-                if ($pwr0 < -22)
+                if ($pwr15 < -22)
                     echo "<font color='#FF0000'>";
                 else
                     echo "<font color='#000000'>";
@@ -260,14 +283,14 @@ class IFSpectrum_impl extends TestData_header {
                 echo "</td></tr>";
 
             }
-            foreach ($TDHdataLabels as $label)
+            foreach ($this->TDHdataLabels as $label)
                 echo "<tr class = 'alt3'><th colspan = '5'>$label</th></tr>";
             echo "</table></div>";
         }
     }
 
     public function DisplayPowerVarFullBandTable(){
-        $data = $this->ifSpectrumDb -> getPowerVarFullBand($FEid, $this->band, $this->dataSetGroup);
+        $data = $this->ifSpectrumDb -> getPowerVarFullBand($this->FEid, $this->band, $this->dataSetGroup);
         if ($data) {
             // TODO: add back in borders/shading.
             echo "<div style='width:400px' border='1'>";
@@ -276,15 +299,15 @@ class IFSpectrum_impl extends TestData_header {
             echo "<tr class='alt3'><td style='border-right:solid 1px #000000;'><b>LO (GHz)</td>";
             echo "<td><b>IF0</b></td>";
             echo "<td><b>IF1</b></td>";
-            if ($band < 9){
+            if ($this->band < 9){
                 echo "<td><b>IF2</b></td>";
                 echo "<td><b>IF3</b></td>";
             }
             echo "</tr>";
 
             $maxVar = $this->specs['pwr'];
-            $okColor = $specs['fontcolor'];
-            $badColor = $specs["fontcolor$maxVar"];
+            $okColor = $this->specs['fontcolor'];
+            $badColor = $this->specs["fontcolor$maxVar"];
 
             foreach ($data as $row) {
                 $LO = $row['FreqLO'];
@@ -318,54 +341,73 @@ class IFSpectrum_impl extends TestData_header {
                 }
                 echo "</tr>";
             }
-            foreach ($TDHdataLabels as $label)
+            foreach ($this->TDHdataLabels as $label)
                 echo "<tr class = 'alt3'><th colspan = '5'>$label</th></tr>";
             echo "</table></div>";
         }
     }
 
     public function GeneratePlots(){
-        ini_set('memory_limit', '384M');
-        WriteINI($this->progressfile,'progress', 1);
-        WriteINI($this->progressfile,'message','Creating temporary tables...');
-        $this->ifCalc->deleteTables();
-        $this->ifCalc->createTables();
+        $this->ReportProgress(1, 'Creating temporary table...');
+        $this->ifSpectrumDb->createTemporaryTable($this->FEid, $this->band, $this->dataSetGroup);
+        $this->makeOutputDirectory(true);
 
-        WriteINI($this->progressfile,'progress', 20);
-        WriteINI($this->progressfile,'message','Plotting IF Spectrum...');
+        $this->ReportProgress(20, 'Plotting IF Spectrum...');
         $this->Plot_IFSpectrum_Data(FALSE, 20, 5);
 
-        WriteINI($this->progressfile,'progress', 40);
-        WriteINI($this->progressfile,'message','Plotting Expanded IF Spectrum...');
+        $this->ReportProgress(40, 'message','Plotting Expanded IF Spectrum...');
         $this->Plot_IFSpectrum_Data(TRUE, 40, 5);
 
-        WriteINI($this->progressfile,'progress',60);
-        WriteINI($this->progressfile,'message','Plotting Power Variation...');
+        $this->ReportProgress(60, 'Plotting Power Variation...');
         $this->Plot_PowerVariation_Data(FALSE, 60, 5);
 
-        WriteINI($this->progressfile,'progress',90);
-        WriteINI($this->progressfile,'message','Removing temporary tables...');
-        $this->ifCalc->deleteTables();
+        $this->ReportProgress(80, 'Plotting Power Variation...');
+        $this->Plot_PowerVariation_Data(TRUE, 80, 5);
 
-        WriteINI($this->progressfile,'progress',100);
-        WriteINI($this->progressfile,'message','Finished plotting IF Spectrum.');
-        ini_set('memory_limit', '128M');
+        $this->ReportProgress(90, 'Removing temporary tables...');
+        $this->ifSpectrumDb->deleteTemporaryTable();
+
+        $this->ReportProgress(100, 'Finished plotting IF Spectrum.');
     }
 
-    public function makeImageFilenames($typeUrl, $ifChannel = "") {
-        $imagedirectory = $this->writedirectory . 'tdh/';
-        if (!file_exists($imagedirectory)){
-            mkdir($imagedirectory);
+    private static function deleteDir($dirPath) {
+        if (!is_dir($dirPath)) {
+            throw new InvalidArgumentException("$dirPath must be a directory");
         }
-        $imagedirectory .= $this->TDHkeys[0] . "/";
-        if (!file_exists($imagedirectory)){
-            mkdir($imagedirectory);
+        if (substr($dirPath, strlen($dirPath) - 1, 1) != '/') {
+            $dirPath .= '/';
         }
-        $imagedirectory .= 'IFSpectrum';
-        if (!file_exists($imagedirectory)){
-            mkdir($imagedirectory);
+        $files = glob($dirPath . '*', GLOB_MARK);
+        foreach ($files as $file) {
+            if (is_dir($file)) {
+                self::deleteDir($file);
+            } else {
+                unlink($file);
+            }
         }
-        $this->imagepath = $imagedirectory;
+        rmdir($dirPath);
+    }
+
+    private function makeOutputDirectory($deleteContents = false) {
+        $this->imagedirectory = $this->writedirectory . 'tdh/';
+
+        if (!file_exists($this->imagedirectory))
+            mkdir($this->imagedirectory);
+
+        $this->imagedirectory .= $this->TDHkeys[0] . "/";
+        if (!file_exists($this->imagedirectory))
+            mkdir($this->imagedirectory);
+
+        $this->imagedirectory .= 'IFSpectrum';
+        if ($deleteContents)
+            self::deleteDir($this->imagedirectory);
+
+        if (!file_exists($this->imagedirectory))
+            mkdir($this->imagedirectory);
+    }
+
+    private function makeImageFilenames($typeUrl, $ifChannel = "") {
+        $this->imagepath = $this->imagedirectory;
         $this->imagename = $typeUrl . "_Band$this->band" . date('Y_m_d_H_i_s') . "dsg" . $this->dataSetGroup . "if" . $ifChannel;
         // partial image url.  Still need to add the full filename generated by the plotter:
         $this->image_url = $this->url_directory . "tdh/" . $this->TDHkeys[0] . "/IFSpectrum/";
@@ -374,95 +416,98 @@ class IFSpectrum_impl extends TestData_header {
     public function Plot_IFSpectrum_Data($expanded, $progressStart, $progressIncrement) {
         // Create plots for spurious noise
         $iflim = $this->specs['maxch'];
-        $band = $this->band;
-        $fesn = $this->FrontEnd->GetValue('SN');
+        $fesn = $this->FrontEnd -> GetValue('SN');
         $typeURL = ($expanded) ? 'spurious_url2d2' : 'spurious_url2d';
         $ifGain = 15;
         $msgExpanded = ($expanded) ? ' Expanded' : '';
 
         for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
-            if ($this->CheckForAbort())
+            if ($this->ProgressCheckForAbort())
                 return;
 
             // update the progress file:
-            WriteINI($this->progressfile,'progress', $progressStart + ($ifChannel / $iflim) * $progressIncrement);
-            WriteINI($this->progressfile,'message', "Plotting Spurious$msgExpanded IF$ifChannel...");
+            $progress = $progressStart + ($ifChannel / $iflim) * $progressIncrement;
+            $this->ReportProgress($progress, "Plotting Spurious$msgExpanded IF$ifChannel...");
 
             // Resets attributes to be used by plotter:
-            $this->plotter->resetPlotter();
+            $this->plotter -> resetPlotter();
 
             // Set the image path and band into the plotter:
             $this->makeImageFilenames($typeURL, $ifChannel);
-            $this->plotter->setParams($this->imagepath, $band);
+            $this->plotter -> setParams($this->imagepath, $this->band);
 
             // Get spurious noise data from database:
-            $this->ifCalc->IFChannel = $ifChannel;
-            $this->ifCalc->getSpuriousData();
+            $data = $this->ifSpectrumDb -> getSpectrumData($ifChannel);
 
             // Set data into the plotter:
-            $this->plotter->setData($this->ifCalc->data);
+            $this->plotter -> setData($data);
 
             // save raw data (for troubleshooting):
             if (!$expanded)
-                $this->plotter->save_data("SpuriousBand$band" . "_IF$ifChannel");
+                $this->plotter -> save_data("SpuriousBand" . $this->band . "_IF$ifChannel");
 
             // Set the plot title and generate the plot:
             $plotTitle = "Spurious Noise FE-$fesn, Band $this->band SN $this->CCASN IF$ifChannel";
             $this->plotter->generateSpuriousPlot($expanded, $this->imagename, $plotTitle, $this->TDHdataLabels);
 
             // Append the actual image filename to the URL before saving:
-            $this->image_url .= $this->plotter->getOutputFileName();
+            $this->image_url .= $this->plotter -> getOutputFileName();
 
-            if ($this->plotURLs[$ifChannel]->keyId == ''){
+            if ($this->plotURLs[$ifChannel] -> keyId == ''){
                 $this->plotURLs[$ifChannel] = new GenericTable();
-                $this->plotURLs[$ifChannel]->NewRecord('TEST_IFSpectrum_plotURLs', 'keyId', 40, 'fkFacility');
-                $this->plotURLs[$ifChannel]->SetValue('fkHeader', $this->TDHkeys[0]);
-                $this->plotURLs[$ifChannel]->SetValue('Band', $this->band);
-                $this->plotURLs[$ifChannel]->SetValue('IFChannel', $ifChannel);
-                $this->plotURLs[$ifChannel]->SetValue('IFGain', $ifGain);
+                $this->plotURLs[$ifChannel] -> NewRecord('TEST_IFSpectrum_plotURLs', 'keyId', 40, 'fkFacility');
+                $this->plotURLs[$ifChannel] -> SetValue('fkHeader', $this->TDHkeys[0]);
+                $this->plotURLs[$ifChannel] -> SetValue('Band', $this->band);
+                $this->plotURLs[$ifChannel] -> SetValue('IFChannel', $ifChannel);
+                $this->plotURLs[$ifChannel] -> SetValue('IFGain', $ifGain);
 
             }
-            $this->plotURLs[$ifChannel]->SetValue($typeURL, $this->image_url);
-            $this->plotURLs[$ifChannel]->Update();
-            WriteINI($this->progressfile, 'image', $this->image_url);
+            $this->plotURLs[$ifChannel] -> SetValue($typeURL, $this->image_url);
+            $this->plotURLs[$ifChannel] -> Update();
+
+            // Update the progress display image:
+            $this->UpdateProgressImageUrl();
         }
     }
 
     public function Plot_PowerVariation_Data($win31MHz, $progressStart, $progressIncrement){
         $iflim = $this->specs['maxch'];
-        $band = $this->band;
-        $fesn = $this->FrontEnd->GetValue('SN');
+        $fesn = $this->FrontEnd -> GetValue('SN');
         $ifGain = 15;
         if ($win31MHz) {
             $typeURL = 'powervar_31MHz_url';
-            $fwin = 31 * pow(10, 6); // Window size
+            $fWindow = 31 * pow(10, 6); // Window size
             $winText = '31 MHz';
         } else {
             $typeURL = 'powervar_2GHz_url';
-            $fwin = 2 * pow(10, 9); // Window size
+            $fWindow = 2 * pow(10, 9); // Window size
             $winText = '2 GHz';
         }
         for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
-            if ($this->CheckForAbort())
+            if ($this->ProgressCheckForAbort())
                 return;
 
-            WriteINI($this->progressfile,'progress', $progressStart + ($ifChannel / $iflim) * $progressIncrement);
-            WriteINI($this->progressfile,'message', 'Plotting Power Variation $winText window IF$ifChannel...');
+            $progress = $progressStart + ($ifChannel / $iflim) * $progressIncrement;
+            $this->ReportProgress($progress, "Plotting Power Variation $winText window IF$ifChannel...");
 
             // Resets attributes to be used by plotter:
-            $this->plotter->resetPlotter();
+            $this->plotter -> resetPlotter();
 
             // Set the image path and band into the plotter:
             $this->makeImageFilenames($typeURL, $ifChannel);
-            $this->plotter->setParams($this->imagepath, $band);
+            $this->plotter -> setParams($this->imagepath, $this->band);
 
             // Get spurious noise data from database:
-            $this->ifCalc->IFChannel = $ifChannel;
-            $this->ifCalc->getPowerData($fwin); // Gets power variation from database for 2 GHz window
+            $data = $this->ifSpectrumDb -> getSpectrumData($ifChannel);
+
+            // Calculate power variation:
+            $this->ifCalc -> setData($data);
+            $pvarData = $this->ifCalc -> getPowerVarWindow($this->specs['fWindow_Low'] * pow(10, 9),
+                    $this->specs['fWindow_high'] * pow(10, 9), $fWindow);
 
             // Set data into the plotter:
-            $this->plotter->setData($this->ifCalc->data);
-            $this->plotter->save_data("PowerVarBand$band" . "_$winText" . "_IF$ifChannel");
+            $this->plotter -> setData($pvarData);
+            $this->plotter -> save_data("PowerVarBand" . $this->band . "_$winText" . "_IF$ifChannel");
 
             // Set the plot title and generate the plot:
             $plotTitle = "Power Variation $winText Window FE-$fesn, Band $this->band SN $this->CCASN IF$ifChannel";
@@ -471,29 +516,21 @@ class IFSpectrum_impl extends TestData_header {
             // Append the actual image filename to the URL before saving:
             $this->image_url .= $this->plotter->getOutputFileName();
 
-            if ($this->plotURLs[$ifChannel]->keyId == ''){
+            if ($this->plotURLs[$ifChannel] -> keyId == ''){
                 $this->plotURLs[$ifChannel] = new GenericTable();
-                $this->plotURLs[$ifChannel]->NewRecord('TEST_IFSpectrum_plotURLs','keyId',40,'fkFacility');
-                $this->plotURLs[$ifChannel]->SetValue('fkHeader',$this->TDHkeys[0]);
-                $this->plotURLs[$ifChannel]->SetValue('Band',$this->band);
-                $this->plotURLs[$ifChannel]->SetValue('IFChannel',$ifChannel);
-                $this->plotURLs[$ifChannel]->SetValue('IFGain',$ifGain);
+                $this->plotURLs[$ifChannel] -> NewRecord('TEST_IFSpectrum_plotURLs','keyId',40,'fkFacility');
+                $this->plotURLs[$ifChannel] -> SetValue('fkHeader',$this->TDHkeys[0]);
+                $this->plotURLs[$ifChannel] -> SetValue('Band',$this->band);
+                $this->plotURLs[$ifChannel] -> SetValue('IFChannel',$ifChannel);
+                $this->plotURLs[$ifChannel] -> SetValue('IFGain',$ifGain);
 
             }
-            $this->plotURLs[$ifChannel]->SetValue($typeURL, $this->image_url);
-            $this->plotURLs[$ifChannel]->Update();
-            WriteINI($this->progressfile, 'image', $this->image_url);
-        }
-    }
+            $this->plotURLs[$ifChannel] -> SetValue($typeURL, $this->image_url);
+            $this->plotURLs[$ifChannel] -> Update();
 
-    public function CheckForAbort(){
-        $ini_array = parse_ini_file($this->progressfile_fullpath);
-        $this->aborted = $ini_array['abort'];
-        if ($this->aborted == 1){
-            WriteINI($this->progressfile,'message',"Aborted.");
-            return true;
+            // Update the progress display image:
+            $this->UpdateProgressImageUrl();
         }
-        return false;
     }
 
 } // end class

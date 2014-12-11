@@ -31,14 +31,15 @@ class IFSpectrum_db {
     private $FEid;
     private $band;
     private $dataSetGroup;
+    private $lastTS;
 
     /**
      * Initializes IFSpectrum_db class
      */
     public function __construct() {
         require(site_get_config_main());
-        $this->$dbConnection = site_getDbConnection();
-	    $this->FEid = $this->band = $this->dataSetGroup = 0;
+        $this->dbConnection = site_getDbConnection();
+	    $this->FEid = $this->band = $this->dataSetGroup = $this->lastTS = 0;
     }
 
     /**
@@ -177,10 +178,10 @@ class IFSpectrum_db {
 	 * @param int $Band
 	 * @param int $FEid
 	 *
-	 * @return array(
-	 *     [1] => string TS of newest key found
-	 *     [0] => array of TDH keys
-	 * )
+	 * @return array of TDH keys
+	 *
+	 * Side-effect:  sets $this->lastTS to the timestamp header with the max keyID.
+	 *  Retrieve it using getLastTS()
 	 */
 	public function getTestDataHeaderKeys($FEid, $band, $dataSetGroup) {
 	    $q = "SELECT TestData_header.keyId, TestData_header.TS
@@ -198,9 +199,17 @@ class IFSpectrum_db {
 	    $TS = 0;
 	    while ($row = @mysql_fetch_array($r)) {
     	    $tdh[] = $row[0];
-    	    $TS = $row[1];
+    	    $this->lastTS = $row[1];
     	}
-   	    return array($TS, $tdh);
+   	    return $tdh;
+	}
+
+	/**
+	 * Retrieve the newest timestamp seen in the last call to getTestDataHeaderKeys()
+	 * @return string TS
+	 */
+	public function getLastTS() {
+	    return $this->lastTS;
 	}
 
 	/**
@@ -252,7 +261,7 @@ class IFSpectrum_db {
 
 	    $NFHeader = new GenericTable();
 	    $NFHeader -> Initialize('TEST_IFSpectrum_NoiseFloor_Header', $keyNF, 'keyId');
-	    $keyNF = $NoiseFloor->keyId;
+	    $keyNF = $NFHeader -> keyId;
 
 	    return array($keyNF, $NFHeader);
 	}

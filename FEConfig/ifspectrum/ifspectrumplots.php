@@ -22,27 +22,25 @@
 <?php
 
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
-require_once($site_classes . '/class.ifspectrumplotter.php');
+require_once($site_classes . '/IFSpectrum/IFSpectrum_impl.php');
 require_once($site_dbConnect);
 require_once($site_FEConfig . '/jsFunctions.php');
 
 $fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '';
 $FEid = isset($_REQUEST['fe']) ? $_REQUEST['fe'] : '';
 $band = isset($_REQUEST['b']) ? $_REQUEST['b'] : '';
-$DataSetGroup = isset($_REQUEST['g']) ? $_REQUEST['g'] : '';
+$dataSetGroup = isset($_REQUEST['g']) ? $_REQUEST['g'] : '';
 $id = isset($_REQUEST['id']) ? $_REQUEST['id'] : '';
 $drawPlots = isset($_REQUEST['d']) ? $_REQUEST['d'] : 0;
 
-$ifSpectrupPlotsLogger = new Logger('ifspectrumplots.php.txt', 'w');
-
-if ($DataSetGroup == '' || $id != '') {
+if ($dataSetGroup == '' || $id != '') {
     // Get DataSet Group from testdata key ID
+    // TODO:  move into database library.
     $q = "SELECT `DataSetGroup`
     FROM `TestData_header`
     WHERE `keyId` = $id";
     $r = @mysql_query($q,$db);
-
-    $DataSetGroup = @mysql_result($r,0,0);
+    $dataSetGroup = @mysql_result($r,0,0);
 }
 
 if ($id == '') {
@@ -50,28 +48,30 @@ if ($id == '') {
     $id = '0';
 }
 
-$ifspec = new IFSpectrumPlotter();
-$ifspec->Initialize_IFSpectrum($FEid,$DataSetGroup,$fc,$band);
+$ifspec = new IFSpectrum_impl();
+$ifspec -> Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $fc);
 
-$feconfig = $ifspec->FrontEnd->feconfig_latest;
-$fesn = $ifspec->FrontEnd->GetValue('SN');
-$ccasn = $ifspec->FrontEnd->ccas[$band]->GetValue('SN');
+$feconfig = $ifspec -> FrontEnd -> feconfig_latest;
+$fesn = $ifspec -> FrontEnd -> GetValue('SN');
+$ccasn = $ifspec -> FrontEnd -> ccas[$band] -> GetValue('SN');
 
-$title = "IF Spectrum Band $band DataSet $DataSetGroup";
+$title = "IF Spectrum Band $band DataSet $dataSetGroup";
 
 include "header_ifspectrum.php";
 
 if ($drawPlots == 1) {
-    $ifspec->CreateNewProgressFile($fc,$DataSetGroup);
-//    echo '<script type="text/javascript">window.location="../pbar/status.php?lf=' . $ifspec->progressfile . '";</script>';
+    $ifspec->CreateNewProgressFile();
+    echo '<script type="text/javascript">window.location="../pbar/status.php?lf=' . $ifspec->progressfile . '";</script>';
 }
 
-echo "<body id = 'body3' onload='createIFSpectrumTabs($fc,$id,$FEid,$DataSetGroup,$band);' BGCOLOR='#19475E'>";
+echo "<body id = 'body3' onload='createIFSpectrumTabs($fc, $id, $FEid, $dataSetGroup, $band);' BGCOLOR='#19475E'>";
 
 echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
 
 if ($drawPlots == 1) {
-    $ifspec->GeneratePlots();
+    $ifspec -> GeneratePlots();
+    // TODO:  can't clean up progress file because page stops updating.   Devise fix:
+    //$ifspec -> DeleteProgressFile();
 }
 
 ?>
