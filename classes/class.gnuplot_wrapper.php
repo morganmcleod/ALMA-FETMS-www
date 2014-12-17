@@ -477,7 +477,7 @@ class GnuplotWrapper {
             $temp = "set ytics (";
             $LO = array_keys($ytic);
             foreach($LO as $L) {
-                $temp .= "'0 dB' " . $ytic[$L][0] . ",'" . (string)($ytic[$L][1] - $ytic[$L][0]) . " dB' " . $ytic[$L][1] . ",";
+                $temp .= "'0 dBm' " . $ytic[$L][0] . ",'" . (string)(round($ytic[$L][1] - $ytic[$L][0], 2)) . " dBm' " . $ytic[$L][1] . ",";
             }
             $temp = substr($temp, 0, -1);
             $temp .= ")\n";

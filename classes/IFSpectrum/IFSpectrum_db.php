@@ -134,7 +134,7 @@ class IFSpectrum_db {
      * array(
      *     [0] => Array(
      *          'LO_GHz' => float,    // LO frequency
-     *          'Freq_Hz' => float,   // Spectrum analyzer IF center
+     *          'Freq_GHz' => float,   // Spectrum analyzer IF center
      *          'Power_dBm' => float  // Spectrum analyzer power measurement
      *     )
      *     [1] => Array...
@@ -153,11 +153,11 @@ class IFSpectrum_db {
 	        $keysList .= $row[0];
 	    }
 
-	    $q = "SELECT IFSpectrum_SubHeader.FreqLO, TEMP_IFSpectrum.Freq_Hz, TEMP_IFSpectrum.Power_dBm
+	    $q = "SELECT IFSpectrum_SubHeader.FreqLO, (TEMP_IFSpectrum.Freq_Hz / 1.0E9) as Freq_GHz, TEMP_IFSpectrum.Power_dBm
 	    FROM IFSpectrum_SubHeader, TEMP_IFSpectrum
 	    WHERE TEMP_IFSpectrum.fkSubHeader = IFSpectrum_SubHeader.keyId
 	    AND IFSpectrum_SubHeader.keyId in ($keysList)
-	    ORDER BY FreqLO, Freq_Hz ASC;";
+	    ORDER BY FreqLO, Freq_GHz ASC;";
 
 	    $r = $this->run_query($q);
 
@@ -165,7 +165,7 @@ class IFSpectrum_db {
 	    while ($row = @mysql_fetch_array($r)) {
 	        $output[] = array(
 	                'LO_GHz' => $row[0],
-	                'Freq_Hz' => $row[1],
+	                'Freq_GHz' => $row[1],
 	                'Power_dBm' => $row[2]
 	        );
 	    }

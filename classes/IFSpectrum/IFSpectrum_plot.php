@@ -11,14 +11,97 @@ require_once($site_classes . '/class.gnuplot_wrapper.php');
 
 class IFSpectrum_plot extends GnuplotWrapper {
     private $loValues;   // array of LO values to plot
-    private $spurVal;    // holds min and max power levels seen per LO
+
+    private $minMaxData;
+    private $maxOffset;
+
+    const BAD_LO = -999;          // GHz  Invalid value for LO
+    const HUGE_POWER = 999;       // dBm  Invalid big value for power
+    const TINY_POWER = -999;      // dBm  Invalid small value for power
+    const LOW_IF_CUTOFF = 0.010;  // Ghz  Exlude power from below 10 MHz from total power calc and scaling
 
     /**
      * Constructor
      */
     public function __construct() {
         GnuplotWrapper::__construct();
-        $loValues = array();
+        $this->loValues = array();
+        $this->resetMinMaxData();
+    }
+
+    public function resetMinMaxData() {
+        $this->minMaxData = array();
+        $this->maxOffset = 0;
+    }
+
+    /**
+     * Apply offsets in dB to the power levels in dBm of subsequent LO traces.
+     *  This is a utility for plotting, to spread out the traces for display on a single Y scale.
+     *  Also accumulates min and max power levels seen per LO.
+     *
+     * @param float $offset Amount to offset each LO trace from the previous.
+     * @return none.  Modifies the internal data arrays.
+     */
+    public function prepareSpectrumTraces($offset) {
+        $appendResult = function(&$output, $LO, $mindBm, $maxdBm, $lastdBm) {
+            $output[] = array(
+                    'LO_GHz' => $LO,
+                    'pMin_dBm' => $mindBm,
+                    'pMax_dBm' => $maxdBm,
+                    'last_dBm' => $lastdBm
+            );
+        };
+
+        // reset the min/max and trace offset accumulators:
+        $this->resetMinMaxData();
+
+        if (empty($this->data))
+            return;
+
+        // to accumulate min/max powers seen per LO:
+        $mindBm = self::HUGE_POWER;
+        $maxdBm = self::TINY_POWER;
+        $lastdBm = self::TINY_POWER;
+        $lastLO = self::BAD_LO;
+
+        // Loop for all rows:
+        $size = count($this->data);
+        for ($index = 0; $index < $size; $index++) {
+            $row = $this->data[$index];
+            $LO = $row['LO_GHz'];
+            $IF = $row['Freq_GHz'];
+            $PW = $row['Power_dBm'];
+            // if new LO seen:
+            if ($LO != $lastLO) {
+                // and the previous one is not our start token:
+                if ($lastLO != self::BAD_LO) {
+                    // increase the total offset amount:
+                    $this->maxOffset += $offset;
+                    // output a row to minMaxData:
+                    $appendResult($this->minMaxData, $lastLO, $mindBm, $maxdBm, $lastdBm);
+                    // and reset the min/max accumulators:
+                    $mindBm = self::HUGE_POWER;
+                    $maxdBm = self::TINY_POWER;
+                }
+                // make make it the new current LO:
+                $lastLO = $LO;
+            }
+            // Apply the offset to the current power level:
+            $PW += $this->maxOffset;
+            // Save the last power level in the trace for positioning the right-hand tic mark:
+            $lastdBm = $PW;
+            // Accumulate min and max power seen for this LO:
+            if ($IF >= self::LOW_IF_CUTOFF) {
+                if ($PW < $mindBm)
+                    $mindBm = $PW;
+                if ($PW > $maxdBm)
+                    $maxdBm = $PW;
+            }
+            // Apply the offset to the current row:
+            $this->data[$index]['Power_dBm'] = $PW;
+        }
+        // output the final minMaxData row:
+        $appendResult($this->minMaxData, $lastLO, $mindBm, $maxdBm, $lastdBm);
     }
 
     /**
@@ -33,12 +116,12 @@ class IFSpectrum_plot extends GnuplotWrapper {
         // find unique LO frequencies in the data set:
         $this->findLOs();
         // create temporary files with spurious noise data to be used by GNUPLOT:
-        if ($expanded) {
-            $this->getSpuriousExpanded();
-            $this->plotSize(900, 1500); // pixels
-        } else {
             $this->getSpuriousNoise();
-            $this->plotSize(900, 600); // pixels
+
+        if ($expanded) {
+            $this->plotSize(900, count($this->loValues) * 300, false); // pixels
+        } else {
+            $this->plotSize(900, 600, false); // pixels
         }
 
         // setup the plot:
@@ -50,18 +133,18 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $ytics = array();
         $y2tics = array();
         $att = array();
-        $ltIndex = 1;
+        $index = 0;
         // Sets 2nd y axis tick values using data created in getSpuriousNoise()
         // Sets line attributes.
         foreach ($this->loValues as $lo) {
-            if (!$expanded) {
-                $y2tics[$lo] = $this->spurVal[$lo];
-            } else {
-                $ytics[$lo] = $this->spurVal[$lo];
-                $y2tics[$lo] = $this->spurVal[$lo][0];
+            if ($expanded) {
+                $ytics[$lo][0] = $this->minMaxData[$index]['pMin_dBm'];
+                $ytics[$lo][1] = $this->minMaxData[$index]['pMax_dBm'];
             }
-            $att[] = "lines lt $ltIndex title '" . $lo . " GHz'";
-            $ltIndex++;
+
+            $y2tics[$lo] = $this->minMaxData[$index]['last_dBm'];
+            $index++;
+            $att[] = "lines lt $index title '" . $lo . " GHz'";
         }
         if (!$expanded) {
             $ytics = FALSE;
@@ -69,6 +152,8 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $this->plotYTics(array('ytics' => $ytics, 'y2tics' => $y2tics));
         $this->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Power (dB)')); // Set x and y axis labels
         $this->plotArrows(); // Creates vertical lines over IF range from specs ini file.
+        $this->plotYAxis(array('ymin' => $this->minMaxData[0]['pMin_dBm'],
+                               'ymax' => $this->minMaxData[count($this->minMaxData) - 1]['pMax_dBm']));
         $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.04), array(0.01, 0.01)));
         $this->plotData($att, count($att));
         $this->doPlot();
@@ -96,7 +181,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $this->plotOutput($imagename);
         $this->plotTitle($plotTitle);
         $this->plotGrid();
-        $this->createSpecsFile('Freq_Hz', array('spec_value'), array("lines lt -1 lw 5 title 'Spec'"), FALSE);
+        $this->createSpecsFile('Freq_GHz', array('spec_value'), array("lines lt -1 lw 5 title 'Spec'"), FALSE);
         $this->plotLabels(array('x' => 'Center of Window (GHz)', 'y' => 'Power Variation in Window (dB)'));
         $this->plotBMargin(7);
         $this->plotKey('outside');
@@ -136,21 +221,21 @@ class IFSpectrum_plot extends GnuplotWrapper {
 
         $this->plotYAxis(array('ymin' => 0, 'ymax' => 9));
         $this->plotXAxis(array('xmin' => 5, 'xmax' => 9.2));
-        $this->plotAtt['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
-        $this->plotAtt['fspec2'] = "f2(x) = ((x > 7) && (x < 9)) ? 7 : 1/0\n";
+        $this->plotAttribs['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
+        $this->plotAttribs['fspec2'] = "f2(x) = ((x > 7) && (x < 9)) ? 7 : 1/0\n";
 
 //         $dbpull = new IF_db();
 //         $temp = $dbpull->q6($this->band, $IFChannel, $FEid, $DataSetGroup);
         $b6points = $temp[0];
         $maxvar = $temp[1];
 
-        $this->plotAtt["label3"] = "set label 'Max Power Variation: " . round($maxvar, 2) . " dB' at screen 0.01, 0.07\n";
+        $this->plotAttribs["label3"] = "set label 'Max Power Variation: " . round($maxvar, 2) . " dB' at screen 0.01, 0.07\n";
 
         $bmax = 5.52;
         $bmin = 5.45;
         for ($i=0; $i<count($b6points); $i++) {
             $temp = "fb6_$i(x)=((x>$bmin) && (x<$bmax)) ? $b6points[$i] : 1/0\r\n";
-            $this->plotAtt["b6$i"] = $temp;
+            $this->plotAttribs["b6$i"] = $temp;
         }
 
         $temp = "plot fb6_0(x) with linespoints notitle pt 5 lt 1, '" . $main_write_directory . "$this->dir/temp_data0.txt'";
@@ -163,12 +248,12 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $temp .= " f1(x) title 'Spec' with lines lt -1 lw 5,";
         $temp .= " f2(x) notitle with lines lt -1 lw 5";
 
-        if(isset($this->plotAtt['specAtt'])) {
-            $add = $this->plotAtt['specAtt'];
+        if(isset($this->plotAttribs['specAtt'])) {
+            $add = $this->plotAttribs['specAtt'];
             $temp .= $add;
-            unset($this->plotAtt['specAtt']);
+            unset($this->plotAttribs['specAtt']);
         }
-        $this->plotAtt['plot'] = $temp . "\n";
+        $this->plotAttribs['plot'] = $temp . "\n";
     }
 
 
@@ -188,76 +273,20 @@ class IFSpectrum_plot extends GnuplotWrapper {
 
     /**
      * Creates temp data files to be used to plot spurious noise for a given band and IF channel.
-     * @param array $LO- LO frequencies used in data.
      */
     public function getSpuriousNoise() {
         $LO = $this->loValues;
-        $min = 1000;
-        $max = -1000;
         $oldData = $this->data;
         for ($i=0; $i<count($LO); $i++) {
             $tempData = array();
             foreach ($oldData as $row) {
                 if ($row['LO_GHz'] == $LO[$i]) {
                     $tempData[] = $row;
-                    if($row['Power_dBm'] < $min) {
-                        $min = $row['Power_dBm'];
-                    }
-                    if($row['Power_dBm'] > $max) {
-                        $max = $row['Power_dBm'];
-                    }
                 }
             }
             $this->data = $tempData;
-            $this->createTempFile('Freq_Hz', 'Power_dBm', $i);
-            $this->spurVal[$LO[$i]] = $tempData[count($tempData) - 1]['Power_dBm'];
+            $this->createTempFile('Freq_GHz', 'Power_dBm', $i);
         }
-        $this->spurVal['ymin'] = $min;
-        $this->spurVal['ymax'] = $max;
-        $this->data = $oldData;
-    }
-
-    /**
-     * Same as getSpuriousNoise, but adds an offset for expanded plots and changes ytics
-     *
-     * @param array $LO- LO frequencies used in data.
-     */
-    public function getSpuriousExpanded() {
-        $LO = $this->loValues;
-        $wmin = 1000;
-        $wmax = -1000;
-        $oldData = $this->data;
-        $offset = 0;
-        for ($i=0; $i<count($LO); $i++) {
-            $tempData = array();
-            $min = 1000;
-            $max = -1000;
-            foreach ($oldData as $row) {
-                if ($row['LO_GHz'] == $LO[$i]) {
-                    $temp = $row;
-                    $temp['Power_dBm'] += $offset;
-                    $tempData[] = $temp;
-                    if($temp['Power_dBm'] < $wmin) {
-                        $wmin = $temp['Power_dBm'];
-                    }
-                    if($temp['Power_dBm'] > $wmax) {
-                        $wmax = $temp['Power_dBm'];
-                    }
-                    if($temp['Power_dBm'] < $min) {
-                        $min = $temp['Power_dBm'];
-                    }
-                    if($temp['Power_dBm'] > $max) {
-                        $max = $temp['Power_dBm'];
-                    }
-                }
-            }
-            $this->data = $tempData;
-            $this->createTempFile('Freq_Hz', 'Power_dBm', $i);
-            $this->spurVal[$LO[$i]] = array(round($min, 2), round($max, 2));
-            $offset += 32;
-        }
-        $this->spurVal['ymin'] = $wmin;
-        $this->spurVal['ymax'] = $wmax;
         $this->data = $oldData;
     }
 
@@ -269,8 +298,10 @@ class IFSpectrum_plot extends GnuplotWrapper {
     public function plotArrows() {
         $lo = $this->specs['ifspec_low'];
         $hi = $this->specs['ifspec_high'];
-        $this->plotAtt['arrow_lo'] = "set arrow 1 from $lo, " . $this->spurVal['ymin'] . " to $lo, " . $this->spurVal['ymax'] . " nohead lt -1 lw 2\n";
-        $this->plotAtt['arrow_hi'] = "set arrow 2 from $hi, " . $this->spurVal['ymin'] . " to $hi, " . $this->spurVal['ymax'] . " nohead lt -1 lw 2\n";
+        $y1 = $this->minMaxData[0]['pMin_dBm'];
+        $y2 = $this->minMaxData[count($this->minMaxData) - 1]['pMax_dBm'];
+        $this->plotAttribs['arrow_lo'] = "set arrow 1 from $lo, " . $y1 . " to $lo, " . $y2 . " nohead lt -1 lw 2\n";
+        $this->plotAttribs['arrow_hi'] = "set arrow 2 from $hi, " . $y1 . " to $hi, " . $y2 . " nohead lt -1 lw 2\n";
     }
 
     /**
@@ -282,7 +313,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
     private function outputFilePowerVar($fileIndex, $output) {
         $dataBak = $this->data;
         $this->data = $output;
-        $this->createTempFile('Freq_Hz', 'pVar_dB', $fileIndex);
+        $this->createTempFile('Freq_GHz', 'pVar_dB', $fileIndex);
         $this->data = $dataBak;
     }
 

@@ -30,7 +30,7 @@ interface IFSpectrum_calc_itf {
      * array(
      *     [0] => Array(
      *          'LO_GHz' => float,    // LO frequency
-     *          'Freq_Hz' => float,   // Spectrum analyzer IF center
+     *          'Freq_GHz' => float,   // Spectrum analyzer IF center
      *          'Power_dBm' => float  // Spectrum analyzer power measurement
      *     )
      *     [1] => Array...
@@ -44,7 +44,7 @@ interface IFSpectrum_calc_itf {
      * @param $data array must have the same number of points as the per-LO traces.  Structure is:
      * array(
      *     [0] => Array(
-     *          'Freq_Hz' => float,   // Spectrum analyzer IF center
+     *          'Freq_GHz' => float,   // Spectrum analyzer IF center
      *          'Power_dBm' => float  // Spectrum analyzer power measurement
      *     )
      *     [1] => Array...
@@ -66,8 +66,8 @@ interface IFSpectrum_calc_itf {
      * @return array(
      *     [0] => array(
      *         'LO_GHz' => float,    // An LO frequency
-     *         'Freq_Hz' => float,   // A center IF pertaining to the LO
-     *         'pVar_dB' => float    // Max-min power seen in the window around Freq_Hz.
+     *         'Freq_GHz' => float,   // A center IF pertaining to the LO
+     *         'pVar_dB' => float    // Max-min power seen in the window around Freq_GHz.
      *     )
      *     [1] => array...
      *
@@ -104,16 +104,6 @@ interface IFSpectrum_calc_itf {
      *     [1] => array...
      */
     public function getTotalAndInBandPower($fMin = 4.0e9, $fMax = 8.0e9);
-
-    /**
-     * Apply offsets in dB to the power levels in dBm of subsequent LO traces.
-     *  This is a utility for plotting, to spread out the traces for display on a single Y scale.
-     *
-     * @param float $offset Amount to offset each LO trace from the previous.
-     * @return none.  Modifies the internal data array.
-     */
-    public function applyPowerLevelOffsets($offset);
-
 }
 
 
@@ -126,8 +116,8 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
     const HUGE_POWER = 999;       // dBm  Invalid big value for power
     const TINY_POWER = -999;      // dBm  Invalid small value for power
     const TINY_DBM = 1.0e-9;      // dBm  Minimum result to return when subtracting noise floor.
-    const MIN_IF_BIN = 3.0e6;     // Hz   We assume the analyzer bins are 3 MHz.
-    const LOW_IF_CUTOFF = 10.0e6; // exlude power from below 10 MHz from total power calc.
+    const MIN_IF_BIN = 0.003;     // GHz  We assume the analyzer bins are 3 MHz.
+    const LOW_IF_CUTOFF = 0.010;  // Ghz  Exlude power from below 10 MHz from total power calc.
     const DFLT_CABLEPAD = 6.0;    // dB   Assumed cable pad to compensate for.
 
     /**
@@ -136,21 +126,32 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
      * @param $data structure shown for setData in interface above.
      */
     public function IFSpectrum_calc($data = false) {
+        $this->setData($data);
         $this->cablePad = self::DFLT_CABLEPAD;
         $this->noiseFloorData = array();
-        if ($data)
-            $this->setData($data);
     }
 
     /**
      * Asssign new data.
      *
      * @param $data structure shown in interface above.
+     * @param $sortData if true sort data after insert.
      */
     public function setData($data, $sortData = false) {
-        $this->data = $data;
+        if ($data)
+            $this->data = $data;
+        else
+            $this->data = array();
         if ($sortData)
             $this->sortData();
+    }
+
+    /**
+     * Reset the accumulators for min/max power level by LO and trace offset.
+     */
+    private function resetMinMaxData() {
+        $this->minMaxData = array();
+        $this->maxOffset = 0;
     }
 
     /**
@@ -163,16 +164,15 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
     }
 
     /**
-     * Sort the data ascending by LO_GHz, Freq_Hz.
+     * Sort the data ascending by LO_GHz, Freq_GHz.
      */
     private function sortData() {
-        function cmp(array $a, array $b) {
+        usort($this->data, function(array $a, array $b) {
             if ($a['LO_GHz'] != $b['LO_GHz'])
                 return $a['LO_GHz'] - $b['LO_GHz'];
             else
-                return $a['Freq_Hz'] - $b['Freq_Hz'];
-        }
-        usort($this->data, "cmp");
+                return $a['Freq_GHz'] - $b['Freq_GHz'];
+        });
     }
 
     /**
@@ -276,7 +276,7 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
             foreach ($pvarPoints as $row) {
                 $output[] = array(
                         'LO_GHz' => $LO,
-                        'Freq_Hz' => $row['Freq_Hz'],
+                        'Freq_GHz' => $row['Freq_GHz'],
                         'pVar_dB' => $row['pVar_dB']
                 );
             }
@@ -296,7 +296,7 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
      *
      * @return array(
      *     [0] => array(
-     *         'Freq_Hz' => float,
+     *         'Freq_GHz' => float,
      *         'pVar_dB' => float
      *     )
      *     [1] => array...
@@ -337,9 +337,9 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
 
         // loop the window center from the lower to upper index:
         for ($iCenter = $iLower; $iCenter <= $iUpper; $iCenter++) {
-            $fCenter = $this->data[$iCenter]['Freq_Hz'];
-            $mindB = self::HUGE_POWER;
-            $maxdB = self::TINY_POWER;
+            $fCenter = $this->data[$iCenter]['Freq_GHz'];
+            $mindBm = self::HUGE_POWER;
+            $maxdBm = self::TINY_POWER;
             // loop across the window around the moving center:
             $iWinMin = $iCenter - $iSpan;
             $iWinMax = $iCenter + $iSpan;
@@ -347,15 +347,15 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
                 $row = $this->data[$index];
                 $PW = $row['Power_dBm'];
                 // find min and max power in the window:
-                if ($PW < $mindB)
-                    $mindB = $PW;
-                if ($PW > $maxdB)
-                    $maxdB = $PW;
+                if ($PW < $mindBm)
+                    $mindBm = $PW;
+                if ($PW > $maxdBm)
+                    $maxdBm = $PW;
             }
             // append output record:
             $output[] = array(
-                    'Freq_Hz' => $fCenter,
-                    'pVar_dB' => ($maxdB - $mindB)
+                    'Freq_GHz' => $fCenter,
+                    'pVar_dB' => ($maxdBm - $mindBm)
             );
         }
         return $output;
@@ -363,13 +363,13 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
 
     /**
      * Find the lower bound of $findFreq in the specified range:
-     *  first index where $findFreq >= Freq_Hz
+     *  first index where $findFreq >= Freq_GHz
      *  If $reverse is true, find the upper bound:
-     *  last index where $findFreq <= Freq_Hz
+     *  last index where $findFreq <= Freq_GHz
      *
      * @param integer $minIndex of range to search
      * @param integer $maxIndex of range to search
-     * @param float $findFreq Freq_Hz to find in range
+     * @param float $findFreq Freq_GHz to find in range
      * @param boolean $reverse true if searching down from $maxIndex
      * @return index value or false if not found.
      */
@@ -377,7 +377,7 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
         $index = (!$reverse) ? $minIndex : $maxIndex;
         $done = false;
         while (!$done) {
-            $freq = $this->data[$index]['Freq_Hz'];
+            $freq = $this->data[$index]['Freq_GHz'];
             if (!$reverse) {
                 if ($freq >= $findFreq)
                     $done = true;
@@ -408,11 +408,11 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
      */
     public function getPowerVarFullBand($fMin = 4.0e9, $fMax = 8.0e9) {
         // helper function to append a record to the output:
-        function appendResult(&$output, $outputRec) {
+        $appendResult = function(&$output, $outputRec) {
             // compute the power difference and append:
             $outputRec[1] = $outputRec[3] - $outputRec[2];
             $output[] = $outputRec;
-        }
+        };
 
         if (empty($this->data))
             return false;
@@ -430,7 +430,7 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
         // loop on all rows:
         foreach($this->data as $row) {
             $LO = $row['LO_GHz'];
-            $IF = $row['Freq_Hz'];
+            $IF = $row['Freq_GHz'];
             $PW = $row['Power_dBm'];
 
             // for each new LO seen:
@@ -438,7 +438,7 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
                 // if the previous LO seen is not our start token:
                 if ($outputRec[0] != self::BAD_LO) {
                     // output the previous LO record:
-                    appendResult(&$output, $outputRec);
+                    $appendResult(&$output, $outputRec);
                 }
                 // reset the output record to accumulate for the next LO:
                 $outputRec = $newRec;
@@ -454,7 +454,7 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
             }
         }
         // output data for the last LO:
-        appendResult(&$output, $outputRec);
+        $appendResult(&$output, $outputRec);
         return $output;
     }
 
@@ -467,14 +467,14 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
      */
     public function getTotalAndInBandPower($fMin = 4.0e9, $fMax = 8.0e9) {
         // helper function to append a record to the output:
-        function appendResult(&$output, $LO, $total, $inband) {
+        $appendResult = function(&$output, $LO, $total, $inband) {
             // accumulated powers converted back to dBm:
             $output[] = array(
                     'LO_GHz' => $LO,
                     'pTotal_dBm' => 10 * log($total, 10),
                     'pInBand_dBm' => 10 * log($inBand, 10)
             );
-        }
+        };
 
         if (empty($this->data))
             return false;
@@ -494,14 +494,14 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
         // loop on all rows:
         foreach($this->data as $row) {
             $LO = $row['LO_GHz'];
-            $IF = $row['Freq_Hz'];
+            $IF = $row['Freq_GHz'];
             $PW = $row['Power_dBm'];
             // for each new LO seen:
             if ($LO != $lastLO) {
                 // if the previous LO seen is not our start token:
                 if ($lastLO != self::BAD_LO) {
                     // output a record with the accumulated powers:
-                    appendResult($output, $LO, $total, $inBand);
+                    $appendResult($output, $LO, $total, $inBand);
                 }
                 // reset our accumulators:
                 $lastLO = $LO;
@@ -518,7 +518,7 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
                 $inBand += $P;
         }
         // output the record for the last LO:
-        appendResult($output, $LO, $total, $inBand);
+        $appendResult($output, $LO, $total, $inBand);
         return $output;
     }
 
@@ -532,7 +532,7 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
             return;
 
         // We assume that the $noiseFloorData array has the same number and of points
-        //  at the same Freq_Hz indexes as each of the LO sections of $data.
+        //  at the same Freq_GHz indexes as each of the LO sections of $data.
 
         // Loop for all rows:
         $nfIndex = 0;
@@ -565,39 +565,6 @@ class IFSpectrum_calc implements IFSpectrum_calc_itf {
             $this->data[$index]['Power_dBm'] = 10 * log($P, 10);
             // Increment the noise floor data index for the next loop iter:
             $nfIndex++;
-        }
-    }
-
-    /**
-     * Apply offsets in dB to the power levels in dBm of subsequent LO traces.
-     *  This is a utility for plotting, to spread out the traces for display on a single Y scale.
-     *
-     * @param float $offset Amount to offset each LO trace from the previous.
-     * @return none.  Modifies the internal data array.
-     */
-    public function applyPowerLevelOffsets($offset) {
-        if (empty($this->data))
-            return;
-
-        // to accumulate offset of all prev. LOs:
-        $totalOffset = 0;
-
-        // Loop for all rows:
-        $size = count($this->data);
-        $lastLO = self::BAD_LO;
-        for ($index = 0; $index < size; $index++) {
-            $row = $this->data[$index];
-            $LO = $row['LO_GHz'];
-            $PW = $row['Power_dBm'];
-            // if new LO seen:
-            if ($LO != $lastLO) {
-                // make make it the new current LO:
-                $lastLO = $LO;
-                // increase the total offset amount:
-                $totalOffset += $offset;
-            }
-            // Apply the offset to the current row:
-            $this->data[$index][Power_dBm] = $PW + $totalOffset;
         }
     }
 }

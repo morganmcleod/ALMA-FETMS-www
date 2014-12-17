@@ -358,11 +358,11 @@ class IFSpectrum_impl extends TestData_header {
         $this->ReportProgress(40, 'message','Plotting Expanded IF Spectrum...');
         $this->Plot_IFSpectrum_Data(TRUE, 40, 5);
 
-        $this->ReportProgress(60, 'Plotting Power Variation...');
-        $this->Plot_PowerVariation_Data(FALSE, 60, 5);
+//         $this->ReportProgress(60, 'Plotting Power Variation...');
+//         $this->Plot_PowerVariation_Data(FALSE, 60, 5);
 
-        $this->ReportProgress(80, 'Plotting Power Variation...');
-        $this->Plot_PowerVariation_Data(TRUE, 80, 5);
+//         $this->ReportProgress(80, 'Plotting Power Variation...');
+//         $this->Plot_PowerVariation_Data(TRUE, 80, 5);
 
         $this->ReportProgress(90, 'Removing temporary tables...');
         $this->ifSpectrumDb->deleteTemporaryTable();
@@ -420,6 +420,7 @@ class IFSpectrum_impl extends TestData_header {
         $typeURL = ($expanded) ? 'spurious_url2d2' : 'spurious_url2d';
         $ifGain = 15;
         $msgExpanded = ($expanded) ? ' Expanded' : '';
+        $offset = ($expanded) ? 35 : 10;
 
         for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())
@@ -442,13 +443,16 @@ class IFSpectrum_impl extends TestData_header {
             // Set data into the plotter:
             $this->plotter -> setData($data);
 
+            // Apply offset and find min/max power levels:
+            $this->plotter -> prepareSpectrumTraces($offset);
+
             // save raw data (for troubleshooting):
-            if (!$expanded)
-                $this->plotter -> save_data("SpuriousBand" . $this->band . "_IF$ifChannel");
+//             if (!$expanded)
+//                 $this->plotter -> save_data("SpuriousBand" . $this->band . "_IF$ifChannel");
 
             // Set the plot title and generate the plot:
             $plotTitle = "Spurious Noise FE-$fesn, Band $this->band SN $this->CCASN IF$ifChannel";
-            $this->plotter->generateSpuriousPlot($expanded, $this->imagename, $plotTitle, $this->TDHdataLabels);
+            $this->plotter -> generateSpuriousPlot($expanded, $this->imagename, $plotTitle, $this->TDHdataLabels);
 
             // Append the actual image filename to the URL before saving:
             $this->image_url .= $this->plotter -> getOutputFileName();
