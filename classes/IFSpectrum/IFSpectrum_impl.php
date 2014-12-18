@@ -518,9 +518,15 @@ class IFSpectrum_impl extends TestData_header {
             if ($this->debugRawDataFiles)
                 $this->plotter -> save_data("PowerVarBand" . $this->band . "_$winText" . "_IF$ifChannel");
 
-            // Set the plot title and generate the plot:
+            // Set the plot title:
             $plotTitle = "Power Variation $winText Window FE-$fesn, CCA $this->band-$this->CCASN, IF$ifChannel";
-            $this->plotter->generatePowerVarPlot($win31MHz, $this->imagename, $plotTitle, $this->TDHdataLabels);
+
+            // Append a "Max Power Variation" line to the labels:
+            $labels = $this->TDHdataLabels;
+            $labels[] = "Max Power Variation: " . round($this->ifCalc -> getMaxVarWindow(), 2) . " dB";
+
+            // Generate the plot
+            $this->plotter->generatePowerVarPlot($win31MHz, $this->imagename, $plotTitle, $labels);
 
             // Append the actual image filename to the URL before saving:
             $this->image_url .= $this->plotter->getOutputFileName();

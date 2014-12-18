@@ -213,10 +213,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
             $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.04), array(0.01, 0.01)));
             $this->band6powervar($if, $FEid, $dataSetGroup, $att, count($att));
         } else {
-            $temp = "Max Power Variation: "; // . round($IF->maxvar, 2) . " dB";
-            $TDHdataLabels[] = $temp;
             $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.07), array(0.01, 0.04), array(0.01, 0.01)));
-            array_pop($TDHdataLabels);
             $this->plotData($att, count($att));
         }
         $this->doPlot();

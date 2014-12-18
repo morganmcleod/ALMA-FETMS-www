@@ -26,6 +26,7 @@ class IFSpectrum_calc {
     private $data;                // same structure as for setData()
     private $noiseFloorData;
     private $cablePad;            // dB of pad in cable to compensate for.
+    private $maxVarWindow;        // maximum variation seen in any call to getPowerVarWindow();
 
     const BAD_LO = -999;          // GHz  Invalid value for LO
     const HUGE_POWER = 999;       // dBm  Invalid big value for power
@@ -67,6 +68,11 @@ class IFSpectrum_calc {
             $this->data = array();
         if ($sortData)
             $this->sortData();
+        $this->maxVarWindow = 0;
+    }
+
+    public function getMaxVarWindow() {
+        return $this->maxVarWindow;
     }
 
     /**
@@ -280,11 +286,16 @@ class IFSpectrum_calc {
                 if ($PW > $maxdBm)
                     $maxdBm = $PW;
             }
+            // calculate pVar:
+            $pVar = ($maxdBm - $mindBm);
             // append output record:
             $output[] = array(
                     'Freq_GHz' => $fCenter,
-                    'pVar_dB' => ($maxdBm - $mindBm)
+                    'pVar_dB' => $pVar
             );
+            // accumulate $maxVarWindow:
+            if ($pVar > $this->maxVarWindow)
+                $this->maxVarWindow = $pVar;
         }
         return $output;
     }
