@@ -2,7 +2,6 @@
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.generictable.php');
-require_once($site_classes . '/class.pwrspectools.php');
 require_once($site_classes . '/class.logger.php');
 require_once($site_FEConfig . '/HelperFunctions.php');
 require_once($site_dbConnect);
