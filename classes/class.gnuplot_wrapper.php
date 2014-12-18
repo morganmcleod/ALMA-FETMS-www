@@ -429,7 +429,9 @@ class GnuplotWrapper {
      */
     public function plotLabels($labels) {
         $this->plotAttribs['xlabel'] = "set xlabel '" . $labels['x'] . "'\n";
-        $this->plotAttribs['ylabel'] = "set ylabel '" . $labels['y'] . "'\n";
+        if ($labels['y']) {
+            $this->plotAttribs['ylabel'] = "set ylabel '" . $labels['y'] . "'\n";
+        }
         if (isset($labels['y2'])) {
             $this->plotAttribs['y2label'] = "set y2label '" . $labels['y2'] . "'\n";
         }

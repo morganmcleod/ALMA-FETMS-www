@@ -24,6 +24,8 @@ class IFSpectrum_plot extends GnuplotWrapper {
     const HUGE_POWER = 999;       // dBm  Invalid big value for power
     const TINY_POWER = -999;      // dBm  Invalid small value for power
     const LOW_IF_CUTOFF = 0.010;  // Ghz  Exlude power from below 10 MHz from total power calc and scaling
+    const DFLT_OFFSET = 10;       // dB  offset between traces
+    const EXPANDED_SPACING = 2.5; // dB  spacing between traces in expanded plot
 
     /**
      * Constructor
@@ -44,10 +46,10 @@ class IFSpectrum_plot extends GnuplotWrapper {
      *  This is a utility for plotting, to spread out the traces for display on a single Y scale.
      *  Also accumulates min and max power levels seen per LO.
      *
-     * @param float $offset Amount to offset each LO trace from the previous.
+     * @param bool $expanded true if offseting for expanded plots.
      * @return none.  Modifies the internal data arrays.
      */
-    public function prepareSpectrumTraces($offset) {
+    public function prepareSpectrumTraces($expanded) {
         $appendResult = function(&$output, $LO, $mindBm, $maxdBm, $lastdBm) {
             $output[] = array(
                     'LO_GHz' => $LO,
@@ -81,7 +83,11 @@ class IFSpectrum_plot extends GnuplotWrapper {
                 // and the previous one is not our start token:
                 if ($lastLO != self::BAD_LO) {
                     // increase the total offset amount:
-                    $this->maxOffset += $offset;
+                    if ($expanded) {
+                        $this->maxOffset += round(($maxdBm - $mindBm) + self::EXPANDED_SPACING, 0);
+                    } else {
+                        $this->maxOffset += self::DFLT_OFFSET;
+                    }
                     // output a row to minMaxData:
                     $appendResult($this->minMaxData, $lastLO, $mindBm, $maxdBm, $lastdBm);
                     // and reset the min/max accumulators:
@@ -151,11 +157,13 @@ class IFSpectrum_plot extends GnuplotWrapper {
             $index++;
             $att[] = "lines lt $index title '" . $lo . " GHz'";
         }
+        $ylabel = FALSE;
         if (!$expanded) {
             $ytics = FALSE;
+            $ylabel = 'Power (dB)';
         }
         $this->plotYTics(array('ytics' => $ytics, 'y2tics' => $y2tics));
-        $this->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Power (dB)')); // Set x and y axis labels
+        $this->plotLabels(array('x' => 'IF (GHz)', 'y' => $ylabel)); // Set x and y axis labels
         $this->plotArrows(); // Creates vertical lines over IF range from specs ini file.
         $this->plotYAxis(array('ymin' => $this->minMaxData[0]['pMin_dBm'],
                                'ymax' => $this->minMaxData[count($this->minMaxData) - 1]['pMax_dBm']));

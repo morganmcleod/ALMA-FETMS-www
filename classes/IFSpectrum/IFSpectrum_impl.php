@@ -417,7 +417,6 @@ class IFSpectrum_impl extends TestData_header {
         $typeURL = ($expanded) ? 'spurious_url2d2' : 'spurious_url2d';
         $ifGain = 15;
         $msgExpanded = ($expanded) ? ' Expanded' : '';
-        $offset = ($expanded) ? 35 : 10;
 
         for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())
@@ -441,7 +440,7 @@ class IFSpectrum_impl extends TestData_header {
             $this->plotter -> setData($data);
 
             // Apply offset and find min/max power levels:
-            $this->plotter -> prepareSpectrumTraces($offset);
+            $this->plotter -> prepareSpectrumTraces($expanded);
 
             // save raw data (for troubleshooting):
             if ($this->debugRawDataFiles)
