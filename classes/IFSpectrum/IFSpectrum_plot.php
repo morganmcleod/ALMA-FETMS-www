@@ -11,9 +11,14 @@ require_once($site_classes . '/class.gnuplot_wrapper.php');
 
 class IFSpectrum_plot extends GnuplotWrapper {
     private $loValues;   // array of LO values to plot
-
-    private $minMaxData;
-    private $maxOffset;
+    private $maxOffset;  // maximum accumulated offset for stacked specrum traces.
+    private $minMaxData; // Min and max power plus offset seen per LO:
+                         // array(
+                         //     'LO_GHz'   => float,
+                         //     'pMin_dBm' => float,
+                         //     'pMax_dBm' => float,
+                         //     'last_dBm' => float    // rightmost point in trace, for Y2 axis labels.
+                         // )
 
     const BAD_LO = -999;          // GHz  Invalid value for LO
     const HUGE_POWER = 999;       // dBm  Invalid big value for power
@@ -116,7 +121,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
         // find unique LO frequencies in the data set:
         $this->findLOs();
         // create temporary files with spurious noise data to be used by GNUPLOT:
-            $this->getSpuriousNoise();
+        $this->createTempFiles('Power_dBm');
 
         if ($expanded) {
             $this->plotSize(900, count($this->loValues) * 300, false); // pixels
@@ -134,7 +139,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $y2tics = array();
         $att = array();
         $index = 0;
-        // Sets 2nd y axis tick values using data created in getSpuriousNoise()
+        // Sets 2nd y axis tick values using data created in prepareSpectrumTraces()
         // Sets line attributes.
         foreach ($this->loValues as $lo) {
             if ($expanded) {
@@ -170,9 +175,11 @@ class IFSpectrum_plot extends GnuplotWrapper {
     public function generatePowerVarPlot($win31MHz, $imagename, $plotTitle, $TDHdataLabels) {
         // find unique LO frequencies in the data set:
         $this->findLOs();
-        // Create temporary files for power variation over 2 GHz window plots:
-        $this->getPowerVar();
-        $this->plotSize(900, 600); // pixels
+        // create temporary files with spurious noise data to be used by GNUPLOT:
+        $this->createTempFiles('pVar_dB');
+
+        // use default plot size:
+        $this->plotSize();
 
         if ($win31MHz)
             $this->specs['spec_value'] = 1.35;
@@ -190,7 +197,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $att = array();
         $ltIndex = 1;
         foreach ($this->loValues as $lo) {
-            $att[] = "lines lt $ltIndex title '$lo GHz'";
+            $att[] = "lines lt $ltIndex title ' $lo GHz'";
             $ltIndex++;
         }
         if ($this->band == 6) {
@@ -272,28 +279,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
     }
 
     /**
-     * Creates temp data files to be used to plot spurious noise for a given band and IF channel.
-     */
-    public function getSpuriousNoise() {
-        $LO = $this->loValues;
-        $oldData = $this->data;
-        for ($i=0; $i<count($LO); $i++) {
-            $tempData = array();
-            foreach ($oldData as $row) {
-                if ($row['LO_GHz'] == $LO[$i]) {
-                    $tempData[] = $row;
-                }
-            }
-            $this->data = $tempData;
-            $this->createTempFile('Freq_GHz', 'Power_dBm', $i);
-        }
-        $this->data = $oldData;
-    }
-
-    /**
      * plots vertical lines at IF limits from specs class.
-     *
-     * MUST BE CALLED AFTER setParams() AND getSpuriousNoise/Expanded()
      */
     public function plotArrows() {
         $lo = $this->specs['ifspec_low'];
@@ -305,39 +291,22 @@ class IFSpectrum_plot extends GnuplotWrapper {
     }
 
     /**
-     * Create a temporary file for power variation data in $output
-     *
-     * @param integer $fileIndex
-     * @param array $output
+     * Creates temp data files to be used to plot spurious noise for a given band and IF channel.
      */
-    private function outputFilePowerVar($fileIndex, $output) {
-        $dataBak = $this->data;
-        $this->data = $output;
-        $this->createTempFile('Freq_GHz', 'pVar_dB', $fileIndex);
-        $this->data = $dataBak;
-    }
-
-    /**
-     * Creates temporary files to be used to plot power variation data.
-     */
-    public function getPowerVar() {
-        $lastLO = false;
-        $fileIndex = 0;
-        $output = array();
-
-        foreach ($this->data as $row) {
-            $LO = $row['LO_GHz'];
-            if ($LO != $lastLO) {
-                if ($lastLO) {
-                    $this->outputFilePowerVar($fileIndex, $output);
-                    $output = array();
-                    $fileIndex++;
+    private function createTempFiles($yvar) {
+        $LO = $this->loValues;
+        $oldData = $this->data;
+        for ($i=0; $i<count($LO); $i++) {
+            $tempData = array();
+            foreach ($oldData as $row) {
+                if ($row['LO_GHz'] == $LO[$i]) {
+                    $tempData[] = $row;
                 }
-                $lastLO = $LO;
             }
-            $output[] = $row;
+            $this->data = $tempData;
+            $this->createTempFile('Freq_GHz', $yvar, $i);
         }
-        $this->outputFilePowerVar($fileIndex, $output);
+        $this->data = $oldData;
     }
 }
 

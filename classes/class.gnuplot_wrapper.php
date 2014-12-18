@@ -347,11 +347,12 @@ class GnuplotWrapper {
      * @param int $xwin- Width of plot in pixels
      * @param int $ywin- Height of plot in pixels
      */
-    public function plotSize($xwin, $ywin, $crop = TRUE) {
-        $temp = "set terminal png size $xwin,$ywin";
-        if($crop) {
+    public function plotSize($xwin = 640, $ywin = 480, $crop = FALSE) {
+        $temp = "set terminal png";
+        if ($xwin && $ywin)
+            $temp .= " size $xwin,$ywin";
+        if($crop)
             $temp .= " crop";
-        }
         $temp .= "\n";
         $this->plotAttribs['size'] = $temp;
     }
