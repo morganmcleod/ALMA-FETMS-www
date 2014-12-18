@@ -24,6 +24,7 @@
  */
 
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
+require_once($site_libraries . '/array_column/src/array_column.php');
 require_once($site_dbConnect);
 
 class IFSpectrum_db {
@@ -99,30 +100,54 @@ class IFSpectrum_db {
 
 	/**
 	 * Helper function to fetch a IFSpectrum_SubHeader and TestData_header info
-	 *  for the given $FEid, $band, $dataSetGroup, $ifChannel, $ifGain
+	 *  for the given $ifChannel, $ifGain.
+	 *  Uses the $FEid, $band, and $dataSetGroup previously passed to createTemporaryTable().
 	 *
-	 * @param integer $FEid
-	 * @param integer $band
-	 * @param integer $dataSetGroup
 	 * @param integer $ifChannel
 	 * @param integer $ifGain
-	 *
-	 * @return resource- Resource to query results:
-	 *  (SubHeader.keyId, SubHeader.FreqLO, TDH.keyId)
+	 * @return array(
+	 *     [0] => array(
+	 *         'LO_GHz' => float,
+	 *         'keyIFS' => string,     // IFSpectrum_SubHeader.keyId
+	 *         'keyTDH' => string      // TestData_header.keyId
+	 *     )
+	 *     [1] => array(...
+	 * )
 	 */
-	private function getSubHeaderKeys($FEid, $band, $dataSetGroup, $ifChannel, $ifGain = 15) {
-	    $q = "SELECT IFSpectrum_SubHeader.keyId, IFSpectrum_SubHeader.FreqLO, TestData_header.keyId
+	private function getHeaderInfo($ifChannel, $ifGain = 15) {
+	    $q = "SELECT IFSpectrum_SubHeader.FreqLO, IFSpectrum_SubHeader.keyId, TestData_header.keyId
 	    FROM IFSpectrum_SubHeader, TestData_header, FE_Config
 	    WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
 	    AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
-	    AND IFSpectrum_SubHeader.Band = $band
+	    AND IFSpectrum_SubHeader.Band = $this->band
 	    AND IFSpectrum_SubHeader.IFChannel = $ifChannel
 	    AND IFSpectrum_SubHeader.IFGain = $ifGain
 	    AND IFSpectrum_SubHeader.IsIncluded = 1
-	    AND FE_Config.fkFront_Ends = $FEid
-	    AND TestData_header.DataSetGroup = $dataSetGroup
+	    AND FE_Config.fkFront_Ends = $this->FEid
+	    AND TestData_header.DataSetGroup = $this->dataSetGroup
 	    ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";
-	    return $this->run_query($q);
+
+	    $r = $this->run_query($q);
+
+	    $output = array();
+	    while ($row = @mysql_fetch_array($r)) {
+	        $output[] = array(
+	                'LO_GHz' => $row[0],
+	                'keyIFS' => $row[1],
+	                'keyTDH' => $row[2]
+            );
+	    }
+	    return $output;
+	}
+
+	private function getSubHeaderKeys($headerInfo) {
+	    $keyList = "";
+	    foreach ($headerInfo as $row) {
+	        if($keyList)
+	            $keyList .= ", ";
+	        $keyList .= $row['keyIFS'];
+	    }
+	    return $keyList;
 	}
 
 	/**
@@ -132,26 +157,18 @@ class IFSpectrum_db {
 	 * @param integer $ifGain
      * @return structure suitable for IFSpectrum_calc:
      * array(
-     *     [0] => Array(
+     *     [0] => array(
      *          'LO_GHz' => float,    // LO frequency
      *          'Freq_GHz' => float,   // Spectrum analyzer IF center
      *          'Power_dBm' => float  // Spectrum analyzer power measurement
      *     )
-     *     [1] => Array...
+     *     [1] => array(...
      * )
 	 */
 	public function getSpectrumData($ifChannel, $ifGain = 15) {
 	    // Get the subheader keys for the traces:
-	    $r = $this->getSubHeaderKeys($this->FEid, $this->band, $this->dataSetGroup, $ifChannel, $ifGain);
-	    if (!$r)
-	        return false;
-
-	    $keysList = "";
-	    while ($row = @mysql_fetch_array($r)) {
-	        if ($keysList)
-	            $keysList .= ",";
-	        $keysList .= $row[0];
-	    }
+	    $headerInfo = $this->getHeaderInfo($ifChannel, $ifGain);
+	    $keysList = $this->getSubHeaderKeys($headerInfo);
 
 	    $q = "SELECT IFSpectrum_SubHeader.FreqLO, (TEMP_IFSpectrum.Freq_Hz / 1.0E9) as Freq_GHz, TEMP_IFSpectrum.Power_dBm
 	    FROM IFSpectrum_SubHeader, TEMP_IFSpectrum
@@ -284,88 +301,6 @@ class IFSpectrum_db {
 	}
 
 	/**
-	 *
-	 * @param unknown_type $TDHkeys
-	 * @param unknown_type $ifChannel
-	 */
-	public function getLOFrequencies($TDHkeys, $ifChannel = 'all') {
-	    $keysList = $this->makeKeysList($TDHkeys);
-
-	    $q = "SELECT DISTINCT(FreqLO) FROM IFSpectrum_SubHeader
-	    WHERE fkHeader IN ($keysList)";
-	    if ($ifChannel != 'all')
-	        $q .= " AND IFChannel = $ifChannel";
-	    $q .= " AND IsIncluded = 1 ORDER BY FreqLO ASC;";
-
-	    return $this->run_query($qlo);
-	}
-
-	/**
-	 * Load the data to display for the Total and In-Band Power table
-	 *
-	 * @param int $FEid
-	 * @param int $band
-	 * @param int $dataSetGroup
-	 * @param int $ifChannel
-	 *
-	 * @return data ordered by FreqLO:
-	 * array(
-	 *     [0] => array(
-	 *         'FreqLO' => float,
-	 *         'pwr0' => float,
-	 *         'pwr15' => float,
-	 *         'pwrT' => float,
-	 *         'pwrDiff' => float
-	 *     )
-	 *     [1] => array...
-	 * )
-	 */
-	public function getTotalAndInBandPower($FEid, $band, $dataSetGroup, $ifChannel) {
-	    $TDHkeys = $this->getTestDataHeaderKeys($FEid, $band, $dataSetGroup);
-
-	    $keysList = $this->makeKeysList($TDHkeys);
-
-	    $q = "SELECT IFSpectrum_SubHeader.FreqLO, IFSpectrum_SubHeader.IFGain,
-	    TEST_IFSpectrum_TotalPower.TotalPower, TEST_IFSpectrum_TotalPower.InBandPower
-	    FROM IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower
-	    WHERE IFSpectrum_SubHeader.fkHeader IN ($keysList)
-	    AND TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId
-	    AND IFSpectrum_SubHeader.IsIncluded = 1
-	    AND IFSpectrum_SubHeader.IFChannel = $ifChannel
-	    ORDER BY FreqLO, IFGain ASC;";
-
-	    $output = array();
-
-	    $PT0 = 0;    // total power with 0 dB gain
-	    $PT15 = 0;   // total power 15 dB
-	    $PI0 = 0;    // in-band power 0 dB
-	    $PI15 = 0;   // in-band power 15 dB
-
-	    $r = $this->run_query($q);
-	    while ($row = @mysql_fetch_array($r)) {
-	        $LO = $row[0];
-	        $gain = $row[1];
-
-	        if ($gain == 0) {
-	            $PT0 = $row[2];
-	            $PI0 = $row[3];
-	        } elseif ($gain == 15) {
-	            $PT15 = $row[2];
-	            $PI15 = $row[3];
-
-	            $output[] = array(
-	                    'FreqLO' => $LO,
-	                    'pwr0' => $PI0,
-	                    'pwr15' => $PI15,
-	                    'pwrT' => $PT15,
-	                    'pwrDiff' => $PT15 - $PI15
-	            );
-	        }
-	    }
-	    return $output;
-	}
-
-	/**
 	 * Load the data to display for the Power Variation Full Band table
 	 *
 	 * @param int $FEid
@@ -443,6 +378,148 @@ class IFSpectrum_db {
 	        }
 	    }
 	    return $output;
+	}
+
+
+	/**
+	 * Insert (and replace existing) full-band power variation data
+	 *  for the specified ifChannel.
+	 *
+	 *  @param int $ifChannel
+	 *  @param data array(
+ 	 *     [0] => array(
+     *         'LO_GHz' => float,
+     *         'pVar_dB' => float
+     *     )
+     *     [1] => array(...
+     *  )
+     */
+	public function storePowerVarFullBand($ifChannel, $data) {
+	    // Get the subheader keys and LO freqs for the traces:
+	    $ifGain = 15;
+	    $headerInfo = $this->getHeaderInfo($ifChannel, $ifGain);
+	    $keysList = $this->getSubHeaderKeys($headerInfo);
+
+	    // Delete previous data for the specified channel:
+	    $q = "DELETE FROM TEST_IFSpectrum_PowerVarFullBand WHERE fkSubHeader IN ($keysList)";
+
+	    if (!$this->run_query($q))
+	        return false;
+
+	    $q = "INSERT INTO TEST_IFSpectrum_PowerVarFullBand (fkSubHeader, Power_dBm) VALUES ";
+
+	    $v = "";
+	    foreach ($data as $row) {
+	        $LO = $row['LO_GHz'];
+	        $pVar = $row['pVar_dB'];
+	        $i = array_search($LO, array_column($headerInfo, 'LO_GHz'));
+	        if (!($i === FALSE)) {
+	            $key = $headerInfo[$i]['keyIFS'];
+	            if ($v)
+	                $v .= ", ";
+	            $v .= "($key, $pVar)";
+	        }
+	    }
+	    $q .= $v . ";";
+	    if (!$this->run_query($q))
+	        return false;
+	}
+
+	/**
+	 * Load the data to display for the Total and In-Band Power table
+	 *
+	 * @param int $FEid
+	 * @param int $band
+	 * @param int $dataSetGroup
+	 * @param int $ifChannel
+	 *
+	 * @return data ordered by FreqLO:
+	 * array(
+	 *     [0] => array(
+	 *         'FreqLO' => float,
+	 *         'pwr0' => float,
+	 *         'pwr15' => float,
+	 *         'pwrT' => float,
+	 *         'pwrDiff' => float
+	 *     )
+	 *     [1] => array...
+	 * )
+	 */
+	public function getTotalAndInBandPower($FEid, $band, $dataSetGroup, $ifChannel) {
+	    $TDHkeys = $this->getTestDataHeaderKeys($FEid, $band, $dataSetGroup);
+
+	    $keysList = $this->makeKeysList($TDHkeys);
+
+	    $q = "SELECT IFSpectrum_SubHeader.FreqLO, IFSpectrum_SubHeader.IFGain,
+	    TEST_IFSpectrum_TotalPower.TotalPower, TEST_IFSpectrum_TotalPower.InBandPower
+	    FROM IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower
+	    WHERE IFSpectrum_SubHeader.fkHeader IN ($keysList)
+	    AND TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId
+	    AND IFSpectrum_SubHeader.IsIncluded = 1
+	    AND IFSpectrum_SubHeader.IFChannel = $ifChannel
+	    ORDER BY FreqLO, IFGain ASC;";
+
+	    $output = array();
+
+	    $PT0 = 0;    // total power with 0 dB gain
+	    $PT15 = 0;   // total power 15 dB
+	    $PI0 = 0;    // in-band power 0 dB
+	    $PI15 = 0;   // in-band power 15 dB
+
+	    $r = $this->run_query($q);
+	    while ($row = @mysql_fetch_array($r)) {
+	        $LO = $row[0];
+	        $gain = $row[1];
+
+	        if ($gain == 0) {
+	            $PT0 = $row[2];
+	            $PI0 = $row[3];
+
+	        } elseif ($gain == 15) {
+	            $PT15 = $row[2];
+	            $PI15 = $row[3];
+
+	            $output[] = array(
+	                    'FreqLO' => $LO,
+	                    'pwr0' => $PI0,
+	                    'pwr15' => $PI15,
+	                    'pwrT' => $PT15,
+	                    'pwrDiff' => $PT15 - $PI15
+	            );
+	        }
+	    }
+	    return $output;
+	}
+
+	public function storeTotalAndInBandPower($ifChannel, $ifGain, $data) {
+	    $headerInfo = $this->getHeaderInfo($ifChannel, $ifGain);
+	    $keysList = $this->getSubHeaderKeys($headerInfo);
+
+	    // Delete previous data for the specified channel:
+	    $q = "DELETE FROM TEST_IFSpectrum_TotalPower WHERE fkSubHeader IN ($keysList)";
+
+	    if (!$this->run_query($q))
+	        return false;
+
+	    $q = "INSERT INTO TEST_IFSpectrum_TotalPower (fkSubHeader, TotalPower, InBandPower) VALUES ";
+
+	    $v = "";
+	    foreach ($data as $row) {
+	        $LO = $row['LO_GHz'];
+	        $pTot = $row['pTotal_dBm'];
+	        $pInB = $row['pInBand_dBm'];
+
+	        $i = array_search($LO, array_column($headerInfo, 'LO_GHz'));
+	        if (!($i === FALSE)) {
+	            $key = $headerInfo[$i]['keyIFS'];
+	            if ($v)
+	                $v .= ", ";
+	            $v .= "($key, $pTot, $pInB)";
+	        }
+	    }
+	    $q .= $v . ";";
+	    if (!$this->run_query($q))
+	        return false;
 	}
 
 } // end class

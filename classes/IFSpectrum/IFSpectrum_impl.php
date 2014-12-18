@@ -71,7 +71,7 @@ class IFSpectrum_impl extends TestData_header {
 
     var $swVersion;               //software version string for this class.
 
-    public function __construct(){
+    public function __construct() {
         $this->swVersion = "1.3.0";
         // 1.3.0  MTM: still refactoring with new IFSpectrum_calc, _db, and _plot classes.
         // 1.2.0  MTM: refactoring from Aaron's new plotter classes.
@@ -155,7 +155,7 @@ class IFSpectrum_impl extends TestData_header {
 
         // load the CCA serial number:
         $this->CCASN = 0;
-        if ($this->FrontEnd -> ccas[$this->band] -> keyId != ''){
+        if ($this->FrontEnd -> ccas[$this->band] -> keyId != '') {
             $this->CCASN = $this->FrontEnd -> ccas[$this->band] -> GetValue('SN');
         }
     }
@@ -183,10 +183,10 @@ class IFSpectrum_impl extends TestData_header {
         WriteINI($this->progressfile, 'image', $this->image_url);
     }
 
-    public function ProgressCheckForAbort(){
+    public function ProgressCheckForAbort() {
         $ini_array = parse_ini_file($this->progressfile_fullpath);
         $this->aborted = $ini_array['abort'];
-        if ($this->aborted){
+        if ($this->aborted) {
             WriteINI($this->progressfile,'message',"Stopped.");
             return true;
         }
@@ -200,11 +200,11 @@ class IFSpectrum_impl extends TestData_header {
         echo "<tr class = 'alt'><th colspan='3'>IF Spectrum data sets for TestData_header.dataSetGroup $this->dataSetGroup</th></tr>";
         echo "<tr><th>Key</th><th>Timestamp</th><th>Notes</th></tr>";
 
-        for ($i = 0; $i < count($this->TDHkeys); $i++){
-            if ($i % 2 == 0){
+        for ($i = 0; $i < count($this->TDHkeys); $i++) {
+            if ($i % 2 == 0) {
                 $trclass = "alt";
             }
-            if ($i % 2 != 0){
+            if ($i % 2 != 0) {
                 $trclass = "";
             }
             $t = new TestData_header();
@@ -287,7 +287,7 @@ class IFSpectrum_impl extends TestData_header {
         }
     }
 
-    public function DisplayPowerVarFullBandTable(){
+    public function DisplayPowerVarFullBandTable() {
         $data = $this->ifSpectrumDb -> getPowerVarFullBand($this->FEid, $this->band, $this->dataSetGroup);
         if ($data) {
             // TODO: add back in borders/shading.
@@ -297,7 +297,7 @@ class IFSpectrum_impl extends TestData_header {
             echo "<tr class='alt3'><td style='border-right:solid 1px #000000;'><b>LO (GHz)</td>";
             echo "<td><b>IF0</b></td>";
             echo "<td><b>IF1</b></td>";
-            if ($this->band < 9){
+            if ($this->band < 9) {
                 echo "<td><b>IF2</b></td>";
                 echo "<td><b>IF3</b></td>";
             }
@@ -345,24 +345,28 @@ class IFSpectrum_impl extends TestData_header {
         }
     }
 
-    public function GeneratePlots(){
+    public function GeneratePlots() {
         $this->ReportProgress(1, 'Creating temporary table...');
         $this->ifSpectrumDb->createTemporaryTable($this->FEid, $this->band, $this->dataSetGroup);
         $this->makeOutputDirectory(true);
 
-        $this->ReportProgress(20, 'Plotting IF Spectrum...');
-        $this->Plot_IFSpectrum_Data(FALSE, 20, 5);
+        $this->ReportProgress(10, 'Plotting IF Spectrum...');
+        $this->Plot_IFSpectrum_Data(FALSE, 10, 5);
 
-        $this->ReportProgress(40, 'message','Plotting Expanded IF Spectrum...');
-        $this->Plot_IFSpectrum_Data(TRUE, 40, 5);
+        $this->ReportProgress(30, 'Plotting Expanded IF Spectrum...');
+        $this->Plot_IFSpectrum_Data(TRUE, 30, 5);
 
-        $this->ReportProgress(60, 'Plotting Power Variation...');
-        $this->Plot_PowerVariation_Data(FALSE, 60, 5);
+        $this->ReportProgress(50, 'Plotting Power Variation...');
+        $this->Plot_PowerVariation_Data(FALSE, 50, 2.5);
+        $this->Plot_PowerVariation_Data(TRUE, 60, 2.5);
 
-        $this->ReportProgress(80, 'Plotting Power Variation...');
-        $this->Plot_PowerVariation_Data(TRUE, 80, 5);
+        $this->ReportProgress(70, 'Full-band Power Variation...');
+        $this->Calc_PowerVar_FullBand(70, 2.5);
 
-        $this->ReportProgress(90, 'Removing temporary tables...');
+        $this->ReportProgress(85, 'Total and In-Band Power...');
+        $this->Calc_TotalInbandPower(80, 2.5);
+
+        $this->ReportProgress(95, 'Removing temporary table...');
         $this->ifSpectrumDb->deleteTemporaryTable();
 
         $this->ReportProgress(100, 'Finished plotting IF Spectrum.');
@@ -417,16 +421,17 @@ class IFSpectrum_impl extends TestData_header {
         $typeURL = ($expanded) ? 'spurious_url2d2' : 'spurious_url2d';
         $ifGain = 15;
         $msgExpanded = ($expanded) ? ' Expanded' : '';
+        $progress = $progressStart;
 
         for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())
                 return;
 
             // update the progress file:
-            $progress = $progressStart + ($ifChannel / $iflim) * $progressIncrement;
             $this->ReportProgress($progress, "Plotting Spurious$msgExpanded IF$ifChannel...");
+            $progress += $progressIncrement;
 
-            // Resets attributes to be used by plotter:
+            // Reset attributes to be used by plotter:
             $this->plotter -> resetPlotter();
 
             // Set the image path and band into the plotter:
@@ -447,13 +452,13 @@ class IFSpectrum_impl extends TestData_header {
                 $this->plotter -> save_data("SpuriousBand" . $this->band . "_IF$ifChannel");
 
             // Set the plot title and generate the plot:
-            $plotTitle = "Spurious Noise FE-$fesn, Band $this->band SN $this->CCASN IF$ifChannel";
+            $plotTitle = "Spurious Noise FE-$fesn, CCA $this->band-$this->CCASN, IF$ifChannel";
             $this->plotter -> generateSpuriousPlot($expanded, $this->imagename, $plotTitle, $this->TDHdataLabels);
 
             // Append the actual image filename to the URL before saving:
             $this->image_url .= $this->plotter -> getOutputFileName();
 
-            if ($this->plotURLs[$ifChannel] -> keyId == ''){
+            if ($this->plotURLs[$ifChannel] -> keyId == '') {
                 $this->plotURLs[$ifChannel] = new GenericTable();
                 $this->plotURLs[$ifChannel] -> NewRecord('TEST_IFSpectrum_plotURLs', 'keyId', 40, 'fkFacility');
                 $this->plotURLs[$ifChannel] -> SetValue('fkHeader', $this->TDHkeys[0]);
@@ -470,7 +475,7 @@ class IFSpectrum_impl extends TestData_header {
         }
     }
 
-    public function Plot_PowerVariation_Data($win31MHz, $progressStart, $progressIncrement){
+    public function Plot_PowerVariation_Data($win31MHz, $progressStart, $progressIncrement) {
         $iflim = $this->specs['maxch'];
         $fesn = $this->FrontEnd -> GetValue('SN');
         $ifGain = 15;
@@ -483,14 +488,16 @@ class IFSpectrum_impl extends TestData_header {
             $fWindow = 2.0;     // Window size GHz.
             $winText = '2 GHz';
         }
+        $progress = $progressStart;
+
         for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())
                 return;
 
-            $progress = $progressStart + ($ifChannel / $iflim) * $progressIncrement;
             $this->ReportProgress($progress, "Plotting Power Variation $winText window IF$ifChannel...");
+            $progress += $progressIncrement;
 
-            // Resets attributes to be used by plotter:
+            // Reset attributes to be used by plotter:
             $this->plotter -> resetPlotter();
 
             // Set the image path and band into the plotter:
@@ -512,13 +519,13 @@ class IFSpectrum_impl extends TestData_header {
                 $this->plotter -> save_data("PowerVarBand" . $this->band . "_$winText" . "_IF$ifChannel");
 
             // Set the plot title and generate the plot:
-            $plotTitle = "Power Variation $winText Window FE-$fesn, Band $this->band SN $this->CCASN IF$ifChannel";
+            $plotTitle = "Power Variation $winText Window FE-$fesn, CCA $this->band-$this->CCASN, IF$ifChannel";
             $this->plotter->generatePowerVarPlot($win31MHz, $this->imagename, $plotTitle, $this->TDHdataLabels);
 
             // Append the actual image filename to the URL before saving:
             $this->image_url .= $this->plotter->getOutputFileName();
 
-            if ($this->plotURLs[$ifChannel] -> keyId == ''){
+            if ($this->plotURLs[$ifChannel] -> keyId == '') {
                 $this->plotURLs[$ifChannel] = new GenericTable();
                 $this->plotURLs[$ifChannel] -> NewRecord('TEST_IFSpectrum_plotURLs','keyId',40,'fkFacility');
                 $this->plotURLs[$ifChannel] -> SetValue('fkHeader',$this->TDHkeys[0]);
@@ -532,6 +539,67 @@ class IFSpectrum_impl extends TestData_header {
 
             // Update the progress display image:
             $this->UpdateProgressImageUrl();
+        }
+    }
+
+    public function Calc_PowerVar_FullBand($progressStart, $progressIncrement) {
+        $iflim = $this->specs['maxch'];
+        $fesn = $this->FrontEnd -> GetValue('SN');
+        $ifGain = 15;
+        $progress = $progressStart;
+
+        for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
+            if ($this->ProgressCheckForAbort())
+                return;
+
+            $this->ReportProgress($progress, "Full-band Power Variation IF$ifChannel...");
+            $progress += $progressIncrement;
+
+            // Get spurious noise data from database:
+            $data = $this->ifSpectrumDb -> getSpectrumData($ifChannel, $ifGain);
+
+            // Calculate power variation:
+            $this->ifCalc -> setData($data);
+            $pvarData = $this->ifCalc -> getPowerVarFullBand($this->specs['fWindow_Low'], $this->specs['fWindow_high']);
+
+            // Store back to database:
+            $this->ifSpectrumDb -> storePowerVarFullBand($ifChannel, $pvarData);
+        }
+    }
+
+    public function Calc_TotalInbandPower($progressStart, $progressIncrement) {
+        $iflim = $this->specs['maxch'];
+        $fesn = $this->FrontEnd -> GetValue('SN');
+        $progress = $progressStart;
+
+        for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
+            if ($this->ProgressCheckForAbort())
+                return;
+
+            $this->ReportProgress($progress, "Total and In-Band Power IF$ifChannel...");
+            $progress += $progressIncrement;
+
+            // Get spurious noise data from database for 0 dB gain:
+            $ifGain = 0;
+            $data = $this->ifSpectrumDb -> getSpectrumData($ifChannel, $ifGain);
+
+            // Calculate total and in-band power:
+            $this->ifCalc -> setData($data);
+            $pwrData = $this->ifCalc -> getTotalAndInBandPower($this->specs['fWindow_Low'], $this->specs['fWindow_high']);
+
+            // Store back to database:
+            $this->ifSpectrumDb -> storeTotalAndInBandPower($ifChannel, $ifGain, $pwrData);
+
+            // Get spurious noise data from database for 15 dB gain:
+            $ifGain = 15;
+            $data = $this->ifSpectrumDb -> getSpectrumData($ifChannel, $ifGain);
+
+            // Calculate total and in-band power:
+            $this->ifCalc -> setData($data);
+            $pwrData = $this->ifCalc -> getTotalAndInBandPower($this->specs['fWindow_Low'], $this->specs['fWindow_high']);
+
+            // Store back to database:
+            $this->ifSpectrumDb -> storeTotalAndInBandPower($ifChannel, $ifGain, $pwrData);
         }
     }
 

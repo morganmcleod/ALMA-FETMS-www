@@ -344,10 +344,13 @@ class IFSpectrum_calc {
      */
     public function getPowerVarFullBand($fMin = 4.0, $fMax = 8.0) {
         // helper function to append a record to the output:
-        $appendResult = function(&$output, $outputRec) {
-            // compute the power difference and append:
-            $outputRec[1] = $outputRec[3] - $outputRec[2];
-            $output[] = $outputRec;
+        $appendResult = function(&$output, $LO, $mindBm, $maxdBm) {
+            $output[] = array(
+                    'LO_GHz' => $LO,
+                    'pVar_dB' => ($maxdBm - $mindBm),
+                    'pMin_dBm' => $mindBm,
+                    'pMax_dBm' => $maxdBm
+            );
         };
 
         if (empty($this->data))
@@ -355,13 +358,9 @@ class IFSpectrum_calc {
 
         $output = array();
         // record structure to accumulate min and max for each LO:
-        $newRec = array(
-            'LO_GHz' => self::BAD_LO,
-            'pVar_dB' => 0,
-            'pMin_dBm' => self::HUGE_POWER,
-            'pMax_dBm' => self::TINY_POWER
-        );
-        $outputRec = $newRec;
+        $lastLO = self::BAD_LO;
+        $mindBm = self::HUGE_POWER;
+        $maxdBm = self::TINY_POWER;
 
         // loop on all rows:
         foreach($this->data as $row) {
@@ -370,27 +369,28 @@ class IFSpectrum_calc {
             $PW = $row['Power_dBm'];
 
             // for each new LO seen:
-            if ($LO != $outputRec[0]) {
+            if ($LO != $lastLO) {
                 // if the previous LO seen is not our start token:
-                if ($outputRec[0] != self::BAD_LO) {
+                if ($lastLO != self::BAD_LO) {
                     // output the previous LO record:
-                    $appendResult(&$output, $outputRec);
+                    $appendResult(&$output, $lastLO, $mindBm, $maxdBm);
                 }
                 // reset the output record to accumulate for the next LO:
-                $outputRec = $newRec;
-                $outputRec[0] = $LO;
+                $lastLO = $LO;
+                // reset min/max accumulators:
+                $mindBm = self::HUGE_POWER;
+                $maxdBm = self::TINY_POWER;
             }
-
             // accumulate min and max powers seen for the current LO:
             if ($fMin <= $IF && $IF <= $fMax) {
-                if ($PW < $outputRec[2])
-                    $outputRec[2] = $PW;
-                if ($PW > $outputRec[3])
-                    $outputRec[3] = $PW;
+                if ($PW < $mindBm)
+                    $mindBm = $PW;
+                if ($PW > $maxdBm)
+                    $maxdBm = $PW;
             }
         }
         // output data for the last LO:
-        $appendResult(&$output, $outputRec);
+        $appendResult(&$output, $lastLO, $mindBm, $maxdBm);
         return $output;
     }
 
@@ -408,7 +408,7 @@ class IFSpectrum_calc {
      */
     public function getTotalAndInBandPower($fMin = 4.0, $fMax = 8.0) {
         // helper function to append a record to the output:
-        $appendResult = function(&$output, $LO, $total, $inband) {
+        $appendResult = function(&$output, $LO, $total, $inBand) {
             // accumulated powers converted back to dBm:
             $output[] = array(
                     'LO_GHz' => $LO,
@@ -460,6 +460,10 @@ class IFSpectrum_calc {
         }
         // output the record for the last LO:
         $appendResult($output, $LO, $total, $inBand);
+
+        // restore original data prior to NF correction:
+        $this->data = $tempData;
+
         return $output;
     }
 
@@ -485,7 +489,7 @@ class IFSpectrum_calc {
             $PW = $row['Power_dBm'];
             // if new LO seen:
             if ($LO != $lastLO) {
-                // make make it the new current LO:
+                // make it the new current LO:
                 $lastLO = $LO;
                 // reset the index into the noise floor data:
                 $nfIndex = 0;
