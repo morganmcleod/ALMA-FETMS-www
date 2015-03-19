@@ -10,6 +10,7 @@ require_once($site_classes . '/class.gnuplot_wrapper.php');
  */
 
 class IFSpectrum_plot extends GnuplotWrapper {
+    private $pvarData_special; // special data array for band6 5-6 GHz
     private $loValues;   // array of LO values to plot
     private $maxOffset;  // maximum accumulated offset for stacked specrum traces.
     private $minMaxData; // Min and max power plus offset seen per LO:
@@ -32,13 +33,23 @@ class IFSpectrum_plot extends GnuplotWrapper {
      */
     public function __construct() {
         GnuplotWrapper::__construct();
+        $pvarData_special = array();
         $this->loValues = array();
         $this->resetMinMaxData();
     }
 
     public function resetMinMaxData() {
+        unset($this->minMaxData);
         $this->minMaxData = array();
         $this->maxOffset = 0;
+    }
+
+    public function setData_special($pvarData_special) {
+        unset($this->pvarData_special);
+        if ($pvarData_special)
+            $this->pvarData_special = $pvarData_special;
+        else
+            $this->pvarData_special = array();
     }
 
     /**
@@ -167,7 +178,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $this->plotArrows(); // Creates vertical lines over IF range from specs ini file.
         $this->plotYAxis(array('ymin' => $this->minMaxData[0]['pMin_dBm'],
                                'ymax' => $this->minMaxData[count($this->minMaxData) - 1]['pMax_dBm']));
-        $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.04), array(0.01, 0.01)));
+        $this->plotAddLabel($TDHdataLabels);
         $this->plotData($att, count($att));
         $this->doPlot();
     }
@@ -189,8 +200,12 @@ class IFSpectrum_plot extends GnuplotWrapper {
         // use default plot size:
         $this->plotSize();
 
-        if ($win31MHz)
+        if ($win31MHz) {
             $this->specs['spec_value'] = 1.35;
+            $ymax = 2.35;
+        } else {
+            $ymax = ($this->band == 6) ? 9 : $this->specs['spec_value'] + 1;
+        }
 
         // setup the plot:
         $this->plotOutput($imagename);
@@ -200,7 +215,6 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $this->plotLabels(array('x' => 'Center of Window (GHz)', 'y' => 'Power Variation in Window (dB)'));
         $this->plotBMargin(7);
         $this->plotKey('outside');
-        $ymax = ($this->band == 6) ? 9 : $this->specs['spec_value'] + 1;
         $this->plotYAxis(array('ymin' => 0, 'ymax' => $ymax));
         $att = array();
         $ltIndex = 1;
@@ -208,66 +222,22 @@ class IFSpectrum_plot extends GnuplotWrapper {
             $att[] = "lines lt $ltIndex title ' $lo GHz'";
             $ltIndex++;
         }
-        if ($this->band == 6) {
-            // Special band 6 power variation plot:
-            $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.04), array(0.01, 0.01)));
-            $this->band6powervar($if, $FEid, $dataSetGroup, $att, count($att));
-        } else {
-            $this->plotAddLabel($TDHdataLabels, array(array(0.01, 0.07), array(0.01, 0.04), array(0.01, 0.01)));
-            $this->plotData($att, count($att));
+
+        if (!$win31MHz && $this->band == 6) {
+            $this->plotAttribs['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
+
+            $att[] = "f1(x) notitle with lines lt -1 lw 5";
+
+//             $ltIndex = 1;
+//             foreach ($this->pvarData_special as $row) {
+//                 $att[] = "5, " . $row['pVar_dB'] . "linespoints lt $ltIndex notitle";
+//                 $ltIndex++;
+//             }
         }
+        $this->plotAddLabel($TDHdataLabels);
+        $this->plotData($att, count($att));
         $this->doPlot();
     }
-
-    /**
-     * Plots band 6, 2 GHz case for power variation.
-     *
-     * @param int $IFChannel
-     * @param int $FEid
-     * @param int $DataSetGroup
-     * @param array $lineAtt- Strings indicating parameters for each line to be plotted.
-     * @param int $count- number of lines to be plotted, number of files created by createTempFile()
-     */
-    public function band6powervar($IFChannel, $FEid, $DataSetGroup, $lineAtt, $count) {
-        require(site_get_config_main());
-
-        $this->plotYAxis(array('ymin' => 0, 'ymax' => 9));
-        $this->plotXAxis(array('xmin' => 5, 'xmax' => 9.2));
-        $this->plotAttribs['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
-        $this->plotAttribs['fspec2'] = "f2(x) = ((x > 7) && (x < 9)) ? 7 : 1/0\n";
-
-//         $dbpull = new IF_db();
-//         $temp = $dbpull->q6($this->band, $IFChannel, $FEid, $DataSetGroup);
-        $b6points = $temp[0];
-        $maxvar = $temp[1];
-
-        $this->plotAttribs["label3"] = "set label 'Max Power Variation: " . round($maxvar, 2) . " dB' at screen 0.01, 0.07\n";
-
-        $bmax = 5.52;
-        $bmin = 5.45;
-        for ($i=0; $i<count($b6points); $i++) {
-            $temp = "fb6_$i(x)=((x>$bmin) && (x<$bmax)) ? $b6points[$i] : 1/0\r\n";
-            $this->plotAttribs["b6$i"] = $temp;
-        }
-
-        $temp = "plot fb6_0(x) with linespoints notitle pt 5 lt 1, '" . $main_write_directory . "$this->dir/temp_data0.txt'";
-        $temp .= " using 1:2 with $lineAtt[0],";
-        for ($k=1; $k<$count; $k++) {
-            $temp .= " fb6_$k(x) with linespoints notitle pt 5 lt " . (string)($k + 1) . ", ";
-            $temp .= "'" .$main_write_directory . "$this->dir/temp_data$k.txt'";
-            $temp .= " using 1:2 with $lineAtt[$k],";
-        }
-        $temp .= " f1(x) title 'Spec' with lines lt -1 lw 5,";
-        $temp .= " f2(x) notitle with lines lt -1 lw 5";
-
-        if(isset($this->plotAttribs['specAtt'])) {
-            $add = $this->plotAttribs['specAtt'];
-            $temp .= $add;
-            unset($this->plotAttribs['specAtt']);
-        }
-        $this->plotAttribs['plot'] = $temp . "\n";
-    }
-
 
     /**
      * Finds unique LO values in the data array.

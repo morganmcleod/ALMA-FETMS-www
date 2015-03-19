@@ -401,7 +401,7 @@ class IFSpectrum_impl extends TestData_header {
             mkdir($this->imagedirectory);
 
         $this->imagedirectory .= 'IFSpectrum';
-        if ($deleteContents)
+        if ($deleteContents && file_exists($this->imagedirectory))
             self::deleteDir($this->imagedirectory);
 
         if (!file_exists($this->imagedirectory))
@@ -455,6 +455,9 @@ class IFSpectrum_impl extends TestData_header {
             $plotTitle = "Spurious Noise FE-$fesn, CCA $this->band-$this->CCASN, IF$ifChannel";
             $this->plotter -> generateSpuriousPlot($expanded, $this->imagename, $plotTitle, $this->TDHdataLabels);
 
+            // Free memory:
+            unset($data);
+
             // Append the actual image filename to the URL before saving:
             $this->image_url .= $this->plotter -> getOutputFileName();
 
@@ -479,6 +482,7 @@ class IFSpectrum_impl extends TestData_header {
         $iflim = $this->specs['maxch'];
         $fesn = $this->FrontEnd -> GetValue('SN');
         $ifGain = 15;
+        $pvarData = $pvarData_special = false;
         if ($win31MHz) {
             $typeURL = 'powervar_31MHz_url';
             $fWindow = 0.031;   // Window size GHz.
@@ -510,9 +514,24 @@ class IFSpectrum_impl extends TestData_header {
             // Calculate power variation:
             $this->ifCalc -> setData($data);
             $pvarData = $this->ifCalc -> getPowerVarWindow($this->specs['fWindow_Low'], $this->specs['fWindow_high'], $fWindow);
+            if ($this->band == 6) {
+                $fWindow_special_Low = $this->specs['fWindow_special_Low'];
+                $fWindow_special_High = $this->specs['fWindow_special_High'];
+                $fWindow_special = $fWindow_special_High - $fWindow_special_Low;
+                $pvarData_special = $this->ifCalc -> getPowerVarWindow($fWindow_special_Low, $fWindow_special_High, $fWindow_special);
+            }
+            // Cache max power variation:
+            $maxVar = $this->ifCalc -> getMaxVarWindow();
+
+            // Free memory:
+            $this->ifCalc -> setData(false);
+            unset($data);
 
             // Set data into the plotter:
             $this->plotter -> setData($pvarData);
+            if ($pvarData_special) {
+                $this->plotter -> setData_special($pvarData_special);
+            }
 
             // save raw data (for troubleshooting):
             if ($this->debugRawDataFiles)
@@ -523,7 +542,7 @@ class IFSpectrum_impl extends TestData_header {
 
             // Append a "Max Power Variation" line to the labels:
             $labels = $this->TDHdataLabels;
-            $labels[] = "Max Power Variation: " . round($this->ifCalc -> getMaxVarWindow(), 2) . " dB";
+            $labels[] = "Max Power Variation: " . round($maxVar, 2) . " dB";
 
             // Generate the plot
             $this->plotter->generatePowerVarPlot($win31MHz, $this->imagename, $plotTitle, $labels);

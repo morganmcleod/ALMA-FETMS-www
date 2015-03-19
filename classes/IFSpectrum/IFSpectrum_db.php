@@ -170,21 +170,22 @@ class IFSpectrum_db {
 	    $headerInfo = $this->getHeaderInfo($ifChannel, $ifGain);
 	    $keysList = $this->getSubHeaderKeys($headerInfo);
 
-	    $q = "SELECT IFSpectrum_SubHeader.FreqLO, (TEMP_IFSpectrum.Freq_Hz / 1.0E9) as Freq_GHz, TEMP_IFSpectrum.Power_dBm
+	    $q = "SELECT IFSpectrum_SubHeader.FreqLO as LO_GHz, (TEMP_IFSpectrum.Freq_Hz / 1.0E9) as Freq_GHz, TEMP_IFSpectrum.Power_dBm
 	    FROM IFSpectrum_SubHeader, TEMP_IFSpectrum
 	    WHERE TEMP_IFSpectrum.fkSubHeader = IFSpectrum_SubHeader.keyId
 	    AND IFSpectrum_SubHeader.keyId in ($keysList)
-	    ORDER BY FreqLO, Freq_GHz ASC;";
+	    ORDER BY LO_GHz, Freq_GHz ASC;";
 
 	    $r = $this->run_query($q);
 
 	    $output = array();
-	    while ($row = @mysql_fetch_array($r)) {
-	        $output[] = array(
-	                'LO_GHz' => $row[0],
-	                'Freq_GHz' => $row[1],
-	                'Power_dBm' => $row[2]
-	        );
+	    $count = 0;
+	    while ($row = mysql_fetch_assoc($r)) {
+	        $output[] = $row;
+	        $count++;
+	        if ($count == 71998) {
+	            echo 'yo';
+	        }
 	    }
 	    return $output;
 	}

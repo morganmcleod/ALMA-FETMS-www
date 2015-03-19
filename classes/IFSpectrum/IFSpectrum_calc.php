@@ -44,6 +44,7 @@ class IFSpectrum_calc {
     public function IFSpectrum_calc($data = false) {
         $this->setData($data);
         $this->cablePad = self::DFLT_CABLEPAD;
+        unset($this->noiseFloorData);
         $this->noiseFloorData = array();
     }
 
@@ -62,6 +63,7 @@ class IFSpectrum_calc {
      * )
      */
     public function setData($data, $sortData = false) {
+        unset($this->data);
         if ($data)
             $this->data = $data;
         else
@@ -262,6 +264,10 @@ class IFSpectrum_calc {
         $iUpper = $this->findWindowEdge($minIndex, $maxIndex, $fUpper, true);
         if ($iUpper === false)
             return false;
+
+        // adjust in case $fLower == $fUpper:
+        if ($fLower == $fUpper && $iUpper < $iLower)
+            $iLower = $iUpper;
 
         // find the index of the lower window edge:
         $iLowerWindow = $this->findWindowEdge($minIndex, $iLower, $fMin, false);

@@ -28,6 +28,7 @@ class GnuplotWrapper {
     protected $outputFileName;  // Filename of the output plot
     protected $band;            // What ALMA cartridge band this plot is for
     protected $specs;           // Array of spec values as returned from class Specifications
+    protected $labelLocations;  // Array of label locations at bottom of the plot
     protected $plotAttribs;     // Named attributes for the plot
     protected $commandFile;     // The command filename to pass to Gnuplot
     protected $gnuplot;         // Gnuplot command on this system.
@@ -37,8 +38,9 @@ class GnuplotWrapper {
      * Constructor
      */
     public function __construct() {
-        $this->swVersion = '1.1';
+        $this->swVersion = '1.2';
         /*
+         * 1.2: Added labelLocations logic
          * Version 1.1 Modifications and refactoring Morgan McLeod
          * Version 1.0 (07/30/2014) author Aaron Beaudoin
          */
@@ -46,6 +48,7 @@ class GnuplotWrapper {
         $this->resetPlotter();
         $this->band = 0;
         $this->specs = array();
+        $this->labelLocations = array(array(0.01, 0.01), array(0.01, 0.04), array(0.01, 0.07), array(0.01, 0.07));
         $a = func_get_args();
         $i = func_num_args();
         if ($i >= 1)
@@ -61,9 +64,11 @@ class GnuplotWrapper {
      * Resets all plot attributes to allow for new plot.
      */
     public function resetPlotter() {
+        unset($this->data);
         $this->data = array();
         $this->outputDir = NULL;
         $this->outputFileName = NULL;
+        unset($this->plotAttribs);
         $this->plotAttribs = array();
         $this->commandFile = '';
     }
@@ -247,7 +252,6 @@ class GnuplotWrapper {
      * @param array $yvar- dependent variable
      * @param string $sortBy- key for independent variable
      * @param int $count- index for naming output text files
-     * @param array $specs- List of desired specs to be plotted. Defaults to NULL if specs not desired in plot.
      * @param boolean $average- True if average values desired. Defaults to FALSE.
      */
     public function createTempFile($xvar, $yvar, $count, $average = FALSE) {
@@ -389,18 +393,29 @@ class GnuplotWrapper {
     }
 
     /**
-     * Add additional labels to plot.
+     * Add additional labels to bottom of plot.
+     * Member labelLocations is used to place labels
      *
      * @param array $labels- Labels desired to be added to plot
-     * @param 2d array $locs- x and y locations of each label
-     * Ex. $locs = array(array(.01, .01), array(.01, .04))
      */
-    public function plotAddLabel($labels, $locs) {
-        $count = 0;
-        foreach ($labels as $l) {
-            $key = "label" . (string)($count + 1);
-            $this->plotAttribs[$key] = "set label '" . $l . "' at screen " . (string)$locs[$count][0] . ", " . (string)$locs[$count][1] . "\n";
-            $count++;
+    public function plotAddLabel($labels) {
+        $index = count($labels);
+        if (!$index)
+            return;     // nothing to do.
+
+        // index into labelLocations:
+        $labelIndex = 0;
+
+        // apply the labels in reverse order, from bottom up plot upward
+        while ($index > 0) {
+            $index--;
+            // can't proceed unless labelLocations has something here:
+            if (isset($this->labelLocations[$labelIndex])) {
+                $loc = $this->labelLocations[$labelIndex];
+                $key = "label" . (string)($index + 1);
+                $this->plotAttribs[$key] = "set label '" . $labels[$index] . "' at screen " . (string)$loc[0] . ", " . (string)$loc[1] . "\n";
+                $labelIndex++;
+            }
         }
     }
 
