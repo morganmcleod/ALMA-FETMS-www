@@ -36,7 +36,7 @@ class BeamEffDB { //extends DBRetrieval {
 	public function qdelete($keyScanDetails, $fc=NULL) {
 		$q = "DELETE FROM BeamEfficiencies WHERE fkScanDetails = $keyScanDetails";
 		if(!is_null($fc)) {
-			$q .= "AND fkFacility = $this->fc;";
+			$q .= "AND fkFacility = $fc;";
 		}
 		return $this->run_query($q);
 	}
