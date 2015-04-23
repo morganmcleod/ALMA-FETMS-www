@@ -157,7 +157,7 @@ class NoiseTemperature extends TestData_header{
             $this->CalculateBand10AvgNT();
 
         $this->LoadAndWriteCCANoiseTempData();
-        
+
         $this->MakePlotFooterLabels();
 
         $this->DrawPlotTrVsIF();
@@ -1170,7 +1170,7 @@ class NoiseTemperature extends TestData_header{
         else
             $plot_title .= "T_rec uncorrected";
         $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN') . ", CCA" . $this->GetValue('Band') . "-$this->CCA_SN WCA" . $this->GetValue('Band') . "-$this->WCA_SN";
-        $this->y_lim = 1.1 * $this->NT_allRF_spec;  // upper limit to y axis
+        $this->y_lim = 1.3 * $this->NT_allRF_spec;  // upper limit to y axis
 
         // Create GNU plot command file for Tssb vs IF plot command
         $commandfile = $this->plotDir . "Tssb_vs_IF_plotcommands.txt";
@@ -1197,10 +1197,10 @@ class NoiseTemperature extends TestData_header{
             fwrite($f, "plot  '$this->if_datafile' using 1:2 with lines lt 1 lw 1 title 'Pol0sb1',");
             fwrite($f, "'$this->if_datafile' using 1:3 with lines lt 2 lw 1 title 'Pol0sb2',");
             fwrite($f, "'$this->if_datafile' using 1:4 with lines lt 3 lw 1 title 'Pol1sb1',");
-            fwrite($f, "'$this->if_datafile' using 1:5 with lines lt 4 lw 1 title 'Pol1sb2',");
+            fwrite($f, "'$this->if_datafile' using 1:5 with lines lt 4 lw 1 title 'Pol1sb2'\r\n");
         }
-        fwrite($f, "'$this->spec_datafile' using 1:3 with lines lt -1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
-        fwrite($f, "'$this->spec_datafile' using 1:2 with lines lt 0 lw 1 title ' $this->NT_80_spec K (80%)'\r\n");
+//        fwrite($f, "'$this->spec_datafile' using 1:3 with lines lt -1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
+//        fwrite($f, "'$this->spec_datafile' using 1:2 with lines lt 0 lw 1 title ' $this->NT_80_spec K (80%)'\r\n");
         fclose($f);
 
         // get the main data files write directory from config_main:
@@ -1299,7 +1299,8 @@ class NoiseTemperature extends TestData_header{
                 fwrite($f, "'$this->avg_datafile' using 1:3 with linespoints lt 2 lw 1 title 'Pol0sb2',");
                 fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1sb1',");
                 fwrite($f, "'$this->avg_datafile' using 1:5 with linespoints lt 4 lw 1 title 'Pol1sb2',");
-                fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
+                fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)',");
+                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt -1 lw 3 title ' $this->NT_allRF_spec K (100%)'\r\n");
                 break;
         }
         fclose($f);
