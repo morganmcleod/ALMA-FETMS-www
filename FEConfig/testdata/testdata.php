@@ -20,6 +20,7 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.cca_image_rejection.php');
 require_once($site_classes . '/class.finelosweep.php');
 require_once($site_classes . '/class.noisetemp.php');
+require_once($site_classes . '/class.wca.php');
 
 
 $fc = $_REQUEST['fc'];
@@ -260,7 +261,6 @@ if (($td->GetValue('PlotURL') == '')) {
     }
 }
 
-require_once(site_get_classes() . '/class.wca.php');
 
 function Display_TestDataMain($td) {
 
@@ -361,9 +361,6 @@ function Display_TestDataMain($td) {
 }
 
 
-require_once(site_get_classes() . '/class.finelosweep.php');
-require_once(site_get_classes() . '/class.noisetemp.php');
-require_once(site_get_classes() . '/class.cca_image_rejection.php');
 
 function Display_Plot($td){
     switch($td->GetValue('fkTestData_Type')){

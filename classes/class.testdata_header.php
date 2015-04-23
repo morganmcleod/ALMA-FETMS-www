@@ -6,6 +6,8 @@ require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.cryostat.php');
 require_once($site_classes . '/class.dataplotter.php');
 require_once($site_classes . '/class.wca.php');
+require_once($site_classes . '/class.spec_functions.php');
+
 require_once($site_dbConnect);
 
 class TestData_header extends GenericTable{
@@ -83,7 +85,7 @@ class TestData_header extends GenericTable{
     	$value = @mysql_fetch_array($r);
     	return $value[0];
     }
-    
+
     public function RequestValues_TDH() {
         if ($this->GetValue('fkTestData_Type') == 7){
             //IF Spectrum, Get noisefloor key
@@ -301,10 +303,6 @@ class TestData_header extends GenericTable{
     }
 
     public function DrawPlot(){
-
-        $plt = new DataPlotter();
-        $plt->Initialize_DataPlotter($this->keyId,$this->dbconnection,$this->GetValue('keyFacility'));
-
         //Determine which type of plot to draw...
         switch ($this->GetValue('fkTestData_Type')) {
         case "43":

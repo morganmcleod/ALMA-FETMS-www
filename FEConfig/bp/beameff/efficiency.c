@@ -198,31 +198,13 @@ int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
     copol_pol1->eta_defocus = 1-0.3*pow(                       
                             (copol_pol1->k*(copol_pol1->delta_z - copol_pol1->nominal_z_offset)/1000) *
                             pow(32,-2.0) ,2.0);   
-            
-            
-            /*               
-    printf("pol0 k= %f\n",copol_pol0->k);
-    printf("pol1 k= %f\n",copol_pol1->k);
-    printf("pol0 deltaz= %f\n",copol_pol0->delta_z);
-    printf("pol1 deltaz= %f\n",copol_pol1->delta_z);
-    printf("pol0 nom z offset= %f\n",copol_pol0->nominal_z_offset);
-    printf("pol1 nom z offset= %f\n",copol_pol1->nominal_z_offset);
-    printf("pol0 deltaz - nom z offset= %f\n",copol_pol0->delta_z - copol_pol0->nominal_z_offset);
-    printf("pol1 deltaz - nom z offset= %f\n",copol_pol1->delta_z - copol_pol1->nominal_z_offset);
-    //printf("pol0 eta defocus= %f\n",copol_pol0->eta_defocus);
-    //printf("pol1 eta defocus= %f\n",copol_pol1->eta_defocus);
-    getchar();                        
-                  */                               
                             
     copol_pol0->total_aperture_eff = copol_pol0->eta_tot_nd * copol_pol0->eta_defocus; 
     copol_pol1->total_aperture_eff = copol_pol1->eta_tot_nd * copol_pol1->eta_defocus; 
 
     //pol0
     lambda = c_mm_per_ns / copol_pol0->f;    // c in mm/ns.  f in GHz.
-    //delta = (copol_pol0->delta_z - 200.0 + 0.0000000000001) / pow(M,2.0);
     delta = (copol_pol0->delta_z - 200.0 + 0.0000000000001) / pow(M,2.0) / 0.7197;
-    
-    // beta = (2*pi/lambda)*delta*(2-cos(psi_o/57.3) - cos(psi_m/57.3));
     beta = (2*pi/lambda)*delta*(1-cos(psi_o/57.3));
 
     copol_pol0->defocus_efficiency =
@@ -238,14 +220,11 @@ int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
          )
     );
     copol_pol0->shift_from_focus_mm = copol_pol0->delta_z  - 200.0;
-    //copol_pol0->subreflector_shift_mm = copol_pol0->shift_from_focus_mm / pow(M,2.0);
     copol_pol0->subreflector_shift_mm = fabs(copol_pol0->shift_from_focus_mm) / pow(M,2.0) / 0.7197;
+    copol_pol0->mean_subreflector_shift = copol_pol0->nominal_z_offset / pow(M,2.0) / 0.7197;
 
     //pol1
     lambda = c_mm_per_ns / copol_pol1->f;    // c in mm/ns.  f in GHz.
-    //delta = (copol_pol1->delta_z - 200.0 + 0.0000000000001) / pow(M,2.0);
-    //beta = (2*pi/lambda)*delta*(2-cos(psi_o/57.3) - cos(psi_m/57.3));
-    
     delta = (copol_pol1->delta_z - 200.0 + 0.0000000000001) / pow(M,2.0) / 0.7197;
     beta = (2*pi/lambda)*delta*(1-cos(psi_o/57.3));
     
@@ -262,24 +241,10 @@ int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
          )
     );
     copol_pol1->shift_from_focus_mm = copol_pol1->delta_z - 200.0;
-    //copol_pol1->subreflector_shift_mm = copol_pol1->shift_from_focus_mm / pow(M,2.0);
     copol_pol1->subreflector_shift_mm = fabs(copol_pol1->shift_from_focus_mm) / pow(M,2.0) / 0.7197;
-    
-    /*
-    printf("copol_pol0->subreflector_shift_ wavelength= %f\n",copol_pol0->subreflector_shift_mm/lambda);
-    printf("copol_pol1->subreflector_shift_ wavelength= %f\n",copol_pol1->subreflector_shift_mm/lambda);
-    
-    printf("pol0 eta defocus= %f\n",copol_pol0->eta_defocus);
-    printf("pol0 defocus_efficiency= %f\n",copol_pol0->defocus_efficiency);
-    printf("pol1 eta defocus= %f\n",copol_pol1->eta_defocus);
-    printf("pol1 defocus_efficiency= %f\n",copol_pol1->defocus_efficiency);
-    getchar();
-    */
-    
-    //Note: 0.7197 comes from equation 22 of ALMA MEMO 456 using M=20 and phi_0 = 3.58
-    
-    copol_pol0->mean_subreflector_shift = copol_pol0->nominal_z_offset / pow(M,2.0) / 0.7197;
     copol_pol1->mean_subreflector_shift = copol_pol1->nominal_z_offset / pow(M,2.0) / 0.7197;
+
+    //Note: 0.7197 comes from equation 22 of ALMA MEMO 456 using M=20 and phi_0 = 3.58
 
     return 1;                                    
 }

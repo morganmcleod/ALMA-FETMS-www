@@ -2,6 +2,7 @@
 
 date_default_timezone_set ('America/New_York');
 ini_set('display_errors', '1');
+ini_set('memory_limit', '384M');  // needed for IF spectrum plotting.
 $errorReportSettingsNo_E_NOTICE = E_ERROR | E_WARNING | E_PARSE;
 $errorReportSettingsNormal = $errorReportSettingsNo_E_NOTICE | E_NOTICE;
 error_reporting($errorReportSettingsNormal);

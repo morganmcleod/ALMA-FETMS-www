@@ -1,12 +1,38 @@
 <?php
-require_once(dirname(__FILE__) . '/../../../SiteConfig.php');
+/**
+ * ALMA - Atacama Large Millimeter Array
+ * (c) Associated Universities Inc., 2006
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+ *
+ * @author Aaron Beaudoin
+ * Version 1.0 (07/30/2014)
+ *
+ *
+ * Example code can be found in /test/class.test.php
+ *
+ */
+
+require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
 require_once($site_classes . '/class.spec_functions.php');
 
 	class NT_db{
 		var $db;
 		var $CCA_componentKeys;
-		
+
 		/**
 		 * Initializes database connection
 		 */
@@ -14,21 +40,21 @@ require_once($site_classes . '/class.spec_functions.php');
 			require(site_get_config_main());
 			$this->db = site_getDbConnection();
 		}
-		
+
 		/**
 		 * Runs query
-		 * 
-		 * @param string $query- SQL query 
+		 *
+		 * @param string $query- SQL query
 		 */
 		public function run_query($query) {
 			return @mysql_query($query, $this->db);
 		}
-		
+
 		/**
 		 * Initializes CCA_componentKeys
-		 * 
+		 *
 		 * IMPORTANT: This function must be called in order to call qIR() and qSpec()
-		 * 
+		 *
 		 * @param int $SN- serial number
 		 * @param int $band- band
 		 * @param int $fc- keyFacility
@@ -44,13 +70,13 @@ require_once($site_classes . '/class.spec_functions.php');
 			}
 			$this->CCA_componentKeys = $CCA_componentKeys;
 		}
-		
+
 		/**
 		 * Retrieves noise temperature data from database
-		 * 
+		 *
 		 * @param int $keyId
 		 * @param int $fc- keyFacility
-		 * 
+		 *
 		 * @return array- Data structured into rows of values for columns of data type
 		 */
 		public function qdata($keyId, $fc) {
@@ -60,7 +86,7 @@ require_once($site_classes . '/class.spec_functions.php');
 			AND keyFacility = $fc
 			AND Noise_Temp.IsIncluded = 1
 			ORDER BY FreqLO ASC, CenterIF ASC";
-				
+
 			$r = $this->run_query($q);
 			$data = array();
 			while($row = @mysql_fetch_array($r)) {
@@ -76,15 +102,15 @@ require_once($site_classes . '/class.spec_functions.php');
 										'RF_lsb' => $row[0] - $row[1]);
 										$data[] = $values;
 			}
-				
+
 			return $data;
 		}
-		
+
 		/**
 		 * Returns resource to database table with image rejection data.
-		 * 
+		 *
 		 * @param int $fc- keyFacility
-		 * 
+		 *
 		 * @return resource
 		 */
 		public function qIR($fc) {
@@ -93,22 +119,22 @@ require_once($site_classes . '/class.spec_functions.php');
 			$index = 0;
 			do {
 				$compKey = $CCA_componentKeys[$index];
-			
+
 				$q = "SELECT keyID FROM TestData_header WHERE fkTestData_Type = 38 AND fkDataStatus = 7 AND fkFE_Components = $compKey AND keyFacility = $fc";
 				$r = $this->run_query($q);
 				$CCA_TD_key = @mysql_result($r, 0, 0);
 				$index++;
 			} while($CCA_TD_key == FALSE && $index < count($CCA_componentKeys));
-				
+
 			$q = "SELECT FreqLO, CenterIF, Pol, SB, SBR FROM CCA_TEST_SidebandRatio WHERE fkHeader = $CCA_TD_key AND fkFacility = $fc ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
 			return $this->run_query($q);
 		}
-		
+
 		/**
 		 * Returns resource to database table with CCA temperature data
-		 * 
+		 *
 		 * @param int $fc- keyFacility
-		 * 
+		 *
 		 * @return resource
 		 */
 		public function qcca($fc) {
@@ -123,11 +149,11 @@ require_once($site_classes . '/class.spec_functions.php');
 				$CCA_NT_key = @mysql_result($r, 0, 0);
 				$cnt++;
 			}
-				
+
 			$q = "SELECT MAX(keyDataSet) FROM CCA_TEST_NoiseTemperature WHERE fkheader = $CCA_NT_key";
 			$r = $this->run_query($q);
 			$keyDataSet = @mysql_result($r, 0, 0);
-				
+
 			$q = "SELECT FreqLO, CenterIF, Pol, SB, Treceiver FROM CCA_TEST_NoiseTemperature WHERE fkheader = $CCA_NT_key AND keyDataSet = $keyDataSet ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
 			return $this->run_query($q);
 		}

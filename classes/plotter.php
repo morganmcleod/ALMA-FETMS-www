@@ -1,75 +1,36 @@
 <?php
-require_once(dirname(__FILE__) . '/../../SiteConfig.php');
+/**
+* ALMA - Atacama Large Millimeter Array
+* (c) Associated Universities Inc., 2006
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+*
+* @author Aaron Beaudoin
+* Version 1.0 (07/30/2014)
+*
+*
+* Example code can be found in /test/class.test.php
+*
+*/
+
+require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
 require_once($site_classes . '/class.spec_functions.php');
 require_once($site_IF . '/IF_db.php');
 
-/**
- * 
- * @author Aaron Beaudoin
- * 
- * Example code to plot noise temperature:
- * $plt = new plotter(); //initializes plotter class
- * $plt->setParams($data, 'NoiseTempLibrary', 6) //$data can be obtained through loadData() or calc classes.
- * //Initializes data structure, saves files to NoiseTempLibrary, and retrieves specs for band6
- * 
- * $plt->print_data //Print data to table in browser.
- * 
- * $plt->plotSize(900, 600); //Plot size with width 900, height 600
- * $plt->plotOutput('Band6 Pol0 Sb1 RF'); //output file name, defaults format to png.
- * $plt->plotTitle('Receiver Noise Temperature Tssb corrected, FE SN61, CCA6-61 WCA6-09'); //plot title
- * $plt->plotLabels(array('x' => 'LO (GHz)', 'y' => 'Tssb Corrected (K)', 'y2' => 'Difference from Spec (%)')); //Axes labels
- * $plt->plotYAxis(array('ymin' => 0, 'ymax' => 149.6, 'y2min' => 0, 'y2max' => 120)); //Y-axes ranges
- * $plt->checkIFLim('CenterIF'); //Removes data that doesn't meet IF specifications
- * $plt->createTempFile('RF_usb', 'Tssb_corr01', 0); //Creates files for lines
- * $plt->createTempFile('RF_usb', 'Trx01', 1);
- * $plt->createTempFile('RF_usb', 'diff01', 2);
- * $att = array();													//Line attributes to be passed to plotData()
- * $att[] = "lines lt 1 lw 3 title 'FEIC Meas Pol0 USB'";
- * $att[] = "lines lt 3 title 'Cart Group Meas Pol0 USB'";
- * $att[] = "points lt -1 axes x1y2 title 'Diff relative to Spec'";
- * $plt->plotData($att, 3); //Creates plot code using temp_data files
- * $plt->setPlotter($plt->genPlotCode()); //creates plotting script and writes to file.
- * system("$GNUPLOT $plt->plotter"); //creates plots and save to file name given by plotOutput
- *  
- * 
- * Example code to plot IF Spectrum Spurious Noise:
- * $plt = new plotter();
- * $plt->setParams($data, 'IFSpectrumLibrary', 6);
- * 
- * $LO = array('221', '225', '229', '233', '237', '241', '245', '249', '253', '257', '261', '265'); //Each LO value to be plotted
- * //MUST MATCH UP WITH LO VALUES IN DATA
- * $plt->getSpuriousNoise($LO); //Creates temp data files with IF frequencies and powers. Each file corresponds to a LO frequency
- * //$plt->getSpuriousExpanded($LO) //Use instead of getSpuriousNoise($LO) if expanded plots are desired.
- * $plt->plotSize(900, 600); //Use 900, 1500 for expanded plots
- * $plt->plotOutput('Band6 Spurious IF0');
- * $plt->plotTitle('Spurious Noise, FE-61, Band 6 SN 61 IF0');
- * $plt->plotGrid(); //Adds grid lines to plot
- * $plt->plotKey(FALSE); //Takes legend out of plot
- * $plt->plotBMargin(7);
- * 
- * $y2tics = array();
- * $ytics = array(); //for expanded plots
- * $att = array();
- * $count = 1;
- * foreach ($LO as $L) { //sets ytics values and locations and sets line parameters
- *    $y2tics[$L] = $plt->spurVal[$L];
- *    //$y2tics[$L] = $plt->spurVal[$L][0]; //for expanded plots, use instead of previous line
- *    //$ytics[$L] = $plt->spurVal[$L]; //for expanded plots
- *    $att[] = "lines lt $count title '" . $L . " GHz'";
- *    $count++;
- * }
- * $plt->plotYTics(array('ytics' => FALSE, 'y2tics' => $y2tics));
- * //$plt->plotYTics(array('ytics' => $ytics, 'y2tics' => $y2tics)); //for expanded plots, use instead of previous line
- * $plt->plotLabels(array('x' => 'IF (GHz)', 'y' => 'Power (dB)'));
- * $plt->plotArrows(); //plots vertical lines in IF specs window
- * 
- * $plt->plotData($att, count($att));
- * $plt->setPlotter($plt->genPlotCode());
- * system("$GNUPLOT $plt->plotter");
- * 
- */
-class plotter{
+class plotter {
 	var $data;
 	var $dir;
 	var $specs;
@@ -78,7 +39,8 @@ class plotter{
 	var $spurVal;
 	var $band;
 	var $LO;
-	
+	var $version;
+
 	/**
 	 * Constructor
 	 */
@@ -103,25 +65,33 @@ class plotter{
 		}
 		if ($dir == 'IFSpectrumLibrary') {
 			$specs = $new_specs->getSpecs('ifspectrum', $band);
-		}		
+		}
 		$this->specs = $specs;
 		$this->band = $band;
+		$this->version = "1.0";
 	}
 
 	/**
-	 * Prints power variation and total and in-band power tables to browser.
+	 * Resets all plot attributes to allow for new plot.
+	 */
+	public function resetPlotter() {
+		$this->plotAtt = array();
+	}
+
+	/**
+	 * Displays power variation table to browser.
 	 * Assumes band has already been initialized.
-	 * 
+	 *
 	 * @param int $DataSetGroup
 	 * @param int $FEid
 	 */
-	public function powerTables($DataSetGroup, $FEid) {
+	public function powerVarTables($DataSetGroup, $FEid, $feconfig, $TS) {
 		$IF = new IFCalc();
 		$IF->setParams($this->band, 0, $FEid, $DataSetGroup);
 		$powVar = $IF->getPowVarData();
-		
+
 		$oldData = $this->data;
-		
+
 		$this->data = $powVar;
 		$this->findLOs();
 		$tempdata = array();
@@ -139,44 +109,61 @@ class plotter{
 			$tempdata[] = $add;
 		}
 		$this->data = $tempdata;
-		
 		echo "<div style='width:400px' border='1'> <table id = 'table7' border = '1'>";
 		echo "<tr><th colspan = '5'>Band $this->band Power Variation Full Band</th></tr>";
 		$this->print_data();
+		echo "<tr><th colspan = '5'>Front End Configuration: $feconfig</th></tr>";
+		echo "<tr><th colspan = '5'>Version $this->version</th></tr>";
+		echo "<tr><th colspan = '5'>Meas Date: $TS</th></tr>";
 		echo "</table></div>";
-		
-		
-		for ($if=0; $if<=3; $if++) {
-			echo "<div style = 'width:600px'>";
-			echo "<table id = 'table7' border = '1'>";
-			echo "<tr><th colspan = '5'>Band $this->band Total and In-Band Power</th></tr>";
-			echo "<tr><th colspan = '5'><b>IF Channel $if</b></th></tr>";
-			echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
-			
-			$IF->IFChannel = $if;
-			$this->data = $IF->getTotPowData();
-			$this->findLOs();
-			$newData = array();
-			foreach ($this->data as $d) {
-				$temp = array();
-				$temp["LO (GHz)"] = "<b>" . $d['FreqLO'] . "</b>";
-				$temp['In-Band (dBm)'] = $d['pwr0'];
-				$temp['In-Band (dBm) '] = $d['pwr15'];
-				$temp['Total (dBm)'] = $d['pwrT'];
-				$temp['Total - In-Band'] = $d['pwrdiff'];
-				$newData[] = $temp;
-			}
-			$this->data = $newData;
-			$this->print_data();
-			echo "</table></div>";
-		}
-		
 		$this->data = $oldData;
 	}
-	
+
 	/**
-	 * Plots band 6, 2 GHz case for power variation. 
-	 * 
+	 * Displays the total and in-band power table for IF Output Spectrum.
+	 * Assumes band has already been initialized.
+	 *
+	 * @param int $DataSetGroup
+	 * @param int $FEid
+	 * @param int $if
+	 */
+	public function powerTotTables($DataSetGroup, $FEid, $if, $feconfig, $ts) {
+		$IF = new IFCalc();
+		$IF->setParams($this->band, 0, $FEid, $DataSetGroup);
+
+		echo "<div style = 'width:600px'>";
+		echo "<table id = 'table7' border = '1'>";
+		echo "<tr><th colspan = '5'>Band $this->band Total and In-Band Power</th></tr>";
+		echo "<tr><th colspan = '5'><b>IF Channel $if</b></th></tr>";
+		echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
+
+		$IF->IFChannel = $if;
+		$oldData = $this->data;
+		$this->data = $IF->getTotPowData();
+		$this->findLOs();
+		$newData = array();
+		foreach ($this->data as $d) {
+			$temp = array();
+			$temp["LO (GHz)"] = "<b>" . $d['FreqLO'] . "</b>";
+			$temp['In-Band (dBm)'] = $d['pwr0'];
+			$temp['In-Band (dBm) '] = $d['pwr15'];
+			$temp['Total (dBm)'] = $d['pwrT'];
+			$temp['Total - In-Band'] = $d['pwrdiff'];
+			$newData[] = $temp;
+		}
+		$this->data = $newData;
+		$this->print_data();
+		echo "<tr><th colspan = '5'>Front End Configuration: $feconfig</th></tr>";
+		echo "<tr><th colspan = '5'>Version $this->version</th></tr>";
+		echo "<tr><th colspan = '5'>Meas Date: $ts</th></tr>";
+		echo "</table></div>";
+
+		$this->data = $oldData;
+	}
+
+	/**
+	 * Plots band 6, 2 GHz case for power variation.
+	 *
 	 * @param int $IFChannel
 	 * @param int $FEid
 	 * @param int $DataSetGroup
@@ -185,23 +172,27 @@ class plotter{
 	 */
 	public function band6powervar($IFChannel, $FEid, $DataSetGroup, $lineAtt, $count) {
 		require(site_get_config_main());
-		
+
 		$this->plotYAxis(array('ymin' => 0, 'ymax' => 9));
 		$this->plotXAxis(array('xmin' => 5, 'xmax' => 9.2));
-		
+
 		$this->plotAtt['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
 		$this->plotAtt['fspec2'] = "f2(x) = ((x > 7) && (x < 9)) ? 7 : 1/0\n";
-		
+
 		$dbpull = new IF_db();
-		$b6points = $dbpull->q6($this->band, $IFChannel, $FEid, $DataSetGroup);
-		
+		$temp = $dbpull->q6($this->band, $IFChannel, $FEid, $DataSetGroup);
+		$b6points = $temp[0];
+		$maxvar = $temp[1];
+
+		$this->plotAtt["label3"] = "set label 'Max Power Variation: " . round($maxvar, 2) . " dB' at screen 0.01, 0.07\n";
+
 		$bmax = 5.52;
 		$bmin = 5.45;
 		for ($i=0; $i<count($b6points); $i++) {
 			$temp = "fb6_$i(x)=((x>$bmin) && (x<$bmax)) ? $b6points[$i] : 1/0\r\n";
 			$this->plotAtt["b6$i"] = $temp;
 		}
-		
+
 		$temp = "plot fb6_0(x) with linespoints notitle pt 5 lt 1, '" . $main_write_directory . "$this->dir/temp_data0.txt'";
 		$temp .= " using 1:2 with $lineAtt[0],";
 		for ($k=1; $k<$count; $k++) {
@@ -211,16 +202,16 @@ class plotter{
 		}
 		$temp .= " f1(x) title 'Spec' with lines lt -1 lw 5,";
 		$temp .= " f2(x) notitle with lines lt -1 lw 5";
-		
+
 		if(isset($this->plotAtt['specAtt'])) {
 			$add = $this->plotAtt['specAtt'];
 			$temp .= $add;
 			unset($this->plotAtt['specAtt']);
 		}
-		
+
 		$this->plotAtt['plot'] = $temp . "\n";
 	}
-	
+
 	/**
 	 *
 	 *@param int $band- band being plotted, used to get specs
@@ -242,7 +233,7 @@ class plotter{
 		$new_specs = new Specifications();
 		$specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $band);
 		require(site_get_config_main());
-		
+
 		//Removes data that don't lay within IF limits.
 		$iflim = in_array('RF_usb', $data_types) || in_array('RF_lsb', $data_types);
 		if ($iflim) {
@@ -254,14 +245,14 @@ class plotter{
 			}
 			$data = $new_data;
 		}
-		
-		//Writes data and specs to files 
+
+		//Writes data and specs to files
 		$i = 1;
 		$count = 0;
 		while($i<count($data_types)) {
 			$x = array();
 			$y = array();
-			
+
 			//Determines if data is increasing or decreasing to put spaces between RF values.
 			//Assumes data is sorted by RF, then IF.
 			$order = '';
@@ -276,7 +267,7 @@ class plotter{
 					$y[] = $d[$data_types[$i]];
 				}
 			}
-			
+
 			//Calculates average based on first datatype
 			//Assumes data is sorted by first datatype.
 			if ($average) {
@@ -296,7 +287,7 @@ class plotter{
 					}
 				}
 				$x = $new_x;
-				$y = $averages;				
+				$y = $averages;
 			}
 
 			$spec_files = $main_write_directory . "NoiseTempLibrary/specData.txt";
@@ -309,7 +300,7 @@ class plotter{
 					if($order == 'asc' && ($x[$j] < $x[$j-1])) {
 						fwrite($f_temp, "\n");
 						fwrite($fSpec, "\n");
-					} 
+					}
 					if($order == 'desc'&& ($x[$j] > $x[$j-1])) {
 						fwrite($f_temp, "\n");
 						fwrite($fSpec, "\n");
@@ -324,10 +315,10 @@ class plotter{
 			fclose($fSpec);
 			$i++;
 			$count++;
-		}	
+		}
 
 		$plotter = $main_write_directory . 'NoiseTempLibrary/plot_script.txt';
-			
+
 		$plot_code = "";
 		//Creates script file for GNUPLOT
 		$plot_code .= "set terminal png size 900,600 crop\n";
@@ -358,24 +349,24 @@ class plotter{
 		$f = fopen($plotter, 'w');
 		fwrite($f, $plot_code);
 		fclose($f);
-			
+
 		system("$GNUPLOT $plotter");
 	}
-	
+
 	public function genIFSpectrum($LO, $band, $ifchannel) {
 		$data = $this->data;
 		require(site_get_config_main());
-		
+
 		$ytics = array();
-		
+
 		$ymin = 999;
 		$ymax = -999;
-		
+
 		$i = 0;
 		while($i<count($LO)) {
 			$x = array();
 			$y = array();
-			
+
 			foreach($data as $d) {
 				if ($d["FreqLO"] == (float)$LO[$i]) {
 					$pow = $d["Power_dBm"];
@@ -389,7 +380,7 @@ class plotter{
 					}
 				}
 			}
-			
+
 			$temp_data_file = $main_write_directory . "IFSpectrumLibrary/temp_data$i.txt";
 			$f = fopen($temp_data_file, 'w');
 			for ($j=0; $j<count($x); $j++) {
@@ -399,9 +390,9 @@ class plotter{
 			$ytics["$LO[$i]"] = $y[count($y) - 1];
 			$i++;
 		}
-		
+
 		$plotter = $main_write_directory . "$this->dir/plot_script.txt";
-		
+
 		$plot_code = "";
 		$plot_code .= "set terminal png size 900,600\n";
 		$plot_code .= "set output '" . $main_write_directory . $this->dir . "/$band" . "spuriousIF$ifchannel.png'\n";"
@@ -421,7 +412,7 @@ class plotter{
 		}
 		$plot_code = substr($plot_code, 0, -1);
 		$plot_code .= ")\n";//*//*
-		$plot_code .= "set grid\n";	
+		$plot_code .= "set grid\n";
 		$plot_code .= "set arrow 1 from 4,$ymin to 4,$ymax nohead lt -1 lw 2\n";
 		$plot_code .= "set arrow 2 from 8,$ymin to 8,$ymax nohead lt -1 lw 2\n";
 		$plot_code .= "set bmargin 7\n";
@@ -436,12 +427,12 @@ class plotter{
 		$f = fopen($plotter, 'w');
 		fwrite($f, $plot_code);
 		fclose($f);
-		
+
 		system("$GNUPLOT $plotter");
 	}//*/
 
 	/**
-	 * Prints data in HTML table to browser. 
+	 * Prints data in HTML table to browser.
 	 * MUST initialize HTML table prior to call.
 	 * ex: echo "<table border = '1'>";
 	 * 	   print_data();
@@ -472,7 +463,7 @@ class plotter{
 
 	/**
 	 * Loads saved data from previous work
-	 * 
+	 *
 	 * @param $band
 	 * @return 2d array- data structure used in the rest of the library
 	 */
@@ -494,18 +485,18 @@ class plotter{
 		}
 		return $data;
 	}
-	
+
 	/**
-	 * Saves data in txt file for use in generate_plots()
+	 * Saves data in txt file for later use.
 	 * Note: If data value doesn't exist, prints NULL
 	 */
 	public function save_data($saveas) {
 		require(site_get_config_main());
 		$file_path = $main_write_directory . "$this->dir/$saveas.txt";
-			
+
 		$data = $this->data;
 		$keys = array_keys($data[0]);
-			
+
 		$file = fopen($file_path, 'w');
 		for($i=0; $i<count($keys); $i++) {
 			fwrite($file, $keys[$i] . "\t");
@@ -523,7 +514,7 @@ class plotter{
 		}
 		fclose($file);
 	}
-	
+
 	/**
 	 * Recursivly finds the order of data.
 	 * @param string $xvar- data type desired to find order
@@ -539,7 +530,7 @@ class plotter{
 			return $this->findOrder($xvar, $index + 1);
 		}
 	}
-	
+
 	/**
 	 * Removes data rows that don't fit within predescribed IF limits.
 	 * @param string $IFLabel- key for IF value in data structure
@@ -553,7 +544,7 @@ class plotter{
 		}
 		$this->data = $new_data;
 	}
-	
+
 	/**
 	 * Averages y values together based on same x values.
 	 * @param array $x- independent variable.
@@ -580,7 +571,7 @@ class plotter{
 		$new_x[] = array_sum($temp_x) / count($temp_x);
 		return array($new_x, $averages);
 	}
-	
+
 	/**
 	 * Creates temp data files to be used to plot spurious noise for a given band and IF channel.
 	 * @param array $LO- LO frequencies used in data.
@@ -611,7 +602,7 @@ class plotter{
 		$this->spurVal['ymin'] = $min;
 		$this->spurVal['ymax'] = $max;
 	}
-	
+
 	/**
 	 * Creates temporary files to be used to plot power variation data.
 	 * @param array $LO- LO frequencies of data.
@@ -631,10 +622,10 @@ class plotter{
 			$this->data = $oldData;
 		}
 	}
-	
+
 	/**
 	 * Same as getSpuriousNoise, but adds an offset for expanded plots and changes ytics
-	 * 
+	 *
 	 * @param array $LO- LO frequencies used in data.
 	 */
 	public function getSpuriousExpanded() {
@@ -675,7 +666,7 @@ class plotter{
 		$this->spurVal['ymin'] = $wmin;
 		$this->spurVal['ymax'] = $wmax;
 	}
-	
+
 	/**
 	 * Writes data to temp_data#.txt files to be used in plotting script generation.
 	 * @param array $xvar- independent variable
@@ -689,22 +680,22 @@ class plotter{
 		require(site_get_config_main());
 		$x = array();
 		$y = array();
-	
+
 		$order = $this->findOrder($xvar);
-	
+
 		foreach ($this->data as $d) {
 			if (isset($d[$yvar])) {
 				$x[] = $d[$xvar];
 				$y[] = $d[$yvar];
 			}
 		}
-		
+
 		if($average) {
 			$new_data = $this->averageData($x, $y);
 			$x = $new_data[0];
 			$y = $new_data[1];
 		}
-	
+
 		$temp_data_file = $main_write_directory . "$this->dir/temp_data$count.txt";
 		$f = fopen ($temp_data_file, 'w');
 		fwrite($f, $x[0] . "\t" . $y[0] . "\n");
@@ -721,7 +712,7 @@ class plotter{
 		}
 		fclose($f);
 	}
-	
+
 	/**
 	 * Creates temp file for spec data to be plotted.
 	 * @param string $xvar- Independent variable
@@ -730,24 +721,24 @@ class plotter{
 	 */
 	public function createSpecsFile ($xvar, $specs, $lineAtt, $checkIF = TRUE) {
 		require(site_get_config_main());
-		
+
 		$x = array();
-		
+
 		$order = $this->findOrder($xvar);
-		
+
 		if ($checkIF) {
 			$this->checkIFLim('CenterIF');
 		}
 		foreach ($this->data as $d) {
 			$x[] = $d[$xvar];
 		}
-		
+
 		$spec_string = "";
 		foreach ($specs as $s) {
 			$spec_string .= "\t" . $this->specs[$s];
 		}
 		$spec_string .= "\n";
-		
+
 		$spec_files = $main_write_directory . "$this->dir/specData.txt";
 		$fspec = fopen($spec_files, 'w');
 		fwrite($fspec, $x[0] . $spec_string);
@@ -768,15 +759,15 @@ class plotter{
 		}
 		$this->plotAtt['specAtt'] = $temp;
 	}
-	
+
 	/**
 	 * Finds LO values to be used by getPowerVar(), getSpuriousNoise(), and getSpuriousExpanded()
-	 * 
+	 *
 	 * Requires LO values to be in 'FreqLO' column
 	 */
 	public function findLOs() {
 		$data = $this->data;
-		
+
 		$LOs = array();
 		foreach($data as $d) {
 			if(in_array($d['FreqLO'], $LOs)) {
@@ -785,24 +776,24 @@ class plotter{
 				$LOs[] = $d['FreqLO'];
 			}
 		}
-		
+
 		$this->LO = $LOs;
 	}
-	
+
 	/**
 	 * plots vertical lines at IF limits from specs class.
-	 * 
+	 *
 	 * MUST BE CALLED AFTER getSpuriousNoise/Expanded() AND setParams()
 	 * Only works for IFSpectrumLibrary
 	 */
 	public function plotArrows() {
 		$lo = $this->specs['ifspec_low'];
 		$hi = $this->specs['ifspec_high'];
-		
-		$this->plotAtt['arrow_lo'] = "set arrow 1 from $lo, " . $this->spurVal['ymin'] . " to $lo, " . $this->spurVal['ymax'] . " nohead lt -1 lw 2\n"; 
+
+		$this->plotAtt['arrow_lo'] = "set arrow 1 from $lo, " . $this->spurVal['ymin'] . " to $lo, " . $this->spurVal['ymax'] . " nohead lt -1 lw 2\n";
 		$this->plotAtt['arrow_hi'] = "set arrow 2 from $hi, " . $this->spurVal['ymin'] . " to $hi, " . $this->spurVal['ymax'] . " nohead lt -1 lw 2\n";
 	}
-	
+
 	/**
 	 * Generates plot title to be used in plotting script
 	 * @param string $title
@@ -810,7 +801,7 @@ class plotter{
 	public function plotTitle($title) {
 		$this->plotAtt['title'] = "set title '" . $title . "'\n";
 	}
-	
+
 	/**
 	 * Generates plot size to be used in plotting script
 	 * @param int $xwin- Width of plot in pixels
@@ -824,17 +815,17 @@ class plotter{
 		$temp .= "\n";
 		$this->plotAtt['size'] = $temp;
 	}
-	
+
 	/**
 	 * Shows grid lines in plot
 	 */
 	public function plotGrid() {
 		$this->plotAtt['grid'] = "set grid\n";
 	}
-	
+
 	/**
 	 * Places legend outside of plot
-	 * 
+	 *
 	 * @param string/ boolean $request- where should plot be placed
 	 * 'outside' for outside, FALSE if plot should not be shown
 	 */
@@ -846,19 +837,19 @@ class plotter{
 			$this->plotAtt['key'] = "set nokey\n";
 		}
 	}
-	
+
 	/**
 	 * set bmargin for plot
-	 * 
+	 *
 	 * @param int $value- size of bmargin
 	 */
 	public function plotBMargin($value) {
 		$this->plotAtt['bmargin'] = "set bmargin $value\n";
 	}
-	
+
 	/**
 	 * Add additional labels to plot.
-	 * 
+	 *
 	 * @param array $labels- Labels desired to be added to plot
 	 * @param 2d array $locs- x and y locations of each label
 	 * Ex. $locs = array(array(.01, .01), array(.01, .04))
@@ -867,11 +858,11 @@ class plotter{
 		$count = 0;
 		foreach ($labels as $l) {
 			$key = "label" . (string)($count + 1);
-			$this->plotAtt[$key] = "set label '" . $l . "' at screen " . $locs[$count][0] . ", " . $locs[$count][1] . "\n";
+			$this->plotAtt[$key] = "set label '" . $l . "' at screen " . (string)$locs[$count][0] . ", " . (string)$locs[$count][1] . "\n";
 			$count++;
 		}
 	}
-	
+
 	/**
 	 * Generates plot output file to be used in plotting script
 	 * @param string $saveas- name of output file
@@ -881,7 +872,7 @@ class plotter{
 		require(site_get_config_main());
 		$this->plotAtt['output'] = "set output '" . $main_write_directory . "$this->dir/$saveas.$format'\n";
 	}
-	
+
 	/**
 	 * Generates plot labels to be used in plotting script
 	 * @param array $labels- Axis labels in plot.
@@ -894,20 +885,20 @@ class plotter{
 			$this->plotAtt['y2label'] = "set y2label '" . $labels['y2'] . "'\n";
 		}
 	}
-	
+
 	/**
 	 * Generates plot Y-axis limits to be used in plotting script
-	 * @param array $ylims- min and max values for y-axis 
+	 * @param array $ylims- min and max values for y-axis
 	 * Keys should be ymin,ymax,y2min,y2max. Only include desired keys.
 	 */
 	public function plotYAxis($ylims) {
 		$this->plotAtt['yrange'] = "set yrange [". $ylims['ymin']. ":" . $ylims['ymax'] . "]\n";
-		
+
 		if (isset($ylims['y2min'])) {
 			$this->plotAtt['y2range'] = "set y2range [". $ylims['y2min'] . ":" . $ylims['y2max'] . "]\n";
 		}
 	}
-	
+
 	/**
 	 * Generates plot X-axis limits to be used in plotting script
 	 * @param array $xlims- min and max values for x-axis
@@ -915,12 +906,12 @@ class plotter{
 	 */
 	public function plotXAxis($xlims) {
 		$this->plotAtt['xrange'] = "set xrange [". $xlims['xmin']. ":" . $xlims['xmax'] . "]\n";
-	
+
 		if (isset($xlims['x2min'])) {
 			$this->plotAtt['x2range'] = "set x2range [". $xlims['x2min'] . ":" . $xlims['x2max'] . "]\n";
 		}
 	}
-	
+
 	/**
 	 * Generates plot Y-axis tics to be used in plotting script
 	 * @param 2d array $ytics:
@@ -959,7 +950,7 @@ class plotter{
 			}
 		}
 	}
-	
+
 	/**
 	 * Generates plot line to be used in plotting script
 	 * @param array $lineAtt- Strings indicating parameters for each line to be plotted.
@@ -973,16 +964,16 @@ class plotter{
 			$temp .= " using 1:2 with $lineAtt[$k],";
 		}
 		$temp = substr($temp, 0, -1);
-		
+
 		if(isset($this->plotAtt['specAtt'])) {
 			$add = $this->plotAtt['specAtt'];
 			$temp .= $add;
 			unset($this->plotAtt['specAtt']);
 		}
-		
+
 		$this->plotAtt['plot'] = $temp . "\n";
 	}
-	
+
 	/**
 	 * Generates plotting script
 	 * @return string- entire script to be passed to GNUPLOT
@@ -995,7 +986,7 @@ class plotter{
 		}
 		return $plot_code;
 	}
-	
+
 	/**
 	 * Initializes plotting script, saves the file, and runs it through GNUPLOT
 	 * @param string $plot_code- entire script to be passed to GNUPLOT. Can be generated by genPlotCode()
