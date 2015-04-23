@@ -4,6 +4,8 @@
  * It populates the tabbed enclosure with plots or data tables,
  * depending on which tab was selected.
  *
+ * 2015-02-22 jee added Display_PhaseEff();
+ *
  */
 
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
@@ -37,7 +39,7 @@ switch ($tabtype) {
         //Scan Info tab
         $posturl = "bp.php?keyheader=$tdh->keyId&fc=" . $tdh->GetValue('keyFacility');
 
-        //If not MISE, we will wrap thetest data notes in a <form>.
+        //If not MISE, we will wrap the test data notes in a <form>.
         //TODO:  apparently this means you can't save notes in MSIE!
         $browserNotMSIE = (strpos(strtolower($_SERVER['HTTP_USER_AGENT']),'msie') === FALSE);
 
@@ -68,6 +70,7 @@ switch ($tabtype) {
         //Data Tables tab
         $eff->Display_ApertureEff();
         $eff->Display_TaperEff();
+		$eff->Display_PhaseEff();
         $eff->Display_SpilloverEff();
         $eff->Display_PolEff();
         $eff->Display_DefocusEff();

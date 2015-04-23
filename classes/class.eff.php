@@ -35,7 +35,8 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version = "1.1.1";
+        $this->software_version = "1.1.2";
+        // 1.1.2  Added Display_PhaseEff()
         // 1.1.1  Added download for cross-pol .csv files.
         // 1.1.0  Uses database calls from dbCode/beameffdb.php
         // 1.0.23 Supressed E_NOTICE errors in the Upload...() functions
@@ -913,6 +914,8 @@ class eff {
         echo "<tr><td>";
         $this->Display_TaperEff();
         echo "</td><td>";
+        $this->Display_PhaseEff();
+        echo "</td><td>";
         $this->Display_SpilloverEff();
         echo "</td></tr>";
 
@@ -1044,7 +1047,7 @@ class eff {
             <th>RF GHz</th>
             <th>pol</th>
             <th>Elevation</th>
-            <th>Taper Eff</th>
+            <th>Amp Taper Eff</th>
             </tr>";
 
 
@@ -1064,6 +1067,35 @@ class eff {
         //Meas SW Ver
         echo "<tr><td colspan='4'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
             . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "</table></div><br><br>";
+    }
+
+    function Display_PhaseEff() {
+        echo "<div style = 'width:300px'><table id = 'table1' border='1' border='1'>";
+        echo "<tr class='alt'><th colspan = 4>Phase Efficiency Band $this->band</th></tr>";
+        echo "<tr>
+        <th>RF GHz</th>
+        <th>pol</th>
+        <th>Elevation</th>
+        <th>Phase Eff</th>
+        </tr>";
+
+        for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
+            echo "<tr>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_phase'),2) . "</td>";
+
+            echo "<tr>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_phase'),2) . "</td>";
+        }
+        //Meas SW Ver
+        echo "<tr><td colspan='4'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
+        . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
