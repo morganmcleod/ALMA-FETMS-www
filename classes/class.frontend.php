@@ -684,6 +684,9 @@ class FrontEnd extends GenericTable{
 
 
     public function DisplayTable_AllPAITestData($band = "%"){
+    	/*
+    	 * 2015-04-28 jee for pattern data, added test number and day of week to date
+    	 */
         $bandstring = "";
         echo "<div style= 'width:900px'>";
         echo "<table id='table1'>";
@@ -746,9 +749,12 @@ class FrontEnd extends GenericTable{
                         case 55:
                             //Beam patterns
                             $testpage = 'bp/bp.php';
-                            echo "<td width='180px'><a href='$testpage?keyheader=$row[0]&fc=". $row[8] ."' target = 'blank'>".$row[1]."</a></td>";
-                            echo "<td width = '150px'>".$TestNotes."</td>";
-                            echo "<td width = '120px'>".$row[7]."</td>";
+                            // hyperlink with test URL and key ID
+                            echo "<td width='180px'><a href='$testpage?keyheader=$row[0]&fc=". $row[8] ."' target = 'blank'>".$row[1]." ".$row['keyId']."</a></td>";
+                            echo "<td width = '150px'>".$TestNotes."</td>";		// notes
+                            // add the day of the week to the date:
+                            $ymd = DateTime::createFromFormat('Y-m-d H:i:s', $row[7])->format('D Y-m-d H:i:s');
+                            echo "<td width = '120px'>".$ymd."</td>";
                             break;
                         case 7:
                             //IFSpectrum
