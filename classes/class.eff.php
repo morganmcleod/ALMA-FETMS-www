@@ -35,7 +35,8 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version = "1.1.2";
+        $this->software_version = "1.1.3";
+        // 1.1.3  Fixed MakeOutputEnvironment to delete old files first.
         // 1.1.2  Added Display_PhaseEff()
         // 1.1.1  Added download for cross-pol .csv files.
         // 1.1.0  Uses database calls from dbCode/beameffdb.php
@@ -201,18 +202,18 @@ class eff {
         }
         // inside it will have an "output" and a "listings" subdirectory:
         $this->outputdirectory = $this->newbasedir . "output/";
-        if (!file_exists($this->outputdirectory)) {
-            mkdir($this->outputdirectory);
-        }
+        if (file_exists($this->outputdirectory))
+            self::deleteDir($this->outputdirectory);
+        mkdir($this->outputdirectory);
+
         $this->listingsdir = $this->newbasedir . "listings/";
-        if (!file_exists($this->listingsdir)) {
-            mkdir($this->listingsdir);
-        }
+        if (file_exists($this->listingsdir))
+            self::deleteDir($this->listingsdir);
+        mkdir($this->listingsdir);
+
         // we will tell beameff_64 to put its output here:
         $this->eff_outputfile = $this->outputdirectory . "output.txt";
-        if (file_exists($this->eff_outputfile)) {
-            unlink($this->eff_outputfile);
-        }
+
         // and to get its command input here:
         $this->eff_inputfile = $this->newbasedir;
         if ($squint)
@@ -937,21 +938,22 @@ class eff {
         $this->Display_SoftwareVersions();
     }
 
-    private function rrmdir($dir) {
-        // TODO: this helper function was used but commented out in MakeInputFile().  Made private; Delete?
-        if (is_dir($dir)) {
-            $objects = scandir($dir);
-            foreach ($objects as $object) {
-                if ($object != "." && $object != "..") {
-                    if (filetype($dir."/".$object) == "dir")
-                        rrmdir($dir."/".$object);
-                    else
-                        unlink($dir."/".$object);
-                }
-            }
-            reset($objects);
-            rmdir($dir);
+    private static function deleteDir($dirPath) {
+        if (!is_dir($dirPath)) {
+            throw new InvalidArgumentException("$dirPath must be a directory");
         }
+        if (substr($dirPath, strlen($dirPath) - 1, 1) != '/') {
+            $dirPath .= '/';
+        }
+        $files = glob($dirPath . '*', GLOB_MARK);
+        foreach ($files as $file) {
+            if (is_dir($file)) {
+                self::deleteDir($file);
+            } else {
+                unlink($file);
+            }
+        }
+        rmdir($dirPath);
     }
 
     function Display_PointingAngles() {
