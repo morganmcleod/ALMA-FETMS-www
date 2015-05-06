@@ -72,7 +72,8 @@ class IFSpectrum_impl extends TestData_header {
     var $swVersion;               //software version string for this class.
 
     public function __construct() {
-        $this->swVersion = "1.3.0";
+        $this->swVersion = "1.3.1";
+        // 1.3.1  MTM: refactoring done.  B5 special powervar plot temporarily disabled.
         // 1.3.0  MTM: still refactoring with new IFSpectrum_calc, _db, and _plot classes.
         // 1.2.0  MTM: refactoring from Aaron's new plotter classes.
         // 1.1.0  ATB: moved database calls to dbCode/ifspectrumdb.php
@@ -487,10 +488,12 @@ class IFSpectrum_impl extends TestData_header {
             $typeURL = 'powervar_31MHz_url';
             $fWindow = 0.031;   // Window size GHz.
             $winText = '31 MHz';
+            $spec = $this->specs['spec_value_var31MHz'];    //1.35;
         } else {
             $typeURL = 'powervar_2GHz_url';
             $fWindow = 2.0;     // Window size GHz.
             $winText = '2 GHz';
+            $spec = $this->specs['spec_value'];
         }
         $progress = $progressStart;
 
@@ -513,15 +516,21 @@ class IFSpectrum_impl extends TestData_header {
 
             // Calculate power variation:
             $this->ifCalc -> setData($data);
-            $pvarData = $this->ifCalc -> getPowerVarWindow($this->specs['fWindow_Low'], $this->specs['fWindow_high'], $fWindow);
-            if ($this->band == 6) {
-                $fWindow_special_Low = $this->specs['fWindow_special_Low'];
-                $fWindow_special_High = $this->specs['fWindow_special_High'];
-                $fWindow_special = $fWindow_special_High - $fWindow_special_Low;
-                $pvarData_special = $this->ifCalc -> getPowerVarWindow($fWindow_special_Low, $fWindow_special_High, $fWindow_special);
-            }
+
+            $fWindowLow = $this->specs['fWindow_Low'];
+            $fWindowHigh = $this->specs['fWindow_high'];
+            // Temporary:  use the 'special low' window for band 6.
+            if ($this->band == 6)
+                $fWindowLow = $this->specs['fWindow_special_Low'];
+            // TODO:  Get special band 6 plots working again.
+
+            $pvarData = $this->ifCalc -> getPowerVarWindow($fWindowLow, $fWindowHigh, $fWindow, $spec);
+
             // Cache max power variation:
             $maxVar = $this->ifCalc -> getMaxVarWindow();
+
+            // Calculate LOs with out-of spec values:
+            $badLOs = $this->ifCalc -> getBadVarLOs();
 
             // Free memory:
             $this->ifCalc -> setData(false);
@@ -542,10 +551,13 @@ class IFSpectrum_impl extends TestData_header {
 
             // Append a "Max Power Variation" line to the labels:
             $labels = $this->TDHdataLabels;
-            $labels[] = "Max Power Variation: " . round($maxVar, 2) . " dB";
+            $lastLabel = "Max Power Variation: " . round($maxVar, 2) . " dB";
+            if (!empty($badLOs))
+                $lastLabel .= "    * indicates out-of-spec trace";
+            $labels[] = $lastLabel;
 
             // Generate the plot
-            $this->plotter->generatePowerVarPlot($win31MHz, $this->imagename, $plotTitle, $labels);
+            $this->plotter->generatePowerVarPlot($win31MHz, $this->imagename, $plotTitle, $spec, $badLOs, $labels);
 
             // Append the actual image filename to the URL before saving:
             $this->image_url .= $this->plotter->getOutputFileName();

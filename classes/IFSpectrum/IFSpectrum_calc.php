@@ -27,6 +27,8 @@ class IFSpectrum_calc {
     private $noiseFloorData;
     private $cablePad;            // dB of pad in cable to compensate for.
     private $maxVarWindow;        // maximum variation seen in any call to getPowerVarWindow();
+    private $badVarLOs;           // array of LO freqs where power var crossed spec line.
+    private $badVarThisRange;     // True= most recently processed power var range crossed spec line.
 
     const BAD_LO = -999;          // GHz  Invalid value for LO
     const HUGE_POWER = 999;       // dBm  Invalid big value for power
@@ -75,6 +77,10 @@ class IFSpectrum_calc {
 
     public function getMaxVarWindow() {
         return $this->maxVarWindow;
+    }
+
+    public function getBadVarLOs() {
+        return $this->badVarLOs;
     }
 
     /**
@@ -192,11 +198,12 @@ class IFSpectrum_calc {
      *     [1] => array...
      *
      */
-    public function getPowerVarWindow($fMin = 4.0, $fMax = 8.0, $fWindow = 2.0) {
+    public function getPowerVarWindow($fMin = 4.0, $fMax = 8.0, $fWindow = 2.0, $spec = 0.0) {
         if (empty($this->data))
             return false;
 
         $output = array();
+        $this->badVarLOs = array();
 
         // get all the LO frequencies and their data ranges:
         $LORanges = $this->getLORanges();
@@ -206,7 +213,7 @@ class IFSpectrum_calc {
             $maxIndex = $range['maxIndex'];
 
             // get the power variation plot points for each range, corresponding to one LO:
-            $pvarPoints = $this->getPowerVarWindowForRange($minIndex, $maxIndex, $fMin, $fMax, $fWindow);
+            $pvarPoints = $this->getPowerVarWindowForRange($minIndex, $maxIndex, $fMin, $fMax, $fWindow, $spec);
 
             // Append all the points to the output array:
             foreach ($pvarPoints as $row) {
@@ -216,6 +223,10 @@ class IFSpectrum_calc {
                         'pVar_dB' => $row['pVar_dB']
                 );
             }
+
+            // If out of spec, append to list of bad LOs:
+            if ($this->badVarThisRange)
+                $this->badVarLOs[] = $LO;
         }
         return $output;
     }
@@ -238,7 +249,7 @@ class IFSpectrum_calc {
      *     [1] => array...
      * }
      */
-    private function getPowerVarWindowForRange($minIndex, $maxIndex, $fMin = 4.0, $fMax = 8.0, $fWindow = 2.0) {
+    private function getPowerVarWindowForRange($minIndex, $maxIndex, $fMin = 4.0, $fMax = 8.0, $fWindow = 2.0, $spec = 0.0) {
         $output = array();
 
         // sanity check inputs:
@@ -250,6 +261,8 @@ class IFSpectrum_calc {
 
         if ($fWindow <= self::MIN_IF_BIN)
             return false;
+
+        $this->badVarThisRange = false;
 
         // compute lower and upper center frequencies:
         $fLower = $fMin + ($fWindow / 2);
@@ -302,6 +315,9 @@ class IFSpectrum_calc {
             // accumulate $maxVarWindow:
             if ($pVar > $this->maxVarWindow)
                 $this->maxVarWindow = $pVar;
+            // accumulate $badVarThisRange:
+            if ($spec > 0 && $pVar > $spec)
+                $this->badVarThisRange = true;
         }
         return $output;
     }

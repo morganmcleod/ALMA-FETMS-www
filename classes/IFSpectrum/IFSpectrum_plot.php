@@ -191,7 +191,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
      * @param string $plotTitle for the top of the plot
      * @param string $TDHdataLabels for the bottom of the plot
      */
-    public function generatePowerVarPlot($win31MHz, $imagename, $plotTitle, $TDHdataLabels) {
+    public function generatePowerVarPlot($win31MHz, $imagename, $plotTitle, $spec, $badLOs, $TDHdataLabels) {
         // find unique LO frequencies in the data set:
         $this->findLOs();
         // create temporary files with spurious noise data to be used by GNUPLOT:
@@ -200,12 +200,10 @@ class IFSpectrum_plot extends GnuplotWrapper {
         // use default plot size:
         $this->plotSize();
 
-        if ($win31MHz) {
-            $this->specs['spec_value'] = 1.35;
-            $ymax = 2.35;
-        } else {
-            $ymax = ($this->band == 6) ? 9 : $this->specs['spec_value'] + 1;
-        }
+        $this->specs['spec_value'] = $spec;
+        $ymax = $spec + 1;
+        if (!$win31MHz && $this->band == 6)
+            $ymax = 9;
 
         // setup the plot:
         $this->plotOutput($imagename);
@@ -219,21 +217,26 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $att = array();
         $ltIndex = 1;
         foreach ($this->loValues as $lo) {
-            $att[] = "lines lt $ltIndex title ' $lo GHz'";
+            $mark = ' ';
+            if (array_search($lo, $badLOs))
+                $mark = '*';
+
+            $att[] = "lines lt $ltIndex title '$mark$lo GHz'";
             $ltIndex++;
         }
 
-        if (!$win31MHz && $this->band == 6) {
-            $this->plotAttribs['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
+// TODO: Get band6 special power var plots working again
+//         if (!$win31MHz && $this->band == 6) {
+//             $this->plotAttribs['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
 
-            $att[] = "f1(x) notitle with lines lt -1 lw 5";
+//             $att[] = "f1(x) notitle with lines lt -1 lw 5";
 
-//             $ltIndex = 1;
-//             foreach ($this->pvarData_special as $row) {
-//                 $att[] = "5, " . $row['pVar_dB'] . "linespoints lt $ltIndex notitle";
-//                 $ltIndex++;
-//             }
-        }
+//              $ltIndex = 1;
+//              foreach ($this->pvarData_special as $row) {
+//                  $att[] = "5, " . $row['pVar_dB'] . "linespoints lt $ltIndex notitle";
+//                  $ltIndex++;
+//              }
+//         }
         $this->plotAddLabel($TDHdataLabels);
         $this->plotData($att, count($att));
         $this->doPlot();
