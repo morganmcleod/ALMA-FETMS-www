@@ -28,7 +28,7 @@ class WCA extends FEComponent{
     var $tdh_outputpower;    //TestData_header record object for Output Power
     var $tdh_phasenoise;     //TestData_header record object for Phase Noise
     var $tdh_phasejitter;    //TestData_header record object for Phase Jitter
-    
+
     var $db_pull;
     var $new_spec;
     var $dbconnection;
@@ -300,7 +300,7 @@ class WCA extends FEComponent{
                     <td>Jitter (fs)</td>
                 </tr>
             </div>";
-        
+
         $rpj = $this->db_pull->qpj('select', $this->tdh_phasejitter->keyId);
 
         while ($rowpj = @mysql_fetch_array($rpj)){
@@ -469,7 +469,7 @@ class WCA extends FEComponent{
         $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
         return $spec['value'];
     }
-       
+
     private function findMaxSafeRows($allRows) {
         // $allRows is an array of arrays where each row has:
         // FreqLO, VD, Power
@@ -571,6 +571,8 @@ class WCA extends FEComponent{
 
         $r = @mysql_query($q, $this->dbconnection);//*/
         $r = $this->db_pull->q(5, NULL, $pol, $this->fc, $this->FormatTDHList($tdhArray));
+
+        $allRows = array();
 
         while($row = @mysql_fetch_array($r))
             $allRows[] = $row;    // append row to allRows.
@@ -1425,7 +1427,7 @@ class WCA extends FEComponent{
 
 
         $loindex=0;
-        
+
         $this->db_pull->qpj('delete', $this->tdh_phasejitter->keyId, $this->fc);
 
         $rlo = $this->db_pull->qlo('WCA_PhaseNoise', $this->tdh_phasenoise, $this->fc);
@@ -1438,7 +1440,7 @@ class WCA extends FEComponent{
 			$values[] = $lo;
 			$values[] = $pol;
 			$values[] = $jitterarray[$loindex];
-			
+
 			$this->db_pull->qpj('insert', $this->tdh_phasejitter->keyId, $this->fc, $values);
 
 
@@ -1737,7 +1739,7 @@ class WCA extends FEComponent{
                 	$req = 14;
                 }
                 $r = $this->db_pull->q($req, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
-                
+
                 if (@mysql_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "$CurrentLO GHz";
                     $data_file[$datafile_count] = $this->writedirectory . "wca_op_vs_dv_".$i."_".$pol.".txt";
