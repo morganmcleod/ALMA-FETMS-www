@@ -7,7 +7,7 @@
 </head>
 <body>
 <div id="footer">
-  <h3><a href="VersionInfo.php" STYLE="TEXT-DECORATION: NONE" ><font color="#ffffff">Version:2.1.0</font></a></h3>
+  <h3><a href="VersionInfo.php" STYLE="TEXT-DECORATION: NONE" ><font color="#ffffff">Version:3.0.0 2015-05-07</font></a></h3>
 </div>
 </body>
 </html>
