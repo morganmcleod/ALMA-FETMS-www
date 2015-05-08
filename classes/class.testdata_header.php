@@ -28,7 +28,8 @@ class TestData_header extends GenericTable{
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '', $InitFEComps = -1) {
-        $this->swversion = "1.0.8";
+        $this->swversion = "1.0.9";
+        // 1.0.9 fixed instantiating DataPlotter in DrawPlot().
         // 1.0.8 minor fix to require(class.wca.php)
         // 1.0.7 MM fixes so that we can run with E_NOTIFY
         // version 1.0.6 Moved code from here which instantiates classes derived from this one!   (to testdata.php, pending verification.)
@@ -303,6 +304,10 @@ class TestData_header extends GenericTable{
     }
 
     public function DrawPlot(){
+
+        $plt = new DataPlotter();
+        $plt->Initialize_DataPlotter($this->keyId,$this->dbconnection,$this->GetValue('keyFacility'));
+
         //Determine which type of plot to draw...
         switch ($this->GetValue('fkTestData_Type')) {
         case "43":
