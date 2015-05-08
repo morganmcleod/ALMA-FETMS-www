@@ -11,7 +11,7 @@ class WCAdb { //extends DBRetrieval {
 
 	/**
 	 * Initializes class and creates database connection
-	 * 
+	 *
 	 * @param $db- existing database connection
 	 */
 	public function WCAdb($db) {
@@ -21,20 +21,20 @@ class WCAdb { //extends DBRetrieval {
 
 	/**
 	 * @param string $query- SQL query to be passed to database
-	 * 
+	 *
 	 * @return Resource ID- results from query
 	 */
 	public function run_query($query) {
 		return @mysql_query($query, $this->dbconnection);
 	}
-	
+
 	/**
-	 * 
-	 * @param string $action- indicates if query will select , delete, or insert values from the database 
+	 *
+	 * @param string $action- indicates if query will select , delete, or insert values from the database
 	 * @param integer $keyId
 	 * @param integer $fc (default = NULL)
 	 * @param array $values- integers representing LO, Jitter, and pol. (default = NULL)
-	 * 
+	 *
 	 * @return resource for query results in action is select.
 	 */
 	public function qpj($action, $keyId, $fc=NULL, $values=NULL) {
@@ -52,9 +52,9 @@ class WCAdb { //extends DBRetrieval {
 			$this->run_query($q);
 		}
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param string $request- indicates which query is desired
 	 * @param integer $keyId (default = NULL)
 	 * @param integer $fc (default = NULL)
@@ -105,10 +105,10 @@ class WCAdb { //extends DBRetrieval {
 			$q = '';
 		}
 		return $this->run_query($q);
-	}	
-	
+	}
+
 	/**
-	 * 
+	 *
 	 * @param integer $occur- occurance of query request
 	 * @param integer $keyId (default = NULL)
 	 * @param integer $pol (default = NULL)
@@ -116,7 +116,7 @@ class WCAdb { //extends DBRetrieval {
 	 * @param integer $FormatTDHListArr- tdhArray value from FormatTDHList (default = NULL)
 	 * @param integer $CurrentLO (default = NULL)
 	 * @param integer $LOfreq (default = NULL)
-	 * 
+	 *
 	 */
 	public function q($occur, $keyId=NULL, $pol=NULL, $fc=NULL, $FormatTDHListArr=NULL, $CurrentLO=NULL, $LOfreq=NULL) {
 		if($occur == 1) {
@@ -154,9 +154,9 @@ class WCAdb { //extends DBRetrieval {
 		}
 		return $this->run_query($q);
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param string $test_type- TestData_Type desired
 	 * @param integer $keyId
 	 * @param integer $fc
@@ -184,9 +184,9 @@ class WCAdb { //extends DBRetrieval {
 		$q .= " AND fkFacility = $fc ORDER BY FreqLO ASC;";
 		return $this->run_query($q);
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param string $test_type- TestData_Type desired
 	 * @param integer $keyId
 	 * @param integer $fc (default = NULL)
@@ -210,7 +210,7 @@ class WCAdb { //extends DBRetrieval {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param integer $keyId
 	 * @param string $test_type- TestData_Type desired
 	 * @param boolean $comp- fkFE_Components? (default = NULL)
@@ -229,9 +229,9 @@ class WCAdb { //extends DBRetrieval {
 		$q .= " = $keyId;";
 		$this->run_query($q);
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param string $request- Table desired
 	 * @param array $filecontents
 	 * @param TestData_header $object- tdh desired (ex. tdh_ampstab)
@@ -239,101 +239,146 @@ class WCAdb { //extends DBRetrieval {
 	 * @param TestData_header $other_object- if additional tdh desired (default = NULL)
 	 */
 	public function del_ins($request, $filecontents, $object, $fc=NULL, $other_object=NULL) {
+		switch ($request) {
+		    case 'WCA_MaxSafePower':
+		        $colNames = array('TS', 'FreqLO', 'VD0_setting', 'VD1_setting', 'VD0', 'VD1', 'fkFE_Component', 'fkFacility');
+		        break;
+		    case 'WCA_OutputPower':
+		        $colNames = array('fkHeader', 'keyDataSet', 'FreqLO', 'Power', 'Pol', 'VD0', 'VD1', 'VG0', 'VG1', 'fkFacility');
+		        break;
+		    case 'WCA_AmplitudeStability':
+		        $colNames = array('fkHeader', 'FreqLO', 'Pol', 'Time', 'AllanVar');
+		        break;
+			case 'WCA_AMNoise':
+			    $colNames = array('fkHeader', 'AMNoise', 'FreqLO', 'FreqIF', 'Pol', 'DrainVoltage', 'GateVoltage');
+			    break;
+			case 'WCA_PhaseNoise':
+			    $colNames = array('fkHeader', 'FreqLO', 'Pol', 'CarrierOffset', 'Lf');
+		        break;
+			default:
+			    return;
+		}
+
 		$qdel = "DELETE FROM $request WHERE fkHeader = $object->keyId";
 		if($request == "WCA_MaxSafePower") {
-			$qdel = "DELETE FROM $request WHERE fkFE_Component = $object->keyId";
+		    $qdel = "DELETE FROM $request WHERE fkFE_Component = $object->keyId";
 		}
 		if(!is_null($fc)) {
-			$qdel .= " AND fkFacility = $fc";
+		    $qdel .= " AND fkFacility = $fc";
 		}
 		$qdel .= ";";
 		$rdel = $this->run_query($qdel);
-		$once = 0;
-		for($i=0; $i<sizeof($filecontents); $i++) {
-			$line_data = trim($filecontents[$i]);
-			$tempArray = explode(",", $line_data);
-			if (is_numeric(substr($tempArray[0],0,1)) == true){
-				if($once == 0) {
-					$object->SetValue('TS', $tempArray[3]);
-					$object->Update();
-					if(!is_null($other_object)){
-						$other_object->SetValue('TS', $tempArray[3]);
-						$other_object->Update();
-					}
-					$once = 1;
-				}
-				$ins_arr = array();
-				if($request == 'WCA_MaxSafePower') {
-					$ins_arr['TS'] = $tempArray[3];
-					$ins_arr['FreqLO'] = $tempArray[4];
-					$ins_arr['VD0_setting'] = $tempArray[5];
-					$ins_arr['VD1_setting'] = $tempArray[6];
-					$ins_arr['VD0'] = $tempArray[7];
-					$ins_arr['VD1'] = $tempArray[8];
-					$ins_arr['fkFE_Component'] = $object->keyId;
-					$ins_arr['fkFacility'] = $fc;
-				}	
-				if($request == 'WCA_OutputPower') {
-					$PolTemp = $tempArray[6];
-					if(strtolower($tempArray[6]) == "a") {
-						$PolTemp = "0";
-					}
-					if(strtolower($tempArray[6] == "b")) {
-						$PolTemp = "1";
-					}
-					$ins_arr['fkHeader'] = $object->keyId;
-					$ins_arr['keyDataSet'] = $tempArray[1];
-					$ins_arr['FreqLO'] = $tempArray[2];
-					$ins_arr['Power'] = $tempArray[3];
-					$ins_arr['Pol'] = $PolTemp;
-					$ins_arr['VD0'] = $tempArray[7];
-					$ins_arr['VD1'] = $tempArray[8];
-					$ins_arr['VG0'] = $tempArray[9];
-					$ins_arr['VG1'] = $tempArray[10];
-					$ins_arr['fkFacility'] = $fc;
-				}
-				if($request == 'WCA_AmplitudeStability') {
-					$ins_arr['fkHeader'] = $object->keyId;
-					$ins_arr['FreqLO'] = $tempArray[4];
-					$ins_arr['Pol'] = $tempArray[5];
-					$ins_arr['Time'] = $tempArray[6];
-					$ins_arr['AllanVar'] = $tempArray[7];
-				}
-				if($request == 'WCA_AMNoise') {
-					$ins_arr['fkHeader'] = $object->keyId;
-					$ins_arr['AMNoise'] = $tempArray[4];
-					$ins_arr['FreqLO'] = $tempArray[5];
-					$ins_arr['FreqIF'] = $tempArray[6];
-					$ins_arr['Pol'] = $tempArray[7];
-					$ins_arr['DrainVoltage'] = $tempArray[8];
-					$ins_arr['GateVoltage'] = $tempArray[9];
-				}
-				if($request == 'WCA_PhaseNoise') {
-					$ins_arr['fkHeader'] = $object->keyId;
-					$ins_arr['FreqLO'] = $tempArray[4];
-					$ins_arr['Pol'] = $tempArray[5];
-					$ins_arr['CarrierOffset'] = $tempArray[6];
-					$ins_arr['Lf'] = $tempArray[7];
-				}
-				$qins = "INSERT INTO $request (";
-				$inskeys = array_keys($ins_arr);
-				$insvals = array_values($ins_arr);
-				$keys = "";
-				$vals = "";
-				for ($i=0; $i<count($inskeys); $i++) {
-					$keys .= "$inskeys,";
-					$vals .= "'$insvals',";
-				}
-				$keys = substr($keys, 0, -1);
-				$vals = substr($vals, 0, -1);
-				$qins .= "$keys) VALUES ($vals);";
-				$this->run_query($qins);
-			}
+
+		$qins = "INSERT INTO $request (";
+		$first = true;
+		foreach ($colNames as $col) {
+		    if (!$first)
+		        $qins .= ",";
+		    else
+		        $first = false;
+		    $qins .= $col;
 		}
+		$qins .= ") VALUES ";
+
+		$first = true;
+		foreach ($filecontents as $line) {
+		    $line_data = trim($line);
+		    $tempArray = explode(",", $line_data);
+		    // skip header line:
+		    if (is_numeric(substr($tempArray[0],0,1))) {
+		        if (!$first)
+		            // prepend a comma if not the first set of values:
+		            $qins .= ",";
+		        else {
+		            // update the TDH time stamp with the data from the first row:
+		            $object->SetValue('TS', $tempArray[3]);
+		            $object->Update();
+		            // TODO:  what is other_object used for?
+		            if(!is_null($other_object)){
+		                $other_object->SetValue('TS', $tempArray[3]);
+		                $other_object->Update();
+		            }
+		            $first = false;
+		        }
+		        switch ($request) {
+		            case 'WCA_MaxSafePower':
+		                $values = array("'" . $tempArray[3] . "'",   //TS
+		                                $tempArray[4],   //FreqLO
+		                                $tempArray[5],   //VD0_setting
+		                                $tempArray[6],   //VD1_setting
+		                                $tempArray[7],   //VD0
+		                                $tempArray[8],   //VD1
+		                                $object->keyId,  //fkFE_Component
+		                                $fc              //fkFacility
+		                );
+		                break;
+		            case 'WCA_OutputPower':
+		                $PolTemp = $tempArray[6];
+		                if(strtolower($tempArray[6]) == "a") {
+		                    $PolTemp = "0";
+		                }
+		                if(strtolower($tempArray[6] == "b")) {
+		                    $PolTemp = "1";
+		                }
+		                $values = array($object->keyId, //fkHeader
+		                                $tempArray[1], //keyDataSet
+		                                $tempArray[4], //FreqLO
+		                                $tempArray[5], //Power
+		                                $PolTemp,      //Pol
+		                                $tempArray[7], //VD0
+		                                $tempArray[8], //VD1
+		                                $tempArray[9], //VG0
+		                                $tempArray[10],//VG1
+		                                $fc            //fkFacility
+		                );
+		                break;
+		            case 'WCA_AmplitudeStability':
+		                $values = array($object->keyId, //fkHeader
+		                                $tempArray[4], //FreqLO
+		                                $tempArray[5], //Pol
+		                                $tempArray[6], //Time
+		                                $tempArray[7]  //AllanVar
+		                );
+		                break;
+		            case 'WCA_AMNoise':
+		                $values = array($object->keyId, //fkHeader
+		                                $tempArray[4], //AMNoise
+		                                $tempArray[5], //FreqLO
+		                                $tempArray[6], //FreqIF
+		                                $tempArray[7], //Pol
+		                                $tempArray[8], //DrainVoltage
+		                                $tempArray[9]  //GateVoltage
+
+
+		                );
+		                break;
+		            case 'WCA_PhaseNoise':
+		                $values = array($object->keyId, //fkHeader
+		                                $tempArray[4], //FreqLO
+		                                $tempArray[5], //Pol
+		                                $tempArray[6], //CarrierOffset
+		                                $tempArray[7]  //Lf
+		                );
+		                break;
+		        }
+		        $qins .= "(";
+		        $first = true;
+		        foreach ($values as $col) {
+		            if (!$first)
+		                $qins .= ",";
+		            else
+		                $first = false;
+		            $qins .= $col;
+		        }
+		        $qins .= ")";
+		    }
+		}
+		$qins .= ";";
+		$ret = $this->run_query($qins);
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param string $action- select or delete
 	 * @param integer $keyId
 	 * @param string $test_type- TestData_Type desired
@@ -366,9 +411,9 @@ class WCAdb { //extends DBRetrieval {
 			$q .= " AND keyFacility = $fc";
 		}
 		$q .= ";";
-		
-		return $this->run_query($q);		
+
+		return $this->run_query($q);
 	}
-	
+
 }
 ?>
