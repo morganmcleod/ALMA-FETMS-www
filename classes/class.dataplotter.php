@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.1.0";
+        $this->swversion = "1.2.0";
 
         /*
+         * 1.2.0:  Fixed Plot_LOLockTest
          * 1.1.0:  Uses dbCode/dataplotterdb for database calls
          * version 1.0.29:  MTM fixed "set...screen" commands to gnuplot
          */
@@ -1336,16 +1337,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
 
         $td_header = $this->TestDataHeader->keyId;
+        $this->url_directory = $main_url_directory  . "FE_" . $this->FESN . "/";
         $this->writedirectory = $main_write_directory  . "FE_" . $this->FESN . "/";
-        $this->writedirectory = $main_write_directory;
         if (!file_exists($this->writedirectory)){
             mkdir($this->writedirectory);
-        }
-
-        $this->url_directory = $main_url_directory  . "FE_" . $this->FESN . "/";
-        $this->url_directory = $main_url_directory;
-        if (!file_exists($this->url_directory)){
-            mkdir($this->url_directory);
         }
 
         //Get CCA Serial Number
@@ -1372,10 +1367,12 @@ class DataPlotter extends GenericTable{
         $lpr->Initialize('TEST_LOLockTest_SubHeader',$subheader_id,'keyId',$this->fc,'keyFacility');
 
         // data query depending on dataset
-        if ($this->TestDataHeader->GetValue('DataSetGroup') == 0){
+        if ($this->TestDataHeader->GetValue('DataSetGroup') == 0) {
             $qdata= "SELECT TEST_LOLockTest.LOFreq,
             TEST_LOLockTest.PhotomixerCurrent,
-            TEST_LOLockTest.PLLRefTotalPower
+            TEST_LOLockTest.PLLRefTotalPower,
+            TEST_LOLockTest.LORTMLocked,
+            TEST_LOLockTest.LOLocked
             FROM TEST_LOLockTest, TEST_LOLockTest_SubHeader, TestData_header
             WHERE TEST_LOLockTest.fkHeader = TEST_LOLockTest_SubHeader.keyId
             AND TEST_LOLockTest_SubHeader.fkHeader = TestData_header.keyId
@@ -1385,29 +1382,38 @@ class DataPlotter extends GenericTable{
         } else {
             // query to get front end key of the FEConfig of the TDH.
             $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ". $this->TestDataHeader->GetValue('fkFE_Config');
-
             // query to get data
-        $rdata = $this->db_pull->qdata(2, $td_header, NULL, $t, $this->TestDataHeader);
-        $UnlocksFound = 0;
+            $qdata = "SELECT TEST_LOLockTest.LOFreq,
+            TEST_LOLockTest.PhotomixerCurrent,
+            TEST_LOLockTest.PLLRefTotalPower,
+            TEST_LOLockTest.LORTMLocked,
+            TEST_LOLockTest.LOLocked
+            FROM FE_Config
+            LEFT JOIN TestData_header ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
+            LEFT JOIN TEST_LOLockTest_SubHeader ON TEST_LOLockTest_SubHeader.`fkHeader` = `TestData_header`.`keyId`
+            LEFT JOIN TEST_LOLockTest ON TEST_LOLockTest_SubHeader.`keyId` = TEST_LOLockTest.fkHeader
+            WHERE TestData_header.Band = " . $this->TestDataHeader->GetValue('Band')."
+            AND TestData_header.fkTestData_Type= 57
+            AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup')."
+            AND TEST_LOLockTest.IsIncluded = 1
+            AND FE_Config.fkFront_Ends = ($qfe)
+            GROUP BY TEST_LOLockTest.LOFreq ASC;";
+        }
+        $t->WriteLogFile($qdata);
+        $rdata = @mysql_query($qdata,$this->dbconnection) or die('Failed on query in dataplotter.php line ' . __LINE__);
+
+        $UnlocksFound = array();
         $count = 0;
-        while ($rowdata = @mysql_fetch_array($rdata)){
-            if ($count == 1){
+        while ($rowdata = @mysql_fetch_array($rdata)) {
+            if ($count == 1) {
                 $FreqStepSize = abs($previousLO - $rowdata['LOFreq']);
             }
-            //If even one unlock is found, set $UnlocksFound = 1.
-            //If any unlocked points are found, they will be plotted on the graph.
-    //         if (($rowdata['LOLocked'] == 0) || ($rowdata['LORTMLocked'] == 0)){
-    //             $UnlocksFound = 1;
-    //         }
+            if (($rowdata['LOLocked'] == 0) || ($rowdata['LORTMLocked'] == 0)) {
+                $UnlocksFound[] = $rowdata['LOFreq'];
+            }
             $stringData = $rowdata['LOFreq'] . "\t" . $rowdata['PhotomixerCurrent'] . "\t" . $rowdata['PLLRefTotalPower'] . "\r\n";
             fwrite($fh, $stringData);
 
-            //Record any points at which TEST_LOLockTest.LOLocked=0 or TEST_LOLockTest.LORTMLocked=0
-    //         if (($rowdata['LOLocked'] == '0') || ($rowdata['LORTMLocked'] == '0')){
-    //             $UnlockedLO[$UnlockedCount]  = $rowdata['LOFreq'];
-    //             $UnlockedPwr[$UnlockedCount] = $rowdata['PhotomixerCurrent'];
-    //             $UnlockedCount += 1;
-    //         }
             $previousLO = $rowdata['LOFreq'];
             $count += 1;
         }
@@ -1436,15 +1442,10 @@ class DataPlotter extends GenericTable{
         $t->WriteLogFile($plot_title);
 
         //Create directories if necesary
-        $imagedirectory = $this->writedirectory . "FE_" . $this->FESN . "/";
-
-        if (!file_exists($imagedirectory)){
-            mkdir($imagedirectory);
-        }
         $imagename = "LOLockTest_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/$imagename";
         $plot_command_file = $this->writedirectory . "lolocktest_command_tdh$td_header.txt";
-        $image_url = $this->url_directory . "FE_" . $this->FESN . "/$imagename";
+        $image_url = $this->url_directory . "/$imagename";
 
         //Update plot url. Set the same value for all TestData_header records in this group.
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
@@ -1452,17 +1453,15 @@ class DataPlotter extends GenericTable{
 
         $this->db_pull->q_other('URL', $t, NULL, NULL, $image_url, $td_header);
 
-        $t->WriteLogFile($qURL);
-
-        $imagepath = $imagedirectory . $imagename;
-
+        $imagepath = $this->writedirectory . $imagename;
 
         $t->WriteLogFile("Plot command file= " . $plot_command_file);
 
         // set up plot labels
-        if ($this->TestDataHeader->GetValue('DataSetGroup') == 0){
-            $plot_label_1 =" set label 'TestData_header.keyId: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+        if ($this->TestDataHeader->GetValue('DataSetGroup') == 0) {
+            $plot_label_1 ="set label 'TestData_header.keyId: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
             $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
+
         } else {
             $r = $this->db_pull->q(7, NULL, NULL, NULL, NULL, $this->TestDataHeader);
 
@@ -1501,7 +1500,7 @@ class DataPlotter extends GenericTable{
                 $FE_Config = "($max_FE_Config)";
             }
 
-            $plot_label_1 =" set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
+            $plot_label_1 ="set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
             $plot_label_2 ="set label 'Dataset: ".$this->TestDataHeader->GetValue('DataSetGroup').", TS: $TS";
             if ($showFEConfig)
                 $plot_label_2 .=", FE Configuration: $FE_Config";
@@ -1525,16 +1524,15 @@ class DataPlotter extends GenericTable{
         fwrite($fh, $plot_label_1);
         fwrite($fh, $plot_label_2);
 
-        if ($UnlocksFound == 1){
+        if (!empty($UnlocksFound)){
             //Plot points where lock failed
             //This loop adds a function for each point where LO was unlocked.
-            for ($i=0; $i<count($UnlockedLO); $i++){
-                $minpoint = $UnlockedLO[$i] - (0.5 * $FreqStepSize);
-                $maxpoint = $UnlockedLO[$i] + (0.5 * $FreqStepSize);
-                //$pointval = "p$i(x)=((x>$minpoint) && (x<$maxpoint)) ? $UnlockedPwr[$i] : 1/0\r\n";
-
-                $pointval = "p$i(x)=((x>$minpoint) && (x<$maxpoint)) ? 0 : 1/0\r\n";
-
+            for ($i=0; $i<count($UnlocksFound); $i++) {
+                $LO = $UnlocksFound[$i];
+                $minpoint = $LO - (0.5 * $FreqStepSize);
+                $maxpoint = $LO + (0.5 * $FreqStepSize);
+                $j = $i + 1;
+                $pointval = "p$j(x)=((x>$minpoint) && (x<$maxpoint)) ? 0 : 1/0\r\n";
                 fwrite($fh, $pointval);
             }
         }
@@ -1543,13 +1541,12 @@ class DataPlotter extends GenericTable{
         $plot_string .= ", '$data_file'  using 1:3 title 'PLL IF Total Power' with lines axis x1y1";
         $plot_string .= ", -0.5  title 'spec' lt 1 with lines axis x1y1";
 
-        if ($UnlocksFound == 1){
+        if (!empty($UnlocksFound)){
             //Plot points where lock failed
             //This loops plots each function where LO was unlocked.
-            $plot_string .= ", p0(x) with linespoints  title 'LO Unlocked' pt 5 lt 12 pointsize 1 axis x1y1";
-            for ($i=1; $i<count($UnlockedLO); $i++){
-                //$plot_string .= ", p$i(x) with linespoints  notitle pt 5 lt 12 pointsize 1 axis x1y1";
-                $plot_string .= ", p$i(x) with linespoints  notitle pt 5 lt 12 pointsize 1 axis x1y1";
+            for ($i=0; $i<count($UnlocksFound); $i++) {
+                $j = $i + 1;
+                $plot_string .= ", p$j(x) with linespoints notitle pt 5 lt 12 pointsize 1 axis x1y1";
             }
         }
         $plot_string .= ", -4.5  notitle lt 1 with lines axis x1y1";
@@ -1563,14 +1560,6 @@ class DataPlotter extends GenericTable{
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-
-    function progressBar($percentage) {
-        print "<div id=\"progress-bar\" class=\"all-rounded\">\n";
-        print "<div id=\"progress-bar-percentage\" class=\"all-rounded\" style=\"width: $percentage%\">";
-            if ($percentage > 5) {print "$percentage%";} else {print "<div class=\"spacer\">&nbsp;</div>";}
-        print "</div></div>";
-    }
-
-}
 }//end class
+
 ?>
