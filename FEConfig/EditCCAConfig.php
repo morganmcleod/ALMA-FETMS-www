@@ -8,7 +8,6 @@
 
 <link href="images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
 
-<script type="text/javascript" src="jQuery.js"></script>
 <link type="text/css" href="../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
 <script src="../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
 <script src="../ext/ext-all.js" type="text/javascript"></script>
@@ -19,11 +18,9 @@
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.cca.php');
-require_once($site_classes . '/xlreader/reader.php');
 require_once('HelperFunctions.php');
 require_once('jsFunctions.php');
 
-//$fc = 40;
 if (isset($_REQUEST['fc'])){
     $fc = $_REQUEST['fc'];
 }
@@ -58,19 +55,12 @@ if (isset($_REQUEST['submit'])){
 
 
     //Update sln info for component and front end
-    //$dbops->UpdateStatusLocationAndNotes_Component($cca->GetValue('keyFaciliy'), $oldStatus, $oldLocation,$updatestring,$cca->keyId, ' ','');
     $dbops->UpdateStatusLocationAndNotes_FE($cca->FEfc, '', '',$updatestring,$feconfig, $feconfig, ' ','');
-
-
-
 }
 ?>
 <body id = 'body3' onload="createCompTabs(<?php echo $cca->GetValue('Band'); ?>,20,<?php echo $comp_key; ?>)" BGCOLOR="#19475E">
 <?php
 echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
-?>
-
-        <?php
 echo "
     <div id='sidebar2' >
         <table>
@@ -87,35 +77,25 @@ echo "
             </tr>
 
         </table>
-    </div>"; ?>
-
-
-
-
+    </div>";
+?>
 
 <div id="maincontent2" >
     <div id="tabs1"  ></div>
 </div>
 
-
-
-        <?php
+<?php
     echo "<input type = 'hidden' name ='conf' value='$cca->keyId'>";
     echo "<input type = 'hidden' name ='fc' value='".$cca->GetValue('keyFacility')."'>";
 ?>
 
 </form>
 <br><br>
-
-
-
-
 </body>
 
-
-
-
-<?php //include "footer.php" ;?>
+<?php
+//include "footer.php";
+?>
 
 </html>
 
