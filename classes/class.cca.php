@@ -54,10 +54,7 @@ class CCA extends FEComponent {
     var $swversion;
     var $fkDataStatus;
     var $fc; //facility key
-    var $facility;
     var $sln; //Status location and notes object (generic table)
-
-
 
     var $CCA_urls; //Generic table object of CCA_urls, fkFE_Component = $this->keyId
 
@@ -74,16 +71,16 @@ class CCA extends FEComponent {
 
     var $SubmittedFileName; //Uploaded file (csv, zip, ini), base name
     var $SubmittedFileTmp;  //Uploaded file (csv, zip, ini), actual path
-
     var $ErrorArray; //Array of errors
 
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.9";
+        $this->swversion = "1.0.10";
 
         /*
-         * 1.0.9 fixed bugs in CCA data upload
-         * 1.0.8 fixes to allow operation with E_NOTICE enabled
+         * 1.0.10 Added XML data file uplaod and fixed related bugs
+         * 1.0.9  fixed bugs in CCA data upload
+         * 1.0.8  fixes to allow operation with E_NOTICE enabled
          */
 
         require(site_get_config_main());
@@ -91,11 +88,14 @@ class CCA extends FEComponent {
         $this->url_directory = $cca_url_directory;
         $this->ZipDirectory = $this->writedirectory . "zip";
         $this->ErrorArray = array();
-   }
+    }
 
+    private function AddError($ErrorString){
+        $this->ErrorArray[] = $ErrorString;
+    }
 
     public function Initialize_CCA($in_keyId, $in_fc){
-        $this->fc= $in_fc;
+        $this->fc = $in_fc;
 
         parent::Initialize_FEComponent($in_keyId,$this->fc);
         $this->SetValue('keyFacility',$in_fc);
@@ -113,9 +113,6 @@ class CCA extends FEComponent {
             $this->TempSensors[$ts_location]->Initialize('CCA_TempSensorConfig',$tempsensor_id,'keyId');
         }
 
-
-
-
         //Initialize preamp params.
         $q = "SELECT FreqLO, keyId FROM CCA_PreampParams
               WHERE fkComponent = $this->keyId
@@ -132,9 +129,6 @@ class CCA extends FEComponent {
             $pcount += 1;
         }
 
-
-
-
         //Initialize mixers.
         $q = "SELECT DISTINCT(FreqLO), keyId FROM CCA_MixerParams
               WHERE fkComponent = $this->keyId
@@ -147,8 +141,6 @@ class CCA extends FEComponent {
             $this->MixerParams[$mpcount]->Initialize_MixerParam($this->keyId, $row[0],$this->GetValue('keyFacility'));
             $mpcount += 1;
         }
-
-
 
         //URLs
         $this->CCA_urls = new GenericTable();
@@ -163,11 +155,6 @@ class CCA extends FEComponent {
         $slnid = @mysql_result($rsln,0,0);
         $this->sln = new GenericTable();
         $this->sln->Initialize("FE_StatusLocationAndNotes",$slnid,"keyId");
-
-        //Facility
-        $this->facility = new GenericTable();
-        $this->facility->Initialize('Locations',$this->fc,'keyId');
-
     }
 
     public function NewRecord_CCA($in_fc){
@@ -244,8 +231,6 @@ class CCA extends FEComponent {
             echo '<a name="PreampParams"></a>';
             $this->Display_PreampParams();
 
-
-
             if ($this->CCA_urls->GetValue('url_amplitudestability') != ""){
                 //echo '<a name="AmplitudeStability"></a>';
                 //echo "<h2>Amplitude Stability</h2><br>";
@@ -263,11 +248,6 @@ class CCA extends FEComponent {
         $this->Display_uploadform();
         echo "</td></tr>";
         echo "</table>";
-
-
-        if ($this->keyId != ""){
-            $this->Display_PlotButton();
-        }
 
     }
 
@@ -624,143 +604,99 @@ public function Display_uploadform_SingleCSVfile(){
 
     }
 
-    public function Display_PlotButton(){
-        //echo "TEST";
-        /*
-        echo '
-        <p><div style="width:500px;height:80px; align = "left"></p>
-        <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
-            <!-- MAX_FILE_SIZE must precede the file input field -->
-            <!-- <input type="hidden" name="MAX_FILE_SIZE" value="1000000" /> -->
-            <!-- Name of input element determines name in $_FILES array -->
-            If test data has been uploaded for this CCA, click this button to generate the plots.
-            <input type="submit" name= "submit_plot" value="Generate Plots" />
-        </form>
-        </div>';*/
+    public function RequestValues_CCA($In_SubmittedFileName = '', $In_SubmittedFileTmp = ''){
+        $fc = $this->GetValue('keyFacility');
+        parent::RequestValues();
+        $this->SetValue('keyFacility',$fc);
 
+        if (isset($_REQUEST['deleterecord_forsure'])){
+            $this->DeleteRecord_CCA();
+        }
+
+        $this->SubmittedFileName = $In_SubmittedFileName;
+        $this->SubmittedFileTmp  = $In_SubmittedFileTmp;
+
+        if (isset($_REQUEST['submitted_ccafile'])){
+            $this->SubmittedFile = $_REQUEST['submitted_ccafile'];
+            $this->SubmittedFileName = $_FILES['ccafile']['name'];
+            $this->SubmittedFileTmp = $_FILES['ccafile']['tmp_name'];
+        }
+
+        $filenamearr = explode(".",$this->SubmittedFileName);
+        $this->SubmittedFileExtension = strtolower($filenamearr[count($filenamearr)-1]);
+
+        if ($this->SubmittedFileExtension == 'zip'){
+            $this->UploadExtractZipFile();
+
+        } else if (($this->SubmittedFileExtension == 'csv') || ($this->SubmittedFileExtension == 'txt')){
+            $this->Upload_TestDataFile();
+        }
+
+        else if ($this->SubmittedFileExtension == 'ini'){
+            $this->Update_Configuration_From_INI($this->SubmittedFileTmp);
+        }
+
+        else if ($this->SubmittedFileExtension == 'xml'){
+            $this->Update_Configuration_From_ALMA_XML($this->SubmittedFileTmp);
+        }
+
+        else {
+            $this->AddError("Error: Unable to upload file $this->SubmittedFileName.");
+        }
     }
 
+    public function Upload_TestDataFile(){
+        if (strpos(strtolower($this->SubmittedFileName), "amplitude_stability" ) != ""){
+            $this->file_AMPLITUDESTABILITY = $this->SubmittedFileTmp;
+            $this->Upload_AmplitudeStability();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "phase_drift" ) != ""){
+            $this->file_PHASE_DRIFT = $this->SubmittedFileTmp;
+            $this->Upload_PhaseDrift();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "gain_compression" ) != ""){
+            $this->file_GAIN_COMPRESSION = $this->SubmittedFileTmp;
+            $this->Upload_GainCompression();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "total_power" ) != ""){
+            $this->file_TOTALPOWER = $this->SubmittedFileTmp;
+            $this->Upload_TotalPower();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "inband_power" ) != ""){
+            $this->file_INBANDPOWER = $this->SubmittedFileTmp;
+            $this->Upload_InBandPower();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "iv_curve" ) != ""){
+            $this->file_IVCURVE = $this->SubmittedFileTmp;
+            $this->Upload_IVCurve();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "sideband_ratio" ) != ""){
+            $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
+            $this->Upload_SidebandRatio();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "image_suppression" ) != ""){
+            $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
+            $this->Upload_SidebandRatio();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "power_var" ) != ""){
+            $this->file_POWERVARIATION = $this->SubmittedFileTmp;
+            $this->Upload_PowerVariation();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "polarization_accuracy" ) != ""){
+            $this->file_POLACCURACY = $this->SubmittedFileTmp;
+            $this->Upload_PolAccuracy();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "if_spectrum" ) != ""){
+            $this->file_IFSPECTRUM = $this->SubmittedFileTmp;
+            $this->Upload_IFSpectrum();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "noise_temperature" ) != ""){
+            $this->file_NOISETEMPERATURE = $this->SubmittedFileTmp;
+            $this->Upload_NoiseTemperature();
+        }
 
-public function RequestValues_CCA($In_SubmittedFileName = '', $In_SubmittedFileTmp = ''){
 
-
-    $fc = $this->GetValue('keyFacility');
-    parent::RequestValues();
-    $this->SetValue('keyFacility',$fc);
-
-    if (isset($_REQUEST['deleterecord_forsure'])){
-        $this->DeleteRecord_CCA();
     }
-
-
-    $this->SubmittedFileName = $In_SubmittedFileName;
-    $this->SubmittedFileTmp  = $In_SubmittedFileTmp;
-
-
-
-
-    if (isset($_REQUEST['submitted_ccafile'])){
-        $this->SubmittedFile = $_REQUEST['submitted_ccafile'];
-        $this->SubmittedFileName = $_FILES['ccafile']['name'];
-        $this->SubmittedFileTmp = $_FILES['ccafile']['tmp_name'];
-    }
-
-
-    $filenamearr = explode(".",$this->SubmittedFileName);
-    $this->SubmittedFileExtension = strtolower($filenamearr[count($filenamearr)-1]);
-
-
-
-
-    if ($this->SubmittedFileExtension == 'zip'){
-        $this->UploadExtractZipFile();
-    }
-
-
-    if (($this->SubmittedFileExtension == 'csv') || ($this->SubmittedFileExtension == 'txt')){
-        $this->Upload_TestDataFile();
-    }
-
-    if ($this->SubmittedFileExtension == 'ini'){
-        $this->Update_Configuration_FROM_INI($this->SubmittedFileTmp);
-    }
-
-
-    //Is this part necessary?
-    /*
-    $this->Update();
-    if (isset($_REQUEST['status_selector'])){
-        $this->sln->SetValue('fkStatusType', $_REQUEST['status_selector']);
-        $this->sln->Update();
-    }
-    if (isset($_REQUEST['location_selector'])){
-        $this->sln->SetValue('fkLocationNames', $_REQUEST['location_selector']);
-        $this->sln->Update();
-    }
-    if (isset($_REQUEST['Notes'])){
-        $this->sln->SetValue('Notes', $_REQUEST['Notes']);
-        $this->sln->Update();
-    }
-    if (isset($_REQUEST['Updated_By'])){
-        $this->sln->SetValue('Updated_By', $_REQUEST['Updated_By']);
-        $this->sln->Update();
-    }*/
-}
-
-public function Upload_TestDataFile(){
-    if (strpos(strtolower($this->SubmittedFileName), "amplitude_stability" ) != ""){
-        $this->file_AMPLITUDESTABILITY = $this->SubmittedFileTmp;
-        $this->Upload_AmplitudeStability();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "phase_drift" ) != ""){
-        $this->file_PHASE_DRIFT = $this->SubmittedFileTmp;
-        $this->Upload_PhaseDrift();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "gain_compression" ) != ""){
-        $this->file_GAIN_COMPRESSION = $this->SubmittedFileTmp;
-        $this->Upload_GainCompression();
-    }
-
-    if (strpos(strtolower($this->SubmittedFileName), "total_power" ) != ""){
-        $this->file_TOTALPOWER = $this->SubmittedFileTmp;
-        $this->Upload_TotalPower();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "inband_power" ) != ""){
-        $this->file_INBANDPOWER = $this->SubmittedFileTmp;
-        $this->Upload_InBandPower();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "iv_curve" ) != ""){
-        $this->file_IVCURVE = $this->SubmittedFileTmp;
-        $this->Upload_IVCurve();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "sideband_ratio" ) != ""){
-        $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
-        $this->Upload_SidebandRatio();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "image_suppression" ) != ""){
-        $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
-        $this->Upload_SidebandRatio();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "power_var" ) != ""){
-        $this->file_POWERVARIATION = $this->SubmittedFileTmp;
-        $this->Upload_PowerVariation();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "polarization_accuracy" ) != ""){
-        $this->file_POLACCURACY = $this->SubmittedFileTmp;
-        $this->Upload_PolAccuracy();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "if_spectrum" ) != ""){
-        $this->file_IFSPECTRUM = $this->SubmittedFileTmp;
-        $this->Upload_IFSpectrum();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "noise_temperature" ) != ""){
-        $this->file_NOISETEMPERATURE = $this->SubmittedFileTmp;
-        $this->Upload_NoiseTemperature();
-    }
-
-
-}
 
     public function DeleteRecord_CCA(){
         $this->Delete_ALL_TestData();
@@ -835,24 +771,17 @@ public function Upload_TestDataFile(){
         $filename = $this->SubmittedFileName; //the filename
 
         //move file
-        if(move_uploaded_file($this->SubmittedFileTmp, $upload_dir.'/'.$filename)){
-        }
-        else{
+        if(!move_uploaded_file($this->SubmittedFileTmp, $upload_dir.'/'.$filename)) {
             $this->AddError("Error : Unable to upload file $this->SubmittedFileName.");
         }
-
 
         $zip_dir = basename(strtolower($filename), ".zip"); //get filename without extension fpr directory creation
 
         //create directory in $upload_dir and chmodd directory
         $createdir = $upload_dir.'/'.$zip_dir;
-        if(!@mkdir($upload_dir.'/'.$zip_dir, 0777)){
+        if(!@mkdir($upload_dir.'/'.$zip_dir, 0777)) {
             $this->AddError("Error : Unable to create directory $createdir");
         }
-        else{
-            //$this->AddError("Error : Unable to create directory $createdir");
-        }
-
 
         //Update notes for front end to reflect that this zip file was uploaded.
         $updatestring  = 'Uploaded Zip file ' . $filename = $this->SubmittedFileName;
@@ -871,11 +800,6 @@ public function Upload_TestDataFile(){
         if ($archive->extract(PCLZIP_OPT_PATH, $upload_dir.'/'.$zip_dir) == 0){
             $this->AddError("Error : Unable to unzip archive");
         }
-        else{
-
-        }
-
-
 
         //show what was just extracted
         $list = $archive->listContent();
@@ -940,10 +864,7 @@ public function Upload_TestDataFile(){
 
         }
 
-
         unlink($upload_dir.'/'.$filename); //delete uploaded file
-
-
 
         if ($this->file_COLDCARTS != ""){
             $this->Upload_CCAs_file();
@@ -998,10 +919,6 @@ public function Upload_TestDataFile(){
                 $this->Upload_PhaseDrift();
             }
         }
-    }
-
-    public function AddError($ErrorString){
-        $this->ErrorArray[count($this->ErrorArray)] = $ErrorString;
     }
 
     public function Upload_CCAs_file() {
@@ -1867,6 +1784,7 @@ public function Upload_TestDataFile(){
         $sln->SetValue('fkStatusType', $newStatus);
         $sln->Update();
     }
+
     public function UpdateLocation($newLocation){
         $sln = new GenericTable();
         $sln->Initialize("FE_StatusLocationAndNotes",$this->keyId,"fkFEComponents");
@@ -1882,27 +1800,25 @@ public function Upload_TestDataFile(){
         $sln->Update();
     }
 
+    public function Update_Configuration_From_INI($INIfile) {
+        // Parse the ini file with sections
+        $ini_array = parse_ini_file($INIfile, true);
+        //Is this CCA in the file? If not, exit
+        //Check to see if the Band value in the file section matches this CCA band value.
+        //If the values don't match,. or if the section doesn't exist, the operation
+        //will be aborted.
+        $sectionname = '~ColdCart' . $this->GetValue('Band') . "-" . $this->GetValue('SN');
+        $CheckBand = $ini_array[$sectionname]['Band'];
+        $ccafound = false;
+        if ($CheckBand == $this->GetValue('Band')){
+            $ccafound = true;
+        }
 
-    public function Update_Configuration_FROM_INI($INIfile, $INIfile_basename = ''){
-            // Parse the ini file with sections
-            $ini_array = parse_ini_file($INIfile, true);
-            //Is this CCA in the file? If not, exit
-            //Check to see if the Band value in the file section matches this CCA band value.
-            //If the values don't match,. or if the section doesn't exist, the operation
-            //will be aborted.
-            $sectionname = '~ColdCart' . $this->GetValue('Band') . "-" . $this->GetValue('SN');
-            $CheckBand = $ini_array[$sectionname]['Band'];
-            $ccafound = 0;
-            if ($CheckBand == $this->GetValue('Band')){
-                $ccafound = 1;
-            }
+        if ($ccafound) {
+            //Warn user that CCA not found in the file
+            $this->AddError("CCA ". $this->GetValue('SN') . " not found in this file!  Upload aborted.");
 
-
-            if ($ccafound != 1){
-                //Warn user that CCA not found in the file
-                $this->AddError("CCA ". $this->GetValue('SN') . " not found in this file! This process has been aborted.");
-            }
-            if ($ccafound == 1){
+        } else {
             //Remove this CCA from the front end
             $dbops = new DBOperations();
 
@@ -1910,24 +1826,19 @@ public function Upload_TestDataFile(){
             $oldStatus = $this->sln->GetValue('fkStatusType');
             $oldLocation = $this->sln->GetValue('fkLocationNames');
 
-
             //Get old status and location for the front end
             $ccaFE = new FrontEnd();
             $ccaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc);
             $oldStatusFE = $ccaFE->fesln->GetValue('fkStatusType');
             $oldLocationFE = $ccaFE->fesln->GetValue('fkLocationNames');
 
-
             $dbops->RemoveComponentFromFrontEnd($this->GetValue('keyFacility'), $this->keyId, '',-1,-1);
-            $FEid_old       = $this->FEid;
+            $FEid_old = $this->FEid;
 
             $this->GetFEConfig();
 
             //Create new component record, duplicate everything from the existing.
             $this->DuplicateRecord_CCA();
-
-            //Notes for the SLN record of new component
-            $Notes = "Configuration changed on " . date('r') . ". ";
 
             //Get magnet params
             $keyVal = $ini_array[$sectionname]['MagnetParam01'];
@@ -1937,13 +1848,11 @@ public function Upload_TestDataFile(){
             $imag11 = $tempArray[3];
             $imag12 = $tempArray[4];
 
-
             //delete newly created duplicate mixer/preamp params, to be replaced from the contents of the ini file.
             $qdel = "DELETE FROM CCA_MixerParams WHERE fkComponent = $this->keyId;";
             $rdel = @mysql_query($qdel,$this->dbconnection);
             $qdel = "DELETE FROM CCA_PreampParams WHERE fkComponent = $this->keyId;";
             $rdel = @mysql_query($qdel,$this->dbconnection);
-
 
             for ($i_mp=0; $i_mp< 100; $i_mp++){
                 $keyName = "MixerParam" . str_pad($i_mp+1,2,"0",STR_PAD_LEFT);
@@ -1963,7 +1872,7 @@ public function Upload_TestDataFile(){
                     $qmx11 .= "VALUES('$lo','1','1','$this->keyId','" . $this->GetValue('keyFacility') . "');";
                     $rmx11 = @mysql_query($qmx11,$this->dbconnection);
 
-                    if ($this->GetValue('Band') != 9){
+                    if ($this->GetValue('Band') < 9){
                         $qmx02 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                         $qmx02 .= "VALUES('$lo','0','2','$this->keyId','" . $this->GetValue('keyFacility') . "');";
                         $rmx02 = @mysql_query($qmx02,$this->dbconnection);
@@ -1974,7 +1883,7 @@ public function Upload_TestDataFile(){
                     }
 
                     $this->MixerParams[$i_mp] = new MixerParams();
-                      $this->MixerParams[$i_mp]->Initialize_MixerParam($this->keyId, $lo, $this->GetValue('keyFacility'));
+                    $this->MixerParams[$i_mp]->Initialize_MixerParam($this->keyId, $lo, $this->GetValue('keyFacility'));
                     $this->MixerParams[$i_mp]->lo     = $tempArray[0];
                     $this->MixerParams[$i_mp]->vj01   = $tempArray[1];
                     $this->MixerParams[$i_mp]->vj02   = $tempArray[2];
@@ -1992,60 +1901,249 @@ public function Upload_TestDataFile(){
                 }
             }
 
+            for ($i_pa=0; $i_pa < 100; $i_pa++) {
+                $keyName = "PreampParam" . str_pad(($i_pa+1),2,"0",STR_PAD_LEFT);
+                $keyVal = $ini_array[$sectionname][$keyName ];
+                if (strlen($keyVal) > 2){
+                    $tempArray = explode(',',$keyVal);
 
-
-                for ($i_pa=0; $i_pa < 100; $i_pa++){
-                    $keyName = "PreampParam" . str_pad(($i_pa+1),2,"0",STR_PAD_LEFT);
-                    $keyVal = $ini_array[$sectionname][$keyName ];
-                    if (strlen($keyVal) > 2){
-                        $tempArray = explode(',',$keyVal);
-
-                        $this->PreampParams[$i_pa] = new GenericTable();
-                          $this->PreampParams[$i_pa]->dbconnection = $this->dbconnection;
-                        $this->PreampParams[$i_pa]->keyId_name = "keyId";
-                        $this->PreampParams[$i_pa]->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
-                          $this->PreampParams[$i_pa]->SetValue('fkComponent',$this->keyId);
-                        $this->PreampParams[$i_pa]->SetValue('FreqLO',$tempArray[0]);
-                        $this->PreampParams[$i_pa]->SetValue('Pol',$tempArray[1]);
-                        $this->PreampParams[$i_pa]->SetValue('SB' ,$tempArray[2]);
-                        $this->PreampParams[$i_pa]->SetValue('VD1',$tempArray[3]);
-                        $this->PreampParams[$i_pa]->SetValue('VD2',$tempArray[4]);
-                        $this->PreampParams[$i_pa]->SetValue('VD3',$tempArray[5]);
-                        $this->PreampParams[$i_pa]->SetValue('ID1',$tempArray[6]);
-                        $this->PreampParams[$i_pa]->SetValue('ID2',$tempArray[7]);
-                        $this->PreampParams[$i_pa]->SetValue('ID3',$tempArray[8]);
-                        $this->PreampParams[$i_pa]->SetValue('VG1',$tempArray[9]);
-                        $this->PreampParams[$i_pa]->SetValue('VG2',$tempArray[10]);
-                        $this->PreampParams[$i_pa]->SetValue('VG3',$tempArray[11]);
-                        $this->PreampParams[$i_pa]->Update();
-                    }
+                    $this->PreampParams[$i_pa] = new GenericTable();
+                    $this->PreampParams[$i_pa]->dbconnection = $this->dbconnection;
+                    $this->PreampParams[$i_pa]->keyId_name = "keyId";
+                    $this->PreampParams[$i_pa]->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
+                    $this->PreampParams[$i_pa]->SetValue('fkComponent',$this->keyId);
+                    $this->PreampParams[$i_pa]->SetValue('FreqLO',$tempArray[0]);
+                    $this->PreampParams[$i_pa]->SetValue('Pol',$tempArray[1]);
+                    $this->PreampParams[$i_pa]->SetValue('SB' ,$tempArray[2]);
+                    $this->PreampParams[$i_pa]->SetValue('VD1',$tempArray[3]);
+                    $this->PreampParams[$i_pa]->SetValue('VD2',$tempArray[4]);
+                    $this->PreampParams[$i_pa]->SetValue('VD3',$tempArray[5]);
+                    $this->PreampParams[$i_pa]->SetValue('ID1',$tempArray[6]);
+                    $this->PreampParams[$i_pa]->SetValue('ID2',$tempArray[7]);
+                    $this->PreampParams[$i_pa]->SetValue('ID3',$tempArray[8]);
+                    $this->PreampParams[$i_pa]->SetValue('VG1',$tempArray[9]);
+                    $this->PreampParams[$i_pa]->SetValue('VG2',$tempArray[10]);
+                    $this->PreampParams[$i_pa]->SetValue('VG3',$tempArray[11]);
+                    $this->PreampParams[$i_pa]->Update();
                 }
+            }
+            $updatestring = "Updated mixer, preamp params for CCA " . $this->GetValue('Band') . "-" . $this->GetValue('SN') . ".";
+
+            //Add CCA to Front End
+            $feconfig = $this->FEfc;
+            $dbops->AddComponentToFrontEnd($FEid_old, $this->keyId, $this->FEfc, $this->GetValue('keyFacility'), '', $updatestring, ' ',-1);
+            $dbops->UpdateStatusLocationAndNotes_Component($this->fc, $oldStatus, $oldLocation,$updatestring,$this->keyId, ' ','');
+            $this->GetFEConfig();
+            $dbops->UpdateStatusLocationAndNotes_FE($this->FEfc, $oldStatusFE, $oldLocationFE,$updatestring,$this->FEConfig, $this->FEConfig, ' ','');
+            unset($dbops);
+        }
+        if (file_exists($INIfile)){
+            unlink($INIfile);
+        }
+    }
+
+    public function Update_Configuration_From_ALMA_XML($XMLfile) {
+
+        $ConfigData = simplexml_load_file($XMLfile);
+        $ccaFound = false;
+        if ($ConfigData) {
+            $assy = (string) $ConfigData->ASSEMBLY['value'];
+            list($band) = sscanf($assy, "ColdCart%d");
+            if ($band && $band == $this->GetValue('Band'))
+                $ccaFound = true;
+        }
+        if (!$ccaFound) {
+            //Warn user that CCA not found in the file
+            $this->AddError("CCA band ". $this->GetValue('Band') . " not found in this file!  Upload aborted.");
+        } else {
+            //Remove this CCA from the front end
+            $dbops = new DBOperations();
+
+            //Preserve these values in the new SLN record
+            $oldStatus = $this->sln->GetValue('fkStatusType');
+            $oldLocation = $this->sln->GetValue('fkLocationNames');
+
+            //Get old status and location for the front end
+            $ccaFE = new FrontEnd();
+            $ccaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc);
+            $oldStatusFE = $ccaFE->fesln->GetValue('fkStatusType');
+            $oldLocationFE = $ccaFE->fesln->GetValue('fkLocationNames');
+
+            $dbops->RemoveComponentFromFrontEnd($this->GetValue('keyFacility'), $this->keyId, '',-1,-1);
+            $FEid_old = $this->FEid;
+
+            $this->GetFEConfig();
+
+            //Create new component record, duplicate everything from the existing.
+            $this->DuplicateRecord_CCA();
+
+            //delete newly created duplicate mixer/preamp params, to be replaced from the contents of the ini file.
+            $qdel = "DELETE FROM CCA_MixerParams WHERE fkComponent = $this->keyId;";
+            $rdel = @mysql_query($qdel,$this->dbconnection);
+            $qdel = "DELETE FROM CCA_PreampParams WHERE fkComponent = $this->keyId;";
+            $rdel = @mysql_query($qdel,$this->dbconnection);
+
+            //Get magnet params array indexed by LO string:
+            $magnetParams = array();
+            foreach ($ConfigData->MagnetParams as $param) {
+                $FreqLO = ((float) $param['FreqLO']) / 1E9;
+                $magnetParams[$FreqLO] = array(
+                    'IMag01' => (float) $param['IMag01'],
+                    'IMag02' => (float) $param['IMag02'],
+                    'IMag11' => (float) $param['IMag11'],
+                    'IMag12' => (float) $param['IMag12']
+                );
+            }
+
+            //Get mixer params:
+            $i = 0;
+            foreach ($ConfigData->MixerParams as $param) {
+                $FreqLO = ((float) $param['FreqLO']) / 1E9;
+                $IMag01 = $magnetParams[$FreqLO]['IMag01'];
+                $IMag02 = $magnetParams[$FreqLO]['IMag02'];
+                $IMag11 = $magnetParams[$FreqLO]['IMag11'];
+                $IMag12 = $magnetParams[$FreqLO]['IMag12'];
+
+                // Create empty CCA_MixerParams records to update:
+                $qmx01 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
+                $qmx01 .= "VALUES('$FreqLO','0','1','$this->keyId','" . $this->GetValue('keyFacility') . "');";
+                $rmx01 = @mysql_query($qmx01,$this->dbconnection);
+
+                $qmx11 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
+                $qmx11 .= "VALUES('$FreqLO','1','1','$this->keyId','" . $this->GetValue('keyFacility') . "');";
+                $rmx11 = @mysql_query($qmx11,$this->dbconnection);
+
+                if ($this->GetValue('Band') < 9){
+                    $qmx02 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
+                    $qmx02 .= "VALUES('$FreqLO','0','2','$this->keyId','" . $this->GetValue('keyFacility') . "');";
+                    $rmx02 = @mysql_query($qmx02,$this->dbconnection);
+
+                    $qmx12 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
+                    $qmx12 .= "VALUES('$FreqLO','1','2','$this->keyId','" . $this->GetValue('keyFacility') . "');";
+                    $rmx12 = @mysql_query($qmx12,$this->dbconnection);
+                }
+
+                $this->MixerParams[$i] = new MixerParams();
+                $this->MixerParams[$i]->Initialize_MixerParam($this->keyId, $FreqLO, $this->GetValue('keyFacility'));
+                $this->MixerParams[$i]->lo     = (string) $FreqLO;
+                $this->MixerParams[$i]->vj01   = (string) $param['VJ01'];
+                $this->MixerParams[$i]->vj02   = (string) $param['VJ02'];
+                $this->MixerParams[$i]->vj11   = (string) $param['VJ11'];
+                $this->MixerParams[$i]->vj12   = (string) $param['VJ12'];
+                $this->MixerParams[$i]->ij01   = (string) $param['IJ01'];
+                $this->MixerParams[$i]->ij02   = (string) $param['IJ02'];
+                $this->MixerParams[$i]->ij11   = (string) $param['IJ11'];
+                $this->MixerParams[$i]->ij12   = (string) $param['IJ12'];
+                $this->MixerParams[$i]->imag01 = $IMag01;
+                $this->MixerParams[$i]->imag02 = $IMag02;
+                $this->MixerParams[$i]->imag11 = $IMag11;
+                $this->MixerParams[$i]->imag12 = $IMag12;
+                $this->MixerParams[$i]->Update_MixerParams($this->keyId, $this->GetValue('keyFacility'));
+                $i++;
+            }
+
+            $i = 0;
+            foreach ($ConfigData->PreampParamsPol0Sb1 as $param) {
+                $this->PreampParams[$i] = new GenericTable();
+                $this->PreampParams[$i]->dbconnection = $this->dbconnection;
+                $this->PreampParams[$i]->keyId_name = "keyId";
+                $this->PreampParams[$i]->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
+                $this->PreampParams[$i]->SetValue('fkComponent',$this->keyId);
+                $this->PreampParams[$i]->SetValue('FreqLO', (string)((float) $param['FreqLO']) / 1E9);
+                $this->PreampParams[$i]->SetValue('Pol', '0');
+                $this->PreampParams[$i]->SetValue('SB' , '1');
+                $this->PreampParams[$i]->SetValue('VD1', (string) $param['VD1']);
+                $this->PreampParams[$i]->SetValue('VD2', (string) $param['VD2']);
+                $this->PreampParams[$i]->SetValue('VD3', (string) $param['VD3']);
+                $this->PreampParams[$i]->SetValue('ID1', (string) $param['ID1']);
+                $this->PreampParams[$i]->SetValue('ID2', (string) $param['ID2']);
+                $this->PreampParams[$i]->SetValue('ID3', (string) $param['ID3']);
+                $this->PreampParams[$i]->SetValue('VG1', (string) $param['VG1']);
+                $this->PreampParams[$i]->SetValue('VG2', (string) $param['VG2']);
+                $this->PreampParams[$i]->SetValue('VG3', (string) $param['VG3']);
+                $this->PreampParams[$i]->Update();
+                $i++;
+            }
+            foreach ($ConfigData->PreampParamsPol0Sb2 as $param) {
+                $this->PreampParams[$i] = new GenericTable();
+                $this->PreampParams[$i]->dbconnection = $this->dbconnection;
+                $this->PreampParams[$i]->keyId_name = "keyId";
+                $this->PreampParams[$i]->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
+                $this->PreampParams[$i]->SetValue('fkComponent',$this->keyId);
+                $this->PreampParams[$i]->SetValue('FreqLO', (string)((float) $param['FreqLO']) / 1E9);
+                $this->PreampParams[$i]->SetValue('Pol', '0');
+                $this->PreampParams[$i]->SetValue('SB' , '2');
+                $this->PreampParams[$i]->SetValue('VD1', (string) $param['VD1']);
+                $this->PreampParams[$i]->SetValue('VD2', (string) $param['VD2']);
+                $this->PreampParams[$i]->SetValue('VD3', (string) $param['VD3']);
+                $this->PreampParams[$i]->SetValue('ID1', (string) $param['ID1']);
+                $this->PreampParams[$i]->SetValue('ID2', (string) $param['ID2']);
+                $this->PreampParams[$i]->SetValue('ID3', (string) $param['ID3']);
+                $this->PreampParams[$i]->SetValue('VG1', (string) $param['VG1']);
+                $this->PreampParams[$i]->SetValue('VG2', (string) $param['VG2']);
+                $this->PreampParams[$i]->SetValue('VG3', (string) $param['VG3']);
+                $this->PreampParams[$i]->Update();
+                $i++;
+            }
+            foreach ($ConfigData->PreampParamsPol1Sb1 as $param) {
+                $this->PreampParams[$i] = new GenericTable();
+                $this->PreampParams[$i]->dbconnection = $this->dbconnection;
+                $this->PreampParams[$i]->keyId_name = "keyId";
+                $this->PreampParams[$i]->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
+                $this->PreampParams[$i]->SetValue('fkComponent',$this->keyId);
+                $this->PreampParams[$i]->SetValue('FreqLO', (string)((float) $param['FreqLO']) / 1E9);
+                $this->PreampParams[$i]->SetValue('Pol', '1');
+                $this->PreampParams[$i]->SetValue('SB' , '1');
+                $this->PreampParams[$i]->SetValue('VD1', (string) $param['VD1']);
+                $this->PreampParams[$i]->SetValue('VD2', (string) $param['VD2']);
+                $this->PreampParams[$i]->SetValue('VD3', (string) $param['VD3']);
+                $this->PreampParams[$i]->SetValue('ID1', (string) $param['ID1']);
+                $this->PreampParams[$i]->SetValue('ID2', (string) $param['ID2']);
+                $this->PreampParams[$i]->SetValue('ID3', (string) $param['ID3']);
+                $this->PreampParams[$i]->SetValue('VG1', (string) $param['VG1']);
+                $this->PreampParams[$i]->SetValue('VG2', (string) $param['VG2']);
+                $this->PreampParams[$i]->SetValue('VG3', (string) $param['VG3']);
+                $this->PreampParams[$i]->Update();
+                $i++;
+            }
+            foreach ($ConfigData->PreampParamsPol1Sb2 as $param) {
+                $this->PreampParams[$i] = new GenericTable();
+                $this->PreampParams[$i]->dbconnection = $this->dbconnection;
+                $this->PreampParams[$i]->keyId_name = "keyId";
+                $this->PreampParams[$i]->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
+                $this->PreampParams[$i]->SetValue('fkComponent',$this->keyId);
+                $this->PreampParams[$i]->SetValue('FreqLO', (string)((float) $param['FreqLO']) / 1E9);
+                $this->PreampParams[$i]->SetValue('Pol', '1');
+                $this->PreampParams[$i]->SetValue('SB' , '2');
+                $this->PreampParams[$i]->SetValue('VD1', (string) $param['VD1']);
+                $this->PreampParams[$i]->SetValue('VD2', (string) $param['VD2']);
+                $this->PreampParams[$i]->SetValue('VD3', (string) $param['VD3']);
+                $this->PreampParams[$i]->SetValue('ID1', (string) $param['ID1']);
+                $this->PreampParams[$i]->SetValue('ID2', (string) $param['ID2']);
+                $this->PreampParams[$i]->SetValue('ID3', (string) $param['ID3']);
+                $this->PreampParams[$i]->SetValue('VG1', (string) $param['VG1']);
+                $this->PreampParams[$i]->SetValue('VG2', (string) $param['VG2']);
+                $this->PreampParams[$i]->SetValue('VG3', (string) $param['VG3']);
+                $this->PreampParams[$i]->Update();
+                $i++;
+            }
 
             $updatestring = "Updated mixer, preamp params for CCA " . $this->GetValue('Band') . "-" . $this->GetValue('SN') . ".";
 
             //Add CCA to Front End
             $feconfig = $this->FEfc;
             $dbops->AddComponentToFrontEnd($FEid_old, $this->keyId, $this->FEfc, $this->GetValue('keyFacility'), '', $updatestring, ' ',-1);
-            $dbops->UpdateStatusLocationAndNotes_Component($this->GetValue('keyFaciliy'), $oldStatus, $oldLocation,$updatestring,$this->keyId, ' ','');
+            $dbops->UpdateStatusLocationAndNotes_Component($this->fc, $oldStatus, $oldLocation,$updatestring,$this->keyId, ' ','');
             $this->GetFEConfig();
             $dbops->UpdateStatusLocationAndNotes_FE($this->FEfc, $oldStatusFE, $oldLocationFE,$updatestring,$this->FEConfig, $this->FEConfig, ' ','');
             unset($dbops);
-
-            }
-            if (file_exists($INIfile)){
-                unlink($INIfile);
-            }
-
-
-
+        }
+        if (file_exists($XMLfile)){
+            unlink($XMLfile);
+        }
     }
 
-
-
-
-
-
-    public function DuplicateRecord_CCA(){
+    private function DuplicateRecord_CCA(){
         $old_id = $this->keyId;
         parent::DuplicateRecord();
 
@@ -2062,17 +2160,21 @@ public function Upload_TestDataFile(){
             unset($mx_temp);
         }
 
-        for ($i = 0; $i < count($this->PreampParams); $i++){
-            $this->PreampParams[$i]->DuplicateRecord();
-            $this->PreampParams[$i]->SetValue('fkComponent',$this->keyId);
-            $this->PreampParams[$i]->Update();
+        if (isset($this->PreampParams)) {
+            for ($i = 0; $i < count($this->PreampParams); $i++){
+                $this->PreampParams[$i]->DuplicateRecord();
+                $this->PreampParams[$i]->SetValue('fkComponent',$this->keyId);
+                $this->PreampParams[$i]->Update();
+            }
         }
 
-        for ($i = 0; $i <= count($this->TempSensors); $i++){
-            if ($this->TempSensors[$i]->keyId != ''){
-                $this->TempSensors[$i]->DuplicateRecord();
-                $this->TempSensors[$i]->SetValue('fkComponent',$this->keyId);
-                $this->TempSensors[$i]->Update();
+        if (isset($this->TempSensors)) {
+            for ($i = 0; $i <= count($this->TempSensors); $i++){
+                if ($this->TempSensors[$i]->keyId != ''){
+                    $this->TempSensors[$i]->DuplicateRecord();
+                    $this->TempSensors[$i]->SetValue('fkComponent',$this->keyId);
+                    $this->TempSensors[$i]->Update();
+                }
             }
         }
     }
@@ -2216,10 +2318,10 @@ public function Upload_TestDataFile(){
         $locs[5]= "Pol 1 Mixer";
 
 
-    $ts = "";
-    if ($this->TempSensors[1]->keyId != ''){
-        $ts = $this->TempSensors[1]->GetValue('TS') . ",";
-    }
+        $ts = "";
+        if ($this->TempSensors[1]->keyId != ''){
+            $ts = $this->TempSensors[1]->GetValue('TS') . ",";
+        }
 
         echo "<div style= 'width: 350px'><table id = 'table6'>";
         echo "<tr class='alt'>

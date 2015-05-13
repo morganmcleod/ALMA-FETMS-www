@@ -1,15 +1,12 @@
 
 //Follows example from http://stackoverflow.com/questions/2514937/file-upload-using-ext-js
 
-//Ext.require([
-//    'Ext.form.field.File',
-//    'Ext.form.Panel',
-//    'Ext.window.MessageBox'
-//]);
-
-
 function WCAFileBrowse(id,fc)
 {
+	var fileinstructions = '<b><u>Types of files that may be uploaded:</b></u><br><br>';
+	fileinstructions += '1. FrontEndControlDLL.ini file. <br>';
+	fileinstructions += '2. ALMA WCA configuration XML file. <br><br>';
+	
 	myuploadform= new Ext.FormPanel({
 		title:'Select file for upload',
         fileUpload: true,
@@ -26,10 +23,16 @@ function WCAFileBrowse(id,fc)
         {
             xtype: 'fileuploadfield',
             id: 'filedata',
-            emptyText: 'Select FrontEndControlDLL.INI file...',
+            emptyText: 'Select a file...',
             fieldLabel: 'File',
+            bodyStyle: 'padding: 0px;',
             buttonText: 'Browse',
             height: '30px'	
+        },
+        {
+            id:'tab1',
+            html :fileinstructions,
+            height: '90px'
         }]
         
     });
@@ -40,7 +43,7 @@ function WCAFileBrowse(id,fc)
 		modal:true,
 		layout:'fit',
 		width:550,
-		height:180,
+		height:215,
 		closable:true,
 		resizable:false,
 		plain:true,
@@ -59,10 +62,9 @@ function WCAFileBrowse(id,fc)
 	                    	var msg = action.result.errors;
                     		var keyconfig = action.result.keyconfig;
                     		
-	                    	if (action.result.errordetected == 1){
+	                    	if (action.result.errordetected == 1) {
 	                    		alert(msg);
-	                    	}
-	                    	if (action.result.errordetected == 0){
+	                    	} else {
 	                    		dlgPopup.close();
 	                    		location.href='ShowComponents.php?conf=' + keyconfig + '&fc=' + fc;
 	                    	}
@@ -77,26 +79,15 @@ function WCAFileBrowse(id,fc)
                     
                 }
             }
-        }
-		,
+        },
         {
-			text:'Close',
+			text:'Cancel',
 			handler:function() 
 			{
 				dlgPopup.close();
-				
 			}
 		}
         ]
-		
-
-	
 	});
-	
-	
 	dlgPopup.show();
-
-	
-	
-
 }

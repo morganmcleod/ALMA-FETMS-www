@@ -28,12 +28,19 @@ class WCA extends FEComponent{
     var $tdh_outputpower;    //TestData_header record object for Output Power
     var $tdh_phasenoise;     //TestData_header record object for Phase Noise
     var $tdh_phasejitter;    //TestData_header record object for Phase Jitter
-    
+
     var $db_pull;
     var $new_spec;
     var $dbconnection;
 
     var $maxSafePowerTable;  //Array of rows for the Max Safe Operating Parameters table.
+
+    var $SubmittedFileExtension; //Extension of submitted file for update (csv, ini or zip)
+
+    var $SubmittedFileName; //Uploaded file (csv, zip, ini), base name
+    var $SubmittedFileTmp;  //Uploaded file (csv, zip, ini), actual path
+
+    var $ErrorArray; //Array of errors
 
     function __construct() {
         $this->fkDataStatus = '7';
@@ -45,15 +52,20 @@ class WCA extends FEComponent{
         $this->url_directory = $wca_url_directory;
         $this->GNUplot = $GNUplot;
         $this->ZipDirectory = $this->writedirectory . "zip";
-        //echo "consruct writedir= $wca_write_directory<br>";
+        $this->ErrorArray = array();
+    }
+
+    private function AddError($ErrorString){
+        $this->ErrorArray[] = $ErrorString;
     }
 
     public function Initialize_WCA($in_keyId, $in_fc){
         $this->logging = 0;
         $this->fc = $in_fc;
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.3";
+        $this->swversion = "1.0.4";
         /*
+         * 1.0.4 Added XML config file upload and fixed related bugs.
          * 1.0.3 calculate max safe power table from output power data in database.
          * 1.0.2 fix "set label...screen" commands to gnuplot
          */
@@ -100,12 +112,6 @@ class WCA extends FEComponent{
         $slnid = @mysql_result($rsln,0,0);
         $this->sln = new GenericTable();
         $this->sln->Initialize("FE_StatusLocationAndNotes",$slnid,"keyId");
-
-        //Facility
-        $this->facility = new GenericTable();
-        $this->facility->Initialize('Locations',$this->GetValue('fkFacility'),'keyId');
-        //echo "facility info:<br>";
-        //echo $this->facility->GetValue('Notes') . "<br>";
 
         //Test data header objects
 		$rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseJitter');
@@ -300,7 +306,7 @@ class WCA extends FEComponent{
                     <td>Jitter (fs)</td>
                 </tr>
             </div>";
-        
+
         $rpj = $this->db_pull->qpj('select', $this->tdh_phasejitter->keyId);
 
         while ($rowpj = @mysql_fetch_array($rpj)){
@@ -469,7 +475,7 @@ class WCA extends FEComponent{
         $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
         return $spec['value'];
     }
-       
+
     private function findMaxSafeRows($allRows) {
         // $allRows is an array of arrays where each row has:
         // FreqLO, VD, Power
@@ -914,27 +920,48 @@ class WCA extends FEComponent{
         unlink($datafile_name);
     }
 
-    public function Upload_INI_file($datafile_name, $datafile_tmpname){
-        $ini_array = parse_ini_file($datafile_tmpname, true);
+    public function UploadConfiguration($datafile_name, $datafile_tmpname) {
+
+        $this->SubmittedFileName = $datafile_name;
+        $this->SubmittedFileTmp  = $datafile_tmpname;
+
+        $filenamearr = explode(".",$this->SubmittedFileName);
+        $this->SubmittedFileExtension = strtolower($filenamearr[count($filenamearr)-1]);
+
+        if ($this->SubmittedFileExtension == 'ini') {
+            $this->Update_Configuration_From_INI($this->SubmittedFileTmp);
+        }
+
+        else if ($this->SubmittedFileExtension == 'xml') {
+            $this->Update_Configuration_From_ALMA_XML($this->SubmittedFileTmp);
+        }
+
+        else {
+            $this->AddError("Error: Unable to upload file $this->SubmittedFileName.");
+        }
+    }
+
+    private function Update_Configuration_From_INI($INIfile){
+        $ini_array = parse_ini_file($INIfile, true);
         $sectionname = '~WCA' . $this->GetValue('Band') . "-" . $this->GetValue('SN');
         $CheckBand = $ini_array[$sectionname]['Band'];
-        $wcafound = 0;
+        $wcafound = false;
         if ($CheckBand == $this->GetValue('Band')){
-            $wcafound = 1;
+            $wcafound = true;
         }
-        if ($wcafound != 1){
 
-            $ErrStr = "Section [$sectionname] not found in file $datafile_name.";
-            $this->AddError($ErrStr);
-            $this->AddError("another line.");
-        }
-        if ($wcafound == 1){
+        if ($wcafound) {
+            // Warn the user that WCA not found in file:
+            $this->AddError("WCA ". $this->GetValue('SN') . " not found in this file!  Upload aborted.");
 
-            //Remove this CCA from the front end
+        } else {
+            //Remove this WCA from the front end
             $dbops = new DBOperations();
+
             //Preserve these values in the new SLN record
             $oldStatus = $this->sln->GetValue('fkStatusType');
             $oldLocation = $this->sln->GetValue('fkLocationNames');
+
             //Get old status and location for the front end
             $wcaFE = new FrontEnd();
             $this->GetFEConfig();
@@ -942,8 +969,9 @@ class WCA extends FEComponent{
             $oldStatusFE = $wcaFE->fesln->GetValue('fkStatusType');
             $oldLocationFE = $wcaFE->fesln->GetValue('fkLocationNames');
             $dbops->RemoveComponentFromFrontEnd($this->GetValue('keyFacility'), $this->keyId, '',-1,-1);
-            $FEid_old       = $this->FEid;
+            $FEid_old = $this->FEid;
             $this->GetFEConfig();
+
             //Create new component record, duplicate everything from the existing.
             //Save old key value
             $keyIdOLD = $this->keyId;
@@ -956,18 +984,12 @@ class WCA extends FEComponent{
             $keys['new'] = $keyIdNEW;
             $this->db_pull->q_other('MS', NULL, NULL, NULL, NULL, NULL, $keys);
 
-            //Copy Yig settings
-
             //Notes for the SLN record of new component
             $Notes = "Configuration changed on " . date('r') . ". ";
 
             //Get rid of any existing LO Params
-            /*$q = "DELETE FROM WCA_LOParams WHERE fkComponent = $this->keyId;";
-            $r = @mysql_query($q,$this->dbconnection);//*/
             $r = $this->db_pull->q(7, $this->keyId);
             //Get rid of any existing WCAs table records
-           /* $q = "DELETE FROM WCAs WHERE fkFE_Component = $this->keyId;";
-            $r = @mysql_query($q,$this->dbconnection);//*/
             $r = $this->db_pull->q(8, $this->keyId);
 
             //Read INI file
@@ -1022,15 +1044,112 @@ class WCA extends FEComponent{
             //Add WCA to Front End
             $feconfig = $this->FEfc;
             $dbops->AddComponentToFrontEnd($FEid_old, $this->keyId, $this->FEfc, $this->GetValue('keyFacility'), '', $updatestring, ' ',-1);
-            $dbops->UpdateStatusLocationAndNotes_Component($this->GetValue('keyFaciliy'), $oldStatus, $oldLocation,$updatestring,$this->keyId, ' ','');
+            $dbops->UpdateStatusLocationAndNotes_Component($this->fc, $oldStatus, $oldLocation,$updatestring,$this->keyId, ' ','');
             $this->GetFEConfig();
             $dbops->UpdateStatusLocationAndNotes_FE($this->FEfc, $oldStatusFE, $oldLocationFE,$updatestring,$this->FEConfig, $this->FEConfig, ' ','');
             unset($dbops);
-        }//end if wca found == 1
-        unlink($datafile_tmpname);
+        }//end if (wcafound)
+        unlink($INIfile);
     }
 
-    public function DuplicateRecord_WCA(){
+    private function Update_Configuration_From_ALMA_XML($XMLfile) {
+        $ConfigData = simplexml_load_file($XMLfile);
+        $found = false;
+        if ($ConfigData) {
+            $assy = (string) $ConfigData->ASSEMBLY['value'];
+            list($band) = sscanf($assy, "WCA%d");
+            if ($band && $band == $this->GetValue('Band'))
+                $found = true;
+        }
+        if (!$found) {
+            //Warn user that CCA not found in the file
+            $this->AddError("WCA band ". $this->GetValue('Band') . " not found in this file!  Upload aborted.");
+        } else {
+            //Remove this WCA from the front end
+            $dbops = new DBOperations();
+
+            //Preserve these values in the new SLN record
+            $oldStatus = $this->sln->GetValue('fkStatusType');
+            $oldLocation = $this->sln->GetValue('fkLocationNames');
+
+            //Get old status and location for the front end
+            $wcaFE = new FrontEnd();
+            $this->GetFEConfig();
+            $wcaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc);
+            $oldStatusFE = $wcaFE->fesln->GetValue('fkStatusType');
+            $oldLocationFE = $wcaFE->fesln->GetValue('fkLocationNames');
+            $dbops->RemoveComponentFromFrontEnd($this->GetValue('keyFacility'), $this->keyId, '',-1,-1);
+            $FEid_old = $this->FEid;
+            $this->GetFEConfig();
+
+            //Create new component record, duplicate everything from the existing.
+            //Save old key value
+            $keyIdOLD = $this->keyId;
+            $this->DuplicateRecord_WCA();
+            $keyIdNEW = $this->keyId;
+
+            //Copy Max Safe Operating Parameters
+            $keys = array();
+            $keys['old'] = $keyIdOLD;
+            $keys['new'] = $keyIdNEW;
+            $this->db_pull->q_other('MS', NULL, NULL, NULL, NULL, NULL, $keys);
+
+            //Notes for the SLN record of new component
+            $Notes = "Configuration changed on " . date('r') . ". ";
+
+            //Get rid of any existing LO Params
+            $r = $this->db_pull->q(7, $this->keyId);
+            //Get rid of any existing WCAs table records
+            $r = $this->db_pull->q(8, $this->keyId);
+
+            //Get LO params array indexed by LO string:
+            $LOParams = array();
+            foreach ($ConfigData->PowerAmp as $param) {
+                $FreqLO = ((float) $param['FreqLO']) / 1E9;
+                $VD0 = (float) $param['VD0'];
+                $VD1 = (float) $param['VD1'];
+                $VG0 = (float) $param['VG0'];
+                $VG1 = (float) $param['VG1'];
+
+                $qnew  = "INSERT INTO WCA_LOParams(fkComponent,FreqLO,VDP0,VDP1,VGP0,VGP1) ";
+                $qnew .= " VALUES('$this->keyId','$FreqLO','$VD0','$VD1','$VG0','$VG1');";
+                $rnew = $this->db_pull->run_query($qnew);
+            }
+            $FLOYIG = ((float) $ConfigData->FLOYIG['value']) / 1E9;
+            $FHIYIG = ((float) $ConfigData->FHIYIG['value']) / 1E9;
+
+            //Copy Yig settings
+            $rYIG = $this->db_pull->q_other('YIG', $this->keyId);
+            $YIGnumrows = @mysql_num_rowS($rYIG);
+
+            if ($YIGnumrows > 0){
+                $this->_WCAs->SetValue('FloYIG',$FLOYIG);
+                $this->_WCAs->SetValue('FhiYIG',$FHIYIG);
+                $this->_WCAs->SetValue('VG0',$VG0);
+                $this->_WCAs->SetValue('VG1',$VG1);
+                $this->_WCAs->Update();
+            }
+            if ($YIGnumrows < 1){
+                $qwcas  = "INSERT INTO WCAs(fkFE_Component,FloYIG,FhiYIG,VG0,VG1) ";
+                $qwcas .= "VALUES('$this->keyId','$FLOYIG','$FHIYIG','$VG0','$VG1');";
+                $rwcas = $this->db_pull->run_query($qwcas);
+            }
+
+            //Done reading from XML file.
+            $updatestring = "Updated config for WCA " . $this->GetValue('Band') . "-" . $this->GetValue('SN') . ".";
+
+            //Add WCA to Front End
+            $feconfig = $this->FEfc;
+            $dbops->AddComponentToFrontEnd($FEid_old, $this->keyId, $this->FEfc, $this->GetValue('keyFacility'), '', $updatestring, ' ',-1);
+            $dbops->UpdateStatusLocationAndNotes_Component($this->fc, $oldStatus, $oldLocation,$updatestring,$this->keyId, ' ','');
+            $this->GetFEConfig();
+            $dbops->UpdateStatusLocationAndNotes_FE($this->FEfc, $oldStatusFE, $oldLocationFE,$updatestring,$this->FEConfig, $this->FEConfig, ' ','');
+            unset($dbops);
+        }
+        unlink($XMLfile);
+    }
+
+    private function DuplicateRecord_WCA(){
         parent::DuplicateRecord();
         //Copy the records for LO Params
         for ($i = 0; $i < count($this->LOParams); $i++){
@@ -1425,7 +1544,7 @@ class WCA extends FEComponent{
 
 
         $loindex=0;
-        
+
         $this->db_pull->qpj('delete', $this->tdh_phasejitter->keyId, $this->fc);
 
         $rlo = $this->db_pull->qlo('WCA_PhaseNoise', $this->tdh_phasenoise, $this->fc);
@@ -1438,7 +1557,7 @@ class WCA extends FEComponent{
 			$values[] = $lo;
 			$values[] = $pol;
 			$values[] = $jitterarray[$loindex];
-			
+
 			$this->db_pull->qpj('insert', $this->tdh_phasejitter->keyId, $this->fc, $values);
 
 
@@ -1737,7 +1856,7 @@ class WCA extends FEComponent{
                 	$req = 14;
                 }
                 $r = $this->db_pull->q($req, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
-                
+
                 if (@mysql_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "$CurrentLO GHz";
                     $data_file[$datafile_count] = $this->writedirectory . "wca_op_vs_dv_".$i."_".$pol.".txt";
