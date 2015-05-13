@@ -264,11 +264,6 @@ class CCA extends FEComponent {
         echo "</td></tr>";
         echo "</table>";
 
-
-        if ($this->keyId != ""){
-            $this->Display_PlotButton();
-        }
-
     }
 
     public function DisplayMainData() {
@@ -624,143 +619,124 @@ public function Display_uploadform_SingleCSVfile(){
 
     }
 
-    public function Display_PlotButton(){
-        //echo "TEST";
+
+    public function RequestValues_CCA($In_SubmittedFileName = '', $In_SubmittedFileTmp = ''){
+        $fc = $this->GetValue('keyFacility');
+        parent::RequestValues();
+        $this->SetValue('keyFacility',$fc);
+
+        if (isset($_REQUEST['deleterecord_forsure'])){
+            $this->DeleteRecord_CCA();
+        }
+
+
+        $this->SubmittedFileName = $In_SubmittedFileName;
+        $this->SubmittedFileTmp  = $In_SubmittedFileTmp;
+
+
+
+
+        if (isset($_REQUEST['submitted_ccafile'])){
+            $this->SubmittedFile = $_REQUEST['submitted_ccafile'];
+            $this->SubmittedFileName = $_FILES['ccafile']['name'];
+            $this->SubmittedFileTmp = $_FILES['ccafile']['tmp_name'];
+        }
+
+
+        $filenamearr = explode(".",$this->SubmittedFileName);
+        $this->SubmittedFileExtension = strtolower($filenamearr[count($filenamearr)-1]);
+
+
+
+
+        if ($this->SubmittedFileExtension == 'zip'){
+            $this->UploadExtractZipFile();
+        }
+
+
+        if (($this->SubmittedFileExtension == 'csv') || ($this->SubmittedFileExtension == 'txt')){
+            $this->Upload_TestDataFile();
+        }
+
+        if ($this->SubmittedFileExtension == 'ini'){
+            $this->Update_Configuration_FROM_INI($this->SubmittedFileTmp);
+        }
+
+
+        //Is this part necessary?
         /*
-        echo '
-        <p><div style="width:500px;height:80px; align = "left"></p>
-        <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
-            <!-- MAX_FILE_SIZE must precede the file input field -->
-            <!-- <input type="hidden" name="MAX_FILE_SIZE" value="1000000" /> -->
-            <!-- Name of input element determines name in $_FILES array -->
-            If test data has been uploaded for this CCA, click this button to generate the plots.
-            <input type="submit" name= "submit_plot" value="Generate Plots" />
-        </form>
-        </div>';*/
-
+        $this->Update();
+        if (isset($_REQUEST['status_selector'])){
+            $this->sln->SetValue('fkStatusType', $_REQUEST['status_selector']);
+            $this->sln->Update();
+        }
+        if (isset($_REQUEST['location_selector'])){
+            $this->sln->SetValue('fkLocationNames', $_REQUEST['location_selector']);
+            $this->sln->Update();
+        }
+        if (isset($_REQUEST['Notes'])){
+            $this->sln->SetValue('Notes', $_REQUEST['Notes']);
+            $this->sln->Update();
+        }
+        if (isset($_REQUEST['Updated_By'])){
+            $this->sln->SetValue('Updated_By', $_REQUEST['Updated_By']);
+            $this->sln->Update();
+        }*/
     }
 
+    public function Upload_TestDataFile(){
+        if (strpos(strtolower($this->SubmittedFileName), "amplitude_stability" ) != ""){
+            $this->file_AMPLITUDESTABILITY = $this->SubmittedFileTmp;
+            $this->Upload_AmplitudeStability();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "phase_drift" ) != ""){
+            $this->file_PHASE_DRIFT = $this->SubmittedFileTmp;
+            $this->Upload_PhaseDrift();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "gain_compression" ) != ""){
+            $this->file_GAIN_COMPRESSION = $this->SubmittedFileTmp;
+            $this->Upload_GainCompression();
+        }
 
-public function RequestValues_CCA($In_SubmittedFileName = '', $In_SubmittedFileTmp = ''){
+        if (strpos(strtolower($this->SubmittedFileName), "total_power" ) != ""){
+            $this->file_TOTALPOWER = $this->SubmittedFileTmp;
+            $this->Upload_TotalPower();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "inband_power" ) != ""){
+            $this->file_INBANDPOWER = $this->SubmittedFileTmp;
+            $this->Upload_InBandPower();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "iv_curve" ) != ""){
+            $this->file_IVCURVE = $this->SubmittedFileTmp;
+            $this->Upload_IVCurve();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "sideband_ratio" ) != ""){
+            $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
+            $this->Upload_SidebandRatio();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "image_suppression" ) != ""){
+            $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
+            $this->Upload_SidebandRatio();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "power_var" ) != ""){
+            $this->file_POWERVARIATION = $this->SubmittedFileTmp;
+            $this->Upload_PowerVariation();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "polarization_accuracy" ) != ""){
+            $this->file_POLACCURACY = $this->SubmittedFileTmp;
+            $this->Upload_PolAccuracy();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "if_spectrum" ) != ""){
+            $this->file_IFSPECTRUM = $this->SubmittedFileTmp;
+            $this->Upload_IFSpectrum();
+        }
+        if (strpos(strtolower($this->SubmittedFileName), "noise_temperature" ) != ""){
+            $this->file_NOISETEMPERATURE = $this->SubmittedFileTmp;
+            $this->Upload_NoiseTemperature();
+        }
 
 
-    $fc = $this->GetValue('keyFacility');
-    parent::RequestValues();
-    $this->SetValue('keyFacility',$fc);
-
-    if (isset($_REQUEST['deleterecord_forsure'])){
-        $this->DeleteRecord_CCA();
     }
-
-
-    $this->SubmittedFileName = $In_SubmittedFileName;
-    $this->SubmittedFileTmp  = $In_SubmittedFileTmp;
-
-
-
-
-    if (isset($_REQUEST['submitted_ccafile'])){
-        $this->SubmittedFile = $_REQUEST['submitted_ccafile'];
-        $this->SubmittedFileName = $_FILES['ccafile']['name'];
-        $this->SubmittedFileTmp = $_FILES['ccafile']['tmp_name'];
-    }
-
-
-    $filenamearr = explode(".",$this->SubmittedFileName);
-    $this->SubmittedFileExtension = strtolower($filenamearr[count($filenamearr)-1]);
-
-
-
-
-    if ($this->SubmittedFileExtension == 'zip'){
-        $this->UploadExtractZipFile();
-    }
-
-
-    if (($this->SubmittedFileExtension == 'csv') || ($this->SubmittedFileExtension == 'txt')){
-        $this->Upload_TestDataFile();
-    }
-
-    if ($this->SubmittedFileExtension == 'ini'){
-        $this->Update_Configuration_FROM_INI($this->SubmittedFileTmp);
-    }
-
-
-    //Is this part necessary?
-    /*
-    $this->Update();
-    if (isset($_REQUEST['status_selector'])){
-        $this->sln->SetValue('fkStatusType', $_REQUEST['status_selector']);
-        $this->sln->Update();
-    }
-    if (isset($_REQUEST['location_selector'])){
-        $this->sln->SetValue('fkLocationNames', $_REQUEST['location_selector']);
-        $this->sln->Update();
-    }
-    if (isset($_REQUEST['Notes'])){
-        $this->sln->SetValue('Notes', $_REQUEST['Notes']);
-        $this->sln->Update();
-    }
-    if (isset($_REQUEST['Updated_By'])){
-        $this->sln->SetValue('Updated_By', $_REQUEST['Updated_By']);
-        $this->sln->Update();
-    }*/
-}
-
-public function Upload_TestDataFile(){
-    if (strpos(strtolower($this->SubmittedFileName), "amplitude_stability" ) != ""){
-        $this->file_AMPLITUDESTABILITY = $this->SubmittedFileTmp;
-        $this->Upload_AmplitudeStability();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "phase_drift" ) != ""){
-        $this->file_PHASE_DRIFT = $this->SubmittedFileTmp;
-        $this->Upload_PhaseDrift();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "gain_compression" ) != ""){
-        $this->file_GAIN_COMPRESSION = $this->SubmittedFileTmp;
-        $this->Upload_GainCompression();
-    }
-
-    if (strpos(strtolower($this->SubmittedFileName), "total_power" ) != ""){
-        $this->file_TOTALPOWER = $this->SubmittedFileTmp;
-        $this->Upload_TotalPower();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "inband_power" ) != ""){
-        $this->file_INBANDPOWER = $this->SubmittedFileTmp;
-        $this->Upload_InBandPower();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "iv_curve" ) != ""){
-        $this->file_IVCURVE = $this->SubmittedFileTmp;
-        $this->Upload_IVCurve();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "sideband_ratio" ) != ""){
-        $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
-        $this->Upload_SidebandRatio();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "image_suppression" ) != ""){
-        $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
-        $this->Upload_SidebandRatio();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "power_var" ) != ""){
-        $this->file_POWERVARIATION = $this->SubmittedFileTmp;
-        $this->Upload_PowerVariation();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "polarization_accuracy" ) != ""){
-        $this->file_POLACCURACY = $this->SubmittedFileTmp;
-        $this->Upload_PolAccuracy();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "if_spectrum" ) != ""){
-        $this->file_IFSPECTRUM = $this->SubmittedFileTmp;
-        $this->Upload_IFSpectrum();
-    }
-    if (strpos(strtolower($this->SubmittedFileName), "noise_temperature" ) != ""){
-        $this->file_NOISETEMPERATURE = $this->SubmittedFileTmp;
-        $this->Upload_NoiseTemperature();
-    }
-
-
-}
 
     public function DeleteRecord_CCA(){
         $this->Delete_ALL_TestData();
