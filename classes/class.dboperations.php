@@ -127,7 +127,7 @@ class DBOperations{
 
         $db = site_getDbConnection();    // TODO: not used?
 
-        if ($this->Component->keyId == ''){
+        if (!isset($this->Component) || !($this->Component-keyId)) {
             $this->Component = new FEComponent();
             $this->Component->Initialize_FEComponent($in_COMPid, $in_fc_comp);
         }
@@ -327,9 +327,6 @@ class DBOperations{
         unset($sln);
         unset($sln_old);
     }
-
-
-
 
     public function Update_FEConfigLinksAdd($in_feconfig_old,$in_feconfig_new, $in_fc_fe){
         /*
