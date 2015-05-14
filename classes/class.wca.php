@@ -63,8 +63,9 @@ class WCA extends FEComponent{
         $this->logging = 0;
         $this->fc = $in_fc;
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.4";
+        $this->swversion = "1.0.5";
         /*
+         * 1.0.5 Fix plotting errors in WCA electronic data upload.
          * 1.0.4 Added XML config file upload and fixed related bugs.
          * 1.0.3 calculate max safe power table from output power data in database.
          * 1.0.2 fix "set label...screen" commands to gnuplot
@@ -166,9 +167,7 @@ class WCA extends FEComponent{
             $FreqLO = $specs['FreqLO'];
         }
 
-        /*$q = "Select * from WCA_LOParams WHERE fkComponent = $this->keyId;";
-        $r = @mysql_query($q,$this->dbconnection);//*/
-        $this->db_pull->q(2, $this->keyId);
+        $r = $this->db_pull->q(2, $this->keyId);
         $numrows = @mysql_num_rows($r);
         if ($numrows < 1){
             $values = array();
@@ -212,7 +211,7 @@ class WCA extends FEComponent{
         if ($this->keyId != ""){
             echo "<table cellspacing='20'>";
             echo "<tr><td>";
-            //$this->Compute_MaxSafePowerLevels(FALSE);
+            $this->Compute_MaxSafePowerLevels(FALSE);
             $this->Display_MaxSafePowerLevels();
             echo "</td></tr>";
             echo "<tr><td>";
@@ -1790,11 +1789,11 @@ class WCA extends FEComponent{
         if(is_array($specs['fwrite1'])) {
 	        $plot_string = "";
 	        for ($i=0; $i<count($specs['fwrite1']); $i++) {
-	        	fwrite($fh, $specs['fwrite1'][$i]);
+	        	fwrite($fh, $specs['fwrite1'][$i] . "\r\n");
 	        	$plot_string .= $specs['plot_string1'][$i];
 	        }
         } else {
-        	fwrite($fh, $specs['fwrite1']);
+        	fwrite($fh, $specs['fwrite1'] . "\r\n");
         	$plot_string = $specs['plot_string1'];
         }
 
@@ -2027,15 +2026,15 @@ class WCA extends FEComponent{
         fwrite($fh, "set key outside\r\n");
         $Band = $this->GetValue('Band');
         $specs = $this->new_spec->getSpecs('wca', $Band);
-        fwrite($fh, $specs['fwrite_set']);
+        fwrite($fh, $specs['fwrite_set'] . "\r\n");
         if(is_array($specs['fwrite2'])) {
 	        $plot_string = '';
 	        for ($i=0; $i<count($specs['fwrite2']); $i++) {
-	        	fwrite($fh, $specs['fwrite2'][$i]);
+	        	fwrite($fh, $specs['fwrite2'][$i] . "\r\n");
 	        	$plot_string .= $specs['plot_string2'][$i];
 	        }
         } else {
-        	fwrite($fh, $specs['fwrite2']);
+        	fwrite($fh, $specs['fwrite2'] . "\r\n");
         	$plot_string = $specs['plot_string2'];
         }
 
