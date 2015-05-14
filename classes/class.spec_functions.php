@@ -1,10 +1,10 @@
-<?php 
+<?php
 /**
  * Author: Aaron Beaudoin
  * Modified version of spec_functions.php, previously written and owned by NRAO.
  */
 	require_once(dirname(__FILE__) . '/../SiteConfig.php');
-	
+
 	/**
 	* Initializes the interface for specifications to be used by the class specs.
 	*/
@@ -18,26 +18,26 @@
 		public function percentDifAdjacentPts($y, $x, $spec, $file);
 		public function stdevChks($y, $x, $win_size, $stdev_spec, $file);
 	}
-	
+
 	/**
 	* Initialized the class specs.
 	*/
 	class Specifications implements SpecRetrieval {
-	
+
 		/**
 		* Constructor for class specs.
 		* No parameters.
 		*/
 		public function Specifications() {}
-		
+
 		/**
 		* Returns 2D array of specifications with their test type, spec type, and band.
 		*
 		* @param $test_type (array) - array of strings indicating the test types
 		* @param $band (array) - array of integers indicating the band number (ex. 5 for "Band5")
 		* @param $spec_name (array) - array of strings indicating the desired specifications
-		* 
-		* @return (array) returns a 2D array, where each subarray consists of 
+		*
+		* @return (array) returns a 2D array, where each subarray consists of
 		* four values, the test type, band, spec type, and the specification, respectively.
 		*/
 		public function getSpecs($test_type, $Band, $spec_name = array()) {
@@ -52,7 +52,7 @@
 			$bLen = count($Band);
 			$sLen = count($spec_name);
 			//Sorts through each array to find the specification for each band for each test type.
-			
+
 			for($t=0; $t<$tLen; $t++) {
 				$filename = dirname(__FILE__) . "/../specs/" . $test_type[$t] . ".ini";
 				$test=parse_ini_file($filename,true);
@@ -71,18 +71,18 @@
 					$sLen = count($spec_names);
 					for($s=0; $s<$sLen; $s++) {
 						$ans = $test[$band][$spec_names[$s]];
-						
+
 						//checks to see if there is a spec available to pass on.
-						$cont = !empty($ans);
-						if($cont) {
+// 						$cont = !empty($ans);
+// 						if($cont) {
 							$specs[$spec_names[$s]] = $ans;
-						}
+// 						}
 					}
 				}
 			}
 			return $specs;
 		}
-		
+
 		/**
 		 * Returns an HTML string with $num encoded green or red based
 		 * on an integer value $inspec.
@@ -101,7 +101,7 @@
 		    }
 		    return $result;
 		}
-		
+
 		/**
 		 * Returns an HTML string with $num encoded green or red based
 		 * on if $num mets the $spec according to the operator ">", "<" or "=".
@@ -109,7 +109,7 @@
 		 * @param $num (float) - number to compare against spec
 		 * @param $operator (string) - one of three strings, ">", "<" or "=".
 		 * @param $spec (float) - specification
-		 * 
+		 *
 		 *
 		 * @return (string) returns and HTML string with $num and color encoding indicating
 		 * meeting spec.
@@ -144,7 +144,7 @@
 			$resp = $this->inspec($num, $inspec);
 			return $resp;
 		}
-		
+
 		/**
 		 * Returns an HTML string with $num encoded green or red based
 		 * on if $num is in the specified range.
@@ -165,7 +165,7 @@
 			$resp = $this->inspec($num, $inspec);
 			return $resp;
 		}
-		
+
 		/**
 		 * Returns an HTML string with $num encoded green or red based
 		 * on if $num is within $spec percent of $num2.
@@ -218,7 +218,7 @@
 				fwrite($file,$writestring);
 			}
 		}
-		
+
 		/**
 		 * Checks to see if each value in the array $y varies from an adjacent
 		 * point by a specified percentage and writes each out-of-spec
@@ -250,7 +250,7 @@
 				fwrite($file,$writestring);
 			}
 		}
-		
+
 		/**
 		 * Checks for points that are out side of a standard deviation threashold
 		 * in a window of a given width
@@ -265,16 +265,16 @@
 		public function stdevChks($y, $x, $win_size, $stdev_spec, $file) {
 			$half_win_size =  round($win_size/2, 0, PHP_ROUND_HALF_DOWN);
 			$index = 0;
-			$pt_cnt = 0;	
+			$pt_cnt = 0;
 			$y_cnt = count($y);
-			foreach ($y as $input ){	
+			foreach ($y as $input ){
 				// this is where the moving average start value is determined.
 				$low_pt = $index - $half_win_size;
 				if ($low_pt < 0) {
 					$low_pt = 0;
 				} else if ($low_pt + $win_size > ($y_cnt-1) ) {
 					$low_pt = $y_cnt - $win_size;
-				}		
+				}
 				// get moving average subset of the entire data set
 				$array_subset = array_slice($y, $low_pt, $win_size);
 				// calculate average of subset

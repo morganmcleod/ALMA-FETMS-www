@@ -158,8 +158,13 @@ class WCA extends FEComponent{
     }
 
     public function AddNewLOParams(){
-    	$spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
-        $FreqLO = $spec['FreqLO'];
+        $band = $this->GetValue('Band');
+        if (empty($band))
+            $FreqLO = 0;
+        else {
+            $specs = $this->new_spec->getSpecs('wca', $band);
+            $FreqLO = $specs['FreqLO'];
+        }
 
         /*$q = "Select * from WCA_LOParams WHERE fkComponent = $this->keyId;";
         $r = @mysql_query($q,$this->dbconnection);//*/
@@ -174,10 +179,8 @@ class WCA extends FEComponent{
     }
 
     public function Update_WCA(){
-        if ($this->password == "nrao1234"){
-            parent::Update();
-            $this->_WCAs->Update();
-        }
+        parent::Update();
+        $this->_WCAs->Update();
     }
 
     public function DisplayData_WCA(){
@@ -191,9 +194,6 @@ class WCA extends FEComponent{
         $this->DisplayMainData();
 
         echo "<br><br>";
-
-        echo "<br>Enter password to upload or save changes.<br>";
-        echo "PASSWORD: <input type='text' name='password' size='10' maxlength='200' value = ''><br>";
 
         echo "<input type='hidden' name='" . $this->keyId_name . "' value='$this->keyId'>";
         if ($this->fc == ''){
@@ -212,7 +212,7 @@ class WCA extends FEComponent{
         if ($this->keyId != ""){
             echo "<table cellspacing='20'>";
             echo "<tr><td>";
-            $this->Compute_MaxSafePowerLevels(FALSE);
+            //$this->Compute_MaxSafePowerLevels(FALSE);
             $this->Display_MaxSafePowerLevels();
             echo "</td></tr>";
             echo "<tr><td>";
@@ -578,6 +578,8 @@ class WCA extends FEComponent{
         $r = @mysql_query($q, $this->dbconnection);//*/
         $r = $this->db_pull->q(5, NULL, $pol, $this->fc, $this->FormatTDHList($tdhArray));
 
+        $allRows = array();
+
         while($row = @mysql_fetch_array($r))
             $allRows[] = $row;    // append row to allRows.
 
@@ -677,6 +679,7 @@ class WCA extends FEComponent{
     }
 
     public function Display_MaxSafePowerLevels() {
+
         $powerLimit = $this->maxSafePowerForBand($this->GetValue('Band'));
 
         echo '
@@ -768,10 +771,10 @@ class WCA extends FEComponent{
                 <tr><td align = "right">Output Power:        </b><input name="file_outputpower" type="file" /></td>
                     <td align = "center"><input type="submit" name="draw_outputpower" value="Redraw Output Power"></td></tr>
                 <tr><td align = "right">Phase Noise:         </b><input name="file_phasenoise" type="file" /></td>
-                    <td align = "center"><input type="submit" name="draw_phasenoise" value="Redraw Phase Noise"></td></tr>';
-            echo "<tr><td align = 'right'>PASSWORD: <input type='text' name='password' size='10' maxlength='200' value = ''>";
-            echo "<input type='hidden' name= 'fc' value='$this->fc' />";
-            echo '<input type="submit" name= "submit_datafile" value="Submit" /></td>
+                    <td align = "center"><input type="submit" name="draw_phasenoise" value="Redraw Phase Noise"></td></tr>
+                <tr><td align = "right">';
+                echo "<input type='hidden' name= 'fc' value='$this->fc' />";
+                echo '<input type="submit" name= "submit_datafile" value="Upload All" /></td>
                     <td align = "center"><input type="submit" name="draw_all" value="REDRAW ALL PLOTS"></td></tr>
             </table>
         </form>
@@ -780,16 +783,10 @@ class WCA extends FEComponent{
         echo "<br>";
     }
     public function RequestValues_WCA(){
-        $this->password = isset($_REQUEST['password']) ? $_REQUEST['password'] : '';
         parent::RequestValues();
 
         if (isset($_REQUEST['deleterecord_forsure'])){
-            //if($this->password == "nrao1234"){
-                $this->DeleteRecord_WCA();
-            //}
-            //if($this->password != "nrao1234"){
-                //echo "<font color = '#ff0000'><b>Incorrect password. Record NOT deleted.</b></font><br>";
-            //}
+            $this->DeleteRecord_WCA();
         }
 
         if (isset($_REQUEST['fc'])){
@@ -808,14 +805,8 @@ class WCA extends FEComponent{
         if (isset($_REQUEST['VG1'])){
             $this->_WCAs->SetValue('VG1',$_REQUEST['VG1']);
         }
-
-        if (isset($_REQUEST['password'])){
-            $this->password = $_REQUEST['password'];
-        }
-
-
         if (isset($_REQUEST['submit_datafile'])){
-            if($this->password == "nrao1234"){
+//            if($this->password == "nrao1234"){
                 if (isset($_FILES['file_wcas']['name'])){
                     if ($this->keyId == ""){
                         $this->NewRecord_WCA();
@@ -854,11 +845,7 @@ class WCA extends FEComponent{
                         $this->Upload_MaxSafePower_file($_FILES['file_maxsafepower']['tmp_name']);
                     }
                 }
-
-            }
-            if($this->password != "nrao1234"){
-                echo "<font color = '#ff0000'><b>Incorrect password. Files NOT uploaded.</b></font><br>";
-            }
+//            }
         }
         if (isset($_REQUEST['draw_all'])){
             $this->RedrawAllPlots();
@@ -1541,13 +1528,11 @@ class WCA extends FEComponent{
         }
         $TS = $this->tdh_phasenoise->GetValue('TS');
 
-
-
         $loindex=0;
 
         $this->db_pull->qpj('delete', $this->tdh_phasejitter->keyId, $this->fc);
 
-        $rlo = $this->db_pull->qlo('WCA_PhaseNoise', $this->tdh_phasenoise, $this->fc);
+        $rlo = $this->db_pull->qlo('WCA_PhaseNoise', $this->tdh_phasenoise->keyId, $this->fc);
 
         while ($rowlo = @mysql_fetch_array($rlo)){
             $lo = $rowlo[0];
