@@ -472,7 +472,7 @@ class WCA extends FEComponent{
         // define max safe power limit per band:
         // TODO: move into specs class.
         $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
-        return $spec['value'];
+        return $spec['maxSafeOutput_dBm'];
     }
 
     private function findMaxSafeRows($allRows) {
@@ -1738,15 +1738,13 @@ class WCA extends FEComponent{
         $imagename = "WCA_OPvsFreq_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
 
         $image_url = $this->url_directory . $imagename;
-        sleep(1);
 
         $plot_title = "WCA Band" . $this->GetValue('Band') . " SN" . $this->GetValue('SN') . " Output Power Vs. Frequency (VD0=$VD0, VD1=$VD1) ($TS)";
-
 
         $this->_WCAs->SetValue('op_vs_freq_url',$image_url);
         $this->_WCAs->Update();
         $imagepath = $imagedirectory . $imagename;
-        $spec_value = 100;
+
         for ($pol=0;$pol<=1;$pol++){
 
             $data_file[$pol]= $this->writedirectory . "wca_opvsfreq_data$pol.txt";
@@ -1786,20 +1784,24 @@ class WCA extends FEComponent{
         fwrite($fh, "set key outside\r\n");
 
         $specs = $this->new_spec->getSpecs('wca', $Band);
-        if(is_array($specs['fwrite1'])) {
-	        $plot_string = "";
-	        for ($i=0; $i<count($specs['fwrite1']); $i++) {
-	        	fwrite($fh, $specs['fwrite1'][$i] . "\r\n");
-	        	$plot_string .= $specs['plot_string1'][$i];
-	        }
-        } else {
-        	fwrite($fh, $specs['fwrite1'] . "\r\n");
-        	$plot_string = $specs['plot_string1'];
+        $i = 1;
+        $done = false;
+        $plot_string = "";
+        while (!$done) {
+            $specLineName = "specLine$i";
+            $plotStringName = "plot_string$i";
+            if (!isset($specs[$specLineName]))
+                $done = true;
+            else {
+                $lineCmd = $specs[$specLineName];
+                fwrite($fh, $lineCmd . "\r\n");
+                $plot_string .= $specs[$plotStringName];
+            }
+            $i++;
         }
 
         $plot_string .= ", '$data_file[0]' using 1:2 title 'Pol 0' with lines ";
         $plot_string .= ", '$data_file[1]' using 1:2 title 'Pol 1' with lines \r\n";
-
 
         fwrite($fh, $plot_string);
         fclose($fh);
@@ -2031,11 +2033,11 @@ class WCA extends FEComponent{
 	        $plot_string = '';
 	        for ($i=0; $i<count($specs['fwrite2']); $i++) {
 	        	fwrite($fh, $specs['fwrite2'][$i] . "\r\n");
-	        	$plot_string .= $specs['plot_string2'][$i];
+	        	$plot_string .= $specs['plotStringStepSize123'][$i];
 	        }
         } else {
         	fwrite($fh, $specs['fwrite2'] . "\r\n");
-        	$plot_string = $specs['plot_string2'];
+        	$plot_string = $specs['plotStringStepSize123'];
         }
 
         for ($i=0;$i<sizeof($data_file);$i++){
