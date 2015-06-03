@@ -86,8 +86,10 @@ class NoiseTemperature extends TestData_header{
     public function DisplayPlots() {
         echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl1') . "'><br><br>";
         echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl2') . "'><br><br>";
-        echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl5') . "'><br><br>";
-        echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl6') . "'><br><br>";
+        if (($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10)) {
+            echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl5') . "'><br><br>";
+            echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl6') . "'><br><br>";
+        }
         echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl3') . "'><br><br>";
         if ($this->GetValue('Band') != 3) {
             echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl4') . "'><br><br>";
@@ -102,8 +104,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.2.2";
+        $this->Plot_SWVer = "1.2.3";
         /*
+         * 1.2.3 Fixed bugs in band 9 & 10 plots.
          * 1.2.2 Added band 5 production changes to noise temp plots.
          * 1.2.1 Uses only MAX(keyDataSet) when loading CCA NT and IR data.
          * 1.2.0 Now pulls specifications from new class that pulls from files instead of database.
@@ -1193,15 +1196,14 @@ class NoiseTemperature extends TestData_header{
         // band dependent plotting
         if ($this->GetValue('Band') == 9 || $this->GetValue('Band') == 10) {
             fwrite($f, "plot  '$this->if_datafile' using 1:2 with lines lt 1 lw 1 title 'Pol0',");
-            fwrite($f, "'$this->if_datafile' using 1:4 with lines lt 3 lw 1 title 'Pol1',");
+            fwrite($f, "'$this->if_datafile' using 1:4 with lines lt 3 lw 1 title 'Pol1'\r\n");
         } else {
             fwrite($f, "plot  '$this->if_datafile' using 1:2 with lines lt 1 lw 1 title 'Pol0sb1',");
             fwrite($f, "'$this->if_datafile' using 1:3 with lines lt 2 lw 1 title 'Pol0sb2',");
             fwrite($f, "'$this->if_datafile' using 1:4 with lines lt 3 lw 1 title 'Pol1sb1',");
             fwrite($f, "'$this->if_datafile' using 1:5 with lines lt 4 lw 1 title 'Pol1sb2'\r\n");
         }
-//        fwrite($f, "'$this->spec_datafile' using 1:3 with lines lt -1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
-//        fwrite($f, "'$this->spec_datafile' using 1:2 with lines lt 0 lw 1 title ' $this->NT_80_spec K (80%)'\r\n");
+
         fclose($f);
 
         // get the main data files write directory from config_main:
@@ -1250,7 +1252,9 @@ class NoiseTemperature extends TestData_header{
             case 9:
                 fwrite($f, "plot  '$this->avg_datafile' using 1:2 with linespoints lt 1 lw 1 title 'Pol0',");
                 fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1',");
+                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
                 fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
+
                 break;
 
             case 10:
