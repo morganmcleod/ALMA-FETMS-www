@@ -218,7 +218,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $ltIndex = 1;
         foreach ($this->loValues as $lo) {
             $mark = ' ';
-            if (array_search($lo, $badLOs))
+            if (in_array($lo, $badLOs))
                 $mark = '*';
 
             $att[] = "lines lt $ltIndex title '$mark$lo GHz'";

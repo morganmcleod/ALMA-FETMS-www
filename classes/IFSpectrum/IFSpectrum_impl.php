@@ -72,7 +72,8 @@ class IFSpectrum_impl extends TestData_header {
     var $swVersion;               //software version string for this class.
 
     public function __construct() {
-        $this->swVersion = "1.3.1";
+        $this->swVersion = "1.3.2";
+        // 1.3.2  MTM: fixed IF spectrum plotting bugs: Wrong URLs table name;  Out-of-spec pVar mark not shown on 0th LO trace.
         // 1.3.1  MTM: refactoring done.  B5 special powervar plot temporarily disabled.
         // 1.3.0  MTM: still refactoring with new IFSpectrum_calc, _db, and _plot classes.
         // 1.2.0  MTM: refactoring from Aaron's new plotter classes.
@@ -464,7 +465,7 @@ class IFSpectrum_impl extends TestData_header {
 
             if ($this->plotURLs[$ifChannel] -> keyId == '') {
                 $this->plotURLs[$ifChannel] = new GenericTable();
-                $this->plotURLs[$ifChannel] -> NewRecord('TEST_IFSpectrum_plotURLs', 'keyId', 40, 'fkFacility');
+                $this->plotURLs[$ifChannel] -> NewRecord('TEST_IFSpectrum_urls', 'keyId', 40, 'fkFacility');
                 $this->plotURLs[$ifChannel] -> SetValue('fkHeader', $this->TDHkeys[0]);
                 $this->plotURLs[$ifChannel] -> SetValue('Band', $this->band);
                 $this->plotURLs[$ifChannel] -> SetValue('IFChannel', $ifChannel);
@@ -564,7 +565,7 @@ class IFSpectrum_impl extends TestData_header {
 
             if ($this->plotURLs[$ifChannel] -> keyId == '') {
                 $this->plotURLs[$ifChannel] = new GenericTable();
-                $this->plotURLs[$ifChannel] -> NewRecord('TEST_IFSpectrum_plotURLs','keyId',40,'fkFacility');
+                $this->plotURLs[$ifChannel] -> NewRecord('TEST_IFSpectrum_urls','keyId',40,'fkFacility');
                 $this->plotURLs[$ifChannel] -> SetValue('fkHeader',$this->TDHkeys[0]);
                 $this->plotURLs[$ifChannel] -> SetValue('Band',$this->band);
                 $this->plotURLs[$ifChannel] -> SetValue('IFChannel',$ifChannel);
