@@ -238,7 +238,7 @@ function LNA_results($td_keyID){
     $FreqLO = @mysql_result($r,0,6);
 
     //get and save Control Data
-    $q_CompID = "SELECT DISTINCT FE_Components.keyId
+    $q_CompID = "SELECT MAX(FE_Components.keyId)
         FROM `FE_Components` JOIN `FE_ConfigLink`
         ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
         WHERE  FE_ConfigLink.fkFE_Config =" .$tdh->GetValue('fkFE_Config')."
@@ -376,7 +376,7 @@ function SIS_results($td_keyID){
     $FreqLO = @mysql_result($r,0,6);
 
     //get and save Control Data
-    $q_CompID = "SELECT DISTINCT FE_Components.keyId
+    $q_CompID = "SELECT DISTINCT MAX(FE_Components.keyId)
         FROM `FE_Components` JOIN `FE_ConfigLink`
         ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
         WHERE  FE_ConfigLink.fkFE_Config =". $tdh->GetValue('fkFE_Config')."
