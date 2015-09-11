@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.0";
+        $this->swversion = "1.2.1";
 
         /*
+         * 1.2.1:  Fixed Plot_WorkmanshipAmplitude
          * 1.2.0:  Fixed Plot_LOLockTest
          * 1.1.0:  Uses dbCode/dataplotterdb for database calls
          * version 1.0.29:  MTM fixed "set...screen" commands to gnuplot
@@ -973,7 +974,6 @@ class DataPlotter extends GenericTable{
 
     public function Plot_WorkmanshipAmplitude(){
         require(site_get_config_main());
-        $this->writedirectory = $main_write_directory  . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
         $this->writedirectory = $main_write_directory;
         if (!file_exists($this->writedirectory)){
             mkdir($this->writedirectory);
@@ -1009,7 +1009,7 @@ class DataPlotter extends GenericTable{
             $ampmax = max(@MYSQL_RESULT($r,0,4),@MYSQL_RESULT($r,0,5)) + 0.1;
         }
 
-        $r = $this->db_pull(4, $TestData_Id, $this->fc);
+        $r = $this->db_pull->q(4, $TestData_Id, $this->fc);
         $plottitle = "Workmanship Amplitude";
         $data_file = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/wkm_amp_data.txt";
         if (@mysql_num_rows($r) > 1){

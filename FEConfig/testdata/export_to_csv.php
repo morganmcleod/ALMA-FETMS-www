@@ -63,7 +63,7 @@ if ((isset($_REQUEST['keyheader']) && (!isset($_REQUEST['ifsub'])))) {
             break;
 
         default:
-            $qdata = "SELECT * FROM $td->TestDataTableName WHERE fkHeader = $td->keyId;";ls;
+            $qdata = "SELECT * FROM $td->TestDataTableName WHERE fkHeader = $td->keyId;";
             break;
     }
 
