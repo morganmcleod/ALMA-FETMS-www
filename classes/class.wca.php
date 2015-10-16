@@ -63,8 +63,9 @@ class WCA extends FEComponent{
         $this->logging = 0;
         $this->fc = $in_fc;
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.5";
+        $this->swversion = "1.0.6";
         /*
+         * 1.0.6 Fix more plotting errors in WCA electronic data upload (step size plots.)
          * 1.0.5 Fix plotting errors in WCA electronic data upload.
          * 1.0.4 Added XML config file upload and fixed related bugs.
          * 1.0.3 calculate max safe power table from output power data in database.
@@ -2029,17 +2030,21 @@ class WCA extends FEComponent{
         $Band = $this->GetValue('Band');
         $specs = $this->new_spec->getSpecs('wca', $Band);
         fwrite($fh, $specs['fwrite_set'] . "\r\n");
-        if(is_array($specs['fwrite2'])) {
-	        $plot_string = '';
-	        for ($i=0; $i<count($specs['fwrite2']); $i++) {
-	        	fwrite($fh, $specs['fwrite2'][$i] . "\r\n");
-	        	$plot_string .= $specs['plotStringStepSize123'][$i];
-	        }
-        } else {
-        	fwrite($fh, $specs['fwrite2'] . "\r\n");
-        	$plot_string = $specs['plotStringStepSize123'];
-        }
 
+        $i = 1;
+        $done = false;
+        $plot_string = "";
+        while (!$done) {
+            $specLineName = "specLineSS$i";
+            $plotStringName = "plotStringSS$i";
+            if (!isset($specs[$specLineName]))
+                $done = true;
+            else {
+                fwrite($fh, $specs[$specLineName] . "\r\n");
+                $plot_string .= $specs[$plotStringName];
+                $i++;
+            }
+        }
         for ($i=0;$i<sizeof($data_file);$i++){
             $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
         }
