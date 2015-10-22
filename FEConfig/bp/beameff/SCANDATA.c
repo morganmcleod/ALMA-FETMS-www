@@ -174,7 +174,7 @@ int SCANDATA_computeSums(SCANDATA *data, float maskRadius) {
 
 int SCANDATA_computeCrosspolSums(SCANDATA *crosspolscan, SCANDATA *copolscan) {
     // compute sums, sums of squares, and other metrics on the farfield crosspol data.
-    float E, pow_sec, intensity;
+    float E, maskE, pow_sec, intensity;
     long int i;
     
     //Fill up mask and E arrays, get sums
@@ -193,6 +193,11 @@ int SCANDATA_computeCrosspolSums(SCANDATA *crosspolscan, SCANDATA *copolscan) {
         crosspolscan -> sum_E += E;
         crosspolscan -> sumsq_E += pow(E, 2.0);
         
+        // accumulate sum and sum of squares of voltage on the secondary:
+        maskE = copolscan -> mask[i] * E;
+        crosspolscan -> sum_maskE += maskE;
+        crosspolscan -> sumsq_maskE += pow(maskE, 2.0);
+
         // accumulate sum and sum of squares of power on the secondary:
         pow_sec = copolscan -> mask[i] * (pow(E, 2.0));
         crosspolscan -> sum_powsec += pow_sec;
