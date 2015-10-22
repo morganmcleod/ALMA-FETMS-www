@@ -28,14 +28,17 @@ class eff {
     var $Processed;         //0 = Has not been processed. 1 = Has been processed.
     var $root_datadir;
     var $root_urldir;
-    var $software_version;
+    var $software_version_class_eff;
+    var $software_version_analysis;
     var $ssid;
     var $fc;                //facility key
     var $GNUPLOT_path;
     var $new_spec;
 
     public function __construct() {
-        $this->software_version = "1.1.3";
+        $this->software_version_class_eff = "1.1.4";
+        $this->software_version_analysis = "";
+        // 1.1.4  Standardized software version string for all data tables, includes analysis.
         // 1.1.3  Fixed MakeOutputEnvironment to delete old files first.
         // 1.1.2  Added Display_PhaseEff()
         // 1.1.1  Added download for cross-pol .csv files.
@@ -65,6 +68,22 @@ class eff {
         $this->beameff_exe = $beameff_64;
         $this->Processed = 0;
         $this->GNUPLOT_path = $GNUPLOT;
+    }
+
+    function SoftwareVersionString() {
+        $version = "Software versions: measurement " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
+                 . ", class.eff " . $this->software_version_class_eff;
+
+        if ($this->software_version_analysis == "") {
+            if (isset($this->scansets[0]->Scan_copol_pol0->BeamEfficencies)) {
+                $this->software_version_analysis = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('software_version');
+            }
+        }
+
+        if ($this->software_version_analysis != "")
+            $version .= ", analysis " . $this->software_version_analysis;
+
+        return $version;
     }
 
     function ReplacePlotURLs() {
@@ -694,7 +713,7 @@ class eff {
 
         $ini_array = parse_ini_file($ini_filename, true);
 
-        $software_version = $ini_array['settings']['software_version'];
+        $software_version_analysis = $ini_array['settings']['software_version'];
 
         $band = 1;
 
@@ -728,7 +747,7 @@ class eff {
                 $beameff-> SetValue("fkScanDetails", $keyScanDetails);
                 $beameff-> SetValue("eff_output_file", $ini_filename);
                 $beameff-> SetValue("pointing_angles_plot", $pointing_angles_plot);
-                $beameff-> SetValue("software_version", $software_version);
+                $beameff-> SetValue("software_version", $software_version_analysis);
 
                 global $errorReportSettingsNo_E_NOTICE;
                 global $errorReportSettingsNormal;
@@ -785,7 +804,7 @@ class eff {
                 $beameff-> SetValue("squint", $ini_array[$key]['squint']);
                 $beameff-> SetValue("squint_arcseconds", $ini_array[$key]['squint_arcseconds']);
                 $beameff-> SetValue("max_dbdifference", $ini_array[$key]['max_dbdifference']);
-                $beameff-> SetValue("software_version_class_eff", $this->software_version);
+                $beameff-> SetValue("software_version_class_eff", $this->software_version_class_eff);
 
                 error_reporting($errorReportSettingsNormal);
 
@@ -803,7 +822,7 @@ class eff {
 
         $ini_array = parse_ini_file($ini_filename, true);
 
-        $software_version = $ini_array['settings']['software_version'];
+        $software_version_analysis = $ini_array['settings']['software_version'];
 
         $band = 1;
         while ($band <= 10) {
@@ -829,7 +848,7 @@ class eff {
                 $beameff-> SetValue("fkScanDetails", $keyScanDetails);
                 $beameff-> SetValue("eff_output_file", $ini_filename);
                 $beameff-> SetValue("pointing_angles_plot", $pointing_angles_plot);
-                $beameff-> SetValue("software_version", $software_version);
+                $beameff-> SetValue("software_version", $software_version_analysis);
 
                 global $errorReportSettingsNo_E_NOTICE;
                 global $errorReportSettingsNormal;
@@ -957,7 +976,6 @@ class eff {
     }
 
     function Display_PointingAngles() {
-
         $nomAZ = @mysql_result($rn,0,0);
         $nomEL = @mysql_result($rn,0,1);
         //Get nominal Az, El
@@ -998,8 +1016,7 @@ class eff {
             echo "<td>$y</td></tr>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='5'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='5'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div>";
     }
 
@@ -1037,8 +1054,7 @@ class eff {
             }
         }
         //Meas SW Ver
-        echo "<tr><td colspan='4'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1067,8 +1083,7 @@ class eff {
             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_taper'),2) . "</td>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='4'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1096,8 +1111,7 @@ class eff {
             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_phase'),2) . "</td>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='4'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-        . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1125,8 +1139,7 @@ class eff {
             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_spillover'),2) . "</td>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='4'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1208,8 +1221,7 @@ class eff {
                 echo "<td>$pe</td>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='6'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='6'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1247,8 +1259,7 @@ class eff {
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('defocus_efficiency_due_to_moving_the_subreflector'),2) . "</td>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='7'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-         . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='7'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1272,8 +1283,7 @@ class eff {
             echo "<td>$el_diff</td></tr>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='4'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='4'><font size='-1'>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div>";
     }
 
@@ -1316,8 +1326,7 @@ class eff {
             }
         }
         //Meas SW Ver
-        echo "<tr><td colspan='4'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br>";
         if ($thirdscanpresent != 1) {
             echo "<font size='+2'><b>WARNING <br>Third scan not present. Squint value is incorrect.</b></font></div>";
@@ -1407,8 +1416,7 @@ class eff {
         echo "<tr><th colspan='5'>Distance between pol 0 and pol 1 phase centers (mm):</th>";
         echo"<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('DistanceBetweenBeamCenters'),2) . "</td></tr>";
         echo "</tr>";
-        echo "<tr><td colspan='6'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-             . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='6'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1528,8 +1536,7 @@ class eff {
                 . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->keyId . "'>xpol</a></td></tr>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='8'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='8'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1591,8 +1598,7 @@ class eff {
             echo "<tr>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='6'><font size='-1'><i>Meas. software version " . $this->scansets[0]->tdh->GetValue('Meas_SWVer')
-            . ", Class.eff version " . $this->software_version . "</i></font></td></tr>";
+        echo "<tr><td colspan='6'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div>";
     }
 
