@@ -108,10 +108,10 @@ int SCANDATA_computeSums(SCANDATA *data, float maskRadius) {
     data -> sumEdgeE=0;
 
     for(i = 0; i < data -> ff_pts; ++i) {
-        // Compute E: array of magnitudes from 2D pattern, normalized to peak = 1.0:
+        // Compute E: array of electric field voltages from 2D pattern, normalized to peak = 1.0:
         data -> E[i] = pow(10.0, (data -> ff_amp_db[i] - maxamp) / 20.0);   
 
-        // Compute mask:
+        // Compute mask of secondary reflector:
         if (data -> radius[i] > outer) {
             // zero outside the maskRadius angle
             data -> mask[i] = 0.0; 
@@ -125,21 +125,30 @@ int SCANDATA_computeSums(SCANDATA *data, float maskRadius) {
             data -> mask[i] = (outer - data -> radius[i]) / data -> ff_stepsize; 
         }
        
-        // accumulate sums and sums of squares:
+        // accumulate sum of the mask:
         data -> sum_mask += data -> mask[i];
+
+        // accumulate sum and sum of squares of the electric field voltage:
         data -> sum_E += data -> E[i];  
         data -> sumsq_E += pow(data -> E[i], 2.0);
+
+        // accumulate sum and sum of squares of voltage on the secondary:
         data -> sum_maskE += data -> mask[i] * data -> E[i]; 
         data -> sumsq_maskE += pow(data -> mask[i] * data -> E[i], 2.0);
+
+        // accumulate sum and sum of squares of power on the secondary:
         data -> sum_powsec += data -> mask[i] * pow(data -> E[i], 2.0); 
         data -> sumsq_powsec += pow(data -> mask[i] * pow(data -> E[i], 2.0), 2.0);  
         
-        data -> sum_intensity += pow(10.0,data -> ff_amp_db[i] / 10.0);
+        // accumulate unnormalized total power and power on subreflector:
+        // TODO:  is this calculation redundant?   Is it correct?
+        data -> sum_intensity += pow(10.0, data -> ff_amp_db[i] / 10.0);
         data -> sum_intensity_on_subreflector += data -> sum_intensity * data -> mask[i];  
         
-        if (pow(data -> radius[i] - maskRadius,2.0) < pow(data -> ff_stepsize, 2.0)) {
-           data -> sumEdge++;
-           data -> sumEdgeE += data -> E[i]; 
+        // accumulate number of data points and sum of electric field voltage falling on the edge of the secondary:
+        if (pow(data -> radius[i] - maskRadius, 2.0) < pow(data -> ff_stepsize, 2.0)) {
+            data -> sumEdge++;
+            data -> sumEdgeE += data -> E[i];
         }                                                
     }
     
@@ -148,18 +157,27 @@ int SCANDATA_computeSums(SCANDATA *data, float maskRadius) {
         printf("data -> sum_maskE: %d\n",data -> sum_maskE);
     }
 
+    // Taper efficiency (Amplitude efficiency in R.Hills paper) is the ratio of the illumination
+    // of the secondary to a uniform illumination:
     data -> eta_taper = pow(data -> sum_maskE, 2.0) / (data -> sum_mask * data -> sum_powsec);
+
+    // Spillover efficiency is the ratio of power on the secondary to total power:
     data -> eta_spillover = data -> sum_powsec / data -> sumsq_E;
+
+    // Illumination efficiency is the product of taper and spillover efficiency:
     data -> eta_illumination = data -> eta_taper * data -> eta_spillover;
+
+    // Power in dB on the "edge" of the secondary is computed from the average voltage in the edge region:
     data -> edge_dB = 20 * log10(data -> sumEdgeE / data -> sumEdge);
     return 1;
 }
 
 int SCANDATA_computeCrosspolSums(SCANDATA *crosspolscan, SCANDATA *copolscan) {
-
+    // compute sums, sums of squares, and other metrics on the farfield crosspol data.
     float E, pow_sec, intensity;
     long int i;
     
+    //Fill up mask and E arrays, get sums
     crosspolscan -> sum_E = 0;
     crosspolscan -> sum_intensity = 0; 
     crosspolscan -> sum_intensity_on_subreflector = 0; 
@@ -168,18 +186,26 @@ int SCANDATA_computeCrosspolSums(SCANDATA *crosspolscan, SCANDATA *copolscan) {
     crosspolscan -> sumsq_powsec = 0; 
 
     for(i = 0; i < crosspolscan -> ff_pts; ++i) {                            
+        // Compute E: array of electric field voltages from 2D pattern, normalized to peak = 1.0 of copol scan:
         E = pow(10.0, (crosspolscan -> ff_amp_db[i] - copolscan -> max_ff_amp_db) / 20.0);
+
+        // accumulate sum and sum of squares of the electric field voltage:
         crosspolscan -> sum_E += E;
         crosspolscan -> sumsq_E += pow(E, 2.0);
         
+        // accumulate sum and sum of squares of power on the secondary:
         pow_sec = copolscan -> mask[i] * (pow(E, 2.0));
         crosspolscan -> sum_powsec += pow_sec;
         crosspolscan -> sumsq_powsec += pow(pow_sec, 2.0);  
         
+        // accumulate unnormalized total power and power on subreflector:
+        // TODO:  is this calculation redundant?   Is it correct?
         intensity = pow(10.0, crosspolscan -> ff_amp_db[i] / 10.0);
         crosspolscan -> sum_intensity += intensity;
         crosspolscan -> sum_intensity_on_subreflector += intensity * copolscan -> mask[i];                      
     }
+
+    //
     crosspolscan -> eta_spill_co_cross = (copolscan -> sum_powsec + crosspolscan -> sum_powsec) / (copolscan->sumsq_E + crosspolscan -> sumsq_E);
     crosspolscan -> eta_pol_on_secondary = (copolscan -> sum_powsec) / (copolscan->sum_powsec + crosspolscan -> sum_powsec);
     crosspolscan -> eta_pol_spill = crosspolscan -> eta_spill_co_cross * crosspolscan -> eta_pol_on_secondary;

@@ -1,7 +1,8 @@
 #include "constants.h"
 
-char *VersionNumber = "1.1.3";
-/* 1.1.3:  Removed hard-coded path to stdoutput.txt and stderr.txt.  Now uses output dir for plots.
+char *VersionNumber = "1.2.0";
+/* 1.2.0:  MM calculating polarization efficiency using powers on subreflector instead of total powers.
+ * 1.1.3:  Removed hard-coded path to stdoutput.txt and stderr.txt.  Now uses output dir for plots.
  * 1.1.2:  MM fixed "set label...screen" commands to gnuplot.
  * 1.1.1:  MM refactoring and commenting the code, cleaning up unused code and data.
  * 1.0.9:  MM code cleanup and adjustments to phase fit and squint algorithms.

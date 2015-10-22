@@ -187,8 +187,15 @@ int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
     copol_pol1->nominal_z_offset = copol_pol0->nominal_z_offset;
     copol_pol0->eta_tot_np = copol_pol0->eta_phase * copol_pol0->eta_spillover * copol_pol0->eta_taper;
     copol_pol1->eta_tot_np = copol_pol1->eta_phase * copol_pol1->eta_spillover * copol_pol1->eta_taper;
-    copol_pol0->eta_pol = copol_pol0->sumsq_E / (copol_pol0->sumsq_E + xpol_pol0->sumsq_E);
-    copol_pol1->eta_pol = copol_pol1->sumsq_E / (copol_pol1->sumsq_E + xpol_pol1->sumsq_E);
+
+// Was being calculated this way through 2015!   Doesn't mask for secondary.
+//    copol_pol0->eta_pol = copol_pol0->sumsq_E / (copol_pol0->sumsq_E + xpol_pol0->sumsq_E);
+//    copol_pol1->eta_pol = copol_pol1->sumsq_E / (copol_pol1->sumsq_E + xpol_pol1->sumsq_E);
+
+    // Polarization efficiency is the ratio of total copol power on the secondary to total copol+xpol power on secondary:
+    copol_pol0->eta_pol = copol_pol0->sumsq_maskE / (copol_pol0->sumsq_maskE + xpol_pol0->sumsq_maskE);
+    copol_pol1->eta_pol = copol_pol1->sumsq_maskE / (copol_pol1->sumsq_maskE + xpol_pol1->sumsq_maskE);
+
     copol_pol0->eta_tot_nd = copol_pol0->eta_tot_np * copol_pol0->eta_pol;
     copol_pol1->eta_tot_nd = copol_pol1->eta_tot_np * copol_pol1->eta_pol;
     
