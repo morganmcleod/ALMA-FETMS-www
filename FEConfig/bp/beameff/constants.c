@@ -1,7 +1,8 @@
 #include "constants.h"
 
-char *VersionNumber = "1.2.0";
-/* 1.2.0:  MM calculating polarization efficiency using powers on subreflector instead of total powers.
+char *VersionNumber = "1.2.1";
+/* 1.2.1:  MM fix too-small char buffers in SCANDATA.  scanset_id victim of overflow?
+ * 1.2.0:  MM calculating polarization efficiency using powers on subreflector instead of total powers.
  * 1.1.3:  Removed hard-coded path to stdoutput.txt and stderr.txt.  Now uses output dir for plots.
  * 1.1.2:  MM fixed "set label...screen" commands to gnuplot.
  * 1.1.1:  MM refactoring and commenting the code, cleaning up unused code and data.
