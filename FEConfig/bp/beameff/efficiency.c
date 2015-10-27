@@ -26,6 +26,8 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     char centers[10];       // 'nominal', 'actual', or '7meter'
     char ibuf[5];
     char sectionName_pkey[200];
+    float subreflector_radius = subreflector_radius12m;
+    int ACA7meter = 0;
     float lambda;
 
     if (DEBUGGING) {
@@ -43,12 +45,18 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     }
 
     num_scans_in_file = GetNumberOfScans(scan_file_dict);
+
     strcpy(delimiter, iniparser_getstring (scan_file_dict, "settings:delimiter", "\t"));
-    strcpy(centers, iniparser_getstring (scan_file_dict, "settings:centers", "nominal"));
     //If comma isn't specified, delimiter is "\t" regardless of
     //what is in input file
     if(strcmp(delimiter,",")) {
         strcpy(delimiter,"\t");
+    }
+
+    strcpy(centers, iniparser_getstring (scan_file_dict, "settings:centers", "nominal"));
+    if(!strcmp(centers, "7meter")) {
+        subreflector_radius = subreflector_radius7m;
+        ACA7meter = 1;
     }
 
     if (DEBUGGING) {
@@ -86,7 +94,7 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
                     GetScanData(scan_file_dict, sectionname, &scans[1]);
                     beamCenters(&scans[1],"nf",delimiter);
                     beamCenters(&scans[1],"ff",delimiter);
-                    PickNominalAngles(scans[1].band,&scans[1].az_nominal,&scans[1].el_nominal);
+                    PickNominalAngles(scans[1].band,&scans[1].az_nominal,&scans[1].el_nominal, ACA7meter);
                     CheckSideband(&scans[1]);
                 }
                 if ((pol == 0) && !strcmp(scantype,"xpol")){
@@ -96,7 +104,7 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
                     GetScanData(scan_file_dict, sectionname, &scans[3]);
                     beamCenters(&scans[3],"nf",delimiter);
                     beamCenters(&scans[3],"ff",delimiter);
-                    PickNominalAngles(scans[3].band,&scans[3].az_nominal,&scans[3].el_nominal);
+                    PickNominalAngles(scans[3].band,&scans[3].az_nominal,&scans[3].el_nominal, ACA7meter);
                     CheckSideband(&scans[3]);
                 }
                 if ((pol == 1) && !strcmp(scantype,"xpol")){
@@ -128,12 +136,14 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     scans[4].az_nominal = scans[3].az_nominal;
     scans[4].el_nominal = scans[3].el_nominal; 
 
-    ReadCopolFile(&scans[1],scan_file_dict);
+
+
+    ReadCopolFile(&scans[1], scan_file_dict, subreflector_radius);
     FitPhase(&scans[1]);
     FitAmplitude(&scans[1]);
     ReadCrosspolFile(&scans[2],&scans[1],scan_file_dict); 
 
-	ReadCopolFile(&scans[3],scan_file_dict);
+	ReadCopolFile(&scans[3],scan_file_dict, subreflector_radius);
     FitPhase(&scans[3]);
     FitAmplitude(&scans[3]);
     ReadCrosspolFile(&scans[4],&scans[3],scan_file_dict); 
@@ -149,7 +159,7 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     scans[3].squint = (100.0 * scans[3].squint_arcseconds) / (1.15 * lambda * 57.3 * 60 * 60 /12000.0 );
 */
 
-    GetAdditionalEfficiencies(&scans[1],&scans[2],&scans[3],&scans[4]);
+    GetAdditionalEfficiencies(&scans[1], &scans[2], &scans[3], &scans[4], centers);
 
     if (DEBUGGING) {
         fprintf(stderr,"WriteCopolData()...\n");
@@ -181,8 +191,10 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
 }
 
 int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
-                              SCANDATA *copol_pol1, SCANDATA *xpol_pol1){
-                                     
+                              SCANDATA *copol_pol1, SCANDATA *xpol_pol1,
+                              char *centers)
+{
+
     float tau=0.25;
     float M=20.0;
     float psi_o=64.0154815383723;
@@ -191,7 +203,13 @@ int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
     float delta;
     float pi=PI;
     float beta;
-                             
+
+    if(!strcmp(centers,"7meter")) {
+        M=21.775537595;
+        psi_o=68.4694425916;
+        psi_m=3.5798212165;
+    }
+
     copol_pol0->nominal_z_offset = 0.5 * (copol_pol0->delta_z + copol_pol1->delta_z);
     copol_pol1->nominal_z_offset = copol_pol0->nominal_z_offset;
     copol_pol0->eta_tot_np = copol_pol0->eta_phase * copol_pol0->eta_spillover * copol_pol0->eta_taper;

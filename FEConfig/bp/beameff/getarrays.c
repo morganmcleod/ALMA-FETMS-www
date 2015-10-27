@@ -8,7 +8,7 @@
 
 extern int DEBUGGING;
 
-int ReadCopolFile(SCANDATA *currentscan, dictionary *scan_file_dict) {
+int ReadCopolFile(SCANDATA *currentscan, dictionary *scan_file_dict, float subreflector_radius) {
 //Read the farfield listing and fill the dynamic arrays for the current scan
 
     FILE *fileptr;

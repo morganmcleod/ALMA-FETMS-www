@@ -500,23 +500,42 @@ int tokenizeDelimiter(char *input, char *tokenArray[MAX_TOKENS], char *delimiter
   return(tokens);
 }
 
-int PickNominalAngles(int almaBand, float *xtarget, float *ytarget) {
-      switch (almaBand) {
-      case 1:  *xtarget = -1.7553; *ytarget = -1.7553; break;
-      case 2:  *xtarget = -1.7553; *ytarget = +1.7553; break;
-      case 3:  *xtarget = +0.3109; *ytarget = +1.7345; break;
-      case 4:  *xtarget = +0.3109; *ytarget = -1.7345; break; 
-      case 5:  *xtarget = +1.6867; *ytarget = +1.6867; break;
-      case 6:  *xtarget = +1.6867; *ytarget = -1.6867; break;
-      case 7:  *xtarget = +0.9740; *ytarget = +0.0000; break;
-      case 8:  *xtarget = +0.0000; *ytarget = +0.9740; break;
-      case 9:  *xtarget = +0.0000; *ytarget = -0.9740; break;
-      case 10: *xtarget = -0.9740; *ytarget = +0.0000; break;
-      default:
-        printf("Illegal band number = %d\n", almaBand);
-        return(-1);
-      }
-      return(0);
+int PickNominalAngles(int almaBand, float *xtarget, float *ytarget, int ACA7meter) {
+    if (ACA7meter == 0) {
+        switch (almaBand) {
+            case 1:  *xtarget = -1.7553; *ytarget = -1.7553; break;
+            case 2:  *xtarget = -1.7553; *ytarget = +1.7553; break;
+            case 3:  *xtarget = +0.3109; *ytarget = +1.7345; break;
+            case 4:  *xtarget = +0.3109; *ytarget = -1.7345; break;
+            case 5:  *xtarget = +1.6867; *ytarget = +1.6867; break;
+            case 6:  *xtarget = +1.6867; *ytarget = -1.6867; break;
+            case 7:  *xtarget = +0.9740; *ytarget = +0.0000; break;
+            case 8:  *xtarget = +0.0000; *ytarget = +0.9740; break;
+            case 9:  *xtarget = +0.0000; *ytarget = -0.9740; break;
+            case 10: *xtarget = -0.9740; *ytarget = +0.0000; break;
+            default:
+                printf("Illegal band number = %d\n", almaBand);
+                return(-1);
+        }
+        return(0);
+    } else {
+        switch (almaBand) {
+            case 1:  *xtarget = -2.943499; *ytarget = -2.943499; break;
+            case 2:  *xtarget = -2.898850; *ytarget = +2.898850; break;
+            case 3:  *xtarget = +0.521949; *ytarget = +2.918507; break;
+            case 4:  *xtarget = +0.549947; *ytarget = -3.120381; break;
+            case 5:  *xtarget = +1.874227; *ytarget = +1.874227; break;
+            case 6:  *xtarget = +1.990572; *ytarget = -1.990572; break;
+            case 7:  *xtarget = +0.764417; *ytarget = +0.000000; break;
+            case 8:  *xtarget = +0.000000; *ytarget = +0.757841; break;
+            case 9:  *xtarget = +0.000000; *ytarget = -0.735064; break;
+            case 10: *xtarget = -0.735064; *ytarget = +0.000000; break;
+            default:
+                printf("Illegal band number = %d\n", almaBand);
+                return(-1);
+        }
+        return(0);
+    }
 } 
 
 

@@ -37,25 +37,28 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.1.5";
+        $this->software_version_class_eff = "1.1.6";
         $this->software_version_analysis = "";
-        // 1.1.5  Added selectable pointing option.
-        // 1.1.4  Standardized software version string for all data tables, includes analysis.
-        // 1.1.3  Fixed MakeOutputEnvironment to delete old files first.
-        // 1.1.2  Added Display_PhaseEff()
-        // 1.1.1  Added download for cross-pol .csv files.
-        // 1.1.0  Uses database calls from dbCode/beameffdb.php
-        // 1.0.23 Supressed E_NOTICE errors in the Upload...() functions
-        // 1.0.22 Reduced number of copies of NominalAngles tables being consulted
-        // 1.0.21 Fixed bugs in pol.eff display, comparing to specs
-        // 1.0.20 MTM updated band 4 PolEff display per FEND-40.02.04.00-0236-C-CRE
-        //          PolEff: modified band 8 display per Whyborn comment on AIVPNCR-24
-        // 1.0.19 MTM no longer writing out Notes to input file for beameff_64.
-        //        Equal sign and others were causing errors from parse_ini_file().
-        // 1.0.18 MTM fix display of NSI filenames.
-        //        Updates to phase center offsets table.
-        //        Fix fonts in tables.
-        //        Comments fixes from meeting with Todd and Saini.
+        /* Version history:
+         * 1.1.6  Added efficiency and squint calculation for ACA 7 meter antenna.
+         * 1.1.5  Added selectable pointing option.
+         * 1.1.4  Standardized software version string for all data tables, includes analysis.
+         * 1.1.3  Fixed MakeOutputEnvironment to delete old files first.
+         * 1.1.2  Added Display_PhaseEff()
+         * 1.1.1  Added download for cross-pol .csv files.
+         * 1.1.0  Uses database calls from dbCode/beameffdb.php
+         * 1.0.23 Supressed E_NOTICE errors in the Upload...() functions
+         * 1.0.22 Reduced number of copies of NominalAngles tables being consulted
+         * 1.0.21 Fixed bugs in pol.eff display, comparing to specs
+         * 1.0.20 MTM updated band 4 PolEff display per FEND-40.02.04.00-0236-C-CRE
+         *        PolEff: modified band 8 display per Whyborn comment on AIVPNCR-24
+         * 1.0.19 MTM no longer writing out Notes to input file for beameff_64.
+         *        Equal sign and others were causing errors from parse_ini_file().
+         * 1.0.18 MTM fix display of NSI filenames.
+         *        Updates to phase center offsets table.
+         *        Fix fonts in tables.
+         *        Comments fixes from meeting with Todd and Saini.
+         */
 
         require(site_get_config_main());
 
@@ -679,23 +682,28 @@ class eff {
         $DistanceBetweenBeamCenters = Abs((Sqrt(pow($x0 - $x90, 2.0) + pow($y0 - $y90, 2.0))));
 
         // Squint calculation based on corrected values.
+        $plateFactor = 2.148;       // arc-s/mm.
+        $dishDiameter = 12000.0;    // mm
+        if ($this->pointingOption == '7meter') {
+            $plateFactor = 3.6833;  // arc-s/mm.
+            $dishDiameter = 7000.0; // mm
+        }
         // square root of the sum of the differences squared
-        // 2.148 is plate factor in arc-s/mm.
-        $squint_arcseconds = Abs((Sqrt(pow($x0 - $x90, 2.0) + pow($y0 - $y90, 2.0)) ) * 2.148);
+        $squint_arcseconds = Abs((Sqrt(pow($x0 - $x90, 2.0) + pow($y0 - $y90, 2.0)) ) * $plateFactor);
 
         // Calculate squint in percentage of units of FWHM of the beam:
         // 1.15 is the coefficent to mutply by lambda/D to get FWHM.  D=diameter of primary mirror in mm.
-        // 299.79 is c in appropriate units.
+        // 299.79 is c in mm/ns.
         // $f is in GHz.
         // 57.3 is degrees in a radian.  Could be expresed as 180/pi.
-        // 60.0 * 60.0 convers to arcseconds.   12000 mm is diameter of dish.
+        // 60.0 * 60.0 converts to arcseconds.
 
         $lambda = 299.79 / $f;    // c in mm/ns.  $f in GHz.
-        $squint = (100.0 * $squint_arcseconds) / (1.15 * $lambda * 57.3 * 60.0 * 60.0 / 12000.0);
+        $squint = (100.0 * $squint_arcseconds) / (1.15 * $lambda * 57.3 * 60.0 * 60.0 / $dishDiameter);
 
         // save the distance between corrected centers back to the scansets data structure:
-        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('DistanceBetweenBeamCenters',$DistanceBetweenBeamCenters);
-        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('DistanceBetweenBeamCenters',$DistanceBetweenBeamCenters);
+        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('DistanceBetweenBeamCenters', $DistanceBetweenBeamCenters);
+        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('DistanceBetweenBeamCenters', $DistanceBetweenBeamCenters);
 
         // save computed squint and write to DB:
         $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('squint', $squint);
@@ -983,12 +991,12 @@ class eff {
         $nomEL = @mysql_result($rn,0,1);
         //Get nominal Az, El
         $sd = new ScanDetails();
-        $nomAZ = $nomEL = 0;
-        $sd -> GetNominalAnglesDB($this->band, $nomAZ, $nomEL);
+        $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('az_nominal'),4);
+        $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('el_nominal'),4);
 
         echo "<div style = 'width:200px'><table id = 'table1'>";
 
-        echo "<tr class='alt'><th colspan = 5>Pointing Angles Band $this->band <i><br>(Nominal: $nomAZ, $nomEL)</i></th></tr>";
+        echo "<tr class='alt'><th colspan = 5>Pointing Angles Band $this->band <i><br>(Eff. calculations using: $nomAZ, $nomEL)</i></th></tr>";
         echo "<tr>
         <th>RF GHz</th>
         <th>pol</th>

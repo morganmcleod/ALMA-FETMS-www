@@ -1,7 +1,7 @@
 #include "SCANDATA.h"
 #include "dictionary.h"
 
-extern int ReadCopolFile(SCANDATA *currentscan, dictionary *scan_file_dict);
+extern int ReadCopolFile(SCANDATA *currentscan, dictionary *scan_file_dict, float subreflector_radius);
 ///< Load a copol listing file as outputted by NSI2000 software.
 ///< results are stored in currentscan and in the dictionary.
 

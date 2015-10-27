@@ -16,4 +16,5 @@ char *VersionNumber = "1.3.1";
 float c = 2.99792458e8; // m/s
 float c_mm_per_ns = 299.79; // c in mm/ns.
 float PI = 3.14159265358979323846;
-float subreflector_radius = 3.57633437; // degrees
+float subreflector_radius12m = 3.57633437;     // degrees
+float subreflector_radius7m = 3.5798212165; // degrees

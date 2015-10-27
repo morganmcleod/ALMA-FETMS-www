@@ -49,20 +49,13 @@ int MakeCircleAndPoints(int band, dictionary *scan_file_dict, char *commandfile)
     char plotkey[10];
     char *linestype, *lineswidth;
     char *tempsec;
-     char tempseckey[200];
+    char tempseckey[200];
+    char centers[10];
+    char nomLegend[30];
+    int ACA7meter = 0;
     
     num_scans = GetNumberOfScans(scan_file_dict);
     scan_array = (SCANDATA *) malloc (num_scans * sizeof(SCANDATA));
-    
-    /*
-    //Fill up array with SCANDATA structures
-    for(i=0;i<num_scans;i++){          
-      sprintf(sectionname,"scan_%d",i);       
-      
-      //GetScanData(scan_file_dict,sectionname, &scan_array[1]); 
-      GetScanData(scan_file_dict,sectionname, &scan_array[i]); 
-    }
-    */
     
     for(i=0;i<iniparser_getnsec(scan_file_dict);i++){
          tempsec = iniparser_getsecname(scan_file_dict,i);
@@ -73,8 +66,11 @@ int MakeCircleAndPoints(int band, dictionary *scan_file_dict, char *commandfile)
              }
      }
     
+    strcpy(centers, iniparser_getstring (scan_file_dict, "settings:centers", "nominal"));
+    if(!strcmp(centers, "7meter")) {
+        ACA7meter = 1;
+    }
 
-    
     
     gnuplot = iniparser_getstring (scan_file_dict,"settings:gnuplot", "null");
 
@@ -84,11 +80,9 @@ int MakeCircleAndPoints(int band, dictionary *scan_file_dict, char *commandfile)
         }                           
     }
 
-
-
     if (bandfound == 1){
         remove(commandfile);
-        PickNominalAngles(band,&xcenter,&ycenter);
+        PickNominalAngles(band, &xcenter, &ycenter, ACA7meter);
         outputdirectory = iniparser_getstring (scan_file_dict,"settings:outputdirectory", "null");
         sprintf(plotfilename,"%sband%d_pointingangles.png",outputdirectory,band);
         sprintf(titlebuffer,"Band %d Pointing Angles",band);
@@ -123,11 +117,9 @@ int MakeCircleAndPoints(int band, dictionary *scan_file_dict, char *commandfile)
         //Print nominal pointing angle
         
         int PrintNomAngle = 1;
-        
-
-                
-
-
+        strcpy(nomLegend, " nominal pointing angle");
+        if (!strcmp(centers, "7meter"))
+            strcpy(nomLegend, " ACA 7m nominal pointing");
 
         for(i=0;i<num_scans;i++){  
             if ((scan_array[i].band == band) && (!strcmp(scan_array[i].type, "copol"))){  
@@ -140,8 +132,8 @@ int MakeCircleAndPoints(int band, dictionary *scan_file_dict, char *commandfile)
                    } 
                    if (strcmp(scan_array[i].is4545_scan, "TRUE") != 0){
                       if (PrintNomAngle == 1){
-                        sprintf(plotcommand,"%s,%f,%f with points lw 1  pt 1 title 'Nominal Pointing Angle'",
-                        plotcommand,xcenter,ycenter);  
+                        sprintf(plotcommand,"%s,%f,%f with points lw 1  pt 1 title '%s'",
+                        plotcommand,xcenter,ycenter,nomLegend);
                         PrintNomAngle = 0;
                       }  
                                                 
