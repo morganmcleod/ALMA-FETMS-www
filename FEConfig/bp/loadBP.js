@@ -16,15 +16,6 @@ function createBPTabs(fc,id,band,bpstatus){
         //One or more scans still need to finish.
         buttontext = 'Generate Plots And Data (Not Ready to Process)';
     }
-
-    var pointingChoices = new Ext.data.ArrayStore({
-        fields: ['key', 'desc'],
-        data : [
-            {"key":"nominal", "desc":"nominal subreflector direction"},
-            {"key":"actual", "desc":"actual beam direction"},
-            {"key":"7meter", "desc":"ACA 7 meter nominal"}
-        ]
-    });
     
     //This toolbar contains the button for generating plots and efficiency data.
     ToolBar = new Ext.Toolbar({
