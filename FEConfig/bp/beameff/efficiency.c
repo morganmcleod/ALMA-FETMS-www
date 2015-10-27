@@ -16,16 +16,16 @@
 extern int DEBUGGING;
 
 int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilename) {
-    char delimiter[2];
     SCANDATA scans[5];
     int num_scans_in_file, i, pol, sb;
+    char *sectionName_p;    // section name returned from ini file library
     char sectionname[20];
     char sectiontemp[20];
-    char scantype[20];
+    char scantype[20];      // 'copol' or 'xpol'
+    char delimiter[2];      // '\t' or ','
+    char centers[10];       // 'nominal', 'actual', or '7meter'
     char ibuf[5];
-    char *tempsec;
-    char tempseckey[200];
-    char centers[10];
+    char sectionName_pkey[200];
     float lambda;
 
     if (DEBUGGING) {
@@ -52,21 +52,21 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     }
 
     if (DEBUGGING) {
-        fprintf(stderr,"Enter first loop.\n");
+        fprintf(stderr,"Loop to read sections...\n");
     }
 
     for(i=0; i<iniparser_getnsec(scan_file_dict); i++) {
-        tempsec = iniparser_getsecname(scan_file_dict,i);
-        sprintf(tempseckey,"%s:scanset",tempsec);
+        sectionName_p = iniparser_getsecname(scan_file_dict,i);
+        sprintf(sectionName_pkey,"%s:scanset",sectionName_p);
 
-        if (iniparser_getint (scan_file_dict, tempseckey, -1) != -1) {
+        if (iniparser_getint (scan_file_dict, sectionName_pkey, -1) != -1) {
             //Fill up array of scans
             //scans[1] = copol, pol 0
             //scans[2] = xpol, pol 0
             //scans[3] = copol, pol 1
             //scans[4] = xpol, pol 1
-            strcpy(sectionname,tempsec);
-            strcpy(sectiontemp,tempsec);
+            strcpy(sectionname,sectionName_p);
+            strcpy(sectiontemp,sectionName_p);
 
             //if the current scan is in the current scanset
             if (iniparser_getint (scan_file_dict, strcat(sectionname,":scanset"), 0) == scanset) {
@@ -103,11 +103,11 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
                     GetScanData(scan_file_dict, sectionname, &scans[4]);
                 }
             }
-        } //end if
-    } //end for
+        } // end reading section
+    } //end loop on sections
 
     if (DEBUGGING) {
-        fprintf(stderr,"Past first loop.\n");
+        fprintf(stderr,"Done loop to read sections.\n");
     }
 
     //Crosspol sideband is same as copol
@@ -122,6 +122,7 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
         scans[3].az_nominal = scans[3].ff_xcenter;
         scans[3].el_nominal = scans[3].ff_ycenter;                                                                        
     }
+    // Apply the same assumed beam centers to the xpol scans:
     scans[2].az_nominal = scans[1].az_nominal;
     scans[2].el_nominal = scans[1].el_nominal;  
     scans[4].az_nominal = scans[3].az_nominal;
@@ -150,7 +151,15 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
 
     GetAdditionalEfficiencies(&scans[1],&scans[2],&scans[3],&scans[4]);
 
+    if (DEBUGGING) {
+        fprintf(stderr,"WriteCopolData()...\n");
+    }
+
     WriteCopolData(scan_file_dict, &scans[1], outputfilename);
+
+    if (DEBUGGING) {
+        fprintf(stderr,"PlotCopol()...\n");
+    }
     PlotCopol(&scans[1],scan_file_dict);
 
     WriteCrosspolData(scan_file_dict, &scans[2],outputfilename);
@@ -193,7 +202,7 @@ int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
     copol_pol0->eta_pol = copol_pol0->sumsq_E / (copol_pol0->sumsq_E + xpol_pol0->sumsq_E);
     copol_pol1->eta_pol = copol_pol1->sumsq_E / (copol_pol1->sumsq_E + xpol_pol1->sumsq_E);
 
-    // Polarization efficiency, using the TOCRA definition,
+    // Polarization efficiency, using the TICRA definition,
     // is the ratio of total copol power on the secondary to total copol+xpol power on secondary:
 //    copol_pol0->eta_pol = copol_pol0->sumsq_maskE / (copol_pol0->sumsq_maskE + xpol_pol0->sumsq_maskE);
 //    copol_pol1->eta_pol = copol_pol1->sumsq_maskE / (copol_pol1->sumsq_maskE + xpol_pol1->sumsq_maskE);

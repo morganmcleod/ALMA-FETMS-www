@@ -6,6 +6,7 @@
 #include "plotting_copol.h"
 #include "outputfilefunctions.h"
 
+extern int DEBUGGING;
 extern char *VersionNumber;
 
 int PlotCopol(SCANDATA *currentscan, dictionary *scan_file_dict){ 
@@ -65,68 +66,69 @@ int WriteCopolDataFile(SCANDATA *currentscan, char *outfilename, char *listingty
     float serieslength_float;
     long int serieslength_int;
     float tempradius;
+    float tempamp;
     
+    if (DEBUGGING) {
+        fprintf(stderr,"WriteCopolDataFile(%s, %s)\n", outfilename, listingtype);
+    }
+
     remove(outfilename);
     fileptr = fopen(outfilename, "w");
     if(fileptr==NULL) {
-      printf("Error: can't create file.\r\n");
+        printf("Error: can't create file.\r\n");
     }
   
   
-  //If Nearfield listing
-  if (!strcmp(listingtype,"nf")){
-      serieslength_float = sqrt(currentscan->nf_pts);
-      serieslength_int=serieslength_float;
-      
+    //If Nearfield listing
+    if (!strcmp(listingtype,"nf")) {
+        serieslength_float = sqrt(currentscan->nf_pts);
+        serieslength_int = serieslength_float;
      
-      if (currentscan->nf_ypts > currentscan->nf_xpts){
-        serieslength_int=currentscan->nf_ypts;
-      }
-      if (currentscan->nf_ypts < currentscan->nf_xpts){
-        serieslength_int=currentscan->nf_xpts;
-      }
+        if (currentscan->nf_ypts > currentscan->nf_xpts) {
+            serieslength_int=currentscan->nf_ypts;
+        }
+        if (currentscan->nf_ypts < currentscan->nf_xpts) {
+            serieslength_int=currentscan->nf_xpts;
+        }
     
-      
-      seriescount=0;
-      for (i=0;i<currentscan->nf_pts - 1;i++){
-        //sprintf(textline, "%f\t%f\t%f\t%f\r\n", currentscan->nf_x[i],currentscan->nf_y[i],
-       // currentscan->nf_amp_db[i]+fabs(currentscan->max_nf_amp_db),currentscan->nf_phase_deg[i]);
+        seriescount=0;
+        for (i=0;i<currentscan->nf_pts - 1;i++) {
+            sprintf(textline, "%f\t%f\t%f\t%f\r\n",
+                    currentscan -> nf_x[i],
+                    currentscan -> nf_y[i],
+                    currentscan -> nf_amp_db[i] + fabs(currentscan -> max_nf_amp_db),
+                    currentscan->nf_phase_deg[i]);
         
-        sprintf(textline, "%f\t%f\t%f\t%f\r\n", currentscan->nf_x[i],currentscan->nf_y[i],
-        currentscan->nf_amp_db[i]+fabs(currentscan->max_nf_amp_db),currentscan->nf_phase_deg[i]);
-        
-        fputs(textline,fileptr);
-        seriescount++;
-        if (seriescount==serieslength_int){
-            fputs("\r\n",fileptr);
-            seriescount=0;
+            fputs(textline,fileptr);
+            seriescount++;
+            if (seriescount == serieslength_int){
+                fputs("\r\n", fileptr);
+                seriescount = 0;
+            }
         }
-      }
-  }  
+    }
   
-  
-  
-  float tempamp;
-  
-  if (!strcmp(listingtype,"ff")){                         
-      serieslength_float = sqrt(currentscan->ff_pts);
-      serieslength_int=serieslength_float;
-      seriescount=0;
-      for (i=0;i<currentscan->ff_pts - 1;i++){
-        sprintf(textline, "%f\t%f\t%f\t%f\r\n", currentscan->ff_az[i],currentscan->ff_el[i],
-        currentscan->ff_amp_db[i]+fabs(currentscan->max_ff_amp_db),currentscan->ff_phase_deg[i]);
+    if (!strcmp(listingtype,"ff")){
+        serieslength_float = sqrt(currentscan->ff_pts);
+        serieslength_int=serieslength_float;
+        seriescount=0;
+        for (i=0;i<currentscan->ff_pts - 1;i++){
+            sprintf(textline, "%f\t%f\t%f\t%f\r\n",
+                    currentscan -> ff_az[i],
+                    currentscan -> ff_el[i],
+                    currentscan -> ff_amp_db[i] + fabs(currentscan -> max_ff_amp_db),
+                    currentscan->ff_phase_deg[i]);
 
-        fputs(textline,fileptr);
-        seriescount++;
-        if (seriescount==serieslength_int){
-            fputs("\r\n",fileptr);
-            seriescount=0;
+            fputs(textline,fileptr);
+            seriescount++;
+            if (seriescount == serieslength_int){
+                fputs("\r\n",fileptr);
+                seriescount = 0;
+            }
         }
-      }
-  } 
-  
-  fclose(fileptr);  
-  return(0);
+    }
+    fclose(fileptr);
+    return(0);
 }
 
 
@@ -149,13 +151,18 @@ int WriteCopolNF_CommandFile(SCANDATA *currentscan, char *outfilename,
     outputdirectory = iniparser_getstring (scan_file_dict,"settings:outputdirectory", "null");
     sprintf(plotfilename,"%sband%d_pol%d_%s_%dghz_nf%s_tilt%d_scanset_%d.png",outputdirectory,currentscan->band,
     currentscan->pol,currentscan->type,currentscan->f,datatype,currentscan->tilt,currentscan->scanset);
-    sprintf(titlebuffer,"band %d, pol %d %s, %d ghz, tilt %d",currentscan->band,currentscan->pol
-    ,currentscan->type,currentscan->f,currentscan->tilt);
+    sprintf(titlebuffer,"band %d, pol %d %s, %d ghz, tilt %d",
+            currentscan -> band,
+            currentscan -> pol,
+            currentscan -> type,
+            currentscan -> f,
+            currentscan->tilt);
+
     title = titlebuffer;
     fileptr = fopen(outfilename, "w");
 
     if(fileptr==NULL) {
-       printf("Error: can't create file.\r\n");
+        printf("Error: can't create file.\r\n");
     }
     fputs("set terminal png size 500, 500 crop\r\n",fileptr);
     sprintf(linebuffer,"set output '%s'\r\n",plotfilename);
@@ -215,14 +222,6 @@ int WriteCopolNF_CommandFile(SCANDATA *currentscan, char *outfilename,
 
         sprintf(linebuffer,"splot '%s' using 1:2:4 title ''\r\n",datafilename);
         fputs(linebuffer,fileptr);
-        
-        /*
-        sprintf(linebuffer,"%f + 0.2*cos(u),%f + 0.2*sin(u), 1 notitle lt -1 ",
-        currentscan->nf_xcenter + currentscan->delta_x,currentscan->nf_ycenter + currentscan->delta_y);
-        fputs(linebuffer,fileptr);
-        */
-        
-
 
         fputs("\r\n",fileptr);
         UpdateDictionary(scan_file_dict,currentscan->sectionname, "plot_copol_nfphase", plotfilename); 
@@ -232,8 +231,12 @@ int WriteCopolNF_CommandFile(SCANDATA *currentscan, char *outfilename,
 }
 
 
-int WriteCopolFF_CommandFile(SCANDATA *currentscan, char *outfilename, 
-   dictionary *scan_file_dict,char *datafilename, char *listingtype){
+int WriteCopolFF_CommandFile(SCANDATA *currentscan,
+                             char *outfilename,
+                             dictionary *scan_file_dict,
+                             char *datafilename,
+                             char *listingtype)
+{
     FILE *fileptr;
     char textline[500];
     long int i;
@@ -247,18 +250,28 @@ int WriteCopolFF_CommandFile(SCANDATA *currentscan, char *outfilename,
     
     remove(outfilename);
     outputdirectory = iniparser_getstring (scan_file_dict,"settings:outputdirectory", "null");
-    sprintf(plotfilename,"%sband%d_pol%d_%s_%dghz_ff%s_tilt%d_scanset_%d.png",outputdirectory,currentscan->band,
-    currentscan->pol,currentscan->type,currentscan->f,listingtype,currentscan->tilt,currentscan->scanset);
+    sprintf(plotfilename, "%sband%d_pol%d_%s_%dghz_ff%s_tilt%d_scanset_%d.png",
+            outputdirectory,
+            currentscan -> band,
+            currentscan -> pol,
+            currentscan -> type,
+            currentscan -> f,
+            listingtype,
+            currentscan -> tilt,
+            currentscan -> scanset);
+
+    sprintf(titlebuffer,"band %d, pol %d %s, %d ghz, tilt %d",
+            currentscan -> band,
+            currentscan -> pol,
+            currentscan -> type,
+            currentscan -> f,
+            currentscan -> tilt);
     
-             
-    sprintf(titlebuffer,"band %d, pol %d %s, %d ghz, tilt %d",currentscan->band,currentscan->pol
-    ,currentscan->type,currentscan->f,currentscan->tilt);
     title = titlebuffer;
     fileptr = fopen(outfilename, "w");
-
     
     if(fileptr==NULL) {
-       printf("Error: can't create file.\r\n");
+        printf("Error: can't create file.\r\n");
     }
     fputs("set terminal png size 500, 500 crop\r\n",fileptr);
     sprintf(linebuffer,"set output '%s'\r\n",plotfilename);
@@ -294,10 +307,6 @@ int WriteCopolFF_CommandFile(SCANDATA *currentscan, char *outfilename,
 				currentscan->scanset_id, currentscan->scan_id, currentscan->fecfg);
 		fputs(linebuffer,fileptr);
 
-        //Remove this part when uncommenting the part that follows
-        //sprintf(linebuffer,"splot '%s' using 1:2:3 title ''",datafilename);
-        //fputs(linebuffer,fileptr);
-        
         sprintf(linebuffer,"splot '%s' using 1:2:3 title '',",datafilename);
         fputs(linebuffer,fileptr);
         sprintf(linebuffer,"%f + 3.58*cos(u),%f + 3.58*sin(u),1 notitle linetype 0 ",
@@ -331,10 +340,7 @@ int WriteCopolFF_CommandFile(SCANDATA *currentscan, char *outfilename,
 				"at screen 0.01, 0.07\r\n",
 				currentscan->scanset_id, currentscan->scan_id, currentscan->fecfg);
 		fputs(linebuffer,fileptr);
-        
-        //sprintf(linebuffer,"splot '%s' using 1:2:4 title ''",datafilename);
-        //fputs(linebuffer,fileptr);
-        
+
         sprintf(linebuffer,"splot '%s' using 1:2:4 title '',",datafilename);
         fputs(linebuffer,fileptr);
         sprintf(linebuffer,"%f + 3.58*cos(u),%f + 3.58*sin(u),1 notitle linetype 0 ",
@@ -343,21 +349,6 @@ int WriteCopolFF_CommandFile(SCANDATA *currentscan, char *outfilename,
         
         fputs("\r\n",fileptr);
         UpdateDictionary(scan_file_dict,currentscan->sectionname, "plot_copol_ffphase", plotfilename);
-        
-        
-        /*
-        sprintf(linebuffer,"splot '%s' using 1:2:4 title '',",datafilename);
-        fputs(linebuffer,fileptr);
-        sprintf(linebuffer,"%f + 3.58*cos(u),%f + 3.58*sin(u), 1 notitle linetype 0,",
-        currentscan->az_nominal,currentscan->el_nominal);
-        fputs(linebuffer,fileptr);
-        sprintf(linebuffer,"%f + 0.2*cos(u),%f + 0.2*sin(u), 1 notitle lt -1 ",
-        currentscan->az_nominal + currentscan->delta_x,currentscan->el_nominal + currentscan->delta_y);
-        fputs(linebuffer,fileptr);
-        fputs("\r\n",fileptr);
-        UpdateDictionary(scan_file_dict,currentscan->sectionname, "plot_copol_ffphase", plotfilename);
-        */
-        
     }
     fclose(fileptr);  
     return(0);

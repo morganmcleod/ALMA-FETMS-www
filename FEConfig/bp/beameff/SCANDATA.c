@@ -92,7 +92,7 @@ int SCANDATA_computeSums(SCANDATA *data, float maskRadius) {
     long int i;
 
     maxamp = data -> max_ff_amp_db;    // TODO: is this correct?  Is this variable zero at this point?
-    printf("SCANDATA_computeSums: maxamp=%f",maxamp);
+    printf("SCANDATA_computeSums: maxamp=%f\n", maxamp);
     inner = maskRadius - (data -> ff_stepsize / 2.0);
     outer = maskRadius + (data -> ff_stepsize / 2.0);
     
