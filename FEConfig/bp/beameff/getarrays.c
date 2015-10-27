@@ -21,6 +21,10 @@ int ReadCopolFile(SCANDATA *currentscan, dictionary *scan_file_dict) {
     long int arrayindex;
     char printmsg[200];
     
+    if (DEBUGGING) {
+        fprintf(stderr,"Enter ReadCopolFile.\n");
+    }
+
     //If comma isn't specified, delimiter is "\t" regardless of what is in input file:
     delimiter = iniparser_getstring(scan_file_dict, "settings:delimiter", "\t");    
     if (strcmp(delimiter,",")) {
@@ -108,7 +112,7 @@ int ReadCopolFile(SCANDATA *currentscan, dictionary *scan_file_dict) {
         stepsize = fabs(currentscan -> ff_el[1] - currentscan -> ff_el[0]);
     }
     if (DEBUGGING) {
-        printf("stepsize1=%f",stepsize);
+        printf("ff_stepsize=%f\n",stepsize);
     }
     currentscan -> ff_stepsize = stepsize;
 
@@ -136,6 +140,10 @@ int ReadCrosspolFile(SCANDATA *crosspolscan, SCANDATA *copolscan, dictionary *sc
     float ifatten_difference;
     char printmsg[200];
     
+    if (DEBUGGING) {
+        fprintf(stderr,"Enter ReadCrosspolFile.\n");
+    }
+
     //If comma isn't specified, delimiter is "\t" regardless of what is in input file:
     delimiter = iniparser_getstring(scan_file_dict, "settings:delimiter", "\t");    
     if (strcmp(delimiter,",")) {
@@ -156,6 +164,10 @@ int ReadCrosspolFile(SCANDATA *crosspolscan, SCANDATA *copolscan, dictionary *sc
         PRINT_STDOUT(printmsg);
         exit(ERR_COULD_NOT_OPEN_FILE);
         return(-1);
+    }
+
+    if (DEBUGGING) {
+        fprintf(stderr,"Enter SCANDATA_allocateArraysXpol.\n");
     }
 
     // reallocate the crosspol farfield arrays with the correct size, from copolscan above:
@@ -293,75 +305,67 @@ int ReadFile_NF(SCANDATA *currentscan, dictionary *scan_file_dict, char *scantyp
     do {
         ptr = fgets(buf,sizeof(buf),fileptrnf);
 
-        if (ptr == NULL) break;
-            if(!strcmp(delimiter,",")) {      
-                 narg = sscanf(ptr,"%f,%f,%f,%f",&az,&el,&amp,&phase);
-            }
-            if(!strcmp(delimiter,"\t")) {  
-                 narg = sscanf(ptr,"%f\t%f\t%f\t%f",&az,&el,&amp,&phase);  
-            } 
-            amp -= minus_amp_amount;
-            az*=currentscan -> sideband_flipped;
-            el*=currentscan -> sideband_flipped;
-            phase*=currentscan -> sideband_flipped;
-            currentscan -> nf_x[arrayindex]=az;
-            currentscan -> nf_y[arrayindex]=el;
+        if (ptr == NULL)
+            break;
 
-            if (arrayindex == 0) {
-                tempy = currentscan -> nf_y[0];
-                tempx = currentscan -> nf_x[0];
-            }
-            
+        if(!strcmp(delimiter,",")) {
+             narg = sscanf(ptr,"%f,%f,%f,%f",&az,&el,&amp,&phase);
+        }
+        if(!strcmp(delimiter,"\t")) {
+             narg = sscanf(ptr,"%f\t%f\t%f\t%f",&az,&el,&amp,&phase);
+        }
+        amp -= minus_amp_amount;
+        az*=currentscan -> sideband_flipped;
+        el*=currentscan -> sideband_flipped;
+        phase*=currentscan -> sideband_flipped;
+        currentscan -> nf_x[arrayindex]=az;
+        currentscan -> nf_y[arrayindex]=el;
 
+        if (arrayindex == 0) {
+            tempy = currentscan -> nf_y[0];
+            tempx = currentscan -> nf_x[0];
+        }
 
-
-
-            if (arrayindex != 0) {
-                if (ypts_found == 1) {
-                    if (currentscan -> nf_y[arrayindex] == tempy) {
-                         if (currentscan -> nf_y[arrayindex] != currentscan -> nf_y[arrayindex + 1]) {                                  
-                             currentscan -> nf_xpts += 1;
-                             tempy = currentscan -> nf_y[arrayindex + 1];
-                        }
+        if (arrayindex != 0) {
+            if (ypts_found == 1) {
+                if (currentscan -> nf_y[arrayindex] == tempy) {
+                     if (currentscan -> nf_y[arrayindex] != currentscan -> nf_y[arrayindex + 1]) {
+                         currentscan -> nf_xpts += 1;
+                         tempy = currentscan -> nf_y[arrayindex + 1];
                     }
                 }
             }
+        }
 
-            
+        //Get nf_xpts, nf_ypts
+        if (arrayindex != 0) {
+          if (currentscan -> nf_y[arrayindex] == tempy) {
+             if (currentscan -> nf_y[arrayindex] != currentscan -> nf_y[arrayindex + 1]) {
+                 if (ypts_found == 0) {
+                     currentscan -> nf_ypts = arrayindex;
+                     //printf("nf_ypts: %d\n",currentscan -> nf_ypts);
 
-            
-            //Get nf_xpts, nf_ypts
-            if (arrayindex != 0) {
-                  if (currentscan -> nf_y[arrayindex] == tempy) {
-                     if (currentscan -> nf_y[arrayindex] != currentscan -> nf_y[arrayindex + 1]) {                                  
-                         if (ypts_found == 0) {                  
-                             currentscan -> nf_ypts = arrayindex;
-                             //printf("nf_ypts: %d\n",currentscan -> nf_ypts);
-                             
-                             //getchar();
-                             ypts_found = 1;
-                             currentscan -> nf_xpts += 1;
-                             tempy = currentscan -> nf_y[arrayindex + 1];
-                             
-                         }
-                     }
-                  }         
+                     //getchar();
+                     ypts_found = 1;
+                     currentscan -> nf_xpts += 1;
+                     tempy = currentscan -> nf_y[arrayindex + 1];
+                 }
+             }
+          }
+        }
+
+        arrayindex++;
+        currentscan -> nf_amp_db[arrayindex]=amp;
+        currentscan -> nf_phase_deg[arrayindex]=phase;
+        if (amp>maxamp) {
+           maxamp=amp;
+        }
+        if(DEBUGGING) {
+            if (once == 1) {
+                printf("first line: %s",buf);
+                once=-1;
             }
-
-            
-            arrayindex++; 
-            currentscan -> nf_amp_db[arrayindex]=amp;
-            currentscan -> nf_phase_deg[arrayindex]=phase;
-            if (amp>maxamp) {
-               maxamp=amp;
-            }
-            //arrayindex++;   
-                if(DEBUGGING) {
-                    if (once == 1) {
-                        printf("first line: %s",buf);
-                        once=-1;
-                    } 
-                }
+        }
         if (narg != 4) {
             sprintf(printmsg,"Error parsing line %d, %s\n",i,currentscan -> nf);
             PRINT_STDOUT(printmsg);
@@ -373,22 +377,16 @@ int ReadFile_NF(SCANDATA *currentscan, dictionary *scan_file_dict, char *scantyp
         printf("getarrays(2): last line: %s",buf);
     }
 
-
-
-
     stepsize=fabs(currentscan -> nf_x[1]-currentscan -> nf_x[0]);
     if (stepsize == 0) {
        //In case listing is in vertical strips rather horizontal
        stepsize = fabs(currentscan -> nf_x[1] - currentscan -> nf_x[0]);
     }
     
-    //printf("max crosspol amp= %f\n",maxamp);
-    //getchar();
     currentscan -> nf_stepsize = stepsize;
     currentscan -> max_nf_amp_db = maxamp;
     fclose(fileptrnf);
 
-    //currentscan -> nf_xpts = 81;
     sprintf(printmsg,"nf_xpts: %d\n",currentscan -> nf_xpts);
     PRINT_STDOUT(printmsg);
     sprintf(printmsg,"nf_ypts: %d\n",currentscan -> nf_ypts);

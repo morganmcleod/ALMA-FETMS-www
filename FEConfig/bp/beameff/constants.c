@@ -1,7 +1,8 @@
 #include "constants.h"
 
-char *VersionNumber = "1.3.0";
-/* 1.3.0:  Revert back to calculating pol.eff with total powers like 1.1.3.
+char *VersionNumber = "1.3.1";
+/* 1.3.1:  Calculation for ACA 7-meter antenna;  Merging earlier code cleanup work.
+ * 1.3.0:  Revert back to calculating pol.eff with total powers like 1.1.3.
  * 1.2.1:  MM add accumulating sum and sumsq maskE on xpol scan.  fix too-small char buffers in SCANDATA.
  * 1.2.0:  MM calculating polarization efficiency using powers on subreflector instead of total powers.
  * 1.1.3:  Removed hard-coded path to stdoutput.txt and stderr.txt.  Now uses output dir for plots.
