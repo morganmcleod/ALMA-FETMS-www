@@ -26,6 +26,7 @@ class eff {
     var $band;
     var $ReadyToProcess;
     var $Processed;         //0 = Has not been processed. 1 = Has been processed.
+    var $pointingOption;
     var $root_datadir;
     var $root_urldir;
     var $software_version_class_eff;
@@ -36,8 +37,9 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.1.4";
+        $this->software_version_class_eff = "1.1.5";
         $this->software_version_analysis = "";
+        // 1.1.5  Added selectable pointing option.
         // 1.1.4  Standardized software version string for all data tables, includes analysis.
         // 1.1.3  Fixed MakeOutputEnvironment to delete old files first.
         // 1.1.2  Added Display_PhaseEff()
@@ -263,7 +265,7 @@ class eff {
         fwrite($fhandle,'gnuplot="' . $this->GNUPLOT_path . '"' . "\r\n");
         fwrite($fhandle,'outputdirectory="' . $this->outputdirectory . '"' . "\r\n");
         fwrite($fhandle,"delimiter=tab\r\n");
-        fwrite($fhandle,"centers=nominal\r\n");
+        fwrite($fhandle,"centers=" . $this->pointingOption . "\r\n");
         fwrite($fhandle,"\r\n");
 
         //Fill in the individual scan sections
@@ -419,7 +421,7 @@ class eff {
         fwrite($fhandle,'gnuplot="' . $this->GNUPLOT_path . '"' . "\r\n");
         fwrite($fhandle,'outputdirectory="' . $this->outputdirectory . '"' . "\r\n");
         fwrite($fhandle,"delimiter=tab\r\n");
-        fwrite($fhandle,"centers=nominal\r\n");
+        fwrite($fhandle,"centers=" . $this->pointingOption . "\r\n");
         fwrite($fhandle,"\r\n");
 
         //Fill in the individual scan sections
@@ -543,8 +545,9 @@ class eff {
         $this->db_pull->q(FALSE, $ff_path, $scan_id);
     }
 
-    public function GetEfficiencies() {
+    public function GetEfficiencies($pointingOption) {
         // Main function to calculate beam efficiencies from scan sets.
+        $this->pointingOption = $pointingOption;
         // Create the input file for beameff_64:
         $this->MakeInputFile();
         // Execute beameff_64:

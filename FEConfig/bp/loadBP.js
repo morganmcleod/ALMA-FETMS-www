@@ -1,3 +1,5 @@
+var pointingOption = 'nominal';
+
 function createBPTabs(fc,id,band,bpstatus){
     var buttontext = '';
     
@@ -15,6 +17,15 @@ function createBPTabs(fc,id,band,bpstatus){
         buttontext = 'Generate Plots And Data (Not Ready to Process)';
     }
 
+    var pointingChoices = new Ext.data.ArrayStore({
+        fields: ['key', 'desc'],
+        data : [
+            {"key":"nominal", "desc":"nominal subreflector direction"},
+            {"key":"actual", "desc":"actual beam direction"},
+            {"key":"7meter", "desc":"ACA 7 meter nominal"}
+        ]
+    });
+    
     //This toolbar contains the button for generating plots and efficiency data.
     ToolBar = new Ext.Toolbar({
     	width:1000,
@@ -26,11 +37,52 @@ function createBPTabs(fc,id,band,bpstatus){
             	icon:'../icons/application_view_gallery.png',
             	handler: function() {
             		//When the button is pressed, reload the page with drawplot=1.
-            		window.location = 'bp.php?drawplot=1&keyheader=' + id + '&fc=' + fc + '&band=' + band;
+            		window.location = 'bp.php?drawplot=1&keyheader=' + id + '&fc=' + fc + '&band=' + band + '&pointing=' + pointingOption;
+            	}
+            },
+            '   ',
+            {
+            	text: 'Use pointing...',
+            	menu: {
+            		plain:  true,              // display no icons
+            		items: [
+            		    {	
+            		    	text: 'Nominal subreflector direction (default)',
+            		    	checked: true,
+            		    	group: 'pointing',
+                            handler: onItemClick,
+            		    }, 
+            		    {
+                            text: 'Actual beam direction',
+                            checked: false,
+            		    	group: 'pointing',
+                            handler: onItemClick
+            		    },
+            		    {
+                            text: 'ACA 7 meter nominal',
+                            checked: false,
+            		    	group: 'pointing',
+                            handler: onItemClick
+            		    }
+            		]
+
             	}
             }
         ]
     });
+    
+	function onItemClick(item) {
+    	if (item.text.search('Nominal') >= 0) {
+    		pointingOption = 'nominal';
+    	}
+    	if (item.text.search('Actual') >= 0) {
+    		pointingOption = 'actual';
+    	}
+     	if (item.text.search('7 meter') >= 0) {
+     		pointingOption = '7meter';
+    	}
+//    	Ext.Msg.alert('Status', 'Selected pointing \'' + pointingOption + '\'.');
+    }
     
     //This is the tabbed structure 
     var tabs = new Ext.TabPanel({

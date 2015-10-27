@@ -100,8 +100,13 @@ if (isset($_REQUEST['drawplot'])) {
         //Show a spinner while plots are being drawn.
         include($site_FEConfig . '/spin.php');
 
+        $pointingOption = 'nominal';
+        if (isset($_REQUEST['pointing'])) {
+            $pointingOption = $_REQUEST['pointing'];
+        }
+
         // GetEfficiencies calls out to the beameff_64 application to compute efficiencies and plots:
-        $eff->GetEfficiencies();
+        $eff->GetEfficiencies($pointingOption);
         echo "done getting effs. <br>";
 
         // ReplacePlotURLs fixes URLs in the database so that they can be loaded from the Plots tabs:
