@@ -33,8 +33,8 @@ function createBPTabs(fc,id,band,bpstatus){
             },
             '   ',
             {
-            	text: 'Use pointing...',
-            	menu: {
+                text: 'Use pointing...',
+        	    menu: {
             		plain:  true,              // display no icons
             		items: [
             		    {	
