@@ -21,7 +21,7 @@ typedef struct SCANDATA_T {
 // values from input file pertain to a single scan:
     int band;               ///< cartridge band under test
     int scanset;            ///< scanset number this scan is part of, usually 1.
-    char type[5];           ///< type of scan "copol" or "xpol"
+    char type[10];          ///< type of scan "copol" or "xpol"
     int pol;                ///< polarization of scan 0 or 1
     int tilt;               ///< tilt table angle in degrees where 0 is horizon
     int f;                  ///< RF in GHz.  TODO: should this be a float?
@@ -38,7 +38,7 @@ typedef struct SCANDATA_T {
     char sectionname[20];   ///< section name of scan data in input/output txt files
     char notes[200];        ///< operator notes entered when measuring.   Always blank as of class.eff 1.0.19 2012-08-14.
     char datetime[200];     ///< TODO:  seems to duplicate ts and is not used, =-1
-    char is4545_scan[5];    ///< "TRUE" or "FALSE"  TODO: not used?
+    char is4545_scan[10];   ///< "TRUE" or "FALSE"  TODO: not used?
     char scanset_id[10];    ///< keyID from ScanSetDetails passed in for plot label
     char scan_id[10];       ///< keyID from ScanDetails passed in for plot label
     char ts[100];           ///< time and date string when measured

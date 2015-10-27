@@ -187,8 +187,17 @@ int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
     copol_pol1->nominal_z_offset = copol_pol0->nominal_z_offset;
     copol_pol0->eta_tot_np = copol_pol0->eta_phase * copol_pol0->eta_spillover * copol_pol0->eta_taper;
     copol_pol1->eta_tot_np = copol_pol1->eta_phase * copol_pol1->eta_spillover * copol_pol1->eta_taper;
+
+    // Polarization efficiency, using the 'alternative' definition from R.Hills paper,
+    // is the ratio of total copol power to total copol+xpol power, NOT masked for the secondary:
     copol_pol0->eta_pol = copol_pol0->sumsq_E / (copol_pol0->sumsq_E + xpol_pol0->sumsq_E);
     copol_pol1->eta_pol = copol_pol1->sumsq_E / (copol_pol1->sumsq_E + xpol_pol1->sumsq_E);
+
+    // Polarization efficiency, using the TOCRA definition,
+    // is the ratio of total copol power on the secondary to total copol+xpol power on secondary:
+//    copol_pol0->eta_pol = copol_pol0->sumsq_maskE / (copol_pol0->sumsq_maskE + xpol_pol0->sumsq_maskE);
+//    copol_pol1->eta_pol = copol_pol1->sumsq_maskE / (copol_pol1->sumsq_maskE + xpol_pol1->sumsq_maskE);
+
     copol_pol0->eta_tot_nd = copol_pol0->eta_tot_np * copol_pol0->eta_pol;
     copol_pol1->eta_tot_nd = copol_pol1->eta_tot_np * copol_pol1->eta_pol;
     
