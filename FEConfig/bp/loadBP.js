@@ -1,7 +1,6 @@
-var pointingOption = 'nominal';
-
 function createBPTabs(fc,id,band,bpstatus){
     var buttontext = '';
+    var pointingOption = 'nominal';
     
     //The "Generate Plots" button will have different text based on the current status.
     if (bpstatus == 1){
