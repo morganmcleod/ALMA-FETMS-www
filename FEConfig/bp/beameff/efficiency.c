@@ -24,10 +24,12 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     char scantype[20];      // 'copol' or 'xpol'
     char delimiter[2];      // '\t' or ','
     char centers[10];       // 'nominal', 'actual', or '7meter'
+    char polSpillOption[10];    // 'default', 'TICRA'
     char ibuf[5];
     char sectionName_pkey[200];
     float subreflector_radius = subreflector_radius12m;
     int ACA7meter = 0;
+    int TICRAMethod = 0;
     float lambda;
 
     if (DEBUGGING) {
@@ -57,6 +59,11 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     if(!strcmp(centers, "7meter")) {
         subreflector_radius = subreflector_radius7m;
         ACA7meter = 1;
+    }
+
+    strcpy(polSpillOption, iniparser_getstring (scan_file_dict, "settings:polSpill", "default"));
+    if(!strcmp(polSpillOption, "TICRA")) {
+        TICRAMethod = 1;
     }
 
     if (DEBUGGING) {
@@ -159,7 +166,7 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     scans[3].squint = (100.0 * scans[3].squint_arcseconds) / (1.15 * lambda * 57.3 * 60 * 60 /12000.0 );
 */
 
-    GetAdditionalEfficiencies(&scans[1], &scans[2], &scans[3], &scans[4], centers);
+    GetAdditionalEfficiencies(&scans[1], &scans[2], &scans[3], &scans[4], centers, TICRAMethod);
 
     if (DEBUGGING) {
         fprintf(stderr,"WriteCopolData()...\n");
@@ -192,7 +199,7 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
 
 int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
                               SCANDATA *copol_pol1, SCANDATA *xpol_pol1,
-                              char *centers)
+                              char *centers, int TICRAMethod)
 {
 
     float tau=0.25;
@@ -210,34 +217,83 @@ int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
         psi_m=3.5798212165;
     }
 
-    copol_pol0->nominal_z_offset = 0.5 * (copol_pol0->delta_z + copol_pol1->delta_z);
-    copol_pol1->nominal_z_offset = copol_pol0->nominal_z_offset;
-    copol_pol0->eta_tot_np = copol_pol0->eta_phase * copol_pol0->eta_spillover * copol_pol0->eta_taper;
-    copol_pol1->eta_tot_np = copol_pol1->eta_phase * copol_pol1->eta_spillover * copol_pol1->eta_taper;
+    // These next three values are computed and written to the output file but not displayed on the PHP page:
 
-    // Polarization efficiency, using the 'alternative' definition from R.Hills paper,
-    // is the ratio of total copol power to total copol+xpol power, NOT masked for the secondary:
-    copol_pol0->eta_pol = copol_pol0->sumsq_E / (copol_pol0->sumsq_E + xpol_pol0->sumsq_E);
-    copol_pol1->eta_pol = copol_pol1->sumsq_E / (copol_pol1->sumsq_E + xpol_pol1->sumsq_E);
+    // TICRA method for computing spillover:
+    xpol_pol0 -> eta_spill_co_cross = (copol_pol0 -> sum_powsec + xpol_pol0 -> sum_powsec) /
+                                      (copol_pol0 -> sumsq_E + xpol_pol0 -> sumsq_E);
+    xpol_pol1 -> eta_spill_co_cross = (copol_pol1 -> sum_powsec + xpol_pol1 -> sum_powsec) /
+                                      (copol_pol1 -> sumsq_E + xpol_pol1 -> sumsq_E);
 
-    // Polarization efficiency, using the TICRA definition,
-    // is the ratio of total copol power on the secondary to total copol+xpol power on secondary:
-//    copol_pol0->eta_pol = copol_pol0->sumsq_maskE / (copol_pol0->sumsq_maskE + xpol_pol0->sumsq_maskE);
-//    copol_pol1->eta_pol = copol_pol1->sumsq_maskE / (copol_pol1->sumsq_maskE + xpol_pol1->sumsq_maskE);
+    // Ratio of copol beam to copol+xpol on secondary:
+    xpol_pol0 -> eta_pol_on_secondary = (copol_pol0 -> sum_powsec) / (copol_pol0 -> sum_powsec + xpol_pol0 -> sum_powsec);
+    xpol_pol1 -> eta_pol_on_secondary = (copol_pol1 -> sum_powsec) / (copol_pol1 -> sum_powsec + xpol_pol1 -> sum_powsec);
 
-    copol_pol0->eta_tot_nd = copol_pol0->eta_tot_np * copol_pol0->eta_pol;
-    copol_pol1->eta_tot_nd = copol_pol1->eta_tot_np * copol_pol1->eta_pol;
+    // Total polariazaiton+spillover efficiency:
+    xpol_pol0 -> eta_pol_spill = xpol_pol0 -> eta_spill_co_cross * xpol_pol0 -> eta_pol_on_secondary;
+    xpol_pol1 -> eta_pol_spill = xpol_pol1 -> eta_spill_co_cross * xpol_pol1 -> eta_pol_on_secondary;
+
+    if (TICRAMethod == 1) {
+        // Polarization efficiency, using the TICRA definition,
+        // is the ratio of total copol power on the secondary to total copol+xpol power on secondary:
+        copol_pol0 -> eta_pol = copol_pol0->sumsq_maskE / (copol_pol0->sumsq_maskE + xpol_pol0->sumsq_maskE);
+        copol_pol1 -> eta_pol = copol_pol1->sumsq_maskE / (copol_pol1->sumsq_maskE + xpol_pol1->sumsq_maskE);
+
+        // Spillover efficiency is the ratio of copol+xpol on secondary to copol+xpol total power:
+        copol_pol0 -> eta_spillover = xpol_pol0 -> eta_spill_co_cross;
+        copol_pol1 -> eta_spillover = xpol_pol1 -> eta_spill_co_cross;
+
+    } else {
+        // This is the "default" method used for all ALMA production measurements through October 2015.
+
+        // Polarization efficiency, using the 'alternative' definition from R.Hills paper,
+        // is the ratio of total copol power to total copol+xpol power, NOT masked for the secondary:
+        copol_pol0 -> eta_pol = copol_pol0->sumsq_E / (copol_pol0->sumsq_E + xpol_pol0->sumsq_E);
+        copol_pol1 -> eta_pol = copol_pol1->sumsq_E / (copol_pol1->sumsq_E + xpol_pol1->sumsq_E);
+
+        // Spillover efficiency is the ratio of power on the secondary to total power:
+        copol_pol0 -> eta_spillover = copol_pol0 -> sum_powsec / copol_pol0 -> sumsq_E;
+        copol_pol1 -> eta_spillover = copol_pol1 -> sum_powsec / copol_pol1 -> sumsq_E;
+    }
+
+    // Average Z offset of both scans:
+    copol_pol0 -> nominal_z_offset = 0.5 * (copol_pol0->delta_z + copol_pol1->delta_z);
+    copol_pol1 -> nominal_z_offset = copol_pol0->nominal_z_offset;
+
+    // Taper efficiency (Amplitude efficiency in R.Hills paper) is the ratio of the illumination
+    // of the secondary to a uniform illumination:
+    copol_pol0 -> eta_taper = pow(copol_pol0 -> sum_maskE, 2.0) / (copol_pol0 -> sum_mask * copol_pol0 -> sum_powsec);
+    copol_pol1 -> eta_taper = pow(copol_pol1 -> sum_maskE, 2.0) / (copol_pol1 -> sum_mask * copol_pol1 -> sum_powsec);
+
+    // Total efficiency excluding polarization and defocus:
+    copol_pol0 -> eta_tot_np = copol_pol0->eta_phase * copol_pol0->eta_spillover * copol_pol0->eta_taper;
+    copol_pol1 -> eta_tot_np = copol_pol1->eta_phase * copol_pol1->eta_spillover * copol_pol1->eta_taper;
+
+    // Illumination efficiency is the product of taper and spillover efficiency:
+    copol_pol0 -> eta_illumination = copol_pol0 -> eta_taper * copol_pol0 -> eta_spillover;
+    copol_pol1 -> eta_illumination = copol_pol1 -> eta_taper * copol_pol1 -> eta_spillover;
+
+    // Power in dB at edge of the secondary is computed from the average voltage in the edge region:
+    copol_pol0 -> edge_dB = 20 * log10(copol_pol0 -> sumEdgeE / copol_pol0 -> sumEdge);
+    copol_pol1 -> edge_dB = 20 * log10(copol_pol1 -> sumEdgeE / copol_pol1 -> sumEdge);
+
+    // Total efficiency excluding defocus:
+    copol_pol0 -> eta_tot_nd = copol_pol0->eta_tot_np * copol_pol0->eta_pol;
+    copol_pol1 -> eta_tot_nd = copol_pol1->eta_tot_np * copol_pol1->eta_pol;
     
-    copol_pol0->eta_defocus = 1-0.3*pow(                       
+    // Defocus efficiency:
+    copol_pol0 -> eta_defocus = 1-0.3*pow(
                             (copol_pol0->k*(copol_pol0->delta_z - copol_pol0->nominal_z_offset)/1000) *
                             pow(32,-2.0) ,2.0);
-    copol_pol1->eta_defocus = 1-0.3*pow(                       
+    copol_pol1 -> eta_defocus = 1-0.3*pow(
                             (copol_pol1->k*(copol_pol1->delta_z - copol_pol1->nominal_z_offset)/1000) *
                             pow(32,-2.0) ,2.0);   
                             
-    copol_pol0->total_aperture_eff = copol_pol0->eta_tot_nd * copol_pol0->eta_defocus; 
-    copol_pol1->total_aperture_eff = copol_pol1->eta_tot_nd * copol_pol1->eta_defocus; 
+    // Total efficiency including defocus:
+    copol_pol0 -> total_aperture_eff = copol_pol0->eta_tot_nd * copol_pol0->eta_defocus;
+    copol_pol1 -> total_aperture_eff = copol_pol1->eta_tot_nd * copol_pol1->eta_defocus;
 
+    // Alternate defocus calculation.  TODO:  Is this redundant?  Is it correct?
     //pol0
     lambda = c_mm_per_ns / copol_pol0->f;    // c in mm/ns.  f in GHz.
     delta = (copol_pol0->delta_z - 200.0 + 0.0000000000001) / pow(M,2.0) / 0.7197;

@@ -26,20 +26,27 @@ class eff {
     var $band;
     var $ReadyToProcess;
     var $Processed;         //0 = Has not been processed. 1 = Has been processed.
-    var $pointingOption;
+    var $pointingOption;    // 'nominal', 'actual', or '7meter'
+    var $polSpillOption;    // 'default' or 'TICRA'
     var $root_datadir;
     var $root_urldir;
     var $software_version_class_eff;
     var $software_version_analysis;
+    var $pointingOption_analysis;
+    var $polSpillOption_analysis;
     var $ssid;
     var $fc;                //facility key
     var $GNUPLOT_path;
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.1.6";
+        $this->software_version_class_eff = "1.1.7";
         $this->software_version_analysis = "";
+        $this->pointingOption_analysis = "";
+        $this->polSpillOption_analysis = "";
+
         /* Version history:
+         * 1.1.7  Added switch for pol. and spill eff calculation using default or TICRA method.
          * 1.1.6  Added efficiency and squint calculation for ACA 7 meter antenna.
          * 1.1.5  Added selectable pointing option.
          * 1.1.4  Standardized software version string for all data tables, includes analysis.
@@ -89,6 +96,53 @@ class eff {
             $version .= ", analysis " . $this->software_version_analysis;
 
         return $version;
+    }
+
+    function PointingOptionString() {
+        if ($this->pointingOption_analysis == "") {
+            if (isset($this->scansets[0]->Scan_copol_pol0->BeamEfficencies)) {
+                $this->pointingOption_analysis = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('centers');
+            }
+            switch ($this->pointingOption_analysis) {
+                case "nominal" :
+                    $this->pointingOption_analysis = "Nominal subreflector direction";
+                    break;
+                case "actual" :
+                    $this->pointingOption_analysis = "Actual beam direction";
+                    break;
+                case "7meter" :
+                    $this->pointingOption_analysis = "ACA 7 meter nominal";
+                    break;
+                default:
+                    break;
+            }
+        }
+        $optionString = "";
+        if ($this->pointingOption_analysis != "")
+            $optionString = "Pointing: " . $this->pointingOption_analysis . "<br>";
+        return $optionString;
+    }
+
+    function AnalysisOptionString() {
+        if ($this->polSpillOption_analysis == "") {
+            if (isset($this->scansets[0]->Scan_copol_pol0->BeamEfficencies)) {
+                $this->polSpillOption_analysis = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('polSpillOption');
+            }
+            switch ($this->polSpillOption_analysis) {
+                case "" :
+                case "default" :
+                    $this->polSpillOption_analysis = "ALMA FE production";
+                    break;
+
+                case "TICRA":
+                default :
+                    break;
+            }
+        }
+        $optionString = "";
+        if ($this->polSpillOption_analysis != "")
+            $optionString = "Pol+spill: " . $this->polSpillOption_analysis . "<br>";
+        return $optionString;
     }
 
     function ReplacePlotURLs() {
@@ -269,6 +323,7 @@ class eff {
         fwrite($fhandle,'outputdirectory="' . $this->outputdirectory . '"' . "\r\n");
         fwrite($fhandle,"delimiter=tab\r\n");
         fwrite($fhandle,"centers=" . $this->pointingOption . "\r\n");
+        fwrite($fhandle,"polSpill=" . $this->polSpillOption . "\r\n");
         fwrite($fhandle,"\r\n");
 
         //Fill in the individual scan sections
@@ -425,6 +480,7 @@ class eff {
         fwrite($fhandle,'outputdirectory="' . $this->outputdirectory . '"' . "\r\n");
         fwrite($fhandle,"delimiter=tab\r\n");
         fwrite($fhandle,"centers=" . $this->pointingOption . "\r\n");
+        fwrite($fhandle,"polSpill=" . $this->polSpillOption . "\r\n");
         fwrite($fhandle,"\r\n");
 
         //Fill in the individual scan sections
@@ -548,9 +604,10 @@ class eff {
         $this->db_pull->q(FALSE, $ff_path, $scan_id);
     }
 
-    public function GetEfficiencies($pointingOption) {
+    public function GetEfficiencies($pointingOption, $polSpillOption) {
         // Main function to calculate beam efficiencies from scan sets.
         $this->pointingOption = $pointingOption;
+        $this->polSpillOption = $polSpillOption;
         // Create the input file for beameff_64:
         $this->MakeInputFile();
         // Execute beameff_64:
@@ -725,6 +782,8 @@ class eff {
         $ini_array = parse_ini_file($ini_filename, true);
 
         $software_version_analysis = $ini_array['settings']['software_version'];
+        $pointingOption_analysis = $ini_array['settings']['centers'];
+        $polSpillOption_analysis = $ini_array['settings']['polspill'];
 
         $band = 1;
 
@@ -759,6 +818,8 @@ class eff {
                 $beameff-> SetValue("eff_output_file", $ini_filename);
                 $beameff-> SetValue("pointing_angles_plot", $pointing_angles_plot);
                 $beameff-> SetValue("software_version", $software_version_analysis);
+                $beameff-> SetValue("centers", $pointingOption_analysis);
+                $beameff-> SetValue("polSpillOption", $polSpillOption_analysis);
 
                 global $errorReportSettingsNo_E_NOTICE;
                 global $errorReportSettingsNormal;
@@ -834,6 +895,8 @@ class eff {
         $ini_array = parse_ini_file($ini_filename, true);
 
         $software_version_analysis = $ini_array['settings']['software_version'];
+        $pointingOption_analysis = $ini_array['settings']['centers'];
+        $polSpillOption_analysis = $ini_array['settings']['polspill'];
 
         $band = 1;
         while ($band <= 10) {
@@ -860,6 +923,8 @@ class eff {
                 $beameff-> SetValue("eff_output_file", $ini_filename);
                 $beameff-> SetValue("pointing_angles_plot", $pointing_angles_plot);
                 $beameff-> SetValue("software_version", $software_version_analysis);
+                $beameff-> SetValue("centers", $pointingOption_analysis);
+                $beameff-> SetValue("polSpillOption", $polSpillOption_analysis);
 
                 global $errorReportSettingsNo_E_NOTICE;
                 global $errorReportSettingsNormal;
@@ -1027,7 +1092,10 @@ class eff {
             echo "<td>$y</td></tr>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='5'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
+        echo "<tr><td colspan='5'><font size='-1'><i>"
+                . $this->PointingOptionString()
+                . $this->SoftwareVersionString()
+                . "</i></font></td></tr>";
         echo "</table></div>";
     }
 
@@ -1065,7 +1133,11 @@ class eff {
             }
         }
         //Meas SW Ver
-        echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
+        echo "<tr><td colspan='4'><font size='-1'><i>"
+                . $this->PointingOptionString()
+                . $this->AnalysisOptionString()
+                . $this->SoftwareVersionString()
+                . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1150,7 +1222,11 @@ class eff {
             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_spillover'),2) . "</td>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
+        echo "<tr><td colspan='4'><font size='-1'><i>"
+                . $this->PointingOptionString()
+                . $this->AnalysisOptionString()
+                . $this->SoftwareVersionString()
+                . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 
@@ -1232,7 +1308,11 @@ class eff {
                 echo "<td>$pe</td>";
         }
         //Meas SW Ver
-        echo "<tr><td colspan='6'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
+        echo "<tr><td colspan='6'><font size='-1'><i>"
+                . $this->PointingOptionString()
+                . $this->AnalysisOptionString()
+                . $this->SoftwareVersionString()
+                . "</i></font></td></tr>";
         echo "</table></div><br><br>";
     }
 

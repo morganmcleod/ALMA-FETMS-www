@@ -105,8 +105,13 @@ if (isset($_REQUEST['drawplot'])) {
             $pointingOption = $_REQUEST['pointing'];
         }
 
+        $polSpillOption = 'default';
+        if (isset($_REQUEST['polSpill'])) {
+            $polSpillOption = $_REQUEST['polSpill'];
+        }
+
         // GetEfficiencies calls out to the beameff_64 application to compute efficiencies and plots:
-        $eff->GetEfficiencies($pointingOption);
+        $eff->GetEfficiencies($pointingOption, $polSpillOption);
         echo "done getting effs. <br>";
 
         // ReplacePlotURLs fixes URLs in the database so that they can be loaded from the Plots tabs:

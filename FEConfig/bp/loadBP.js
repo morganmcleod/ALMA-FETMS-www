@@ -1,6 +1,7 @@
 function createBPTabs(fc,id,band,bpstatus){
     var buttontext = '';
     var pointingOption = 'nominal';
+    var polSpillOption = 'default';
     
     //The "Generate Plots" button will have different text based on the current status.
     if (bpstatus == 1){
@@ -27,7 +28,7 @@ function createBPTabs(fc,id,band,bpstatus){
             	icon:'../icons/application_view_gallery.png',
             	handler: function() {
             		//When the button is pressed, reload the page with drawplot=1.
-            		window.location = 'bp.php?drawplot=1&keyheader=' + id + '&fc=' + fc + '&band=' + band + '&pointing=' + pointingOption;
+            		window.location = 'bp.php?drawplot=1&keyheader=' + id + '&fc=' + fc + '&band=' + band + '&pointing=' + pointingOption + '&polSpill=' + polSpillOption;
             	}
             },
             '   ',
@@ -55,10 +56,30 @@ function createBPTabs(fc,id,band,bpstatus){
                             handler: onItemClick
             		    }
             		]
-
             	}
+            },
+            '   ',
+            {
+                text: 'Pol. and spillover method...',
+        	    menu: {
+            		plain:  true,              // display no icons
+            		items: [
+        		        {	
+            		    	text: 'ALMA FE production (default)',
+            		    	checked: true,
+            		    	group: 'polSpill',
+                            handler: onItemClick,
+            		    }, 
+            		    {
+                            text: 'TICRA',
+                            checked: false,
+            		    	group: 'polSpill',
+                            handler: onItemClick
+            		    }
+        		    ]
+        	    }
             }
-        ]
+        ]   
     });
     
 	function onItemClick(item) {
@@ -71,7 +92,13 @@ function createBPTabs(fc,id,band,bpstatus){
      	if (item.text.search('7 meter') >= 0) {
      		pointingOption = '7meter';
     	}
-//    	Ext.Msg.alert('Status', 'Selected pointing \'' + pointingOption + '\'.');
+    	if (item.text.search('FE production') >= 0) {
+    		polSpillOption = 'default';
+    	}
+		if (item.text.search('TICRA') >= 0) {
+			polSpillOption = 'TICRA';
+		}
+		//Ext.Msg.alert('Status', 'Selected pointing \'' + pointingOption + '\'.');
     }
     
     //This is the tabbed structure 

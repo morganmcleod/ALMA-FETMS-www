@@ -157,18 +157,6 @@ int SCANDATA_computeSums(SCANDATA *data, float maskRadius) {
         printf("data -> sum_maskE: %d\n",data -> sum_maskE);
     }
 
-    // Taper efficiency (Amplitude efficiency in R.Hills paper) is the ratio of the illumination
-    // of the secondary to a uniform illumination:
-    data -> eta_taper = pow(data -> sum_maskE, 2.0) / (data -> sum_mask * data -> sum_powsec);
-
-    // Spillover efficiency is the ratio of power on the secondary to total power:
-    data -> eta_spillover = data -> sum_powsec / data -> sumsq_E;
-
-    // Illumination efficiency is the product of taper and spillover efficiency:
-    data -> eta_illumination = data -> eta_taper * data -> eta_spillover;
-
-    // Power in dB on the "edge" of the secondary is computed from the average voltage in the edge region:
-    data -> edge_dB = 20 * log10(data -> sumEdgeE / data -> sumEdge);
     return 1;
 }
 
@@ -209,12 +197,6 @@ int SCANDATA_computeCrosspolSums(SCANDATA *crosspolscan, SCANDATA *copolscan) {
         crosspolscan -> sum_intensity += intensity;
         crosspolscan -> sum_intensity_on_subreflector += intensity * copolscan -> mask[i];                      
     }
-
-    //
-    crosspolscan -> eta_spill_co_cross = (copolscan -> sum_powsec + crosspolscan -> sum_powsec) / (copolscan->sumsq_E + crosspolscan -> sumsq_E);
-    crosspolscan -> eta_pol_on_secondary = (copolscan -> sum_powsec) / (copolscan->sum_powsec + crosspolscan -> sum_powsec);
-    crosspolscan -> eta_pol_spill = crosspolscan -> eta_spill_co_cross * crosspolscan -> eta_pol_on_secondary;
-
     return 1;
 }
 
