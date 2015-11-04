@@ -41,7 +41,7 @@ function createBPTabs(fc,id,band,bpstatus){
             		    	text: 'Nominal subreflector direction (default)',
             		    	checked: true,
             		    	group: 'pointing',
-                            handler: onItemClick,
+                            handler: onItemClick
             		    }, 
             		    {
                             text: 'Actual beam direction',
@@ -68,7 +68,7 @@ function createBPTabs(fc,id,band,bpstatus){
             		    	text: 'ALMA FE production (default)',
             		    	checked: true,
             		    	group: 'polSpill',
-                            handler: onItemClick,
+                            handler: onItemClick
             		    }, 
             		    {
                             text: 'TICRA',
