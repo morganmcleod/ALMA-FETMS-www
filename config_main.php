@@ -31,6 +31,11 @@ switch ($site_hostname){
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         break;
 
+    case "webtest2.cv.nrao.edu":
+        $rootdir_url = "http://webtest2.cv.nrao.edu/php/ntc/ws-mtm/fetms/";
+        $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
+        break;
+
     case "localhost":
         $rootdir_url = "http://localhost/";
         $GNUplot = $GNUPLOT = 'C:/gnuplot/bin/pgnuplot.exe';
@@ -59,10 +64,10 @@ $main_url_directory   = $rootdir_url  . "test_datafiles/";
 $log_write_directory = $main_write_directory . "logs/";
 $log_url_directory = $main_url_directory . "logs/";
 
-$cca_write_directory = $rootdir_data . "cca_datafiles/";
-$cca_url_directory = $rootdir_url    . "cca_datafiles/";
+$cca_write_directory = $rootdir_data . "test_datafiles/";
+$cca_url_directory = $rootdir_url    . "test_datafiles/";
 
-$wca_write_directory = $rootdir_data . "wca_datafiles/";
-$wca_url_directory   = $rootdir_url  . "wca_datafiles/";
+$wca_write_directory = $rootdir_data . "test_datafiles/";
+$wca_url_directory   = $rootdir_url  . "test_datafiles/";
 
 ?>

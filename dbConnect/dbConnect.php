@@ -9,6 +9,7 @@ switch ($_SERVER['SERVER_NAME']) {
         break;
 
     case "webtest.cv.nrao.edu":
+    case "webtest2.cv.nrao.edu":    // webtest2 is just a temporary name.  will revert back to webtest soon.
         // database credentials are kept in the /conf/ directory, not in the webserver document root:
         require_once("/home/webtest.cv.nrao.edu/conf/mtm-dbConnect.conf");
         break;
@@ -32,19 +33,12 @@ function site_getDbConnection() {
 }
 
 function site_warnProductionDb($dbname) {
-    if ($_SERVER['SERVER_NAME'] == 'webtest.cv.nrao.edu') {
+    $server = $_SERVER['SERVER_NAME'];
 
-        if (FALSE && $dbname == 'alma_feic') {
-            // MM disabled this case now that production db is at OSF.
-
-            echo "<font size = '+2' color = '#ff0000'><h><b>
-            WARNING- Using production alma_feic database! Be careful!
-            </b></h></font>";
-        } else {
-            echo "<font size = '+2' color = '#ff0000'><h><b>
-            On webtest.cv.nrao.edu using database $dbname
-            </b></h></font>";
-        }
+    if ($server == 'webtest.cv.nrao.edu' || $server == 'webtest2.cv.nrao.edu') {
+        echo "<font size = '+2' color = '#ff0000'><h><b>
+        On $server using database $dbname
+        </b></h></font>";
     }
 }
 
