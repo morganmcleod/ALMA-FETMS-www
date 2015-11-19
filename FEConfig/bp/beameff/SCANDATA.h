@@ -150,17 +150,17 @@ typedef struct SCANDATA_T {
     float edge_dB;              ///< Average power in dB of the pixels falling at the edge of the subreflector.
     float sum;                  ///< apparenly not used.
     float nominal_z_offset;     ///< average of delta_z for copol and xpol scans
-    float eta_tot_np;           ///< Efficiency other than polarizaion and defocus in [0...1] 
+    float eta_tot_np;           ///< Efficiency other than polarizaion and defocus in [0..1]
                                 ///<  (eta_phase * eta_spillover * eta_taper)
-    float eta_pol;              ///< Polarization efficiency in [0…1]
-    float eta_tot_nd;           ///< Efficiency other than defocus in [0…1] (eta_tot_np * eta_pol)
-    float eta_defocus;          ///< Defocus efficency in [0…1]
-    float total_aperture_eff;   ///< Overall aperture efficiency in [0…1] (eta_tot_nd * eta_defocus)
+    float eta_pol;              ///< Polarization efficiency in [0..1]
+    float eta_tot_nd;           ///< Efficiency other than defocus in [0..1] (eta_tot_np * eta_pol)
+    float eta_defocus;          ///< Defocus efficency in [0..1]
+    float total_aperture_eff;   ///< Overall aperture efficiency in [0..1] (eta_tot_nd * eta_defocus)
     float shift_from_focus_mm;  ///< Difference between delta_z and the nominal probe distance of 200 mm.
     float subreflector_shift_mm;    ///< ?
     float squint;               ///< Beam squint as percentage of FWHM of the Beam.   Not calculated by this program?
     float squint_arcseconds;    ///< Beam squint in arcsecods.   Not calculated by this program?
-    float defocus_efficiency;   ///< Defocus efficency in [0…1] calculated in GetAdditionalEfficiencies().
+    float defocus_efficiency;   ///< Defocus efficency in [0..1] calculated in GetAdditionalEfficiencies().
                                 ///<  How different from eta_defocus?
     float mean_subreflector_shift;  ///< ?
 
