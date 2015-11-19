@@ -55,9 +55,14 @@ int main(int argc, char *argv[])
 	  return -1;
   }
 
-  //Create dictionary from the input text file
+  // Create dictionary from the input text file
   scan_file_dict = iniparser_load(inputfile);
+
+  // Each [scan_n] section specifies which scanset it is part of.
+  // Scansets are numbered 1,2,3...   Up to 200 can be loaded:
   num_scansets = GetScanSetNumberArray(scan_file_dict, &scanset_array, 200);
+
+  // Get the specified output directory
   outputdirectory = iniparser_getstring(scan_file_dict, "settings:outputdirectory", "null");
   strcpy(stdOutDirectory, outputdirectory);
 
@@ -67,9 +72,14 @@ int main(int argc, char *argv[])
   sprintf(printmsg, "Number of scans: %d<br>\n", GetNumberOfScans(scan_file_dict));
   PRINT_STDOUT(printmsg);
   
+  // Finds the first row of data and the datetime string from NSI formatted text files:
   GetNSIValues(scan_file_dict);
+
+  // If there are two z-distances per scan, combine them to reduce the effect of reflections:
   GetZ(scan_file_dict);
+
   GetOutputFilename(scan_file_dict, outfilename);
+
   sprintf(printmsg, "Number of scan sets= %d<br>\n", num_scansets);
   PRINT_STDOUT(printmsg);
 
@@ -91,8 +101,6 @@ int main(int argc, char *argv[])
   PRINT_STDOUT("finished.<br>\n");
   return 0;
 }
-
-
 
     
     
