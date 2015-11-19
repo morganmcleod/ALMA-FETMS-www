@@ -207,12 +207,11 @@ void GetScanData(dictionary *scan_file_dict, char *sectionname, SCANDATA *Result
        return;
 }
 
-int GetNumberOfScans(dictionary *scan_file_dict){
+int GetNumberOfScans(dictionary *scan_file_dict) {
+    // Number of scans is assumed to be equal to the number of sections -1 for the [settings] section:
     int result = iniparser_getnsec(scan_file_dict)-1;
     return result;   
 }
-
-
 
 int GetNumberOfBands(dictionary *scan_file_dict){
     int result=0;
@@ -403,34 +402,34 @@ int GetNumberOfScanSets(dictionary *scan_file_dict){
     return scancount;   
 }
 
-int GetScanSetNumberArray(dictionary *scan_file_dict, int scansetarray[], int scansetarray_size){
-    int result=0;
-    int num_sets=0;
-    int scancount=0, scansetcount=0;
+int GetScanSetNumberArray(dictionary *scan_file_dict, int scansetarray[], int scansetarray_size) {
+    int scancount=0;        // Accumulate size of array of valid [scan_n] sections seen.
+    int scansetcount=0;     // To return total number of scansets found in [scan_n] sections.
+    int scanset;            // Scanset value found in section.
     int i;
-    char ibuf[5];
-    char sectionname[10];
-    char section_key[30];
-    
-  for (i=0;i<iniparser_getnsec(scan_file_dict);i++){    
-            strcpy(sectionname,"scan_");
-            strcat(sectionname,itoa(i, ibuf, 10));  
-            strcpy(section_key,sectionname);
-            
-            
-              
+    char ibuf[10];
+    char sectionname[10];   // "scan_n"
+    char section_key[30];   // "scan_n:scanset"
+
+    for (i = 0; i < iniparser_getnsec(scan_file_dict); i++) {
+        // Build section name:
+        strcpy(sectionname, "scan_");
+        strcat(sectionname, itoa(i, ibuf, 10));
         
-            strcat(section_key,":scanset");    
-            
-            if (iniparser_getint (scan_file_dict, section_key, -1) != -1){
-               scansetarray[scancount]=iniparser_getint (scan_file_dict, section_key, -1);
-               scancount++;
-            }
-            
-            
+        // Build key name within section:
+        strcpy(section_key, sectionname);
+        strcat(section_key, ":scanset");
+
+        // Look up the key:
+        scanset = iniparser_getint(scan_file_dict, section_key, -1);
+        if (scanset != -1) {
+            // Found it.  Append to the array of found scansets
+            scansetarray[scancount] = scanset;
+            scancount++;
+        }
     }
-    
-    scansetcount = GetUniqueArrayInt(scansetarray,scancount);
+    // Reduce the array to unique values for scanset.
+    scansetcount = GetUniqueArrayInt(scansetarray, scancount);
     return scansetcount;   
 }
 
@@ -539,59 +538,50 @@ int PickNominalAngles(int almaBand, float *xtarget, float *ytarget, int ACA7mete
 } 
 
 
-int GetUniqueArrayInt(int invals[],int arrsize){
-    //Input is an array of integers
-    //Duplicate values are deleted from the array
-    //Resulting array consists of all uniqe values, followed
-    //by "-1" in the remaining array slots.
-    //Return value is number of unique elements in array.
-     char tempstr1[900];
-     char tempstr2[900];
-     char tempval[20];
-     int i,ucount=1;
-     char delims[] = "_";
-     char *result = NULL;
-     
+int GetUniqueArrayInt(int invals[], int arrsize) {
+    // Input is an array of integers
+    // Duplicate values are deleted from the array
+    // Resulting array consists of all uniqe values, followed
+    // by "-1" in the remaining array slots.
+    // Return value is number of unique elements in array.
+    char tempstr1[900];
+    char tempstr2[900];
+    char tempval[20];
+    int i, ucount = 1;
+    char delim[] = "_";
+    char *result = NULL;
 
+    // Initialize the two string buffers to empty:
+    tempstr1[0] = '\0';
+    tempstr2[0] = '\0';
 
-     sprintf(tempstr1,"%d_",invals[0]);
-     sprintf(tempstr2,"%d_",invals[0]);
-     
-     
+    // Print all the values into the two temporary strings, separated by the delimiter:
+    for (i = 0; i < arrsize; i++) {
+        sprintf(tempval,"%d%s", invals[i], delim);
 
-     //Copy all values into tempstr1
-     //Copy only unique values into tempstr2
-     //Insert "_" between each value
-     for (i=1;i<arrsize;i++){
-         sprintf(tempval,"%d_",invals[i]);
-         strcat(tempstr1,tempval);
+        // Copy all values into tempstr1
+        strcat(tempstr1, tempval);
 
-         
-         if (!strstr(tempstr2,tempval)){
-                strcat(tempstr2,tempval); 
-                ucount++;                     
-         }
-     }
-     
-     
-     
-    //Replace input array with array containing
-    //only unique values 
-    result = strtok( tempstr2, delims );
-    for (i=0;i<arrsize;i++){
-        if (i<ucount){
-            invals[i] = atoi(result);
-            result = strtok( NULL, delims );
+        // Copy only unique values into tempstr2
+        if (!strstr(tempstr2, tempval)) {
+            strcat(tempstr2, tempval);
+            // accumulate a count of unique values seen:
+            ucount++;
         }
-        if (i>=ucount){
+    }
+
+    //Replace input array with array containing only unique values, filled with -1 for the rest:
+    result = strtok(tempstr2, delim);
+    for (i = 0; i < arrsize; i++) {
+        if (i < ucount) {
+            invals[i] = atoi(result);
+            result = strtok(NULL, delim);
+        } else {
             invals[i] = -1;
         }
     }
-    
-    
-     return ucount;
+    return ucount;
 }
-
 
 int ReplaceDelimiter(char input[400], const char *olddelim, const char *newdelim) {
     char resultstr[400];
