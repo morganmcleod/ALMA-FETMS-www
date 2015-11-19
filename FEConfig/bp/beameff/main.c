@@ -71,6 +71,9 @@ int main(int argc, char *argv[])
 
   sprintf(printmsg, "Number of scans: %d<br>\n", GetNumberOfScans(scan_file_dict));
   PRINT_STDOUT(printmsg);
+
+  sprintf(printmsg, "Number of scansets: %d<br>\n", num_scansets);
+  PRINT_STDOUT(printmsg);
   
   // Finds the first row of data and the datetime string from NSI formatted text files:
   GetNSIValues(scan_file_dict);

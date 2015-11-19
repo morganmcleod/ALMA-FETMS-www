@@ -428,6 +428,9 @@ int GetScanSetNumberArray(dictionary *scan_file_dict, int scansetarray[], int sc
             scancount++;
         }
     }
+
+//    printf("GetUniqueArrayInt...\n");
+
     // Reduce the array to unique values for scanset.
     scansetcount = GetUniqueArrayInt(scansetarray, scancount);
     return scansetcount;   
@@ -547,13 +550,13 @@ int GetUniqueArrayInt(int invals[], int arrsize) {
     char tempstr1[900];
     char tempstr2[900];
     char tempval[20];
-    int i, ucount = 1;
+    int i, ucount = 0;
     char delim[] = "_";
     char *result = NULL;
 
     // Initialize the two string buffers to empty:
-    tempstr1[0] = '\0';
-    tempstr2[0] = '\0';
+    sprintf(tempstr1, "");
+    sprintf(tempstr2, "");
 
     // Print all the values into the two temporary strings, separated by the delimiter:
     for (i = 0; i < arrsize; i++) {
@@ -563,12 +566,16 @@ int GetUniqueArrayInt(int invals[], int arrsize) {
         strcat(tempstr1, tempval);
 
         // Copy only unique values into tempstr2
-        if (!strstr(tempstr2, tempval)) {
+        if (strstr(tempstr2, tempval) == NULL) {
             strcat(tempstr2, tempval);
             // accumulate a count of unique values seen:
             ucount++;
         }
     }
+
+//    printf("ucount=%d\n"
+//           "tempstr1=%s\n"
+//           "tempstr2=%s\n", ucount, tempstr1, tempstr2);
 
     //Replace input array with array containing only unique values, filled with -1 for the rest:
     result = strtok(tempstr2, delim);
