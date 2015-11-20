@@ -162,16 +162,16 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     GetAdditionalEfficiencies(&scans[1], &scans[2], &scans[3], &scans[4], centers);
 
     WriteCopolData(scan_file_dict, &scans[1], outputfilename);
-    //PlotCopol(&scans[1], scan_file_dict);
+    PlotCopol(&scans[1], scan_file_dict);
 
     WriteCrosspolData(scan_file_dict, &scans[2], outputfilename);
-    //PlotCrosspol(&scans[2], scan_file_dict);
+    PlotCrosspol(&scans[2], scan_file_dict);
 
     WriteCopolData(scan_file_dict, &scans[3], outputfilename);
-    //PlotCopol(&scans[3], scan_file_dict);
+    PlotCopol(&scans[3], scan_file_dict);
 
     WriteCrosspolData(scan_file_dict, &scans[4], outputfilename);
-    //PlotCrosspol(&scans[4], scan_file_dict);
+    PlotCrosspol(&scans[4], scan_file_dict);
 
     SCANDATA_free(scans + 0);
     SCANDATA_free(scans + 1);
