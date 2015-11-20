@@ -31,7 +31,6 @@ enum {
 
 extern void GetScanData(dictionary *scan_file_dict, char *sectionname, SCANDATA *);
 extern int GetNumberOfScans(dictionary *scan_file_dict);
-extern int GetNumberOfBands(dictionary *scan_file_dict);
 extern int RemoveKeys(dictionary *scan_file_dict);
 extern int GetNumberOfScanSetsForBand(dictionary *scan_file_dict, int band);
 extern int GetNumberOfScanSets(dictionary *scan_file_dict);

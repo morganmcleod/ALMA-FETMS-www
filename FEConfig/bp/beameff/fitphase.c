@@ -28,22 +28,15 @@ int FitPhase(SCANDATA *currentscan){
     functionphase = &function_phase;
     dfunctionphase = &dfunction_phase;
 
-    // better way to FitPhase:
+    // TODO? better way to FitPhase:
     //  first call with p = {0, 0, 0} and mask radius= 1 deg.
     //  find phase center in rad/deg.
     //  change mask to full subreflector ~3.8 deg.
     //  fimd phase center again using P from first iteration.
 
-
-
-    //Initial guess values
-//    p[1] = currentscan->az_nominal;
-//    p[2] = currentscan->el_nominal;
-//    p[3] = 200.0;
-
     p[1] = 0;
     p[2] = 0;
-    p[3] = 260.0;
+    p[3] = (float) currentscan -> zdistance;
     
     // convert initial guess to rad/deg, rad/deg^2 for z:
     p[1] *=  0.001*(currentscan->k)*(2*PI/360.);           /* aka  slope_u */

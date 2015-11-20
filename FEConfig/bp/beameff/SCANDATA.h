@@ -26,6 +26,7 @@ typedef struct SCANDATA_T {
     int tilt;               ///< tilt table angle in degrees where 0 is horizon
     int f;                  ///< RF in GHz.  TODO: should this be a float?
     int sb;                 ///< 1=USB, 2=LSB
+    int zdistance;          ///< Distance in mm of scan probe from FE RF input.
     float ifatten;          ///< IF processor attenuation in dB for this single scan.
     char nf[200];           ///< filename of nearfield listing txt file
     int nf_startrow;        ///< number of header rows to skip when reading nf

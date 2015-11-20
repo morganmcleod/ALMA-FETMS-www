@@ -45,6 +45,7 @@ class eff {
         /* Version history:
          * 1.1.8  Removed TICRA pol. and spill switch.  Always compute pol.eff on secondary.
          *        Fix 'eta pol + spill' was displaying wrong value, eta_tot_np.
+         *        Uses ProbeZDistance from ScanDetails and passes it to Beameff as zdistance.
          * 1.1.7  Added switch for pol. and spill eff calculation using default or TICRA method.
          * 1.1.6  Added efficiency and squint calculation for ACA 7 meter antenna.
          * 1.1.5  Added selectable pointing option.
@@ -322,6 +323,7 @@ class eff {
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
             fwrite($fhandle,"ifatten=" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ifatten') ."\r\n");
+            fwrite($fhandle,"zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ProbeZDistance') ."\r\n");
 
             $nf_path = $this->listingsdir . "scanset_" . ($scanSet) . "_copol_pol0_nf.txt";
             $this->ExportNF($nf_path,$this->scansets[$scanSetIdx]->keyId_copol_pol0_scan);
@@ -356,6 +358,7 @@ class eff {
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
             fwrite($fhandle,"ifatten=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('ifatten') ."\r\n");
+            fwrite($fhandle,"zdistance=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('ProbeZDistance') ."\r\n");
             fwrite($fhandle,"scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle,"scan_id=" . $this->scansets[$scanSetIdx]->keyId_xpol_pol0_scan. "\r\n");
             fwrite($fhandle,"fecfg=" . $this->scansets[$scanSetIdx]->GetValue('fkFE_Config') . "\r\n");
@@ -389,6 +392,7 @@ class eff {
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
             fwrite($fhandle,"ifatten=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ifatten') ."\r\n");
+            fwrite($fhandle,"zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ProbeZDistance') ."\r\n");
             fwrite($fhandle,"scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle,"scan_id=" . $this->scansets[$scanSetIdx]->keyId_copol_pol1_scan. "\r\n");
             $ts = strftime("%a",strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS'))) . " " .  $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS');
@@ -422,6 +426,7 @@ class eff {
             fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
             fwrite($fhandle,"notes=\r\n");
             fwrite($fhandle,"ifatten=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('ifatten') ."\r\n");
+            fwrite($fhandle,"zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ProbeZDistance') ."\r\n");
             fwrite($fhandle,"scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle,"scan_id=" . $this->scansets[$scanSetIdx]->keyId_xpol_pol1_scan. "\r\n");
             $ts = strftime("%a",strtotime($this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('TS'))) . " " .  $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('TS');

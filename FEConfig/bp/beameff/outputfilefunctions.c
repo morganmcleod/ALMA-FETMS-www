@@ -8,6 +8,8 @@ extern char *VersionNumber;
 
 int WriteCopolData(dictionary *scan_file_dict, SCANDATA *currentscan, char *outputfilename){
     char writeval[200];
+    sprintf(writeval,"%d", currentscan->zdistance);
+    UpdateDictionary(scan_file_dict,currentscan->sectionname, "zdistance", writeval);
     sprintf(writeval,"%f", currentscan->eta_spillover);
     UpdateDictionary(scan_file_dict,currentscan->sectionname, "eta_spillover", writeval);
     sprintf(writeval,"%f", currentscan->eta_taper);
@@ -89,6 +91,9 @@ int WriteCopolData(dictionary *scan_file_dict, SCANDATA *currentscan, char *outp
 int WriteCrosspolData(dictionary *scan_file_dict, SCANDATA *currentscan, char *outputfilename){
     char writeval[200];
 
+    sprintf(writeval,"%d", currentscan->zdistance);
+    UpdateDictionary(scan_file_dict,currentscan->sectionname, "zdistance", writeval);
+
     sprintf(writeval,"%f", currentscan->eta_spill_co_cross);
     UpdateDictionary(scan_file_dict,currentscan->sectionname, "eta_spill_co_cross", writeval);
     sprintf(writeval,"%f", currentscan->eta_pol_on_secondary);
@@ -103,8 +108,8 @@ int WriteCrosspolData(dictionary *scan_file_dict, SCANDATA *currentscan, char *o
     sprintf(writeval,"%f", currentscan->max_dbdifference);
     UpdateDictionary(scan_file_dict,currentscan->sectionname, "max_dbdifference", writeval);
     if (DEBUGGING) {
-      fprintf(stderr,"Done max_dbdifference = %f (ptr=%p)\n",currentscan->max_dbdifference,
-	      &(currentscan->max_dbdifference));
+        fprintf(stderr,"Done max_dbdifference = %f (ptr=%p)\n",currentscan->max_dbdifference,
+                &(currentscan->max_dbdifference));
     }
 
  return 1;                            

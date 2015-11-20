@@ -116,6 +116,12 @@ void GetScanData(dictionary *scan_file_dict, char *sectionname, SCANDATA *Result
        strcpy(section_key,sectionname);
        strcat(section_key,":sb");
        ResultScanData->sb = iniparser_getint (scan_file_dict, section_key, 0);
+       //probe zdistance
+       strcpy(section_key,sectionname);
+       strcat(section_key,":zdistance");
+       ResultScanData->zdistance = iniparser_getint (scan_file_dict, section_key, 260);
+       if (ResultScanData->zdistance == 0)
+           ResultScanData->zdistance = 260;
        //ifatten
        strcpy(section_key,sectionname);
        strcat(section_key,":ifatten");
@@ -213,131 +219,110 @@ int GetNumberOfScans(dictionary *scan_file_dict) {
     return result;   
 }
 
-int GetNumberOfBands(dictionary *scan_file_dict){
-    int result=0;
+int RemoveKeys(dictionary *scan_file_dict) {
+    int i;
+    char *sectionname;
+    char section_key[50];
+    for (i=0;i<GetNumberOfScans(scan_file_dict)+1;i++) {
+
+        sectionname = iniparser_getsecname(scan_file_dict,i);
+
+        //do for all sections except "settings"
+        if(strcmp(sectionname,"settings")) {
+            sprintf(section_key,"%s:type",sectionname);
     
-    return result;   
-}
-
-int RemoveKeys(dictionary *scan_file_dict){
- int i;
- char *sectionname;
- char section_key[50];
- 
- 
-
- 
-
-    for (i=0;i<GetNumberOfScans(scan_file_dict)+1;i++){
-        
-        
-         sectionname = iniparser_getsecname(scan_file_dict,i);
-         
-    
-             if(strcmp(sectionname,"settings")){
-             //do for all sections except "settings"   
-                                                        
-             sprintf(section_key,"%s:type",sectionname);
-             
-             
-             
             //Remove copol keys from crosspol sections
             if(!strcmp(iniparser_getstring(scan_file_dict, section_key,"null"),"xpol")){
-                                                           
-              sprintf(section_key,"%s:eta_spillover",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:eta_taper",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:eta_illumination",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:ff_xcenter",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:ff_ycenter",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:nf_xcenter",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:nf_ycenter",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key); 
 
-              sprintf(section_key,"%s:az_nominal",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:el_nominal",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:delta_x",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:delta_y",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:delta_z",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:eta_phase",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:ampfit_amp",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:ampfit_width_deg",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:ampfit_u_off_deg",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:ampfit_v_off_deg",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:ampfit_d_0_90",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:ampfit_d_45_135",sectionname);
-              iniparser_unset(scan_file_dict, section_key); 
-              sprintf(section_key,"%s:plot_copol_nfamp",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:plot_copol_nfphase",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:plot_copol_ffamp",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:plot_copol_ffphase",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:squint",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:squint_arcseconds",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:eta_total_nofocus",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              
-                                                           
+                sprintf(section_key,"%s:eta_spillover",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:eta_taper",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:eta_illumination",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:ff_xcenter",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:ff_ycenter",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:nf_xcenter",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:nf_ycenter",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+
+                sprintf(section_key,"%s:az_nominal",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:el_nominal",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:delta_x",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:delta_y",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:delta_z",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:eta_phase",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:ampfit_amp",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:ampfit_width_deg",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:ampfit_u_off_deg",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:ampfit_v_off_deg",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:ampfit_d_0_90",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:ampfit_d_45_135",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:plot_copol_nfamp",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:plot_copol_nfphase",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:plot_copol_ffamp",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:plot_copol_ffphase",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:squint",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:squint_arcseconds",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:eta_total_nofocus",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
             }                                                   
+
             //Remove crosspol keys from copol sections
-            if(!strcmp(iniparser_getstring(scan_file_dict, section_key,"null"),"copol")){
-              //Remove squint key for pol 0, copol scan   
-                  sprintf(section_key,"%s:pol",sectionname);                                             
-                  if(iniparser_getint(scan_file_dict, section_key,0) == 0){                                                                                                                                                                                                  
+            if(!strcmp(iniparser_getstring(scan_file_dict, section_key,"null"),"copol")) {
+
+                //Remove squint key for pol 0, copol scan
+                sprintf(section_key,"%s:pol",sectionname);
+
+                if(iniparser_getint(scan_file_dict, section_key,0) == 0) {
                     sprintf(section_key,"%s:squint",sectionname);
                     iniparser_unset(scan_file_dict, section_key);  
                     sprintf(section_key,"%s:squint_arcseconds",sectionname);
                     iniparser_unset(scan_file_dict, section_key);  
-                                                                         
-                  }                                             
-                                                           
-              sprintf(section_key,"%s:max_dbdifference",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:eta_spill_co_cross",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:eta_pol_on_secondary",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:eta_pol_spill",sectionname);                             
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:eta_total_nofocus",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:plot_xpol_nfamp",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:plot_xpol_nfphase",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:plot_xpol_ffamp",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              sprintf(section_key,"%s:plot_xpol_ffphase",sectionname);
-              iniparser_unset(scan_file_dict, section_key);
-              
-
-                         
-             }
+                }
+                sprintf(section_key,"%s:max_dbdifference",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:eta_spill_co_cross",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:eta_pol_on_secondary",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:eta_pol_spill",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:eta_total_nofocus",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:plot_xpol_nfamp",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:plot_xpol_nfphase",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:plot_xpol_ffamp",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+                sprintf(section_key,"%s:plot_xpol_ffphase",sectionname);
+                iniparser_unset(scan_file_dict, section_key);
+            }
+        }
     }
-}
-
- return 1;   
+    return 1;
 }
 
 
