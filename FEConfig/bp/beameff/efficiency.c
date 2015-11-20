@@ -24,12 +24,10 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     char scantype[20];      // 'copol' or 'xpol'
     char delimiter[2];      // '\t' or ','
     char centers[10];       // 'nominal', 'actual', or '7meter'
-    char polSpillOption[10];    // 'default', 'TICRA'
     char ibuf[5];
     char sectionName_pkey[200];
     float subreflector_radius = subreflector_radius12m;
     int ACA7meter = 0;
-    int TICRAMethod = 0;
     float lambda;
 
     if (DEBUGGING) {
@@ -59,11 +57,6 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     if(!strcmp(centers, "7meter")) {
         subreflector_radius = subreflector_radius7m;
         ACA7meter = 1;
-    }
-
-    strcpy(polSpillOption, iniparser_getstring (scan_file_dict, "settings:polSpill", "default"));
-    if(!strcmp(polSpillOption, "TICRA")) {
-        TICRAMethod = 1;
     }
 
     if (DEBUGGING) {
@@ -166,27 +159,19 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
     scans[3].squint = (100.0 * scans[3].squint_arcseconds) / (1.15 * lambda * 57.3 * 60 * 60 /12000.0 );
 */
 
-    GetAdditionalEfficiencies(&scans[1], &scans[2], &scans[3], &scans[4], centers, TICRAMethod);
-
-    if (DEBUGGING) {
-        fprintf(stderr,"WriteCopolData()...\n");
-    }
+    GetAdditionalEfficiencies(&scans[1], &scans[2], &scans[3], &scans[4], centers);
 
     WriteCopolData(scan_file_dict, &scans[1], outputfilename);
+    //PlotCopol(&scans[1], scan_file_dict);
 
-    if (DEBUGGING) {
-        fprintf(stderr,"PlotCopol()...\n");
-    }
-    PlotCopol(&scans[1],scan_file_dict);
+    WriteCrosspolData(scan_file_dict, &scans[2], outputfilename);
+    //PlotCrosspol(&scans[2], scan_file_dict);
 
-    WriteCrosspolData(scan_file_dict, &scans[2],outputfilename);
-    PlotCrosspol(&scans[2],scan_file_dict);
+    WriteCopolData(scan_file_dict, &scans[3], outputfilename);
+    //PlotCopol(&scans[3], scan_file_dict);
 
-    WriteCopolData(scan_file_dict, &scans[3],outputfilename);
-    PlotCopol(&scans[3],scan_file_dict);
-
-    WriteCrosspolData(scan_file_dict, &scans[4],outputfilename);
-    PlotCrosspol(&scans[4],scan_file_dict);
+    WriteCrosspolData(scan_file_dict, &scans[4], outputfilename);
+    //PlotCrosspol(&scans[4], scan_file_dict);
 
     SCANDATA_free(scans + 0);
     SCANDATA_free(scans + 1);
@@ -199,7 +184,7 @@ int GetEfficiencies(dictionary *scan_file_dict, int scanset, char *outputfilenam
 
 int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
                               SCANDATA *copol_pol1, SCANDATA *xpol_pol1,
-                              char *centers, int TICRAMethod)
+                              char *centers)
 {
 
     float tau=0.25;
@@ -225,36 +210,23 @@ int GetAdditionalEfficiencies(SCANDATA *copol_pol0, SCANDATA *xpol_pol0,
     xpol_pol1 -> eta_spill_co_cross = (copol_pol1 -> sum_powsec + xpol_pol1 -> sum_powsec) /
                                       (copol_pol1 -> sumsq_E + xpol_pol1 -> sumsq_E);
 
-    // Ratio of copol beam to copol+xpol on secondary:
+    // TICRA method ratio of copol beam to copol+xpol on secondary:
     xpol_pol0 -> eta_pol_on_secondary = (copol_pol0 -> sum_powsec) / (copol_pol0 -> sum_powsec + xpol_pol0 -> sum_powsec);
     xpol_pol1 -> eta_pol_on_secondary = (copol_pol1 -> sum_powsec) / (copol_pol1 -> sum_powsec + xpol_pol1 -> sum_powsec);
 
-    // Total polariazaiton+spillover efficiency:
+    // Total polariazaiton*spillover efficiency:
     xpol_pol0 -> eta_pol_spill = xpol_pol0 -> eta_spill_co_cross * xpol_pol0 -> eta_pol_on_secondary;
     xpol_pol1 -> eta_pol_spill = xpol_pol1 -> eta_spill_co_cross * xpol_pol1 -> eta_pol_on_secondary;
 
-    if (TICRAMethod == 1) {
-        // Polarization efficiency, using the TICRA definition,
-        // is the ratio of total copol power on the secondary to total copol+xpol power on secondary:
-        copol_pol0 -> eta_pol = copol_pol0->sumsq_maskE / (copol_pol0->sumsq_maskE + xpol_pol0->sumsq_maskE);
-        copol_pol1 -> eta_pol = copol_pol1->sumsq_maskE / (copol_pol1->sumsq_maskE + xpol_pol1->sumsq_maskE);
+    // Polarization efficiency on the secondary using the 'alternative' definition from R.Hills paper,
+    // is the ratio of total copol power to total copol+xpol power, NOT masked for the secondary:
+    copol_pol0 -> eta_pol = copol_pol0->sumsq_E / (copol_pol0->sumsq_E + xpol_pol0->sumsq_E);
+    copol_pol1 -> eta_pol = copol_pol1->sumsq_E / (copol_pol1->sumsq_E + xpol_pol1->sumsq_E);
 
-        // Spillover efficiency is the ratio of copol+xpol on secondary to copol+xpol total power:
-        copol_pol0 -> eta_spillover = xpol_pol0 -> eta_spill_co_cross;
-        copol_pol1 -> eta_spillover = xpol_pol1 -> eta_spill_co_cross;
-
-    } else {
-        // This is the "default" method used for all ALMA production measurements through October 2015.
-
-        // Polarization efficiency, using the 'alternative' definition from R.Hills paper,
-        // is the ratio of total copol power to total copol+xpol power, NOT masked for the secondary:
-        copol_pol0 -> eta_pol = copol_pol0->sumsq_E / (copol_pol0->sumsq_E + xpol_pol0->sumsq_E);
-        copol_pol1 -> eta_pol = copol_pol1->sumsq_E / (copol_pol1->sumsq_E + xpol_pol1->sumsq_E);
-
-        // Spillover efficiency is the ratio of power on the secondary to total power:
-        copol_pol0 -> eta_spillover = copol_pol0 -> sum_powsec / copol_pol0 -> sumsq_E;
-        copol_pol1 -> eta_spillover = copol_pol1 -> sum_powsec / copol_pol1 -> sumsq_E;
-    }
+    // Spillover efficiency, using the 'alternative' definition from R.Hills paper,
+    // is the ratio of copol power on the secondary to total copol power:
+    copol_pol0 -> eta_spillover = copol_pol0 -> sum_powsec / copol_pol0 -> sumsq_E;
+    copol_pol1 -> eta_spillover = copol_pol1 -> sum_powsec / copol_pol1 -> sumsq_E;
 
     // Average Z offset of both scans:
     copol_pol0 -> nominal_z_offset = 0.5 * (copol_pol0->delta_z + copol_pol1->delta_z);

@@ -77,28 +77,27 @@ int WriteCopolData(dictionary *scan_file_dict, SCANDATA *currentscan, char *outp
     sprintf(writeval,"%s", currentscan->is4545_scan);
     UpdateDictionary(scan_file_dict,currentscan->sectionname, "4545_scan", writeval);
     
-    
     if (currentscan->pol == 1){
         sprintf(writeval,"%f", currentscan->squint);
         UpdateDictionary(scan_file_dict,currentscan->sectionname, "squint", writeval);
         sprintf(writeval,"%f", currentscan->squint_arcseconds);
         UpdateDictionary(scan_file_dict,currentscan->sectionname, "squint_arcseconds", writeval);
     }
- return 1;   
+    return 1;
 }
 
 int WriteCrosspolData(dictionary *scan_file_dict, SCANDATA *currentscan, char *outputfilename){
     char writeval[200];
+
     sprintf(writeval,"%f", currentscan->eta_spill_co_cross);
     UpdateDictionary(scan_file_dict,currentscan->sectionname, "eta_spill_co_cross", writeval);
     sprintf(writeval,"%f", currentscan->eta_pol_on_secondary);
     UpdateDictionary(scan_file_dict,currentscan->sectionname, "eta_pol_on_secondary", writeval);
     sprintf(writeval,"%f", currentscan->eta_pol_spill);
     UpdateDictionary(scan_file_dict,currentscan->sectionname, "eta_pol_spill", writeval);
+
     sprintf(writeval,"%s", currentscan->notes);
     UpdateDictionary(scan_file_dict,currentscan->sectionname, "notes", writeval);
-    //sprintf(writeval,"%f", currentscan->eta_total_nofocus);
-    //UpdateDictionary(scan_file_dict,currentscan->sectionname, "eta_total_nofocus", writeval);
     sprintf(writeval,"%f", currentscan->max_ff_amp_db);
     UpdateDictionary(scan_file_dict,currentscan->sectionname, "max_ff_amp_db", writeval);
     sprintf(writeval,"%f", currentscan->max_dbdifference);

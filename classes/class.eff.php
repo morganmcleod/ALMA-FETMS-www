@@ -27,25 +27,24 @@ class eff {
     var $ReadyToProcess;
     var $Processed;         //0 = Has not been processed. 1 = Has been processed.
     var $pointingOption;    // 'nominal', 'actual', or '7meter'
-    var $polSpillOption;    // 'default' or 'TICRA'
     var $root_datadir;
     var $root_urldir;
     var $software_version_class_eff;
     var $software_version_analysis;
     var $pointingOption_analysis;
-    var $polSpillOption_analysis;
     var $ssid;
     var $fc;                //facility key
     var $GNUPLOT_path;
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.1.7";
+        $this->software_version_class_eff = "1.1.8";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
-        $this->polSpillOption_analysis = "";
 
         /* Version history:
+         * 1.1.8  Removed TICRA pol. and spill switch.  Always compute pol.eff on secondary.
+         *        Fix 'eta pol + spill' was displaying wrong value, eta_tot_np.
          * 1.1.7  Added switch for pol. and spill eff calculation using default or TICRA method.
          * 1.1.6  Added efficiency and squint calculation for ACA 7 meter antenna.
          * 1.1.5  Added selectable pointing option.
@@ -123,28 +122,6 @@ class eff {
         return $optionString;
     }
 
-    function AnalysisOptionString() {
-        if ($this->polSpillOption_analysis == "") {
-            if (isset($this->scansets[0]->Scan_copol_pol0->BeamEfficencies)) {
-                $this->polSpillOption_analysis = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('polSpillOption');
-            }
-            switch ($this->polSpillOption_analysis) {
-                case "" :
-                case "default" :
-                    $this->polSpillOption_analysis = "ALMA FE production";
-                    break;
-
-                case "TICRA":
-                default :
-                    break;
-            }
-        }
-        $optionString = "";
-        if ($this->polSpillOption_analysis != "")
-            $optionString = "Pol+spill: " . $this->polSpillOption_analysis . "<br>";
-        return $optionString;
-    }
-
     function ReplacePlotURLs() {
         require(site_get_config_main());
 
@@ -162,35 +139,35 @@ class eff {
             // fix scan URLs.   TODO:  could this move into class.scansetdetails ?
             for ($p = 0; $p <= 8; $p++) {
                 $oldurl = $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue($plots[$p]);
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/") , -1) . "g";
+                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
                 $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->SetValue($plots[$p], "$newurl");
             }
             $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->Update();
 
             for ($p = 0; $p <= 8; $p++) {
                 $oldurl = $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue($plots[$p]);
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/") , -1) . "g";
+                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
                 $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->SetValue($plots[$p], $newurl);
             }
             $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->Update();
 
             for ($p = 0; $p <= 8; $p++) {
                 $oldurl = $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue($plots[$p]);
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/") , -1) . "g";
+                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
                 $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->SetValue($plots[$p], $newurl);
             }
             $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->Update();
 
             for ($p = 0; $p <= 8; $p++) {
                 $oldurl =  $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue($plots[$p]);
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/") , -1) . "g";
+                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
                 $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->SetValue($plots[$p], $newurl);
             }
             $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->Update();
 
             // fix pointing angles
             $oldurl = $this->scansets[$scanSetIdx]->Scan_180->BeamEfficencies->GetValue("pointing_angles_plot");
-            $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/") , -1) . "g";
+            $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
             $this->scansets[$scanSetIdx]->Scan_180->BeamEfficencies->SetValue("pointing_angles_plot", $newurl);
             $this->scansets[$scanSetIdx]->Scan_180->BeamEfficencies->Update();
         }
@@ -323,7 +300,6 @@ class eff {
         fwrite($fhandle,'outputdirectory="' . $this->outputdirectory . '"' . "\r\n");
         fwrite($fhandle,"delimiter=tab\r\n");
         fwrite($fhandle,"centers=" . $this->pointingOption . "\r\n");
-        fwrite($fhandle,"polSpill=" . $this->polSpillOption . "\r\n");
         fwrite($fhandle,"\r\n");
 
         //Fill in the individual scan sections
@@ -480,7 +456,6 @@ class eff {
         fwrite($fhandle,'outputdirectory="' . $this->outputdirectory . '"' . "\r\n");
         fwrite($fhandle,"delimiter=tab\r\n");
         fwrite($fhandle,"centers=" . $this->pointingOption . "\r\n");
-        fwrite($fhandle,"polSpill=" . $this->polSpillOption . "\r\n");
         fwrite($fhandle,"\r\n");
 
         //Fill in the individual scan sections
@@ -604,17 +579,16 @@ class eff {
         $this->db_pull->q(FALSE, $ff_path, $scan_id);
     }
 
-    public function GetEfficiencies($pointingOption, $polSpillOption) {
+    public function GetEfficiencies($pointingOption) {
         // Main function to calculate beam efficiencies from scan sets.
         $this->pointingOption = $pointingOption;
-        $this->polSpillOption = $polSpillOption;
         // Create the input file for beameff_64:
         $this->MakeInputFile();
         // Execute beameff_64:
         $CommandString = "$this->beameff_exe $this->eff_inputfile";
         system($CommandString);
         // Upload the efficiency results to the database:
-        $this->UploadEfficiencyFile($this->eff_outputfile);
+        $this->UploadEfficiencyFile($this->eff_outputfile, false);
         $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
 
         if ($this->scansets[0]->Scan_180->keyId != "") {
@@ -626,7 +600,7 @@ class eff {
             $CommandString = "$this->beameff_exe $this->eff_inputfile";
             system($CommandString);
             // Upload the efficiency results to the database:
-            $this->UploadEfficiencyFile_180($this->eff_outputfile);
+            $this->UploadEfficiencyFile($this->eff_outputfile, true);
             $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
             $this->CalculateSquint();
         }
@@ -776,261 +750,127 @@ class eff {
         $this->scansets[0]->Scan_180->BeamEfficencies->Update();
     }
 
-    function UploadEfficiencyFile($ini_filename) {
+    function UploadEfficiencyFile($ini_filename, $is_180degreeForSquint) {
         require(site_get_config_main());
 
         $ini_array = parse_ini_file($ini_filename, true);
 
+        // Load the analysis software version and pointing option from the analysis output file:
         $software_version_analysis = $ini_array['settings']['software_version'];
         $pointingOption_analysis = $ini_array['settings']['centers'];
-        $polSpillOption_analysis = $ini_array['settings']['polspill'];
 
-        $band = 1;
-
-        while ($band <= 10) {
-            $key = "pointingangles_band_$band";
-            if (isset ($ini_array['settings'][$key]) && $ini_array['settings'][$key] != '') {
-                $pointing_angles_plot = $ini_array['settings'][$key];
-                $band = 11;
-            } else
-                $band++;
+        // Load the pointing angles plot filename:
+        $key = "pointingangles_band_" . $this->band;
+        if (isset ($ini_array['settings'][$key]) && $ini_array['settings'][$key] != '') {
+            $pointing_angles_plot = $ini_array['settings'][$key];
         }
 
-        foreach ($ini_array as $key => $value) {
-            if ($key != "settings") {
-                $keyScanDetails = $ini_array[$key]['keyscandetails'];
+        // Loop on sections:
+        foreach ($ini_array as $section => $contents) {
 
-                //Delete any existing efficiency record for this scan
-                $rdelete = $this->db_pull->qdelete($keyScanDetails, NULL);
-                $rds = $this->db_pull->q_other('s', $keyScanDetails, NULL);
-                $beameffID = @mysql_result($rds,0);
-                $beameff = new GenericTable;
+            // Skip the [settings] section:
+            if ($section != "settings") {
 
-                if ($beameffID == "") {
+                // If processing a 180-degree scan for squint, only process copol, pol0:
+                if (!$is_180degreeForSquint ||
+                        ($ini_array[$section]['type'] == "copol" && $ini_array[$section]['pol'] == "0"))
+                {
+
+                    $keyScanDetails = $ini_array[$section]['keyscandetails'];
+
+                    // Delete any existing efficiencies record for this scan:
+                    $rdelete = $this->db_pull->qdelete($keyScanDetails, NULL);
+
+                    // Create and initialize a new efficies record:
+                    $beameff = new GenericTable;
                     $beameff->Initialize("BeamEfficiencies","","keyBeamEfficiencies",$this->fc,'fkFacility');
-                    $beameff-> NewRecord("BeamEfficiencies","keyBeamEfficiencies",$this->fc,'fkFacility');
+                    $beameff->NewRecord("BeamEfficiencies","keyBeamEfficiencies",$this->fc,'fkFacility');
+
+                    // Store overall/settings values:
+                    $beameff-> SetValue("fkScanDetails", $keyScanDetails);
+                    $beameff-> SetValue("eff_output_file", $ini_filename);
+                    $beameff-> SetValue("pointing_angles_plot", $pointing_angles_plot);
+                    $beameff-> SetValue("software_version", $software_version_analysis);
+                    $beameff-> SetValue("centers", $pointingOption_analysis);
+
+                    // Suppress error reports for undefined index for the next chunk:
+                    global $errorReportSettingsNo_E_NOTICE;
+                    global $errorReportSettingsNormal;
+                    error_reporting($errorReportSettingsNo_E_NOTICE);
+
+                    // Save all the data loaded from the ini file to the new beameffs record:
+                    $beameff-> SetValue("pol", $ini_array[$section]['pol']);
+                    $beameff-> SetValue("tilt", $ini_array[$section]['tilt']);
+                    $beameff-> SetValue("f", $ini_array[$section]['f']);
+                    $beameff-> SetValue("type", $ini_array[$section]['type']);
+                    $beameff-> SetValue("tilt", $ini_array[$section]['tilt']);
+                    $beameff-> SetValue("ifatten", $ini_array[$section]['ifatten']);
+                    $beameff-> SetValue("eta_spillover", $ini_array[$section]['eta_spillover']);
+                    $beameff-> SetValue("eta_taper", $ini_array[$section]['eta_taper']);
+                    $beameff-> SetValue("eta_illumination", $ini_array[$section]['eta_illumination']);
+                    $beameff-> SetValue("ff_xcenter", $ini_array[$section]['ff_xcenter']);
+                    $beameff-> SetValue("ff_ycenter", $ini_array[$section]['ff_ycenter']);
+                    $beameff-> SetValue("az_nominal", $ini_array[$section]['az_nominal']);
+                    $beameff-> SetValue("el_nominal", $ini_array[$section]['el_nominal']);
+                    $beameff-> SetValue("nf_xcenter", $ini_array[$section]['nf_xcenter']);
+                    $beameff-> SetValue("nf_ycenter", $ini_array[$section]['nf_ycenter']);
+                    $beameff-> SetValue("max_ff_amp_db", $ini_array[$section]['max_ff_amp_db']);
+                    $beameff-> SetValue("max_nf_amp_db", $ini_array[$section]['max_nf_amp_db']);
+                    $beameff-> SetValue("delta_x", $ini_array[$section]['delta_x']);
+                    $beameff-> SetValue("delta_y", $ini_array[$section]['delta_y']);
+                    $beameff-> SetValue("delta_z", $ini_array[$section]['delta_z']);
+                    $beameff-> SetValue("eta_phase", $ini_array[$section]['eta_phase']);
+                    $beameff-> SetValue("ampfit_amp", $ini_array[$section]['ampfit_amp']);
+                    $beameff-> SetValue("ampfit_width_deg", $ini_array[$section]['ampfit_width_deg']);
+                    $beameff-> SetValue("ampfit_u_off", $ini_array[$section]['ampfit_u_off_deg']);
+                    $beameff-> SetValue("ampfit_v_off", $ini_array[$section]['ampfit_v_off_deg']);
+                    $beameff-> SetValue("ampfit_d_0_90", $ini_array[$section]['ampfit_d_0_90']);
+                    $beameff-> SetValue("ampfit_edge_db", $ini_array[$section]['edge_db']);
+                    $beameff-> SetValue("ampfit_d_45_135", $ini_array[$section]['ampfit_d_45_135']);
+                    $beameff-> SetValue("plot_copol_nfamp", $ini_array[$section]['plot_copol_nfamp']);
+                    $beameff-> SetValue("plot_copol_nfphase", $ini_array[$section]['plot_copol_nfphase']);
+                    $beameff-> SetValue("plot_copol_ffamp", $ini_array[$section]['plot_copol_ffamp']);
+                    $beameff-> SetValue("plot_copol_ffphase", $ini_array[$section]['plot_copol_ffphase']);
+                    $beameff-> SetValue("plot_xpol_nfamp", $ini_array[$section]['plot_xpol_nfamp']);
+                    $beameff-> SetValue("plot_xpol_nfphase", $ini_array[$section]['plot_xpol_nfphase']);
+                    $beameff-> SetValue("plot_xpol_ffamp", $ini_array[$section]['plot_xpol_ffamp']);
+                    $beameff-> SetValue("plot_xpol_ffphase", $ini_array[$section]['plot_xpol_ffphase']);
+                    $beameff-> SetValue("datetime", $ini_array[$section]['datetime']);
+                    $beameff-> SetValue("nf", $ini_array[$section]['nf']);
+                    $beameff-> SetValue("ff", $ini_array[$section]['ff']);
+                    $beameff-> SetValue("nominal_z_offset", $ini_array[$section]['nominal_z_offset']);
+                    $beameff-> SetValue("eta_tot_np", $ini_array[$section]['eta_tot_np']);
+                    $beameff-> SetValue("eta_pol", $ini_array[$section]['eta_pol']);
+                    $beameff-> SetValue("eta_pol_on_secondary", $ini_array[$section]['eta_pol_on_secondary']);
+                    $beameff-> SetValue("eta_tot_nd", $ini_array[$section]['eta_tot_nd']);
+                    $beameff-> SetValue("eta_pol_spill", $ini_array[$section]['eta_pol_spill']);
+                    $beameff-> SetValue("defocus_efficiency", $ini_array[$section]['defocus_efficiency']);
+                    $beameff-> SetValue("total_aperture_eff", $ini_array[$section]['total_aperture_eff']);
+                    $beameff-> SetValue("shift_from_focus_mm", $ini_array[$section]['shift_from_focus_mm']);
+                    $beameff-> SetValue("subreflector_shift_mm", $ini_array[$section]['subreflector_shift_mm']);
+                    $beameff-> SetValue("defocus_efficiency_due_to_moving_the_subreflector", $ini_array[$section]['defocus_efficiency_due_to_moving_the_subreflector']);
+                    $beameff-> SetValue("squint", $ini_array[$section]['squint']);
+                    $beameff-> SetValue("squint_arcseconds", $ini_array[$section]['squint_arcseconds']);
+                    $beameff-> SetValue("max_dbdifference", $ini_array[$section]['max_dbdifference']);
+                    $beameff-> SetValue("software_version_class_eff", $this->software_version_class_eff);
+
+                    // Restore error reporting:
+                    error_reporting($errorReportSettingsNormal);
+
+                    if ($is_180degreeForSquint) {
+                        // Get the actual pol of the 180 scan
+                        $sd180 = new ScanDetails();
+                        $sd180->Initialize_ScanDetails($keyScanDetails, $this->fc);
+                        $beameff-> SetValue("pol", $sd180->GetValue('pol'));
+                        unset($sd180);
+                    }
+
+                    // Save the completed efficiencies record
+                    $beameff->Update();
+                    unset($beameff);
                 }
-                if ($beameffID != "") {
-                    $beameff->Initialize("BeamEfficiencies",$beameffID,"keyBeamEfficiencies",$this->fc,'fkFacility');
-                }
-
-                $beameff-> SetValue("fkScanDetails", $keyScanDetails);
-                $beameff-> SetValue("eff_output_file", $ini_filename);
-                $beameff-> SetValue("pointing_angles_plot", $pointing_angles_plot);
-                $beameff-> SetValue("software_version", $software_version_analysis);
-                $beameff-> SetValue("centers", $pointingOption_analysis);
-                $beameff-> SetValue("polSpillOption", $polSpillOption_analysis);
-
-                global $errorReportSettingsNo_E_NOTICE;
-                global $errorReportSettingsNormal;
-                error_reporting($errorReportSettingsNo_E_NOTICE);
-
-                $beameff-> SetValue("pol", $ini_array[$key]['pol']);
-                $beameff-> SetValue("tilt", $ini_array[$key]['tilt']);
-                $beameff-> SetValue("f", $ini_array[$key]['f']);
-                $beameff-> SetValue("type", $ini_array[$key]['type']);
-                $beameff-> SetValue("tilt", $ini_array[$key]['tilt']);
-                $beameff-> SetValue("ifatten", $ini_array[$key]['ifatten']);
-                $beameff-> SetValue("eta_spillover", $ini_array[$key]['eta_spillover']);
-                $beameff-> SetValue("eta_taper", $ini_array[$key]['eta_taper']);
-                $beameff-> SetValue("eta_illumination", $ini_array[$key]['eta_illumination']);
-                $beameff-> SetValue("ff_xcenter", $ini_array[$key]['ff_xcenter']);
-                $beameff-> SetValue("ff_ycenter", $ini_array[$key]['ff_ycenter']);
-                $beameff-> SetValue("az_nominal", $ini_array[$key]['az_nominal']);
-                $beameff-> SetValue("el_nominal", $ini_array[$key]['el_nominal']);
-                $beameff-> SetValue("nf_xcenter", $ini_array[$key]['nf_xcenter']);
-                $beameff-> SetValue("nf_ycenter", $ini_array[$key]['nf_ycenter']);
-                $beameff-> SetValue("max_ff_amp_db", $ini_array[$key]['max_ff_amp_db']);
-                $beameff-> SetValue("max_nf_amp_db", $ini_array[$key]['max_nf_amp_db']);
-                $beameff-> SetValue("delta_x", $ini_array[$key]['delta_x']);
-                $beameff-> SetValue("delta_y", $ini_array[$key]['delta_y']);
-                $beameff-> SetValue("delta_z", $ini_array[$key]['delta_z']);
-                $beameff-> SetValue("eta_phase", $ini_array[$key]['eta_phase']);
-                $beameff-> SetValue("ampfit_amp", $ini_array[$key]['ampfit_amp']);
-                $beameff-> SetValue("ampfit_width_deg", $ini_array[$key]['ampfit_width_deg']);
-                $beameff-> SetValue("ampfit_u_off", $ini_array[$key]['ampfit_u_off_deg']);
-                $beameff-> SetValue("ampfit_v_off", $ini_array[$key]['ampfit_v_off_deg']);
-                $beameff-> SetValue("ampfit_d_0_90", $ini_array[$key]['ampfit_d_0_90']);
-                $beameff-> SetValue("ampfit_edge_db", $ini_array[$key]['edge_db']);
-                $beameff-> SetValue("ampfit_d_45_135", $ini_array[$key]['ampfit_d_45_135']);
-                $beameff-> SetValue("plot_copol_nfamp", $ini_array[$key]['plot_copol_nfamp']);
-                $beameff-> SetValue("plot_copol_nfphase", $ini_array[$key]['plot_copol_nfphase']);
-                $beameff-> SetValue("plot_copol_ffamp", $ini_array[$key]['plot_copol_ffamp']);
-                $beameff-> SetValue("plot_copol_ffphase", $ini_array[$key]['plot_copol_ffphase']);
-                $beameff-> SetValue("plot_xpol_nfamp", $ini_array[$key]['plot_xpol_nfamp']);
-                $beameff-> SetValue("plot_xpol_nfphase", $ini_array[$key]['plot_xpol_nfphase']);
-                $beameff-> SetValue("plot_xpol_ffamp", $ini_array[$key]['plot_xpol_ffamp']);
-                $beameff-> SetValue("plot_xpol_ffphase", $ini_array[$key]['plot_xpol_ffphase']);
-                $beameff-> SetValue("datetime", $ini_array[$key]['datetime']);
-                $beameff-> SetValue("nf", $ini_array[$key]['nf']);
-                $beameff-> SetValue("ff", $ini_array[$key]['ff']);
-                $beameff-> SetValue("nominal_z_offset", $ini_array[$key]['nominal_z_offset']);
-                $beameff-> SetValue("eta_tot_np", $ini_array[$key]['eta_tot_np']);
-                $beameff-> SetValue("eta_pol", $ini_array[$key]['eta_pol']);
-                $beameff-> SetValue("eta_tot_nd", $ini_array[$key]['eta_tot_nd']);
-                $beameff-> SetValue("defocus_efficiency", $ini_array[$key]['defocus_efficiency']);
-                $beameff-> SetValue("total_aperture_eff", $ini_array[$key]['total_aperture_eff']);
-                $beameff-> SetValue("shift_from_focus_mm", $ini_array[$key]['shift_from_focus_mm']);
-                $beameff-> SetValue("subreflector_shift_mm", $ini_array[$key]['subreflector_shift_mm']);
-                $beameff-> SetValue("defocus_efficiency_due_to_moving_the_subreflector", $ini_array[$key]['defocus_efficiency_due_to_moving_the_subreflector']);
-                $beameff-> SetValue("squint", $ini_array[$key]['squint']);
-                $beameff-> SetValue("squint_arcseconds", $ini_array[$key]['squint_arcseconds']);
-                $beameff-> SetValue("max_dbdifference", $ini_array[$key]['max_dbdifference']);
-                $beameff-> SetValue("software_version_class_eff", $this->software_version_class_eff);
-
-                error_reporting($errorReportSettingsNormal);
-
-                $oldurl =  $beameff->GetValue("pointing_angles_plot");
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/") , -1) .  "g";
-                $beameff->SetValue("pointing_angles_plot", $newurl);
-                $beameff->Update();
-                unset($beameff);
             }
         }
-    }
-
-    function UploadEfficiencyFile_180($ini_filename) {
-        require(site_get_config_main());
-
-        $ini_array = parse_ini_file($ini_filename, true);
-
-        $software_version_analysis = $ini_array['settings']['software_version'];
-        $pointingOption_analysis = $ini_array['settings']['centers'];
-        $polSpillOption_analysis = $ini_array['settings']['polspill'];
-
-        $band = 1;
-        while ($band <= 10) {
-            $key = "pointingangles_band_$band";
-            if (isset ($ini_array['settings'][$key]) && $ini_array['settings'][$key] != '') {
-                $pointing_angles_plot = $ini_array['settings'][$key];
-                $band = 11;
-            } else
-                $band++;
-        }
-
-        foreach ($ini_array as $key => $value) {
-            if ($key != "settings" && $ini_array[$key]['type'] == "copol" && $ini_array[$key]['pol'] == "0") {
-
-                $keyScanDetails = $ini_array[$key]['keyscandetails'];
-                echo "$key; keyscandetails=$keyScanDetails<br>";
-
-                //Delete any existing efficiency record for this scan
-                $rdelete = $this->db_pull->qdelete($keyScanDetails, $this->fc);
-
-                $beameff = new GenericTable;
-                $beameff-> NewRecord("BeamEfficiencies","keyBeamEfficiencies",$this->fc,'fkFacility');
-                $beameff-> SetValue("fkScanDetails", $keyScanDetails);
-                $beameff-> SetValue("eff_output_file", $ini_filename);
-                $beameff-> SetValue("pointing_angles_plot", $pointing_angles_plot);
-                $beameff-> SetValue("software_version", $software_version_analysis);
-                $beameff-> SetValue("centers", $pointingOption_analysis);
-                $beameff-> SetValue("polSpillOption", $polSpillOption_analysis);
-
-                global $errorReportSettingsNo_E_NOTICE;
-                global $errorReportSettingsNormal;
-                error_reporting($errorReportSettingsNo_E_NOTICE);
-
-                $beameff-> SetValue("tilt", $ini_array[$key]['tilt']);
-                $beameff-> SetValue("f", $ini_array[$key]['f']);
-                $beameff-> SetValue("type", $ini_array[$key]['type']);
-                $beameff-> SetValue("tilt", $ini_array[$key]['tilt']);
-                $beameff-> SetValue("ifatten", $ini_array[$key]['ifatten']);
-                $beameff-> SetValue("eta_spillover", $ini_array[$key]['eta_spillover']);
-                $beameff-> SetValue("eta_taper", $ini_array[$key]['eta_taper']);
-                $beameff-> SetValue("eta_illumination", $ini_array[$key]['eta_illumination']);
-                $beameff-> SetValue("ff_xcenter", $ini_array[$key]['ff_xcenter']);
-                $beameff-> SetValue("ff_ycenter", $ini_array[$key]['ff_ycenter']);
-                $beameff-> SetValue("az_nominal", $ini_array[$key]['az_nominal']);
-                $beameff-> SetValue("el_nominal", $ini_array[$key]['el_nominal']);
-                $beameff-> SetValue("nf_xcenter", $ini_array[$key]['nf_xcenter']);
-                $beameff-> SetValue("nf_ycenter", $ini_array[$key]['nf_ycenter']);
-                $beameff-> SetValue("max_ff_amp_db", $ini_array[$key]['max_ff_amp_db']);
-                $beameff-> SetValue("max_nf_amp_db", $ini_array[$key]['max_nf_amp_db']);
-                $beameff-> SetValue("delta_x", $ini_array[$key]['delta_x']);
-                $beameff-> SetValue("delta_y", $ini_array[$key]['delta_y']);
-                $beameff-> SetValue("delta_z", $ini_array[$key]['delta_z']);
-                $beameff-> SetValue("eta_phase", $ini_array[$key]['eta_phase']);
-                $beameff-> SetValue("ampfit_amp", $ini_array[$key]['ampfit_amp']);
-                $beameff-> SetValue("ampfit_width_deg", $ini_array[$key]['ampfit_width_deg']);
-                $beameff-> SetValue("ampfit_u_off", $ini_array[$key]['ampfit_u_off']);
-                $beameff-> SetValue("ampfit_v_off", $ini_array[$key]['ampfit_v_off']);
-                $beameff-> SetValue("ampfit_d_0_90", $ini_array[$key]['ampfit_d_0_90']);
-                $beameff-> SetValue("ampfit_d_45_135", $ini_array[$key]['ampfit_d_45_135']);
-                $beameff-> SetValue("plot_copol_nfamp", $ini_array[$key]['plot_copol_nfamp']);
-                $beameff-> SetValue("plot_copol_nfphase", $ini_array[$key]['plot_copol_nfphase']);
-                $beameff-> SetValue("plot_copol_ffamp", $ini_array[$key]['plot_copol_ffamp']);
-                $beameff-> SetValue("plot_copol_ffphase", $ini_array[$key]['plot_copol_ffphase']);
-                $beameff-> SetValue("plot_xpol_nfamp", $ini_array[$key]['plot_xpol_nfamp']);
-                $beameff-> SetValue("plot_xpol_nfphase", $ini_array[$key]['plot_xpol_nfphase']);
-                $beameff-> SetValue("plot_xpol_ffamp", $ini_array[$key]['plot_xpol_ffamp']);
-                $beameff-> SetValue("plot_xpol_ffphase", $ini_array[$key]['plot_xpol_ffphase']);
-                $beameff-> SetValue("datetime", $ini_array[$key]['datetime']);
-                $beameff-> SetValue("nf", $ini_array[$key]['nf']);
-                $beameff-> SetValue("ff", $ini_array[$key]['ff']);
-                $beameff-> SetValue("nominal_z_offset", $ini_array[$key]['nominal_z_offset']);
-                $beameff-> SetValue("eta_tot_np", $ini_array[$key]['eta_tot_np']);
-                $beameff-> SetValue("eta_pol", $ini_array[$key]['eta_pol']);
-                $beameff-> SetValue("eta_tot_nd", $ini_array[$key]['eta_tot_nd']);
-                $beameff-> SetValue("defocus_efficiency", $ini_array[$key]['defocus_efficiency']);
-                $beameff-> SetValue("total_aperture_eff", $ini_array[$key]['total_aperture_eff']);
-                $beameff-> SetValue("shift_from_focus_mm", $ini_array[$key]['shift_from_focus_mm']);
-                $beameff-> SetValue("subreflector_shift_mm", $ini_array[$key]['subreflector_shift_mm']);
-                $beameff-> SetValue("defocus_efficiency_due_to_moving_the_subreflector", $ini_array[$key]['defocus_efficiency_due_to_moving_the_subreflector']);
-
-                error_reporting($errorReportSettingsNormal);
-
-                //Get pol of the 180 scan
-                $sd180 = new ScanDetails();
-                $sd180->Initialize_ScanDetails($keyScanDetails,$this->fc);
-                $beameff-> SetValue("pol",$sd180->GetValue('pol'));
-                unset($sd180);
-
-                $oldurl =  $beameff->GetValue("pointing_angles_plot");
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/") , -1) .  "g";
-                $beameff->SetValue("pointing_angles_plot", $newurl);
-                $beameff->Update();
-                unset($beameff);
-            }
-        }
-        $this->ReplacePlotURLs();
-        echo "done uploading...<br>";
-    }
-
-    function DisplayEffReport() {
-        $this->DisplayData();
-        $this->Display_ScanInformation();
-        $this->Display_SetupParameters();
-
-        echo "<table width = '800'>";
-        echo "<tr><td>";
-        $this->Display_PointingAngles();
-        echo "</td><td>";
-        $this->Display_ApertureEff();
-        echo "</td></tr>";
-        echo "<tr><td>";
-        $this->Display_TaperEff();
-        echo "</td><td>";
-        $this->Display_PhaseEff();
-        echo "</td><td>";
-        $this->Display_SpilloverEff();
-        echo "</td></tr>";
-
-        echo "</table>";
-
-        $this->Display_PolEff();
-        $this->Display_DefocusEff();
-
-        $this->Display_PointingAngleDiff();
-        $this->Display_PointingAngleDiff();
-        $this->Display_PointingAngleDiff();
-        $this->Display_PointingAngleDiff();
-        $this->Display_PointingAngleDiff();
-        $this->Display_Squint();
-        $this->Display_AmpFit();
-        $this->Display_PointingAnglesPlot();
-        $this->ReplacePlotURLs();
-        $this->Display_AllAmpPhasePlots();
-        $this->Display_SoftwareVersions();
     }
 
     private static function deleteDir($dirPath) {
@@ -1135,7 +975,6 @@ class eff {
         //Meas SW Ver
         echo "<tr><td colspan='4'><font size='-1'><i>"
                 . $this->PointingOptionString()
-                . $this->AnalysisOptionString()
                 . $this->SoftwareVersionString()
                 . "</i></font></td></tr>";
         echo "</table></div><br><br>";
@@ -1224,7 +1063,6 @@ class eff {
         //Meas SW Ver
         echo "<tr><td colspan='4'><font size='-1'><i>"
                 . $this->PointingOptionString()
-                . $this->AnalysisOptionString()
                 . $this->SoftwareVersionString()
                 . "</i></font></td></tr>";
         echo "</table></div><br><br>";
@@ -1258,8 +1096,8 @@ class eff {
             <th>pol</th>
             <th>Elevation</th>
             <th>Peak Cross dB</th>
-            <th>eta pol + spill</th>
-            <th>Polarization Eff</th>
+            <th>Eta Pol+spill</th>
+            <th>Eta Pol on secondary</th>
             </tr>";
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
@@ -1286,9 +1124,9 @@ class eff {
             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('max_dbdifference'),2) . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_tot_np'),2) . "</td>";
+            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('eta_pol_spill'),2) . "</td>";
 
-            $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_pol'),2);
+            $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('eta_pol_on_secondary'),2);
             if ($pe < $p0spec)
                 echo "<td><font color ='#ff0000'>$pe</font></td>";
             else
@@ -1299,9 +1137,9 @@ class eff {
             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('max_dbdifference'),2) . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_tot_np'),2) . "</td>";
+            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('eta_pol_spill'),2) . "</td>";
 
-            $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_pol'),2);
+            $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('eta_pol_on_secondary'),2);
             if ($pe < $p1spec)
                 echo "<td><font color ='#ff0000'>$pe</font></td>";
             else
@@ -1310,7 +1148,6 @@ class eff {
         //Meas SW Ver
         echo "<tr><td colspan='6'><font size='-1'><i>"
                 . $this->PointingOptionString()
-                . $this->AnalysisOptionString()
                 . $this->SoftwareVersionString()
                 . "</i></font></td></tr>";
         echo "</table></div><br><br>";
