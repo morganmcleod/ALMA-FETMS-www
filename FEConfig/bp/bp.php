@@ -4,7 +4,6 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
 
-<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
 <link rel="stylesheet" type="text/css" href="../tables.css">
 <link rel="stylesheet" type="text/css" href="../buttons.css">
 <link rel="Stylesheet" type="text/css" href="../headerbuttons.css">
