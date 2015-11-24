@@ -1079,7 +1079,7 @@ class eff {
 
     function Display_Equations() {
         require(site_get_config_main());
-        $img = $rootdir_url . "/classes/images/pol_spill_equations.png";
+        $img = $rootdir_url . "classes/images/pol_spill_equations.png";
         $paper = "https://safe.nrao.edu/wiki/pub/ALMA/FEICBeamScanningResults/Calculation_of_Efficiencies.pdf";
 
         echo "<div style='width:300px'><table id = 'table1' border='1'>";
