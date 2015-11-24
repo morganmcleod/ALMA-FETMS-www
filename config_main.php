@@ -32,7 +32,7 @@ switch ($site_hostname){
         break;
 
     case "webtest2.cv.nrao.edu":
-        $rootdir_url = "http://webtest2.cv.nrao.edu/php/ntc/ws-mtm/fetms/";
+        $rootdir_url = "https://webtest2.cv.nrao.edu/php/ntc/ws-mtm/fetms/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         break;
 
