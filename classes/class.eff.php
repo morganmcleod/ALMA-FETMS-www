@@ -38,11 +38,15 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.1.8";
+        $this->software_version_class_eff = "1.1.9";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
 
         /* Version history:
+         * 1.1.9  Displaying total_aperture_eff which includes defocus as Aperture Efficiency.
+         *        Explicit table header: 'Amplitude Taper Efficiency'
+         *        Display pol+spill equations with crossrefs in tables.
+         *        Improved (?) page display formatting.
          * 1.1.8  Removed TICRA pol. and spill switch.  Always compute pol.eff on secondary.
          *        Fix 'eta pol + spill' was displaying wrong value, eta_tot_np.
          *        Uses ProbeZDistance from ScanDetails and passes it to Beameff as zdistance.
@@ -941,7 +945,7 @@ class eff {
                 . $this->PointingOptionString()
                 . $this->SoftwareVersionString()
                 . "</i></font></td></tr>";
-        echo "</table></div>";
+        echo "</table></div><br>";
     }
 
     function Display_ApertureEff() {
@@ -960,7 +964,7 @@ class eff {
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $ae = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_tot_nd'),2);
+            $ae = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('total_aperture_eff'),2);
             if ($ae < 80) {
                 echo "<td><font color = '#ff0000'>$ae</font></td>";
             } else {
@@ -970,7 +974,7 @@ class eff {
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $ae = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_tot_nd'),2);
+            $ae = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('total_aperture_eff'),2);
             if ($ae < 80) {
                 echo "<td><font color = '#ff0000'>$ae</font></td>";
             } else {
@@ -982,17 +986,17 @@ class eff {
                 . $this->PointingOptionString()
                 . $this->SoftwareVersionString()
                 . "</i></font></td></tr>";
-        echo "</table></div><br><br>";
+        echo "</table></div><br>";
     }
 
     function Display_TaperEff() {
         echo "<div style = 'width:300px'><table id = 'table1' border='1' border='1'>";
-        echo "<tr class='alt'><th colspan = 4>Taper Efficiency Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 4>Amplitude Taper Efficiency Band $this->band</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>pol</th>
             <th>Elevation</th>
-            <th>Amp Taper Eff</th>
+            <th>Amplitude<br>Taper Eff</th>
             </tr>";
 
 
@@ -1011,7 +1015,7 @@ class eff {
         }
         //Meas SW Ver
         echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
-        echo "</table></div><br><br>";
+        echo "</table></div><br>";
     }
 
     function Display_PhaseEff() {
@@ -1039,7 +1043,7 @@ class eff {
         }
         //Meas SW Ver
         echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
-        echo "</table></div><br><br>";
+        echo "</table></div><br>";
     }
 
     function Display_SpilloverEff() {
@@ -1049,7 +1053,7 @@ class eff {
             <th>RF GHz</th>
             <th>pol</th>
             <th>Elevation</th>
-            <th>Spillover Eff</th>
+            <th>Spillover Eff<br><font color='blue' size='-2'>(equation 4 below)</font></th>
             </tr>";
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
@@ -1070,7 +1074,18 @@ class eff {
                 . $this->PointingOptionString()
                 . $this->SoftwareVersionString()
                 . "</i></font></td></tr>";
-        echo "</table></div><br><br>";
+        echo "</table></div><br>";
+    }
+
+    function Display_Equations() {
+        require(site_get_config_main());
+        $img = $rootdir_url . "/classes/images/pol_spill_equations.png";
+        $paper = "https://safe.nrao.edu/wiki/pub/ALMA/FEICBeamScanningResults/Calculation_of_Efficiencies.pdf";
+
+        echo "<div style='width:300px'><table id = 'table1' border='1'>";
+        echo "<tr><th><font size='-2'>&nbsp Excerpted from R.Hills' <a href='$paper'>paper</a> on calculation of efficiencies.</font></th></tr>";
+        echo "<tr><td><img src='$img' alt='Polarization and Spillover equations' style='width:608px;'>";
+        echo "</td></tr></table></div><br>";
     }
 
     function Display_SoftwareVersions() {
@@ -1089,7 +1104,7 @@ class eff {
         echo "<td>" . $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('software_version_class_eff') . "</td>";
 
         echo "</tr>";
-        echo "</table></div><br><br>";
+        echo "</table></div><br>";
     }
 
     function Display_PolEff() {
@@ -1101,8 +1116,8 @@ class eff {
             <th>pol</th>
             <th>Elevation</th>
             <th>Peak Cross dB</th>
-            <th>Eta Pol+spill</th>
-            <th>Eta Pol on secondary</th>
+            <th>Eta Pol+spill<br><font color='blue' size='-2'>(equation 1 below)</font></th>
+            <th>Eta Pol on secondary<br><font color='blue' size='-2'>(equation 3)</font></th>
             </tr>";
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
@@ -1155,7 +1170,7 @@ class eff {
                 . $this->PointingOptionString()
                 . $this->SoftwareVersionString()
                 . "</i></font></td></tr>";
-        echo "</table></div><br><br>";
+        echo "</table></div><br>";
     }
 
     function Display_DefocusEff() {
@@ -1193,7 +1208,7 @@ class eff {
         }
         //Meas SW Ver
         echo "<tr><td colspan='7'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
-        echo "</table></div><br><br>";
+        echo "</table></div><br>";
     }
 
     function Display_PointingAngleDiff() {
@@ -1230,11 +1245,6 @@ class eff {
         }
 
         echo "<div style = 'width:400px'><table id = 'table1' border='1'>";
-        echo "<tr><td>Squint algorithm is described <a href='https://safe.nrao.edu/wiki/bin/view/ALMA/BeamSquintFromSingleScan#correctionProcedure'>here.</a></td></tr>";
-        echo "</table></div>";
-
-        echo "<div style = 'width:400px'><table id = 'table1' border='1'>";
-
         echo "<tr class='alt'><th colspan = 4>Beam Squint Band $this->band</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
@@ -1259,7 +1269,9 @@ class eff {
             }
         }
         //Meas SW Ver
-        echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
+        $squintAlgo = "https://safe.nrao.edu/wiki/bin/view/ALMA/BeamSquintFromSingleScan#correctionProcedure";
+        echo "<tr><td colspan='4'><font size='-2'>Squint algorithm is described <a href='$squintAlgo'>here.</a></font>";
+        echo "<br><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div><br>";
         if ($thirdscanpresent != 1) {
             echo "<font size='+2'><b>WARNING <br>Third scan not present. Squint value is incorrect.</b></font></div>";
@@ -1350,7 +1362,7 @@ class eff {
         echo"<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('DistanceBetweenBeamCenters'),2) . "</td></tr>";
         echo "</tr>";
         echo "<tr><td colspan='6'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
-        echo "</table></div><br><br>";
+        echo "</table></div><br>";
     }
 
     function Display_AmpFit() {
@@ -1395,7 +1407,7 @@ class eff {
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_d_45_135'),2) . "</td>";
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_edge_db'),2) . "</td>";
         }
-        echo "</table><br><br>";
+        echo "</table><br>";
     }
 
     function Display_ScanInformation() {
@@ -1470,7 +1482,7 @@ class eff {
         }
         //Meas SW Ver
         echo "<tr><td colspan='8'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
-        echo "</table></div><br><br>";
+        echo "</table></div>";
     }
 
     function Display_SetupParameters() {
@@ -1535,27 +1547,12 @@ class eff {
         echo "</table></div>";
     }
 
-    function DisplayData() {
-        if ($this->Processed != 1) {
-            if ($this->ReadyToProcess == 1) {
-                echo "<font size = '+1' color = '#33ff33'>READY TO PROCESS</b></font><br>";
-                echo " Click 'Get Effs' to generate data and plots.";
-            } else {
-                echo "<font size = '+1' color = '#ff0033'>NOT READY TO PROCESS</b></font>";
-            }
-        }
-        echo '<br><br>Notes:<br><textarea name = "notes" rows="15" cols="100">';
-        echo stripslashes($this->scansets[0]->GetValue('notes'));
-        echo '</textarea><br><br><br><br>';
-    }
-
     function Display_PointingAnglesPlot() {
         echo "<img src='" . $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('pointing_angles_plot') . "'>";
         echo "<div style='height:50px;background:#E9FA89'>";
-        echo "<br><font size='+1'>";
-        echo "<br>The plot below shows pointing angles for the two scans used for squint (one of which is the third scan).<br><br>";
-        echo "<br>Do not use the plot below in the PAI report.</font><br></div>";
-        echo "<br><br><img src='" . $this->scansets[0]->Scan_180->BeamEfficencies->GetValue('pointing_angles_plot') . "'>";
+        echo "<font size='-1'>The plot below shows pointing angles for the two scans used for squint (one of which is the third scan).<br>";
+        echo "Do not use this plot in the PAI report.</font></div>";
+        echo "<img src='" . $this->scansets[0]->Scan_180->BeamEfficencies->GetValue('pointing_angles_plot') . "'>";
     }
 
     function Display_AllAmpPhasePlots($pol = 'both', $nf_ff='both') {
@@ -1629,7 +1626,7 @@ class eff {
                 $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol0);
                 echo "</td>";
                 echo "</tr>";
-                echo "</table><br><br><br>";
+                echo "</table>";
             }
 
         } elseif ($inpol == 1 || $inpol == 'both') {
@@ -1693,7 +1690,7 @@ class eff {
                 $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol1);
                 echo "</td>";
                 echo "</tr>";
-                echo "</table><br><br><br>";
+                echo "</table>";
             }
         }
     }

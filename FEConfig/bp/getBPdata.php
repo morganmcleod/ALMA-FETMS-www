@@ -76,6 +76,7 @@ switch ($tabtype) {
         $eff->Display_DefocusEff();
         $eff->Display_PhaseCenterOffset();
         $eff->Display_Squint();
+        $eff->Display_Equations();
         break;
 
     case 3:
