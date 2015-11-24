@@ -84,7 +84,7 @@ function createBPTabs(fc,id,band,bpstatus){
 	    defaults:{ autoScroll:true},
 	    bodyStyle:{"background-color":"#6C7070"},
 	    items: [
-		    {contentEl: 'parent1', title: 'Scan Info',autoLoad:{url: 'getBPdata.php',params:{id:id,fc:fc,tabtype:'1'}}},
+		    {title:'Scan Info',            autoLoad:{url:'getBPdata.php',params:{id:id,fc:fc,tabtype:'1'}}},
 		    {title:'Data Tables',          autoLoad:{url:'getBPdata.php' ,params:{id:id,fc:fc,tabtype:'2'}}},
 		    {title:'Pointing Angles',      autoLoad:{url:'getBPdata.php' ,params:{id:id,fc:fc,tabtype:'3'}}},
 		    {title:'Pol 0 Nearfield Plots',autoLoad:{url:'getBPdata.php' ,params:{id:id,fc:fc,tabtype:'4'}}},
