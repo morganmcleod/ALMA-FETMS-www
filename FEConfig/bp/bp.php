@@ -117,13 +117,12 @@ if (isset($_REQUEST['drawplot'])) {
 
 // HTML code below are the targets for javaScript loaded from onload=createBPTabs() above.
 ?>
-<div id="content_inside_main2">
+<div style="padding-left: 2em; padding-top: 1em; width: 1100px; background-color: #19475E;">
     <div id="toolbar" style="margin-top:10px;"></div>
     <div id="tabs1"  ></div>
 </div>
 </form>
 </body>
-</div>
 
 <?php include "../footer.php"; ?>
 
