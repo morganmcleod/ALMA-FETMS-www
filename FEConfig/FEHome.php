@@ -22,7 +22,6 @@
     $title="Front Ends";
     include "header.php";
     $where = $_SERVER["PHP_SELF"];
-    //$where = '';
 ?>
 
 <form action='<?php echo $where ?>' method='post' name='fehome' id='fehome'>

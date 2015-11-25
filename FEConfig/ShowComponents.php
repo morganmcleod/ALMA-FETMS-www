@@ -51,7 +51,7 @@ $component->Initialize_FEComponent($comp_key, $fc);
 $band=$component->GetValue('Band');
 $comp_type=$component->GetValue('fkFE_ComponentType');
 
-$title="FE$component->FESN Component";
+$title="FE-$component->FESN Component";
 
 $feconfig = $component->FEConfig;
 $fesn = $component->FESN;
