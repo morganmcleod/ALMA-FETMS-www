@@ -104,17 +104,17 @@ class Cryostat extends GenericTable{
                     $tdhIndex = 5;
                     break;
             }
-            $this->tdheaders[$tdhIndex] = new GenericTable();
-            $this->tdheaders[$tdhIndex]->Initialize('TestData_header', $rowtdh['keyId'], "keyId", $in_fc,'keyFacility');
-            $this->tdheaders[$tdhIndex]->subheader = new GenericTable();
-            //Initialize first using fkHeader as key. This gets us the keyId value without having
-            //to do an extra query.
-            $this->tdheaders[$tdhIndex]->subheader->Initialize('TEST_Cryostat_data_SubHeader', $rowtdh['keyId'], "fkHeader", $in_fc,'keyFacility');
-            $keyid_subheader = $this->tdheaders[$tdhIndex]->subheader->GetValue('keyId');
-            //Use key value to initialize the subheader object again.
-            $this->tdheaders[$tdhIndex]->subheader->Initialize('TEST_Cryostat_data_SubHeader', $keyid_subheader, "keyId", $in_fc,'keyFacility');
-
-
+            if (isset($tdhIndex)) {
+                $this->tdheaders[$tdhIndex] = new GenericTable();
+                $this->tdheaders[$tdhIndex]->Initialize('TestData_header', $rowtdh['keyId'], "keyId", $in_fc,'keyFacility');
+                $this->tdheaders[$tdhIndex]->subheader = new GenericTable();
+                //Initialize first using fkHeader as key. This gets us the keyId value without having
+                //to do an extra query.
+                $this->tdheaders[$tdhIndex]->subheader->Initialize('TEST_Cryostat_data_SubHeader', $rowtdh['keyId'], "fkHeader", $in_fc,'keyFacility');
+                $keyid_subheader = $this->tdheaders[$tdhIndex]->subheader->GetValue('keyId');
+                //Use key value to initialize the subheader object again.
+                $this->tdheaders[$tdhIndex]->subheader->Initialize('TEST_Cryostat_data_SubHeader', $keyid_subheader, "keyId", $in_fc,'keyFacility');
+            }
         }
     }
 
