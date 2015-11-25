@@ -36,7 +36,7 @@ function site_warnProductionDb($dbname) {
     $server = $_SERVER['SERVER_NAME'];
 
     if ($server == 'webtest.cv.nrao.edu' || $server == 'webtest2.cv.nrao.edu') {
-        echo "<font size = '+2' color = '#ff0000'><h><b>
+        echo "<font size='+2' color='#ff0000' face='serif'><h><b>
         On $server using database $dbname
         </b></h></font>";
     }
