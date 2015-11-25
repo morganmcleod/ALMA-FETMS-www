@@ -98,19 +98,10 @@ include('header_with_fe.php');
             <tr><td>
                 <a style='width:90px' href='$exportcsvurl' class='button blue2 biground'>
                 <span style='width:130px'>Export CSV</span></a>
-            </tr></td>
-            <tr><td>
-                <a style='width:90px' href='$drawurl' class='button blue2 biground'>
-                <span style='width:130px'>Generate Plot</span></a>
             </tr></td>";
     }
 
-
 ?>
-
-
-
-
 
 </table>
 </div>

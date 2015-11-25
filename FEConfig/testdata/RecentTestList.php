@@ -1,28 +1,22 @@
-<?php
-require_once(dirname(__FILE__) . '/../../SiteConfig.php');
-require_once($site_dbConnect);
-
-$title="<font size = '+6'>Test Data</font>";
-include "header_with_fe.php";
-?>
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-    <link rel="stylesheet" type="text/css" href="../buttons.css">
-    <link rel="stylesheet" type="text/css" href="../Cartstyle.css">
-    <link rel="stylesheet" type="text/css" href="../../ext4/resources/css/ext-all.css" />
-    <script type="text/javascript" src="../../ext4/bootstrap.js"></script>
-    <script src="../../ext4/ext-all.js" type="text/javascript"></script>
-    <script src="../../ext4/examples/qtips/qtips.js" type="text/javascript"></script>
-    <script type="text/javascript" language="javscript" src="dbGridRecentTestList.js"></script>
-    <link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
-    <title>Recent Tests</title>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon">
+<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
+<link rel="stylesheet" type="text/css" href="../buttons.css">
+<link rel="stylesheet" type="text/css" href="../../ext4/resources/css/ext-all.css">
+<script src="../../ext4/ext-all.js" type="text/javascript"></script>
+<script type="text/javascript" language="javscript" src="dbGridRecentTestList.js"></script>
+<title>Recent Tests</title>
 </head>
 
 <body onload=" var val=document.getElementById('search').value; creategrid(val,1);" style="background-color: #285B75">
+
+<?php
+    $title="Test Data";
+    include "../header.php";
+?>
 
 <div id='wrap'>
     <div id="maincontent4">
@@ -66,17 +60,15 @@ include "header_with_fe.php";
         echo "<option value = '$row[0]'>$row[1]</option>";
     }
 
-    echo "
-    </select></span></a></div><br><br><br>";
+    echo "</select></span></a></div><br><br><br>";
 ?>
-
     <br><br>
     <div id="db-grid"  style = "width:1100px;padding-left: 2em; "></div>';
     </div>
 </div>
-</body>
 <?php
 include('../footer.php');
 ?>
+</body>
 </html>
 

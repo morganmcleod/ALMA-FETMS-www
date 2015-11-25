@@ -4,6 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
 
+<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
 <link rel="stylesheet" type="text/css" href="../tables.css">
 <link rel="stylesheet" type="text/css" href="../buttons.css">
 <link rel="Stylesheet" type="text/css" href="../headerbuttons.css">
@@ -63,10 +64,6 @@ $feconfig = $fe->feconfig->keyId;
 $fesn = $fe->GetValue('SN');
 $band = $tdh->GetValue('Band');
 
-// show the standard header with the folllowing text plus Home, Front End NN, Bugs buttons:
-$title = "Band $band Beam Patterns";
-include "header_bp.php";
-
 // Display the 'Get Efficiencies' button variously based on the ReadyToProcess attribute of the beam efficiency analysis class:
 $geteffurl = "bp.php?drawplot=1&keyheader=".$tdh->keyId."&keyconfig=" . $tdh->GetValue('fkFE_Config') . "&band=$band&fc=$fc";
 
@@ -91,6 +88,10 @@ if ($eff->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nf
 // start the HTML body.  Calls createBPTabs from loadBP.js to customize the button and create the data tabs:
 echo "<body id = 'body3' onload='createBPTabs($fc,$tdh_key,$band,$bpstatus)' BGCOLOR='#19475E'>";
 echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
+
+// show the standard header with the folllowing text plus Home, Front End NN, Bugs buttons:
+$title = "Band $band Beam Patterns";
+include "header_bp.php";
 
 // this section performs the analysis and draws the plots
 if (isset($_REQUEST['drawplot'])) {
@@ -121,10 +122,10 @@ if (isset($_REQUEST['drawplot'])) {
     <div id="tabs1"  ></div>
 </div>
 </form>
-</body>
 
 <?php include "../footer.php"; ?>
 
+</body>
 </html>
 
 

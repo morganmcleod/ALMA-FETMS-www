@@ -1,10 +1,15 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
-<html>
-<head>
-<link rel="stylesheet" type="text/css" href="Cartstyle.css"/>
-<link rel="stylesheet" type="text/css" href="buttons.css">
-</head>
-<body>
+<?php
+require_once(dirname(__FILE__) . '/../SiteConfig.php');
+require_once($site_config_main);
+require_once($site_dbConnect);
+if (!isset($home))
+    $home = $rootdir_url . "FEConfig/FEHome.php";
+if (!isset($showConfig))
+    $showConfig = $rootdir_url . "FEConfig/ShowFEConfig.php";
+// URL for bug reporting:
+$bugsTo = "http://jira.alma.cl/browse/FETMS/";
+?>
+
 <div id="header">
     <div id="header_inside">
         <h1><span>
@@ -14,32 +19,22 @@
         </span></h1>
         <div class="menu_nav">
         <table><tr>
-            <td><a href="FEHome.php" class="button gray biground"><span>Home</span>
+            <td><a href=<?php echo "'$home'" ?> class="button gray biground"><span>Home</span>
             </a></td>
 <?php
         if (isset($feconfig) && $feconfig != '') {
 ?>
-            <td><a href="../FEConfig/ShowFEConfig.php?key=<?php echo $feconfig; ?>&fc=<?php echo $fc; ?>" class="button gray biground">
+            <td><a href=<?php echo "'$showConfig?key=$feconfig&fc=$fc'" ?> class="button gray biground">
             <span>Front End <?php echo $fesn; ?></span></a></td>
 <?php
         }
-        if (isset($componentId) && ($componentId != '')) {
 ?>
-            <td><a href="../FEConfig/ShowComponents.php?conf=<?php echo $componentId; ?>&fc=<?php echo $fc; ?>" class="button gray biground">
-            <span>Component Record</span></a></td>
-<?php
-        }
-?>
-            <td><a href="https://safe.nrao.edu/php/ntc/bugs/AddNewBug.php?modulekey=61" target = "blank" class="button gray biground">
+            <td><a href=<?php echo "'$bugsTo'" ?> target = "_blank" class="button gray biground">
             <span>Bugs</span></a></td>
         </tr></table>
         </div>
     </div>
 </div>
 <?php
-require_once(dirname(__FILE__) . '/../SiteConfig.php');
-require_once($site_dbConnect);
 site_warnProductionDb($dbname);
 ?>
-</body>
-</html>

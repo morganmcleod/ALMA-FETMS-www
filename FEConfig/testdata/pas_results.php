@@ -51,7 +51,7 @@ include('header_with_fe.php');
 
 echo "<title>$title </title></head>";
 
-       ?>
+?>
 
 <form enctype="multipart/form-data" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
 <div id="wrap" style="height:6000px">
@@ -64,9 +64,6 @@ echo "<title>$title </title></head>";
 
 <div id="maincontent" style="height:6000px">
 <div id = "wrap">
-
-
-
 
 <form action=".htmlentities($_SERVER['PHP_SELF'])." method='post'>
 <br>
@@ -164,5 +161,9 @@ If ($band != 0){
 ?>
 
 </form>
-</div></body>
+</div>
+<?php
+    include('../footer.php');
+?>
+</body>
 </html>
