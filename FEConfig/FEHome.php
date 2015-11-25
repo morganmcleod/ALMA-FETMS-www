@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<link href="images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+<link href="images/favicon.ico" rel="shortcut icon" type="image/x-icon">
 <link rel="stylesheet" type="text/css" href="Cartstyle.css">
 <link rel="stylesheet" type="text/css" href="buttons.css">
-<link type="text/css" href="../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
+<link type="text/css" href="../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet">
 <script src="../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
 <script src="../ext/ext-all.js" type="text/javascript"></script>
 <script type="text/javascript" src="Ext.ux.plugins.HeaderButtons.js"></script>
@@ -32,12 +32,10 @@
 <div id="db-grid"></div>
 
 </form>
-
-</body>
 </div>
 
 <?php
     include "footer.php";
 ?>
-
+</body>
 </html>

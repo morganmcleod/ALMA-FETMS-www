@@ -1,0 +1,41 @@
+<?php
+require_once(dirname(__FILE__) . '/../SiteConfig.php');
+
+class GitInfo {
+    var $head;          // the head string, like "ref: refs/heads/master"
+    var $branch;        // the name of the current branch
+    var $hash;          // the hash of the current branch
+    var $masterHash;    // the hash of the master branch
+
+    public function __construct() {
+        global $site_root;
+
+        // get the strings in the .git/HEAD file:
+        $this->head = file($site_root . "/.git/HEAD", FILE_USE_INCLUDE_PATH);
+        // get the first string, typically like "ref: refs/heads/master":
+        $this->head = trim($this->head[0]);
+        // get the current branch, the third part of the head:
+        $this->branch = explode("/", $this->head, 3);
+        $this->branch = trim($this->branch[2]);
+        // get the hash of the current branch:
+        $this->hash = file_get_contents(sprintf("$site_root/.git/refs/heads/%s", $this->branch));
+        // get the hash of the master branch:
+        $this->masterHash = file_get_contents("$site_root/.git/refs/heads/master");
+    }
+    public function getHeadString() {
+        return $this->head;
+    }
+    public function getCurrentBranch() {
+        return $this->branch;
+    }
+    public function getCurrentHash($numChars = 7) {
+        $len = strlen($this->hash);
+        return substr($this->hash, 0, ($numChars < $len) ? $numChars : $len);
+    }
+    public function getMasterHash($numChars = 7) {
+        $len = strlen($this->masterHash);
+        return substr($this->masterHash, 0, ($numChars < $len) ? $numChars : $len);
+    }
+}
+
+?>
