@@ -9,10 +9,8 @@ class GitInfo {
 
     public function __construct() {
         global $site_root;
-
-        // get the strings in the .git/HEAD file:
+        // get the first line in the .git/HEAD file, typically like "ref: refs/heads/master":
         $this->head = file($site_root . "/.git/HEAD", FILE_USE_INCLUDE_PATH);
-        // get the first string, typically like "ref: refs/heads/master":
         $this->head = trim($this->head[0]);
         // get the current branch, the third part of the head:
         $this->branch = explode("/", $this->head, 3);
