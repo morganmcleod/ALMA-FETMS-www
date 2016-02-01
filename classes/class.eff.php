@@ -325,7 +325,6 @@ class eff {
             //Copol pol 0 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"keyscandetails=". $this->scansets[$scanSetIdx]->keyId_copol_pol0_scan ."\r\n");
             fwrite($fhandle,"type=copol\r\n");
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -360,7 +359,6 @@ class eff {
             //Crosspol pol 0 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"keyscandetails=". $this->scansets[$scanSetIdx]->keyId_xpol_pol0_scan ."\r\n");
             fwrite($fhandle,"type=xpol\r\n");
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -394,7 +392,6 @@ class eff {
             //Copol pol 1 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"keyscandetails=". $this->scansets[$scanSetIdx]->keyId_copol_pol1_scan ."\r\n");
             fwrite($fhandle,"type=copol\r\n");
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -428,7 +425,6 @@ class eff {
             //Crosspol pol 1 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"keyscandetails=". $this->scansets[$scanSetIdx]->keyId_xpol_pol1_scan ."\r\n");
             fwrite($fhandle,"type=xpol\r\n");
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -485,7 +481,6 @@ class eff {
             //Copol pol 0 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"keyscandetails=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
             fwrite($fhandle,"type=copol\r\n");
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -512,7 +507,6 @@ class eff {
             //Crosspol pol 0 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"keyscandetails=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
             fwrite($fhandle,"type=xpol\r\n");
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -535,7 +529,6 @@ class eff {
             //Copol pol 1 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"keyscandetails=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
             fwrite($fhandle,"type=copol\r\n");
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -558,7 +551,6 @@ class eff {
             //Crosspol pol 1 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"keyscandetails=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
             fwrite($fhandle,"type=xpol\r\n");
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -793,7 +785,7 @@ class eff {
                         ($ini_array[$section]['type'] == "copol" && $ini_array[$section]['pol'] == "0"))
                 {
 
-                    $keyScanDetails = $ini_array[$section]['keyscandetails'];
+                    $keyScanDetails = $ini_array[$section]['scan_id'];
 
                     // Delete any existing efficiencies record for this scan:
                     $rdelete = $this->db_pull->qdelete($keyScanDetails, NULL);
