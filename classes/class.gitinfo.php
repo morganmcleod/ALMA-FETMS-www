@@ -1,6 +1,8 @@
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 
+// adapted from http://stackoverflow.com/questions/7447472/how-could-i-display-the-current-git-branch-name-at-the-top-of-the-page-of-my-de
+
 class GitInfo {
     var $head;          // the head string, like "ref: refs/heads/master"
     var $branch;        // the name of the current branch
