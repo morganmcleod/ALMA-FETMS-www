@@ -44,10 +44,8 @@ class eff {
 
         /* Version history:
          * 1.2.0  Switch to BeamEff 2.0.2
-         *        Removed ReplacePlotURLs() instead calling PlotPathToURL inline.
-         *
-         *
-         *
+         *        Removed ReplacePlotURLs() instead calling PlotPathToURL() inline.
+         *        Remove unused initializer functions.  Removed dead code.  Marked methods private.
          *
          *
          * 1.1.10 Removed writing 'keyscandetails' added writing 'scan_id' + fix for 180 scans.
@@ -94,8 +92,54 @@ class eff {
         $this->GNUPLOT_path = $GNUPLOT;
     }
 
-    function SoftwareVersionString() {
+    public function Initialize_eff_SingleScanSet($in_keyId, $in_fc) {
+        $this->ssid = $in_keyId;
+        $this->fc = $in_fc;
 
+        $rss = $this->db_pull->qss(2, NULL, $in_keyId, NULL, $this->fc, NULL);
+        $this->band = @mysql_result($rss,0,1);
+        $this->fe_id = @mysql_result($rss,0,2);
+
+        $this->scansets[0] = new ScanSetDetails();
+        $this->scansets[0]->Initialize_ScanSetDetails($in_keyId, $this->fc);
+        $this->scansets[0]->RequestValues_ScanSetDetails();
+
+        if ($this->scansets[0]->keyId_180_scan > 0)
+            $this->ReadyToProcess = 1;
+
+            $this->Processed = $this->db_pull->qeff($this->scansets);
+
+            $this->NumberOfScanSets = 1;
+    }
+
+    public function GetEfficiencies($pointingOption) {
+        // Main function to calculate beam efficiencies from scan sets.
+        $this->pointingOption = $pointingOption;
+        // Create the input file for beameff_64:
+        $this->MakeInputFile();
+        // Execute beameff_64:
+        $CommandString = "$this->beameff_exe $this->eff_inputfile";
+        system($CommandString);
+        // Upload the efficiency results to the database:
+        $this->UploadEfficiencyFile($this->eff_outputfile, false);
+        $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
+
+        if ($this->scansets[0]->Scan_180->keyId != "") {
+            echo "GETTING SQUINT..." . $this->scansets[0]->Scan_180->keyId . "<br>";
+            // Calculate phase center from the 180-degree scans.
+            // Create the input file for beameff_64:
+            $this->MakeInputFileSquint();
+            // Execute beameff_64:
+            $CommandString = "$this->beameff_exe $this->eff_inputfile";
+            system($CommandString);
+            // Upload the efficiency results to the database:
+            $this->UploadEfficiencyFile($this->eff_outputfile, true);
+            $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
+            $this->CalculateSquint();
+        }
+    }
+
+    private function SoftwareVersionString() {
         $version = $this->scansets[0]->tdh->GetValue('Meas_SWVer');
 
         if (!$version) {
@@ -118,7 +162,7 @@ class eff {
         return "Software versions: " . $version;
     }
 
-    function PointingOptionString() {
+    private function PointingOptionString() {
         if ($this->pointingOption_analysis == "") {
             if (isset($this->scansets[0]->Scan_copol_pol0->BeamEfficencies)) {
                 $this->pointingOption_analysis = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('centers');
@@ -144,26 +188,6 @@ class eff {
         if ($this->pointingOption_analysis != "")
             $optionString = "Pointing: " . $this->pointingOption_analysis . "<br>";
         return $optionString;
-    }
-
-    public function Initialize_eff_SingleScanSet($in_keyId, $in_fc) {
-        $this->ssid = $in_keyId;
-        $this->fc = $in_fc;
-
-        $rss = $this->db_pull->qss(2, NULL, $in_keyId, NULL, $this->fc, NULL);
-        $this->band = @mysql_result($rss,0,1);
-        $this->fe_id = @mysql_result($rss,0,2);
-
-        $this->scansets[0] = new ScanSetDetails();
-        $this->scansets[0]->Initialize_ScanSetDetails($in_keyId, $this->fc);
-        $this->scansets[0]->RequestValues_ScanSetDetails();
-
-        if ($this->scansets[0]->keyId_180_scan > 0)
-            $this->ReadyToProcess = 1;
-
-        $this->Processed = $this->db_pull->qeff($this->scansets);
-
-        $this->NumberOfScanSets = 1;
     }
 
     private function MakeOutputEnvironment($squint) {
@@ -215,7 +239,7 @@ class eff {
         }
     }
 
-    public function GetScanSideband($scanSetIdx) {
+    private function GetScanSideband($scanSetIdx) {
         $scanSetId = $this->scansets[$scanSetIdx]->GetValue('keyId');
 
         $rss = $this->db_pull->qss(4, NULL, NULL, NULL, $this->fc, $scanSetId);
@@ -223,7 +247,7 @@ class eff {
         return $rowss[0];
     }
 
-    public function MakeInputFile() {
+    private function MakeInputFile() {
         $this -> MakeOutputEnvironment(FALSE);
 
         // start writing the command input file:
@@ -379,7 +403,7 @@ class eff {
         fclose($fhandle);
     }
 
-    public function MakeInputFileSquint() {
+    private function MakeInputFileSquint() {
         // The SQUINT input file for the BeamEff calculator version 1.x fils all four sections
         //  of the input file with the same 180-degree scan.
         // TODO: Remove this for BeamEff 2.x
@@ -502,7 +526,7 @@ class eff {
         fclose($fhandle);
     }
 
-    function ExportNF($nf_path, $scan_id) {
+    private function ExportNF($nf_path, $scan_id) {
         if (file_exists($nf_path)) {
             unlink($nf_path);
         }
@@ -510,7 +534,7 @@ class eff {
         $this->db_pull->q(TRUE, $nf_path, $scan_id);
     }
 
-    function ExportFF($ff_path, $scan_id) {
+    private function ExportFF($ff_path, $scan_id) {
         if (file_exists($ff_path)) {
             unlink($ff_path);
         }
@@ -518,34 +542,7 @@ class eff {
         $this->db_pull->q(FALSE, $ff_path, $scan_id);
     }
 
-    public function GetEfficiencies($pointingOption) {
-        // Main function to calculate beam efficiencies from scan sets.
-        $this->pointingOption = $pointingOption;
-        // Create the input file for beameff_64:
-        $this->MakeInputFile();
-        // Execute beameff_64:
-        $CommandString = "$this->beameff_exe $this->eff_inputfile";
-        system($CommandString);
-        // Upload the efficiency results to the database:
-        $this->UploadEfficiencyFile($this->eff_outputfile, false);
-        $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
-
-        if ($this->scansets[0]->Scan_180->keyId != "") {
-            echo "GETTING SQUINT..." . $this->scansets[0]->Scan_180->keyId . "<br>";
-            // Calculate phase center from the 180-degree scans.
-            // Create the input file for beameff_64:
-            $this->MakeInputFileSquint();
-            // Execute beameff_64:
-            $CommandString = "$this->beameff_exe $this->eff_inputfile";
-            system($CommandString);
-            // Upload the efficiency results to the database:
-            $this->UploadEfficiencyFile($this->eff_outputfile, true);
-            $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
-            $this->CalculateSquint();
-        }
-    }
-
-    function CalculateSquint() {
+    private function CalculateSquint() {
         $f = $this->scansets[0]->GetValue('f');
 
         //Source position
@@ -687,13 +684,13 @@ class eff {
         $this->scansets[0]->Scan_180->BeamEfficencies->Update();
     }
 
-    function PlotPathToURL($plotPath) {
+    private static function PlotPathToURL($plotPath) {
         // Convert a file-system path to a plot to a web-server URL to the same plot.
         require(site_get_config_main());
         return $main_url_directory . substr($plotPath, stripos($plotPath, "eff/"));
     }
 
-    function UploadEfficiencyFile($ini_filename, $is_180degreeForSquint) {
+    private function UploadEfficiencyFile($ini_filename, $is_180degreeForSquint) {
         require(site_get_config_main());
 
         $ini_array = parse_ini_file($ini_filename, true);
@@ -1493,21 +1490,17 @@ class eff {
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nfamp') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_copol_pol0);
                 echo "</td>";
 
                 echo "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nfphase') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_copol_pol0);
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_nfamp') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol0);
                 echo "</td>";
 
                 echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_nfphase') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol0);
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -1524,21 +1517,17 @@ class eff {
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_ffamp') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_copol_pol0);
                 echo "</td>";
 
                 echo "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_ffphase') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_copol_pol0);
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_ffamp') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol0);
                 echo "</td>";
 
                 echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_ffphase') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol0);
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -1557,21 +1546,17 @@ class eff {
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_nfamp') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_copol_pol1);
                 echo "</td>";
 
                 echo "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_nfphase') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_copol_pol1);
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_nfamp') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol1);
                 echo "</td>";
 
                 echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_nfphase') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol1);
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -1588,30 +1573,22 @@ class eff {
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_ffamp') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_copol_pol1);
                 echo "</td>";
 
                 echo "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_ffphase') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_copol_pol1);
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_ffamp') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol1);
                 echo "</td>";
 
                 echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_ffphase') . "'>";
-                $this->Display_ScanSetDBInfo($scanset,$scanset->Scan_xpol_pol1);
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
             }
         }
-    }
-
-    function Display_ScanSetDBInfo($scanset,$scandetails) {
-        // This function has been empty (commented-out code) for a long time.   TODO: delete this and calls.
     }
 }
 ?>
