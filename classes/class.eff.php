@@ -38,11 +38,18 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.1.10";
+        $this->software_version_class_eff = "1.2.0";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
 
         /* Version history:
+         * 1.2.0  Switch to BeamEff 2.0.2
+         *        Removed ReplacePlotURLs() instead calling PlotPathToURL inline.
+         *
+         *
+         *
+         *
+         *
          * 1.1.10 Removed writing 'keyscandetails' added writing 'scan_id' + fix for 180 scans.
          * 1.1.9  Displaying total_aperture_eff which includes defocus as Aperture Efficiency.
          *        Explicit table header: 'Amplitude Taper Efficiency'
@@ -126,6 +133,9 @@ class eff {
                 case "7meter" :
                     $this->pointingOption_analysis = "ACA 7 meter nominal";
                     break;
+                case "band1test" :
+                    $this->pointingOption_analysis = "Band 1 test dewar";
+                    break;
                 default:
                     break;
             }
@@ -134,57 +144,6 @@ class eff {
         if ($this->pointingOption_analysis != "")
             $optionString = "Pointing: " . $this->pointingOption_analysis . "<br>";
         return $optionString;
-    }
-
-    function ReplacePlotURLs() {
-        require(site_get_config_main());
-
-        $plots[0] = "pointing_angles_plot";
-        $plots[1] = "plot_copol_nfamp";
-        $plots[2] = "plot_copol_ffamp";
-        $plots[3] = "plot_xpol_nfamp";
-        $plots[4] = "plot_xpol_ffamp";
-        $plots[5] = "plot_copol_nfphase";
-        $plots[6] = "plot_copol_ffphase";
-        $plots[7] = "plot_xpol_nfphase";
-        $plots[8] = "plot_xpol_ffphase";
-
-        for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
-            // fix scan URLs.   TODO:  could this move into class.scansetdetails ?
-            for ($p = 0; $p <= 8; $p++) {
-                $oldurl = $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue($plots[$p]);
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
-                $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->SetValue($plots[$p], "$newurl");
-            }
-            $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->Update();
-
-            for ($p = 0; $p <= 8; $p++) {
-                $oldurl = $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue($plots[$p]);
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
-                $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->SetValue($plots[$p], $newurl);
-            }
-            $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->Update();
-
-            for ($p = 0; $p <= 8; $p++) {
-                $oldurl = $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue($plots[$p]);
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
-                $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->SetValue($plots[$p], $newurl);
-            }
-            $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->Update();
-
-            for ($p = 0; $p <= 8; $p++) {
-                $oldurl =  $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue($plots[$p]);
-                $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
-                $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->SetValue($plots[$p], $newurl);
-            }
-            $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->Update();
-
-            // fix pointing angles
-            $oldurl = $this->scansets[$scanSetIdx]->Scan_180->BeamEfficencies->GetValue("pointing_angles_plot");
-            $newurl = $main_url_directory . substr($oldurl, stripos($oldurl, "eff/"));
-            $this->scansets[$scanSetIdx]->Scan_180->BeamEfficencies->SetValue("pointing_angles_plot", $newurl);
-            $this->scansets[$scanSetIdx]->Scan_180->BeamEfficencies->Update();
-        }
     }
 
     public function Initialize_eff($in_fe_id, $in_fc) {
@@ -622,8 +581,6 @@ class eff {
             $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
             $this->CalculateSquint();
         }
-        //Fix the URLs in the generated plots:
-        $this->ReplacePlotURLs();
     }
 
     function CalculateSquint() {
@@ -768,6 +725,12 @@ class eff {
         $this->scansets[0]->Scan_180->BeamEfficencies->Update();
     }
 
+    function PlotPathToURL($plotPath) {
+        // Convert a file-system path to a plot to a web-server URL to the same plot.
+        require(site_get_config_main());
+        return $main_url_directory . substr($plotPath, stripos($plotPath, "eff/"));
+    }
+
     function UploadEfficiencyFile($ini_filename, $is_180degreeForSquint) {
         require(site_get_config_main());
 
@@ -793,7 +756,6 @@ class eff {
                 if (!$is_180degreeForSquint ||
                         ($ini_array[$section]['type'] == "copol" && $ini_array[$section]['pol'] == "0"))
                 {
-
                     $keyScanDetails = $ini_array[$section]['scan_id'];
 
                     // Delete any existing efficiencies record for this scan:
@@ -807,7 +769,7 @@ class eff {
                     // Store overall/settings values:
                     $beameff-> SetValue("fkScanDetails", $keyScanDetails);
                     $beameff-> SetValue("eff_output_file", $ini_filename);
-                    $beameff-> SetValue("pointing_angles_plot", $pointing_angles_plot);
+                    $beameff-> SetValue("pointing_angles_plot", $this->PlotPathToURL($pointing_angles_plot));
                     $beameff-> SetValue("software_version", $software_version_analysis);
                     $beameff-> SetValue("centers", $pointingOption_analysis);
 
@@ -845,14 +807,6 @@ class eff {
                     $beameff-> SetValue("ampfit_d_0_90", $ini_array[$section]['ampfit_d_0_90']);
                     $beameff-> SetValue("ampfit_edge_db", $ini_array[$section]['edge_db']);
                     $beameff-> SetValue("ampfit_d_45_135", $ini_array[$section]['ampfit_d_45_135']);
-                    $beameff-> SetValue("plot_copol_nfamp", $ini_array[$section]['plot_copol_nfamp']);
-                    $beameff-> SetValue("plot_copol_nfphase", $ini_array[$section]['plot_copol_nfphase']);
-                    $beameff-> SetValue("plot_copol_ffamp", $ini_array[$section]['plot_copol_ffamp']);
-                    $beameff-> SetValue("plot_copol_ffphase", $ini_array[$section]['plot_copol_ffphase']);
-                    $beameff-> SetValue("plot_xpol_nfamp", $ini_array[$section]['plot_xpol_nfamp']);
-                    $beameff-> SetValue("plot_xpol_nfphase", $ini_array[$section]['plot_xpol_nfphase']);
-                    $beameff-> SetValue("plot_xpol_ffamp", $ini_array[$section]['plot_xpol_ffamp']);
-                    $beameff-> SetValue("plot_xpol_ffphase", $ini_array[$section]['plot_xpol_ffphase']);
                     $beameff-> SetValue("datetime", $ini_array[$section]['datetime']);
                     $beameff-> SetValue("nf", $ini_array[$section]['nf']);
                     $beameff-> SetValue("ff", $ini_array[$section]['ff']);
@@ -871,6 +825,15 @@ class eff {
                     $beameff-> SetValue("squint_arcseconds", $ini_array[$section]['squint_arcseconds']);
                     $beameff-> SetValue("max_dbdifference", $ini_array[$section]['max_dbdifference']);
                     $beameff-> SetValue("software_version_class_eff", $this->software_version_class_eff);
+
+                    $beameff-> SetValue("plot_copol_nfamp", $this->PlotPathToURL($ini_array[$section]['plot_copol_nfamp']));
+                    $beameff-> SetValue("plot_copol_nfphase", $this->PlotPathToURL($ini_array[$section]['plot_copol_nfphase']));
+                    $beameff-> SetValue("plot_copol_ffamp", $this->PlotPathToURL($ini_array[$section]['plot_copol_ffamp']));
+                    $beameff-> SetValue("plot_copol_ffphase", $this->PlotPathToURL($ini_array[$section]['plot_copol_ffphase']));
+                    $beameff-> SetValue("plot_xpol_nfamp", $this->PlotPathToURL($ini_array[$section]['plot_xpol_nfamp']));
+                    $beameff-> SetValue("plot_xpol_nfphase", $this->PlotPathToURL($ini_array[$section]['plot_xpol_nfphase']));
+                    $beameff-> SetValue("plot_xpol_ffamp", $this->PlotPathToURL($ini_array[$section]['plot_xpol_ffamp']));
+                    $beameff-> SetValue("plot_xpol_ffphase", $this->PlotPathToURL($ini_array[$section]['plot_xpol_ffphase']));
 
                     // Restore error reporting:
                     error_reporting($errorReportSettingsNormal);
