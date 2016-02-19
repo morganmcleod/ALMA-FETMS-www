@@ -146,24 +146,6 @@ class eff {
         return $optionString;
     }
 
-    public function Initialize_eff($in_fe_id, $in_fc) {
-        $this->fe_id = $in_fe_id;
-        $this->fc = $in_fc;
-        $rss = $this->db_pull->qss(1, $this->fe_id, NULL, NULL, NULL, NULL);
-        $ssindex = 0;
-
-        while ($rowss = @mysql_fetch_array($rss)) {
-            $ssid = $rowss[0];
-
-            $this->scansets[$ssindex] = new ScanSetDetails();
-            $this->scansets[$ssindex]->Initialize_ScanSetDetails($ssid, $this->fc);
-            $this->scansets[$ssindex]->RequestValues_ScanSetDetails();
-
-            $ssindex += 1;
-        }
-        $this->NumberOfScanSets = $ssindex;
-    }
-
     public function Initialize_eff_SingleScanSet($in_keyId, $in_fc) {
         $this->ssid = $in_keyId;
         $this->fc = $in_fc;
@@ -182,26 +164,6 @@ class eff {
         $this->Processed = $this->db_pull->qeff($this->scansets);
 
         $this->NumberOfScanSets = 1;
-    }
-
-    public function Initialize_eff_single_band($in_fe_id, $band, $in_fc) {
-        $this->fc = $in_fc;
-        $this->band = $band;
-        $this->fe_id = $in_fe_id;
-
-        $rss = $this->db_pull->qss(3, $this->fe_id, NULL, $this->band, $this->fc, NULL);
-        $ssindex = 0;
-
-        while ($rowss = @mysql_fetch_array($rss)) {
-            $ssid = $rowss[0];
-
-            $this->scansets[$ssindex] = new ScanSetDetails();
-            $this->scansets[$ssindex]->Initialize_ScanSetDetails($ssid, $this->fc);
-            $this->scansets[$ssindex]->RequestValues_ScanSetDetails();
-
-            $ssindex += 1;
-        }
-        $this->NumberOfScanSets = $ssindex;
     }
 
     private function MakeOutputEnvironment($squint) {

@@ -109,8 +109,6 @@ if (isset($_REQUEST['drawplot'])) {
         $eff->GetEfficiencies($pointingOption);
         echo "done getting effs. <br>";
 
-        // ReplacePlotURLs fixes URLs in the database so that they can be loaded from the Plots tabs:
-        $eff->ReplacePlotURLs();
         echo '<meta http-equiv="Refresh" content="1;url=bp.php?keyheader='.$tdh->keyId.'&fc='.$fc.'">';
     }
 }
