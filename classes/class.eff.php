@@ -48,6 +48,7 @@ class eff {
          *        Remove unused initializer functions.  Removed dead code.  Marked methods private.
          *        Remove special handling for phase center correction and squint calculation.  BeamEff2 handles it now.
          *        TODO: Using table beameff x90, y90 to store corrected_x, corrected_y.  Need to alter table and code.
+         *        Seting tdh_id in command file for Beameff2. Spread out nf/ff plots a bit.
          * 1.1.10 Removed writing 'keyscandetails' added writing 'scan_id' + fix for 180 scans.
          * 1.1.9  Displaying total_aperture_eff which includes defocus as Aperture Efficiency.
          *        Explicit table header: 'Amplitude Taper Efficiency'
@@ -273,6 +274,7 @@ class eff {
             fwrite($fhandle,"nf2_startrow=0\r\n");
             fwrite($fhandle,"ff_startrow=0\r\n");
             fwrite($fhandle,"ff2_startrow=0\r\n");
+            fwrite($fhandle,"tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
             fwrite($fhandle,"scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle,"scan_id=" . $this->scansets[$scanSetIdx]->keyId_copol_pol0_scan. "\r\n");
             fwrite($fhandle,"fecfg=" . $this->scansets[$scanSetIdx]->GetValue('fkFE_Config') . "\r\n");
@@ -295,6 +297,7 @@ class eff {
             fwrite($fhandle,"notes=\r\n");
             fwrite($fhandle,"ifatten=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('ifatten') ."\r\n");
             fwrite($fhandle,"zdistance=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('ProbeZDistance') ."\r\n");
+            fwrite($fhandle,"tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
             fwrite($fhandle,"scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle,"scan_id=" . $this->scansets[$scanSetIdx]->keyId_xpol_pol0_scan. "\r\n");
             fwrite($fhandle,"fecfg=" . $this->scansets[$scanSetIdx]->GetValue('fkFE_Config') . "\r\n");
@@ -328,6 +331,7 @@ class eff {
             fwrite($fhandle,"notes=\r\n");
             fwrite($fhandle,"ifatten=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ifatten') ."\r\n");
             fwrite($fhandle,"zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ProbeZDistance') ."\r\n");
+            fwrite($fhandle,"tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
             fwrite($fhandle,"scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle,"scan_id=" . $this->scansets[$scanSetIdx]->keyId_copol_pol1_scan. "\r\n");
             $ts = strftime("%a",strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS'))) . " " .  $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS');
@@ -361,6 +365,7 @@ class eff {
             fwrite($fhandle,"notes=\r\n");
             fwrite($fhandle,"ifatten=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('ifatten') ."\r\n");
             fwrite($fhandle,"zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ProbeZDistance') ."\r\n");
+            fwrite($fhandle,"tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
             fwrite($fhandle,"scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle,"scan_id=" . $this->scansets[$scanSetIdx]->keyId_xpol_pol1_scan. "\r\n");
             $ts = strftime("%a",strtotime($this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('TS'))) . " " .  $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('TS');
@@ -401,6 +406,7 @@ class eff {
                 fwrite($fhandle,"notes=\r\n");
                 fwrite($fhandle,"ifatten=" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('ifatten') ."\r\n");
                 fwrite($fhandle,"zdistance=" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('ProbeZDistance') ."\r\n");
+                fwrite($fhandle,"tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
                 fwrite($fhandle,"scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
                 fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
 
@@ -1261,6 +1267,8 @@ class eff {
                 echo "</td>";
                 echo "</tr>";
 
+                echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
+
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_nfamp') . "'>";
                 echo "</td>";
@@ -1287,6 +1295,8 @@ class eff {
                 echo "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_ffphase') . "'>";
                 echo "</td>";
                 echo "</tr>";
+
+                echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_ffamp') . "'>";
@@ -1317,6 +1327,8 @@ class eff {
                 echo "</td>";
                 echo "</tr>";
 
+                echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
+
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_nfamp') . "'>";
                 echo "</td>";
@@ -1343,6 +1355,8 @@ class eff {
                 echo "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_ffphase') . "'>";
                 echo "</td>";
                 echo "</tr>";
+
+                echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
                 echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_ffamp') . "'>";
