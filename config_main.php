@@ -10,7 +10,7 @@ $fc = 40;
 $rootdir_data = $site_root . '/';
 
 // the beameff_64 application is deployed to a fixed location in the code:
-$beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff_64";
+$beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff2_64";
 
 // set up some variables specific to particular hosts:
 $site_hostname = $_SERVER['SERVER_NAME'];

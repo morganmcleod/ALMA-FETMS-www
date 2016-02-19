@@ -46,8 +46,8 @@ class eff {
          * 1.2.0  Switch to BeamEff 2.0.2
          *        Removed ReplacePlotURLs() instead calling PlotPathToURL() inline.
          *        Remove unused initializer functions.  Removed dead code.  Marked methods private.
-         *
-         *
+         *        Remove special handling for phase center correction and squint calculation.  BeamEff2 handles it now.
+         *        TODO: Using table beameff x90, y90 to store corrected_x, corrected_y.  Need to alter table and code.
          * 1.1.10 Removed writing 'keyscandetails' added writing 'scan_id' + fix for 180 scans.
          * 1.1.9  Displaying total_aperture_eff which includes defocus as Aperture Efficiency.
          *        Explicit table header: 'Amplitude Taper Efficiency'
@@ -107,9 +107,8 @@ class eff {
         if ($this->scansets[0]->keyId_180_scan > 0)
             $this->ReadyToProcess = 1;
 
-            $this->Processed = $this->db_pull->qeff($this->scansets);
-
-            $this->NumberOfScanSets = 1;
+        $this->Processed = $this->db_pull->qeff($this->scansets);
+        $this->NumberOfScanSets = 1;
     }
 
     public function GetEfficiencies($pointingOption) {
@@ -121,22 +120,8 @@ class eff {
         $CommandString = "$this->beameff_exe $this->eff_inputfile";
         system($CommandString);
         // Upload the efficiency results to the database:
-        $this->UploadEfficiencyFile($this->eff_outputfile, false);
+        $this->UploadEfficiencyFile($this->eff_outputfile);
         $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
-
-        if ($this->scansets[0]->Scan_180->keyId != "") {
-            echo "GETTING SQUINT..." . $this->scansets[0]->Scan_180->keyId . "<br>";
-            // Calculate phase center from the 180-degree scans.
-            // Create the input file for beameff_64:
-            $this->MakeInputFileSquint();
-            // Execute beameff_64:
-            $CommandString = "$this->beameff_exe $this->eff_inputfile";
-            system($CommandString);
-            // Upload the efficiency results to the database:
-            $this->UploadEfficiencyFile($this->eff_outputfile, true);
-            $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
-            $this->CalculateSquint();
-        }
     }
 
     private function SoftwareVersionString() {
@@ -190,7 +175,7 @@ class eff {
         return $optionString;
     }
 
-    private function MakeOutputEnvironment($squint) {
+    private function MakeOutputEnvironment() {
         // Create directories if needed, initiailize input and output file names.
 
         // top-level directory for data:
@@ -204,8 +189,6 @@ class eff {
         }
         // data directory for this data set will be like "$basedir/eff/fecfg697/ssid1591", possibly including "SQUINT":
         $this->newbasedir .= "fecfg" . $this->fe_id;
-        if ($squint)
-            $this->newbasedir .= "_SQUINT";
         $this->newbasedir .= "/";
         if (!file_exists($this->newbasedir)) {
             mkdir($this->newbasedir);
@@ -230,10 +213,7 @@ class eff {
 
         // and to get its command input here:
         $this->eff_inputfile = $this->newbasedir;
-        if ($squint)
-            $this->eff_inputfile .= "input_fileSQUINT.txt";
-        else
-            $this->eff_inputfile .= "input_file.txt";
+        $this->eff_inputfile .= "input_file.txt";
         if (file_exists($this->eff_inputfile)) {
             unlink($this->eff_inputfile);
         }
@@ -248,7 +228,7 @@ class eff {
     }
 
     private function MakeInputFile() {
-        $this -> MakeOutputEnvironment(FALSE);
+        $this -> MakeOutputEnvironment();
 
         // start writing the command input file:
         $fhandle = fopen($this->eff_inputfile, 'w');
@@ -399,129 +379,44 @@ class eff {
             fwrite($fhandle,"ff_startrow=0\r\n");
             fwrite($fhandle,"ff2_startrow=0\r\n");
             fwrite($fhandle,"\r\n");
-        }
-        fclose($fhandle);
-    }
 
-    private function MakeInputFileSquint() {
-        // The SQUINT input file for the BeamEff calculator version 1.x fils all four sections
-        //  of the input file with the same 180-degree scan.
-        // TODO: Remove this for BeamEff 2.x
+            //180-degree scan for squint
+            if ($this->scansets[$scanSetIdx]->keyId_180_scan > 0) {
+                $scanNumber++;
+                fwrite($fhandle,"[scan_$scanNumber]\r\n");
+                fwrite($fhandle,"type=copol180\r\n");
+                //Source position
+                //3= pol0 + 180
+                //4= pol1 + 180
+                $sp = $this->scansets[$scanSetIdx]->Scan_180->GetValue('SourcePosition');
+                $pol = 0;
+                if ($sp == 4)
+                    $pol = 1;
+                fwrite($fhandle,"pol=$pol\r\n");
+                fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
+                fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
+                fwrite($fhandle,"sb=" . $sb ."\r\n");
+                fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
+                fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
+                fwrite($fhandle,"notes=\r\n");
+                fwrite($fhandle,"ifatten=" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('ifatten') ."\r\n");
+                fwrite($fhandle,"zdistance=" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('ProbeZDistance') ."\r\n");
+                fwrite($fhandle,"scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
+                fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
 
-        $this -> MakeOutputEnvironment(TRUE);
+                $nf_path = $this->listingsdir . "scanset_" . ($scanSet) . "_copol_180_nf.txt";
+                $this->ExportNF($nf_path,$this->scansets[$scanSetIdx]->keyId_180_scan);
+                $ff_path = $this->listingsdir . "scanset_" . ($scanSet) . "_copol_180_ff.txt";
+                $this->ExportFF($ff_path,$this->scansets[$scanSetIdx]->keyId_180_scan);
 
-        // start writing the command input file:
-        $fhandle = fopen($this->eff_inputfile, 'w');
-
-        //Fill in values for settings section
-        fwrite($fhandle,"[settings]\r\n");
-        fwrite($fhandle,'gnuplot="' . $this->GNUPLOT_path . '"' . "\r\n");
-        fwrite($fhandle,'outputdirectory="' . $this->outputdirectory . '"' . "\r\n");
-        fwrite($fhandle,"delimiter=tab\r\n");
-        fwrite($fhandle,"centers=" . $this->pointingOption . "\r\n");
-        fwrite($fhandle,"\r\n");
-
-        //Fill in the individual scan sections
-        $scanNumber=0;
-        for ($scanSetIdx=0; $scanSetIdx < count($this->scansets); $scanSetIdx++) {
-            $scanSet = $scanSetIdx + 1;
-
-            $sb = $this -> GetScanSideband($scanSetIdx);
-
-            //Copol pol 0 scan
-            $scanNumber++;
-            fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
-            fwrite($fhandle,"type=copol\r\n");
-            fwrite($fhandle,"pol=0\r\n");
-            fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
-            fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
-            fwrite($fhandle,"sb=" . $sb ."\r\n");
-            fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
-            fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
-            fwrite($fhandle,"notes=\r\n");
-            fwrite($fhandle,"ifatten=0\r\n");
-
-            $nf_path = $this->listingsdir . "scanset_" . ($scanSet) . "_copol_180_nf.txt";
-            $this->ExportNF($nf_path,$this->scansets[$scanSetIdx]->keyId_180_scan);
-            $ff_path = $this->listingsdir . "scanset_" . ($scanSet) . "_copol_180_ff.txt";
-            $this->ExportFF($ff_path,$this->scansets[$scanSetIdx]->keyId_180_scan);
-
-            fwrite($fhandle,'nf="' . $nf_path . '"' . "\r\n");
-            fwrite($fhandle,'ff="' . $ff_path . '"' . "\r\n");
-            fwrite($fhandle,"nf_startrow=0\r\n");
-            fwrite($fhandle,"nf2_startrow=0\r\n");
-            fwrite($fhandle,"ff_startrow=0\r\n");
-            fwrite($fhandle,"ff2_startrow=0\r\n");
-            fwrite($fhandle,"\r\n");
-
-            //Crosspol pol 0 scan
-            $scanNumber++;
-            fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
-            fwrite($fhandle,"type=xpol\r\n");
-            fwrite($fhandle,"pol=0\r\n");
-            fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
-            fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
-            fwrite($fhandle,"sb=" . $sb ."\r\n");
-            fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
-            fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
-            fwrite($fhandle,"notes=\r\n");
-            fwrite($fhandle,"ifatten=0\r\n");
-
-
-            fwrite($fhandle,'nf="' . $nf_path . '"' . "\r\n");
-            fwrite($fhandle,'ff="' . $ff_path . '"' . "\r\n");
-            fwrite($fhandle,"nf_startrow=0\r\n");
-            fwrite($fhandle,"nf2_startrow=0\r\n");
-            fwrite($fhandle,"ff_startrow=0\r\n");
-            fwrite($fhandle,"ff2_startrow=0\r\n");
-            fwrite($fhandle,"\r\n");
-
-            //Copol pol 1 scan
-            $scanNumber++;
-            fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
-            fwrite($fhandle,"type=copol\r\n");
-            fwrite($fhandle,"pol=1\r\n");
-            fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
-            fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
-            fwrite($fhandle,"sb=" . $sb ."\r\n");
-            fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
-            fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
-            fwrite($fhandle,"notes=\r\n");
-            fwrite($fhandle,"ifatten=0\r\n");
-
-
-            fwrite($fhandle,'nf="' . $nf_path . '"' . "\r\n");
-            fwrite($fhandle,'ff="' . $ff_path . '"' . "\r\n");
-            fwrite($fhandle,"nf_startrow=0\r\n");
-            fwrite($fhandle,"nf2_startrow=0\r\n");
-            fwrite($fhandle,"ff_startrow=0\r\n");
-            fwrite($fhandle,"ff2_startrow=0\r\n");
-            fwrite($fhandle,"\r\n");
-
-            //Crosspol pol 1 scan
-            $scanNumber++;
-            fwrite($fhandle,"[scan_$scanNumber]\r\n");
-            fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
-            fwrite($fhandle,"type=xpol\r\n");
-            fwrite($fhandle,"pol=1\r\n");
-            fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
-            fwrite($fhandle,"f=" . $this->scansets[$scanSetIdx]->GetValue('f') ."\r\n");
-            fwrite($fhandle,"sb=" . $sb ."\r\n");
-            fwrite($fhandle,"tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') ."\r\n");
-            fwrite($fhandle,"band=" . $this->scansets[$scanSetIdx]->GetValue('band') ."\r\n");
-            fwrite($fhandle,"notes=\r\n");
-            fwrite($fhandle,"ifatten=0\r\n");
-
-            fwrite($fhandle,'nf="' . $nf_path . '"' . "\r\n");
-            fwrite($fhandle,'ff="' . $ff_path . '"' . "\r\n");
-            fwrite($fhandle,"nf_startrow=0\r\n");
-            fwrite($fhandle,"nf2_startrow=0\r\n");
-            fwrite($fhandle,"ff_startrow=0\r\n");
-            fwrite($fhandle,"ff2_startrow=0\r\n");
-            fwrite($fhandle,"\r\n");
+                fwrite($fhandle,'nf="' . $nf_path . '"' . "\r\n");
+                fwrite($fhandle,'ff="' . $ff_path . '"' . "\r\n");
+                fwrite($fhandle,"nf_startrow=0\r\n");
+                fwrite($fhandle,"nf2_startrow=0\r\n");
+                fwrite($fhandle,"ff_startrow=0\r\n");
+                fwrite($fhandle,"ff2_startrow=0\r\n");
+                fwrite($fhandle,"\r\n");
+            }
         }
         fclose($fhandle);
     }
@@ -530,7 +425,6 @@ class eff {
         if (file_exists($nf_path)) {
             unlink($nf_path);
         }
-
         $this->db_pull->q(TRUE, $nf_path, $scan_id);
     }
 
@@ -538,150 +432,7 @@ class eff {
         if (file_exists($ff_path)) {
             unlink($ff_path);
         }
-
         $this->db_pull->q(FALSE, $ff_path, $scan_id);
-    }
-
-    private function CalculateSquint() {
-        $f = $this->scansets[0]->GetValue('f');
-
-        //Source position
-        //1= pol 0
-        //2= pol 1
-        //3= pol0 + 180
-        //4= pol1 + 180
-        $sp = $this->scansets[0]->Scan_180->GetValue('SourcePosition');
-
-        switch ($sp) {
-            case '3':
-                $x0  = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_x');
-                $y0  = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_y');
-                $x90 = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_x');
-                $y90 = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_y');
-                break;
-            case '4':
-                $x0  = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_x');
-                $y0  = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_y');
-                $x90 = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_x');
-                $y90 = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_y');
-                break;
-        }
-
-        $x180 = $this->scansets[0]->Scan_180->BeamEfficencies->GetValue('delta_x');
-        $y180 = $this->scansets[0]->Scan_180->BeamEfficencies->GetValue('delta_y');
-
-        $dX = $x180 - $x0;
-        $dY = $y180 - $y0;
-        $x_diff = $x0 - $x90;
-        $y_diff = $y0 - $y90;
-        $abs_diff = Abs($dX) - Abs($dY);
-
-
-        /* There are only two possible corrections (rigorously proven by this diagram),
-         * depending on whether the relative scan angle of the second polarization was +90 or -90.
-         * To determine whether it was +90 or -90, compare the signs of x_diff, y_diff, and abs_diff.
-         * If all three of them are negative or exactly two of them are positive, then it was +90. Otherwise it was -90. */
-
-        $pol_angle = -90;
-        if (($x_diff * $y_diff * $abs_diff) < 0) {
-            $pol_angle = 90;
-        }
-
-        /* compute x_corr and y_corr.
-         */
-
-        If ($pol_angle == 90) {
-            $x_corr = ((-1 * $dX) - $dY) / 2;
-            $y_corr =          ($dX - $dY)/ 2;
-        }
-
-        If ($pol_angle == -90) {
-            $x_corr = ((-1 * $dX) + $dY) / 2;
-            $y_corr = ((-1 * $dX) - $dY) / 2;
-        }
-
-        //Write values to database
-        // this seems to be writing the same values to both pols.  It works out oK but isn't technically correct.
-        // The corrections should be kept at a higher level in the data structure as they don't really apply to the individual scan.
-        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('x_diff',$x_diff);
-        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('y_diff',$y_diff);
-        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('x_diff',$x_diff);
-        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('y_diff',$y_diff);
-        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('x_corr',$x_corr);
-        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('y_corr',$y_corr);
-        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('x_corr',$x_corr);
-        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('y_corr',$y_corr);
-
-        // save the uncorrected values back into the scansets data structure:
-        switch ($sp) {
-            case '3':
-                $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('x0',$x0);
-                $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('y0',$y0);
-                $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('x90',$x90);
-                $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('y90',$y90);
-
-                $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('x0',0);
-                $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('y0',0);
-                $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('x90',0);
-                $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('y90',0);
-
-                break;
-            case '4':
-                $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('x0',$x0);
-                $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('y0',$y0);
-                $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('x90',$x90);
-                $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('y90',$y90);
-
-                $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('x0',0);
-                $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('y0',0);
-                $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('x90',0);
-                $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('y90',0);
-                break;
-        }
-
-        // apply corrections to x90 and y90 for distance and squint calculations:
-        $x90 = $x90 + $x_corr;
-        $y90 = $y90 + $y_corr;
-
-        //Corrected distance between two beam centers in mm:
-        $DistanceBetweenBeamCenters = Abs((Sqrt(pow($x0 - $x90, 2.0) + pow($y0 - $y90, 2.0))));
-
-        // Squint calculation based on corrected values.
-        $plateFactor = 2.148;       // arc-s/mm.
-        $dishDiameter = 12000.0;    // mm
-        if ($this->pointingOption == '7meter') {
-            $plateFactor = 3.6833;  // arc-s/mm.
-            $dishDiameter = 7000.0; // mm
-        }
-        // square root of the sum of the differences squared
-        $squint_arcseconds = Abs((Sqrt(pow($x0 - $x90, 2.0) + pow($y0 - $y90, 2.0)) ) * $plateFactor);
-
-        // Calculate squint in percentage of units of FWHM of the beam:
-        // 1.15 is the coefficent to mutply by lambda/D to get FWHM.  D=diameter of primary mirror in mm.
-        // 299.79 is c in mm/ns.
-        // $f is in GHz.
-        // 57.3 is degrees in a radian.  Could be expresed as 180/pi.
-        // 60.0 * 60.0 converts to arcseconds.
-
-        $lambda = 299.79 / $f;    // c in mm/ns.  $f in GHz.
-        $squint = (100.0 * $squint_arcseconds) / (1.15 * $lambda * 57.3 * 60.0 * 60.0 / $dishDiameter);
-
-        // save the distance between corrected centers back to the scansets data structure:
-        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('DistanceBetweenBeamCenters', $DistanceBetweenBeamCenters);
-        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('DistanceBetweenBeamCenters', $DistanceBetweenBeamCenters);
-
-        // save computed squint and write to DB:
-        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('squint', $squint);
-        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->SetValue('squint_arcseconds', $squint_arcseconds);
-        $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->Update();
-
-        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('squint', $squint);
-        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->SetValue('squint_arcseconds', $squint_arcseconds);
-        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->Update();
-
-        $this->scansets[0]->Scan_180->BeamEfficencies->SetValue('squint', $squint);
-        $this->scansets[0]->Scan_180->BeamEfficencies->SetValue('squint_arcseconds', $squint_arcseconds);
-        $this->scansets[0]->Scan_180->BeamEfficencies->Update();
     }
 
     private static function PlotPathToURL($plotPath) {
@@ -690,7 +441,7 @@ class eff {
         return $main_url_directory . substr($plotPath, stripos($plotPath, "eff/"));
     }
 
-    private function UploadEfficiencyFile($ini_filename, $is_180degreeForSquint) {
+    private function UploadEfficiencyFile($ini_filename) {
         require(site_get_config_main());
 
         $ini_array = parse_ini_file($ini_filename, true);
@@ -699,116 +450,160 @@ class eff {
         $software_version_analysis = $ini_array['settings']['software_version'];
         $pointingOption_analysis = $ini_array['settings']['centers'];
 
-        // Load the pointing angles plot filename:
-        $key = "pointingangles_band_" . $this->band;
-        if (isset ($ini_array['settings'][$key]) && $ini_array['settings'][$key] != '') {
-            $pointing_angles_plot = $ini_array['settings'][$key];
+        // Find the [results_ssidx] section, having the squint, pointingangles, and phase center correction info:
+        $pointingangles_plot = '';
+        $nominal_z_offset = 0;
+        $x_corr = 0;
+        $y_corr = 0;
+        $corrected_pol = -1;
+        $dist_between_centers_mm = 0;
+        $squint_percent = 0;
+        $squint_arcseconds = 0;
+
+        foreach ($ini_array as $section => $contents) {
+            if (!(stripos($section, "results_") === FALSE)) {
+
+                // Suppress error reports for undefined index for the next chunk:
+                global $errorReportSettingsNo_E_NOTICE;
+                global $errorReportSettingsNormal;
+                error_reporting($errorReportSettingsNo_E_NOTICE);
+
+                // Get the pointing angles plot:
+                $pointingangles_plot = $ini_array[$section]['pointingangles'];
+                if (isset($pointingangles_plot))
+                    $pointingangles_plot = self::PlotPathToURL($pointingangles_plot);
+                else
+                    $pointingangles_plot = '';
+
+                // Get phase center differences and corrections:
+                $nominal_z_offset = $ini_array[$section]['nominal_z_offset'];
+                $x_corr = $ini_array[$section]['x_corr'];
+                $y_corr = $ini_array[$section]['y_corr'];
+                $corrected_pol = $ini_array[$section]['corrected_pol'];
+                $dist_between_centers_mm = $ini_array[$section]['dist_between_centers_mm'];
+
+                // Get beam squint:
+                $squint_percent = $ini_array[$section]['squint_percent'];
+                $squint_arcseconds = $ini_array[$section]['squint_arcseconds'];
+
+                // Restore error reporting:
+                error_reporting($errorReportSettingsNormal);
+            }
         }
 
-        // Loop on sections:
+        // Loop on [scan_x] sections:
         foreach ($ini_array as $section => $contents) {
+            if (!(stripos($section, "scan_") === FALSE)) {
 
-            // Skip the [settings] section:
-            if ($section != "settings") {
+                $keyScanDetails = $ini_array[$section]['scan_id'];
 
-                // If processing a 180-degree scan for squint, only process copol, pol0:
-                if (!$is_180degreeForSquint ||
-                        ($ini_array[$section]['type'] == "copol" && $ini_array[$section]['pol'] == "0"))
-                {
-                    $keyScanDetails = $ini_array[$section]['scan_id'];
+                // Delete any existing efficiencies record for this scan:
+                $rdelete = $this->db_pull->qdelete($keyScanDetails, NULL);
 
-                    // Delete any existing efficiencies record for this scan:
-                    $rdelete = $this->db_pull->qdelete($keyScanDetails, NULL);
+                // Create and initialize a new efficies record:
+                $beameff = new GenericTable;
+                $beameff->Initialize("BeamEfficiencies","","keyBeamEfficiencies",$this->fc,'fkFacility');
+                $beameff->NewRecord("BeamEfficiencies","keyBeamEfficiencies",$this->fc,'fkFacility');
 
-                    // Create and initialize a new efficies record:
-                    $beameff = new GenericTable;
-                    $beameff->Initialize("BeamEfficiencies","","keyBeamEfficiencies",$this->fc,'fkFacility');
-                    $beameff->NewRecord("BeamEfficiencies","keyBeamEfficiencies",$this->fc,'fkFacility');
+                // Store overall/settings values:
+                $beameff-> SetValue("fkScanDetails", $keyScanDetails);
+                $beameff-> SetValue("eff_output_file", $ini_filename);
+                $beameff-> SetValue("pointing_angles_plot", $pointingangles_plot);
+                $beameff-> SetValue("software_version", $software_version_analysis);
+                $beameff-> SetValue("centers", $pointingOption_analysis);
 
-                    // Store overall/settings values:
-                    $beameff-> SetValue("fkScanDetails", $keyScanDetails);
-                    $beameff-> SetValue("eff_output_file", $ini_filename);
-                    $beameff-> SetValue("pointing_angles_plot", $this->PlotPathToURL($pointing_angles_plot));
-                    $beameff-> SetValue("software_version", $software_version_analysis);
-                    $beameff-> SetValue("centers", $pointingOption_analysis);
+                // Suppress error reports for undefined index for the next chunk:
+                global $errorReportSettingsNo_E_NOTICE;
+                global $errorReportSettingsNormal;
+                error_reporting($errorReportSettingsNo_E_NOTICE);
 
-                    // Suppress error reports for undefined index for the next chunk:
-                    global $errorReportSettingsNo_E_NOTICE;
-                    global $errorReportSettingsNormal;
-                    error_reporting($errorReportSettingsNo_E_NOTICE);
+                // Save all the data loaded from the ini file to the new beameffs record:
+                $scanType = $ini_array[$section]['type'];
+                $beameff-> SetValue("type", $scanType);
 
-                    // Save all the data loaded from the ini file to the new beameffs record:
-                    $beameff-> SetValue("pol", $ini_array[$section]['pol']);
-                    $beameff-> SetValue("tilt", $ini_array[$section]['tilt']);
-                    $beameff-> SetValue("f", $ini_array[$section]['f']);
-                    $beameff-> SetValue("type", $ini_array[$section]['type']);
-                    $beameff-> SetValue("tilt", $ini_array[$section]['tilt']);
-                    $beameff-> SetValue("ifatten", $ini_array[$section]['ifatten']);
-                    $beameff-> SetValue("eta_spillover", $ini_array[$section]['eta_spillover']);
-                    $beameff-> SetValue("eta_taper", $ini_array[$section]['eta_taper']);
-                    $beameff-> SetValue("eta_illumination", $ini_array[$section]['eta_illumination']);
-                    $beameff-> SetValue("ff_xcenter", $ini_array[$section]['ff_xcenter']);
-                    $beameff-> SetValue("ff_ycenter", $ini_array[$section]['ff_ycenter']);
-                    $beameff-> SetValue("az_nominal", $ini_array[$section]['az_nominal']);
-                    $beameff-> SetValue("el_nominal", $ini_array[$section]['el_nominal']);
-                    $beameff-> SetValue("nf_xcenter", $ini_array[$section]['nf_xcenter']);
-                    $beameff-> SetValue("nf_ycenter", $ini_array[$section]['nf_ycenter']);
-                    $beameff-> SetValue("max_ff_amp_db", $ini_array[$section]['max_ff_amp_db']);
-                    $beameff-> SetValue("max_nf_amp_db", $ini_array[$section]['max_nf_amp_db']);
-                    $beameff-> SetValue("delta_x", $ini_array[$section]['delta_x']);
-                    $beameff-> SetValue("delta_y", $ini_array[$section]['delta_y']);
-                    $beameff-> SetValue("delta_z", $ini_array[$section]['delta_z']);
-                    $beameff-> SetValue("eta_phase", $ini_array[$section]['eta_phase']);
-                    $beameff-> SetValue("ampfit_amp", $ini_array[$section]['ampfit_amp']);
-                    $beameff-> SetValue("ampfit_width_deg", $ini_array[$section]['ampfit_width_deg']);
-                    $beameff-> SetValue("ampfit_u_off", $ini_array[$section]['ampfit_u_off_deg']);
-                    $beameff-> SetValue("ampfit_v_off", $ini_array[$section]['ampfit_v_off_deg']);
-                    $beameff-> SetValue("ampfit_d_0_90", $ini_array[$section]['ampfit_d_0_90']);
-                    $beameff-> SetValue("ampfit_edge_db", $ini_array[$section]['edge_db']);
-                    $beameff-> SetValue("ampfit_d_45_135", $ini_array[$section]['ampfit_d_45_135']);
-                    $beameff-> SetValue("datetime", $ini_array[$section]['datetime']);
-                    $beameff-> SetValue("nf", $ini_array[$section]['nf']);
-                    $beameff-> SetValue("ff", $ini_array[$section]['ff']);
-                    $beameff-> SetValue("nominal_z_offset", $ini_array[$section]['nominal_z_offset']);
-                    $beameff-> SetValue("eta_tot_np", $ini_array[$section]['eta_tot_np']);
-                    $beameff-> SetValue("eta_pol", $ini_array[$section]['eta_pol']);
-                    $beameff-> SetValue("eta_pol_on_secondary", $ini_array[$section]['eta_pol_on_secondary']);
-                    $beameff-> SetValue("eta_tot_nd", $ini_array[$section]['eta_tot_nd']);
-                    $beameff-> SetValue("eta_pol_spill", $ini_array[$section]['eta_pol_spill']);
-                    $beameff-> SetValue("defocus_efficiency", $ini_array[$section]['defocus_efficiency']);
-                    $beameff-> SetValue("total_aperture_eff", $ini_array[$section]['total_aperture_eff']);
-                    $beameff-> SetValue("shift_from_focus_mm", $ini_array[$section]['shift_from_focus_mm']);
-                    $beameff-> SetValue("subreflector_shift_mm", $ini_array[$section]['subreflector_shift_mm']);
-                    $beameff-> SetValue("defocus_efficiency_due_to_moving_the_subreflector", $ini_array[$section]['defocus_efficiency_due_to_moving_the_subreflector']);
-                    $beameff-> SetValue("squint", $ini_array[$section]['squint']);
-                    $beameff-> SetValue("squint_arcseconds", $ini_array[$section]['squint_arcseconds']);
-                    $beameff-> SetValue("max_dbdifference", $ini_array[$section]['max_dbdifference']);
-                    $beameff-> SetValue("software_version_class_eff", $this->software_version_class_eff);
+                $beameff-> SetValue("pol", $ini_array[$section]['pol']);
+                $beameff-> SetValue("tilt", $ini_array[$section]['tilt']);
+                $beameff-> SetValue("f", $ini_array[$section]['f']);
+                $beameff-> SetValue("datetime", $ini_array[$section]['ts']);
+                $beameff-> SetValue("tilt", $ini_array[$section]['tilt']);
+                $beameff-> SetValue("ifatten", $ini_array[$section]['ifatten']);
+                $beameff-> SetValue("eta_spillover", $ini_array[$section]['eta_spillover']);
+                $beameff-> SetValue("eta_taper", $ini_array[$section]['eta_taper']);
+                $beameff-> SetValue("eta_illumination", $ini_array[$section]['eta_illumination']);
+                $beameff-> SetValue("ff_xcenter", $ini_array[$section]['ff_xcenter']);
+                $beameff-> SetValue("ff_ycenter", $ini_array[$section]['ff_ycenter']);
+                $beameff-> SetValue("az_nominal", $ini_array[$section]['az_nominal']);
+                $beameff-> SetValue("el_nominal", $ini_array[$section]['el_nominal']);
+                $beameff-> SetValue("nf_xcenter", $ini_array[$section]['nf_xcenter']);
+                $beameff-> SetValue("nf_ycenter", $ini_array[$section]['nf_ycenter']);
+                $beameff-> SetValue("max_ff_amp_db", $ini_array[$section]['max_ff_amp_db']);
+                $beameff-> SetValue("max_nf_amp_db", $ini_array[$section]['max_nf_amp_db']);
+                $deltaX = $ini_array[$section]['delta_x'];
+                $beameff-> SetValue("delta_x", $deltaX);
+                $deltaY = $ini_array[$section]['delta_y'];
+                $beameff-> SetValue("delta_y", $deltaY);
+                $beameff-> SetValue("delta_z", $ini_array[$section]['delta_z']);
+                $beameff-> SetValue("eta_phase", $ini_array[$section]['eta_phase']);
+                $beameff-> SetValue("ampfit_amp", $ini_array[$section]['ampfit_amp']);
+                $beameff-> SetValue("ampfit_width_deg", $ini_array[$section]['ampfit_width_deg']);
+                $beameff-> SetValue("ampfit_u_off", $ini_array[$section]['ampfit_u_off_deg']);
+                $beameff-> SetValue("ampfit_v_off", $ini_array[$section]['ampfit_v_off_deg']);
+                $beameff-> SetValue("ampfit_d_0_90", $ini_array[$section]['ampfit_d_0_90']);
+                $beameff-> SetValue("ampfit_edge_db", $ini_array[$section]['edge_db']);
+                $beameff-> SetValue("ampfit_d_45_135", $ini_array[$section]['ampfit_d_45_135']);
+                $beameff-> SetValue("datetime", $ini_array[$section]['datetime']);
+                $beameff-> SetValue("nf", $ini_array[$section]['nf']);
+                $beameff-> SetValue("ff", $ini_array[$section]['ff']);
+                $beameff-> SetValue("eta_tot_np", $ini_array[$section]['eta_tot_np']);
+                $beameff-> SetValue("eta_pol", $ini_array[$section]['eta_pol']);
+                $beameff-> SetValue("eta_pol_on_secondary", $ini_array[$section]['eta_pol_on_secondary']);
+                $beameff-> SetValue("eta_tot_nd", $ini_array[$section]['eta_tot_nd']);
+                $beameff-> SetValue("eta_pol_spill", $ini_array[$section]['eta_pol_spill']);
+                $beameff-> SetValue("defocus_efficiency", $ini_array[$section]['defocus_efficiency']);
+                $beameff-> SetValue("total_aperture_eff", $ini_array[$section]['total_aperture_eff']);
+                $beameff-> SetValue("shift_from_focus_mm", $ini_array[$section]['shift_from_focus_mm']);
+                $beameff-> SetValue("subreflector_shift_mm", $ini_array[$section]['subreflector_shift_mm']);
+                $beameff-> SetValue("defocus_efficiency_due_to_moving_the_subreflector", $ini_array[$section]['defocus_efficiency_due_to_moving_the_subreflector']);
+                $beameff-> SetValue("squint", $ini_array[$section]['squint']);
+                $beameff-> SetValue("squint_arcseconds", $ini_array[$section]['squint_arcseconds']);
+                $beameff-> SetValue("max_dbdifference", $ini_array[$section]['max_dbdifference']);
+                $beameff-> SetValue("software_version_class_eff", $this->software_version_class_eff);
 
-                    $beameff-> SetValue("plot_copol_nfamp", $this->PlotPathToURL($ini_array[$section]['plot_copol_nfamp']));
-                    $beameff-> SetValue("plot_copol_nfphase", $this->PlotPathToURL($ini_array[$section]['plot_copol_nfphase']));
-                    $beameff-> SetValue("plot_copol_ffamp", $this->PlotPathToURL($ini_array[$section]['plot_copol_ffamp']));
-                    $beameff-> SetValue("plot_copol_ffphase", $this->PlotPathToURL($ini_array[$section]['plot_copol_ffphase']));
-                    $beameff-> SetValue("plot_xpol_nfamp", $this->PlotPathToURL($ini_array[$section]['plot_xpol_nfamp']));
-                    $beameff-> SetValue("plot_xpol_nfphase", $this->PlotPathToURL($ini_array[$section]['plot_xpol_nfphase']));
-                    $beameff-> SetValue("plot_xpol_ffamp", $this->PlotPathToURL($ini_array[$section]['plot_xpol_ffamp']));
-                    $beameff-> SetValue("plot_xpol_ffphase", $this->PlotPathToURL($ini_array[$section]['plot_xpol_ffphase']));
+                if ($scanType == 'copol') {
+                    // TODO: rename x90, y90.  Now they contain corrected_x corrected_y.  Not using x0, y0 anymore.
+                    $correctedX = $ini_array[$section]['corrected_x'];
+                    $correctedY = $ini_array[$section]['corrected_y'];
 
-                    // Restore error reporting:
-                    error_reporting($errorReportSettingsNormal);
-
-                    if ($is_180degreeForSquint) {
-                        // Get the actual pol of the 180 scan
-                        $sd180 = new ScanDetails();
-                        $sd180->Initialize_ScanDetails($keyScanDetails, $this->fc);
-                        $beameff-> SetValue("pol", $sd180->GetValue('pol'));
-                        unset($sd180);
+                    $beameff-> SetValue('x90', $correctedX);
+                    $beameff-> SetValue('y90', $correctedY);
+                    // Set x_corr, y_corr if this is the pol which was corrected:
+                    if ($correctedX != $deltaX || $correctedY != $deltaY) {
+                        $beameff-> SetValue('x_corr', $x_corr);
+                        $beameff-> SetValue('y_corr', $y_corr);
                     }
-
-                    // Save the completed efficiencies record
-                    $beameff->Update();
-                    unset($beameff);
+                    $beameff-> SetValue('DistanceBetweenBeamCenters', $dist_between_centers_mm);
+                    $beameff-> SetValue("nominal_z_offset", $nominal_z_offset);
+                    $beameff-> SetValue('squint', $squint_percent);
+                    $beameff-> SetValue('squint_arcseconds', $squint_arcseconds);
                 }
+
+                if ($scanType == 'copol' || $scanType == 'xpol') {
+                    $beameff-> SetValue("plot_copol_nfamp", self::PlotPathToURL($ini_array[$section]['plot_copol_nfamp']));
+                    $beameff-> SetValue("plot_copol_nfphase", self::PlotPathToURL($ini_array[$section]['plot_copol_nfphase']));
+                    $beameff-> SetValue("plot_copol_ffamp", self::PlotPathToURL($ini_array[$section]['plot_copol_ffamp']));
+                    $beameff-> SetValue("plot_copol_ffphase", self::PlotPathToURL($ini_array[$section]['plot_copol_ffphase']));
+                    $beameff-> SetValue("plot_xpol_nfamp", self::PlotPathToURL($ini_array[$section]['plot_xpol_nfamp']));
+                    $beameff-> SetValue("plot_xpol_nfphase", self::PlotPathToURL($ini_array[$section]['plot_xpol_nfphase']));
+                    $beameff-> SetValue("plot_xpol_ffamp", self::PlotPathToURL($ini_array[$section]['plot_xpol_ffamp']));
+                    $beameff-> SetValue("plot_xpol_ffphase", self::PlotPathToURL($ini_array[$section]['plot_xpol_ffphase']));
+                }
+
+                // Restore error reporting:
+                error_reporting($errorReportSettingsNormal);
+
+                // Save the completed efficiencies record
+                $beameff->Update();
+                unset($beameff);
             }
         }
     }
@@ -1207,66 +1002,40 @@ class eff {
         $x_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x_corr');
         $y_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y_corr');
 
-        if ($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x0') != 0) {
-            //Display uncorrected x0, y0, x90, y90 for the case where the 180 scan was pol 0.
-            echo "<tr>";
-            echo "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[0]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x0'),2) . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y0'),2) . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_z'),2) . "</td></tr>";
+        echo "<tr>";
+        echo "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
+        echo "<td>" . $this->scansets[0]->Scan_copol_pol0->GetValue('pol') . "</td>";
+        echo "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_x'),2) . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_y'),2) . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_z'),2) . "</td></tr>";
 
-            echo "<tr>";
-            echo "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[0]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x90'),2) . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y90'),2) . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_z'),2) . "</td></tr>";
-
-            // POL0 - POl1 used to find phase center differences, apply correction to x90, y90 first:
-            $x_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x0')
-                          - ($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x90') + $x_corr);
-
-            $y_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y0')
-                          - ($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y90') + $y_corr);
-
-        } elseif ($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x0') != 0) {
-            //Display uncorrected x90, y90, x0, y0 for the case where the 180 scan was pol 1.
-            echo "<tr>";
-            echo "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[0]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x90'),2) . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y90'),2) . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_z'),2) . "</td></tr>";
-
-            echo "<tr>";
-            echo "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[0]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x0'),2) . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y0'),2) . "</td>";
-            echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_z'),2) . "</td></tr>";
-
-            //POL1 - POl0 used to find phase center differences, apply correction to x90, y90 first:
-            $x_difference = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x0')
-                          - ($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x90') + $x_corr);
-
-            $y_difference = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y0')
-                          - ($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y90') + $y_corr);
-        }
+        echo "<tr>";
+        echo "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
+        echo "<td>" . $this->scansets[0]->Scan_copol_pol1->GetValue('pol') . "</td>";
+        echo "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_x'),2) . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_y'),2) . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_z'),2) . "</td></tr>";
 
         echo "<tr><th colspan='3'>Phase center correction:</th>";
         echo "<td>" . round($x_corr, 2) . "</td>";
         echo "<td>" . round($y_corr, 2) . "</td>";
         echo "<th></th></tr>";
 
+        // corrected_x and corrected_y are calcuated by beameff2.x  Only one pol actually differs from delta_x, delta_y
+        // Since we are only displaying the differences we don't need to know which one.
+        // TODO:  Using x90, y90, not for their original purpose
+        $x_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x90') -
+                        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x90');
+
+        $y_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y90') -
+                        $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y90');
+
         //x_diff, y_diff from https://safe.nrao.edu/wiki/bin/view/ALMA/BeamSquintFromSingleScan#correctionProcedure
         echo "<tr><th colspan='3'>Corrected difference between phase centers:</th>";
-        echo "<td>" . round($x_difference, 2) . "</td>";
-        echo "<td>" . round($y_difference, 2) . "</td>";
+        echo "<td>" . round(abs($x_difference), 2) . "</td>";
+        echo "<td>" . round(abs($y_difference), 2) . "</td>";
         echo "<th></th></tr>";
 
         //echo "<tr class = 'alt'><th colspan='6'></th></tr>";
@@ -1461,10 +1230,6 @@ class eff {
 
     function Display_PointingAnglesPlot() {
         echo "<img src='" . $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('pointing_angles_plot') . "'>";
-        echo "<div style='height:50px;background:#E9FA89'>";
-        echo "<font size='-1'>The plot below shows pointing angles for the two scans used for squint (one of which is the third scan).<br>";
-        echo "Do not use this plot in the PAI report.</font></div>";
-        echo "<img src='" . $this->scansets[0]->Scan_180->BeamEfficencies->GetValue('pointing_angles_plot') . "'>";
     }
 
     function Display_AllAmpPhasePlots($pol = 'both', $nf_ff='both') {
