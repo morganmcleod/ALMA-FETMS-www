@@ -38,11 +38,12 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.1.9";
+        $this->software_version_class_eff = "1.1.10";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
 
         /* Version history:
+         * 1.1.10 Removed writing 'keyscandetails' added writing 'scan_id' + fix for 180 scans.
          * 1.1.9  Displaying total_aperture_eff which includes defocus as Aperture Efficiency.
          *        Explicit table header: 'Amplitude Taper Efficiency'
          *        Display pol+spill equations with crossrefs in tables.
@@ -458,6 +459,10 @@ class eff {
     }
 
     public function MakeInputFileSquint() {
+        // The SQUINT input file for the BeamEff calculator version 1.x fils all four sections
+        //  of the input file with the same 180-degree scan.
+        // TODO: Remove this for BeamEff 2.x
+
         $this -> MakeOutputEnvironment(TRUE);
 
         // start writing the command input file:
@@ -481,6 +486,7 @@ class eff {
             //Copol pol 0 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
+            fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
             fwrite($fhandle,"type=copol\r\n");
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -507,6 +513,7 @@ class eff {
             //Crosspol pol 0 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
+            fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
             fwrite($fhandle,"type=xpol\r\n");
             fwrite($fhandle,"pol=0\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -529,6 +536,7 @@ class eff {
             //Copol pol 1 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
+            fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
             fwrite($fhandle,"type=copol\r\n");
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
@@ -551,6 +559,7 @@ class eff {
             //Crosspol pol 1 scan
             $scanNumber++;
             fwrite($fhandle,"[scan_$scanNumber]\r\n");
+            fwrite($fhandle,"scan_id=". $this->scansets[$scanSetIdx]->keyId_180_scan ."\r\n");
             fwrite($fhandle,"type=xpol\r\n");
             fwrite($fhandle,"pol=1\r\n");
             fwrite($fhandle,"scanset=" . ($scanSet) ."\r\n");
