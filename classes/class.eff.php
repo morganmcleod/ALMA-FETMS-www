@@ -49,6 +49,7 @@ class eff {
          *        Remove special handling for phase center correction and squint calculation.  BeamEff2 handles it now.
          *        TODO: Using table beameff x90, y90 to store corrected_x, corrected_y.  Need to alter table and code.
          *        Seting tdh_id in command file for Beameff2. Spread out nf/ff plots a bit.
+         *        Fix 'Eff. calculations using' on Pointing Angles table to take in to account 'actual'.
          * 1.1.10 Removed writing 'keyscandetails' added writing 'scan_id' + fix for 180 scans.
          * 1.1.9  Displaying total_aperture_eff which includes defocus as Aperture Efficiency.
          *        Explicit table header: 'Amplitude Taper Efficiency'
@@ -637,8 +638,14 @@ class eff {
         $nomEL = @mysql_result($rn,0,1);
         //Get nominal Az, El
         $sd = new ScanDetails();
+
         $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('az_nominal'),4);
         $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('el_nominal'),4);
+
+        if ($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('centers') == "actual") {
+            $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_xcenter'),4);
+            $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_ycenter'),4);
+        }
 
         echo "<div style = 'width:200px'><table id = 'table1'>";
 
