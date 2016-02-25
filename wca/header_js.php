@@ -21,7 +21,7 @@
           <li><a href="wca_main.php"><span>WCAs Home</span></a></li>
           <li><a href="wca_list2.php"><span>WCA List</span></a></li>
           <li><a href="wca.php"><span>Add a WCA</span></a></li>
-          <li><a href="https://safe.nrao.edu/php/ntc/Bugs/AddNewBug.php?modulekey=45"><span>Report a Bug</span></a></li>
+          <li><a href="http://jira.alma.cl/browse/FETMS/"><span>Report a Bug</span></a></li>
 
         </ul>
         <div class="clr"></div>
