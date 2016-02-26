@@ -7,8 +7,8 @@ $fileName = $_FILES['filedata']['name'];
 $tmpName  = $_FILES['filedata']['tmp_name'];
 
 $cca = new CCA();
-$cca->Initialize_CCA($_REQUEST['id'],$_REQUEST['fc']);
-$cca->RequestValues_CCA($fileName,$tmpName);
+$cca->Initialize_CCA($_REQUEST['id'], $_REQUEST['fc'], CCA::INIT_ALL);
+$cca->RequestValues_CCA($fileName, $tmpName);
 
 $errorstring = '';
 $errordetected = 0;

@@ -32,7 +32,7 @@ $ifspec = new IFSpectrum_impl();
 $ifspec -> Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $fc);
 echo "<div style='background-color:#6C7070;width:1000px;'>";
 
-$feconfig = $ifspec -> FrontEnd -> feconfig_latest;
+$feconfig = $ifspec -> FrontEnd -> feconfig_id_latest;
 
 switch($tabtype){
     case 1:

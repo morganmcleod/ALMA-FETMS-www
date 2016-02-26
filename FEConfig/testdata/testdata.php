@@ -323,35 +323,35 @@ function Display_TestDataMain($td) {
             $td->Display_DataForm();
             echo "<br>";
             $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'));
+            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
             $wca->Display_AmplitudeStability();
             break;
         case 44:
             $td->Display_DataForm();
             echo "<br>";
             $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'));
+            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
             $wca->Display_AMNoise();
             break;
         case 46:
             $td->Display_DataForm();
             echo "<br>";
             $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'));
+            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
             $wca->Display_OutputPower();
             break;
         case 47:
             $td->Display_DataForm();
             echo "<br>";
             $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'));
+            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
             $wca->Display_PhaseNoise();
             break;
         case 48:
             $td->Display_DataForm();
             echo "<br>";
             $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'));
+            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
             $wca->Display_PhaseNoise();
             break;
         default:

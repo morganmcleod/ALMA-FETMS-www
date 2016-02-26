@@ -75,9 +75,10 @@ class CCA extends FEComponent {
 
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.10";
+        $this->swversion = "1.0.11";
 
         /*
+         * 1.0.11 MM Added INIT_Options to Initialize_CCA()
          * 1.0.10 Added XML data file uplaod and fixed related bugs
          * 1.0.9  fixed bugs in CCA data upload
          * 1.0.8  fixes to allow operation with E_NOTICE enabled
@@ -90,74 +91,93 @@ class CCA extends FEComponent {
         $this->ErrorArray = array();
     }
 
-    private function AddError($ErrorString){
+    private function AddError($ErrorString) {
         $this->ErrorArray[] = $ErrorString;
     }
 
-    public function Initialize_CCA($in_keyId, $in_fc){
+    const INIT_SLN          = 0x0001;
+    const INIT_TEMPSENSORS  = 0x0002;
+    const INIT_MIXERPARAMS  = 0x0004;
+    const INIT_PREAMPPARAMS = 0x0008;
+    const INIT_TESTDATA     = 0x0010;
+
+    const INIT_NONE         = 0x0000;
+    const INIT_ALL          = 0x001F;
+
+    public function Initialize_CCA($in_keyId, $in_fc, $INIT_Options = self::INIT_ALL) {
         $this->fc = $in_fc;
 
-        parent::Initialize_FEComponent($in_keyId,$this->fc);
+        parent::Initialize_FEComponent($in_keyId, $this->fc);
         $this->SetValue('keyFacility',$in_fc);
 
-        //Initialize temp sensors.
-        $q = "SELECT keyId, Location FROM CCA_TempSensorConfig
-              WHERE fkComponent = $this->keyId
-              ORDER BY Location ASC;";
-        $r = @mysql_query($q,$this->dbconnection);
-        while ($row = @mysql_fetch_array($r)){
-            $tempsensor_id = $row[0];
-            $ts_location = $row[1];
-            $this->TempSensors[$ts_location] = new GenericTable();
-            $this->TempSensors[$ts_location]->keyId_name = "keyId";
-            $this->TempSensors[$ts_location]->Initialize('CCA_TempSensorConfig',$tempsensor_id,'keyId');
+        if ($INIT_Options & self::INIT_SLN) {
+            //Status location and notes
+            $qsln = "SELECT MAX(keyId) FROM FE_StatusLocationAndNotes
+            WHERE fkFEComponents = $this->keyId;";
+            $rsln = @mysql_query($qsln,$this->dbconnection);
+            $slnid = @mysql_result($rsln,0,0);
+            $this->sln = new GenericTable();
+            $this->sln->Initialize("FE_StatusLocationAndNotes",$slnid,"keyId");
         }
 
-        //Initialize preamp params.
-        $q = "SELECT FreqLO, keyId FROM CCA_PreampParams
-              WHERE fkComponent = $this->keyId
-              AND Temperature < 10
-              ORDER BY Pol ASC, SB ASC, FreqLO ASC;";
-        //echo "preamps: " . $q . "<br>";
-        $r = @mysql_query($q,$this->dbconnection);
-        $pcount = 0;
-        while ($row = @mysql_fetch_array($r)){
-            $this->PreampParams[$pcount] = new GenericTable();
-            $this->PreampParams[$pcount]->dbconnection = $this->dbconnection;
-            $this->PreampParams[$pcount]->Initialize('CCA_PreampParams', $row[1], 'keyId', $in_fc, 'fkFacility');
-            //echo $this->PreampParams[$pcount]->GetValue('FreqLO') . "<br>";
-            $pcount += 1;
+        if ($INIT_Options & self::INIT_TEMPSENSORS) {
+            //Initialize temp sensors.
+            $q = "SELECT keyId, Location FROM CCA_TempSensorConfig
+                  WHERE fkComponent = $this->keyId
+                  ORDER BY Location ASC;";
+            $r = @mysql_query($q,$this->dbconnection);
+            while ($row = @mysql_fetch_array($r)) {
+                $tempsensor_id = $row[0];
+                $ts_location = $row[1];
+                $this->TempSensors[$ts_location] = new GenericTable();
+                $this->TempSensors[$ts_location]->keyId_name = "keyId";
+                $this->TempSensors[$ts_location]->Initialize('CCA_TempSensorConfig',$tempsensor_id,'keyId');
+            }
         }
 
-        //Initialize mixers.
-        $q = "SELECT DISTINCT(FreqLO), keyId FROM CCA_MixerParams
-              WHERE fkComponent = $this->keyId
-              GROUP BY FreqLO ASC;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $mpcount = 0;
-        while ($row = @mysql_fetch_array($r)){
-            $this->MixerParams[$mpcount] = new MixerParams();
-            $this->MixerParams[$mpcount]->dbconnection = $this->dbconnection;
-            $this->MixerParams[$mpcount]->Initialize_MixerParam($this->keyId, $row[0],$this->GetValue('keyFacility'));
-            $mpcount += 1;
+        if ($INIT_Options & self::INIT_MIXERPARAMS) {
+            //Initialize mixer params
+            $q = "SELECT DISTINCT(FreqLO), keyId FROM CCA_MixerParams
+            WHERE fkComponent = $this->keyId
+            GROUP BY FreqLO ASC;";
+            $r = @mysql_query($q,$this->dbconnection);
+            $mpcount = 0;
+            while ($row = @mysql_fetch_array($r)) {
+                $this->MixerParams[$mpcount] = new MixerParams();
+                $this->MixerParams[$mpcount]->dbconnection = $this->dbconnection;
+                $this->MixerParams[$mpcount]->Initialize_MixerParam($this->keyId, $row[0],$this->GetValue('keyFacility'));
+                $mpcount += 1;
+            }
         }
 
-        //URLs
-        $this->CCA_urls = new GenericTable();
-        $this->CCA_urls->keyId_name = "fkFE_Component";
-        //$this->CCA_urls->dbconnection = $this->dbconnection;
-        $this->CCA_urls->Initialize("CCA_urls",$this->keyId,"fkFE_Component");
+        if ($INIT_Options & self::INIT_PREAMPPARAMS) {
+            //Initialize preamp params.
+            $q = "SELECT FreqLO, keyId FROM CCA_PreampParams
+                  WHERE fkComponent = $this->keyId
+                  AND Temperature < 10
+                  ORDER BY Pol ASC, SB ASC, FreqLO ASC;";
+            //echo "preamps: " . $q . "<br>";
+            $r = @mysql_query($q,$this->dbconnection);
+            $pcount = 0;
+            while ($row = @mysql_fetch_array($r)) {
+                $this->PreampParams[$pcount] = new GenericTable();
+                $this->PreampParams[$pcount]->dbconnection = $this->dbconnection;
+                $this->PreampParams[$pcount]->Initialize('CCA_PreampParams', $row[1], 'keyId', $in_fc, 'fkFacility');
+                //echo $this->PreampParams[$pcount]->GetValue('FreqLO') . "<br>";
+                $pcount += 1;
+            }
+        }
 
-        //Status location and notes
-        $qsln = "SELECT MAX(keyId) FROM FE_StatusLocationAndNotes
-                             WHERE fkFEComponents = $this->keyId;";
-        $rsln = @mysql_query($qsln,$this->dbconnection);
-        $slnid = @mysql_result($rsln,0,0);
-        $this->sln = new GenericTable();
-        $this->sln->Initialize("FE_StatusLocationAndNotes",$slnid,"keyId");
+        if ($INIT_Options & self::INIT_TESTDATA) {
+            //Test data URLs
+            $this->CCA_urls = new GenericTable();
+            $this->CCA_urls->keyId_name = "fkFE_Component";
+            //$this->CCA_urls->dbconnection = $this->dbconnection;
+            $this->CCA_urls->Initialize("CCA_urls",$this->keyId,"fkFE_Component");
+        }
     }
 
-    public function NewRecord_CCA($in_fc){
+    public function NewRecord_CCA($in_fc) {
         parent::NewRecord('FE_Components','keyId',$in_fc,'keyFacility');
         parent::SetValue('fkFE_ComponentType',20);
         parent::Update();
@@ -181,17 +201,17 @@ class CCA extends FEComponent {
     }
 
 
-    public function DisplayData_CCA(){
+    public function DisplayData_CCA() {
         require(site_get_config_main());
 
         echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
             echo "<div style ='width:100%;height:50%'>";
             //echo "<div align='right' style ='width:50%;height:30%'>";
                 echo "<input type='hidden' name='" . $this->keyId_name . "' value='$this->keyId'>";
-                if ($this->fc != ""){
+                if ($this->fc != "") {
                     echo "<input type='hidden' name='fc' value='$this->fc'>";
                 }
-                if ($this->fc == ""){
+                if ($this->fc == "") {
                     echo "<input type='hidden' name='fc' value='$fc'>";
                 }
                 echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>";
@@ -217,7 +237,7 @@ class CCA extends FEComponent {
         echo "<br>";
 
 
-        if ($this->keyId != ''){
+        if ($this->keyId != '') {
             echo '<a href="#TempSensors">Temperature Sensors<br></a>';
             echo '<a href="#MixerParams">Mixer Parameters<br></a>';
             echo '<a href="#PreampParams">Preamp Parameters<br></a>';
@@ -231,12 +251,12 @@ class CCA extends FEComponent {
             echo '<a name="PreampParams"></a>';
             $this->Display_PreampParams();
 
-            if ($this->CCA_urls->GetValue('url_amplitudestability') != ""){
+            if ($this->CCA_urls->GetValue('url_amplitudestability') != "") {
                 //echo '<a name="AmplitudeStability"></a>';
                 //echo "<h2>Amplitude Stability</h2><br>";
                 //echo "<img src= '". $this->CCA_urls->GetValue('url_amplitudestability') . "'>";
             }
-            if ($this->CCA_urls->GetValue('url_phasedrift') != ""){
+            if ($this->CCA_urls->GetValue('url_phasedrift') != "") {
                 //echo '<a name="PhaseDrift"></a>';
                 //echo "<h2>PhaseDrift</h2><br>";
                 //echo "<img src= '". $this->CCA_urls->GetValue('url_phasedrift') . "'>";
@@ -307,7 +327,7 @@ class CCA extends FEComponent {
         echo "</table></div>";
     }
 
-    public function Display_TempSensors(){
+    public function Display_TempSensors() {
         $locs[0]= "Spare";
         $locs[1]= "110K Stage";
         $locs[2]= "15K Stage";
@@ -316,7 +336,7 @@ class CCA extends FEComponent {
         $locs[5]= "Pol 1 Mixer";
 
         $ts = "";
-        if (isset($this->TempSensors[1]) && $this->TempSensors[1]->keyId != ''){
+        if (isset($this->TempSensors[1]) && $this->TempSensors[1]->keyId != '') {
             $ts = $this->TempSensors[1]->GetValue('TS') . ",";
         }
 
@@ -332,9 +352,9 @@ class CCA extends FEComponent {
 
               </tr>";
 
-        for ($i=1;$i<=5;$i++){
-            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != ""){
-                if ($i % 2 == 0){
+        for ($i=1;$i<=5;$i++) {
+            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != "") {
+                if ($i % 2 == 0) {
                     echo "<tr>";
                 }
                 else{
@@ -355,8 +375,8 @@ class CCA extends FEComponent {
     public function Display_MixerParams() {
         $maxSb = $this->GetValue('Band') < 9 ? 2 : 1;
 
-        for ($pol = 0; $pol <= 1; $pol++){
-            for ($sb = 1; $sb <= $maxSb; $sb++){
+        for ($pol = 0; $pol <= 1; $pol++) {
+            for ($sb = 1; $sb <= $maxSb; $sb++) {
                 $q = "SELECT Temperature,FreqLO,VJ,IJ,IMAG,TS
                       FROM CCA_MixerParams
                       WHERE fkComponent = $this->keyId
@@ -367,7 +387,7 @@ class CCA extends FEComponent {
                 $r = @mysql_query($q,$this->dbconnection);
                 $ts = @mysql_result($r,0,5);
                 $r = @mysql_query($q,$this->dbconnection);
-                if (@mysql_num_rows($r) > 0 ){
+                if (@mysql_num_rows($r) > 0 ) {
                 echo "
                     <div style= 'width: 500px;'>
                     <table id = 'table1' border = '1'>";
@@ -385,8 +405,8 @@ class CCA extends FEComponent {
                         <th>IMAG</th>
                       </tr>";
                 $count= 0;
-                while($row = @mysql_fetch_array($r)){
-                    if ($count % 2 == 0){
+                while($row = @mysql_fetch_array($r)) {
+                    if ($count % 2 == 0) {
                         echo "<tr>";
                     }
                     else{
@@ -514,7 +534,7 @@ class CCA extends FEComponent {
     ";
 }
 
-public function Display_uploadform_AnyFile($keyId, $fc){
+public function Display_uploadform_AnyFile($keyId, $fc) {
     echo "<div style='width:850px'>";
     echo "<table id = 'table8'>";
     echo "<tr class='alt'><th colspan = '2'>Upload a file.</th></tr>";
@@ -545,7 +565,7 @@ public function Display_uploadform_AnyFile($keyId, $fc){
     echo "</table></div>";
 }
 
-public function Display_uploadform_SingleCSVfile(){
+public function Display_uploadform_SingleCSVfile() {
     require(site_get_config_main());
 
             echo '<tr class="alt"><td colspan="2">
@@ -562,7 +582,7 @@ public function Display_uploadform_SingleCSVfile(){
 
     </form>";
 }
-    public function Display_uploadform(){
+    public function Display_uploadform() {
         require(site_get_config_main());
 
 
@@ -604,19 +624,19 @@ public function Display_uploadform_SingleCSVfile(){
 
     }
 
-    public function RequestValues_CCA($In_SubmittedFileName = '', $In_SubmittedFileTmp = ''){
+    public function RequestValues_CCA($In_SubmittedFileName = '', $In_SubmittedFileTmp = '') {
         $fc = $this->GetValue('keyFacility');
         parent::RequestValues();
         $this->SetValue('keyFacility',$fc);
 
-        if (isset($_REQUEST['deleterecord_forsure'])){
+        if (isset($_REQUEST['deleterecord_forsure'])) {
             $this->DeleteRecord_CCA();
         }
 
         $this->SubmittedFileName = $In_SubmittedFileName;
         $this->SubmittedFileTmp  = $In_SubmittedFileTmp;
 
-        if (isset($_REQUEST['submitted_ccafile'])){
+        if (isset($_REQUEST['submitted_ccafile'])) {
             $this->SubmittedFile = $_REQUEST['submitted_ccafile'];
             $this->SubmittedFileName = $_FILES['ccafile']['name'];
             $this->SubmittedFileTmp = $_FILES['ccafile']['tmp_name'];
@@ -625,18 +645,18 @@ public function Display_uploadform_SingleCSVfile(){
         $filenamearr = explode(".",$this->SubmittedFileName);
         $this->SubmittedFileExtension = strtolower($filenamearr[count($filenamearr)-1]);
 
-        if ($this->SubmittedFileExtension == 'zip'){
+        if ($this->SubmittedFileExtension == 'zip') {
             $this->UploadExtractZipFile();
 
-        } else if (($this->SubmittedFileExtension == 'csv') || ($this->SubmittedFileExtension == 'txt')){
+        } else if (($this->SubmittedFileExtension == 'csv') || ($this->SubmittedFileExtension == 'txt')) {
             $this->Upload_TestDataFile();
         }
 
-        else if ($this->SubmittedFileExtension == 'ini'){
+        else if ($this->SubmittedFileExtension == 'ini') {
             $this->Update_Configuration_From_INI($this->SubmittedFileTmp);
         }
 
-        else if ($this->SubmittedFileExtension == 'xml'){
+        else if ($this->SubmittedFileExtension == 'xml') {
             $this->Update_Configuration_From_ALMA_XML($this->SubmittedFileTmp);
         }
 
@@ -645,52 +665,52 @@ public function Display_uploadform_SingleCSVfile(){
         }
     }
 
-    public function Upload_TestDataFile(){
-        if (strpos(strtolower($this->SubmittedFileName), "amplitude_stability" ) != ""){
+    public function Upload_TestDataFile() {
+        if (strpos(strtolower($this->SubmittedFileName), "amplitude_stability" ) != "") {
             $this->file_AMPLITUDESTABILITY = $this->SubmittedFileTmp;
             $this->Upload_AmplitudeStability();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "phase_drift" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "phase_drift" ) != "") {
             $this->file_PHASE_DRIFT = $this->SubmittedFileTmp;
             $this->Upload_PhaseDrift();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "gain_compression" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "gain_compression" ) != "") {
             $this->file_GAIN_COMPRESSION = $this->SubmittedFileTmp;
             $this->Upload_GainCompression();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "total_power" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "total_power" ) != "") {
             $this->file_TOTALPOWER = $this->SubmittedFileTmp;
             $this->Upload_TotalPower();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "inband_power" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "inband_power" ) != "") {
             $this->file_INBANDPOWER = $this->SubmittedFileTmp;
             $this->Upload_InBandPower();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "iv_curve" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "iv_curve" ) != "") {
             $this->file_IVCURVE = $this->SubmittedFileTmp;
             $this->Upload_IVCurve();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "sideband_ratio" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "sideband_ratio" ) != "") {
             $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
             $this->Upload_SidebandRatio();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "image_suppression" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "image_suppression" ) != "") {
             $this->file_SIDEBANDRATIO = $this->SubmittedFileTmp;
             $this->Upload_SidebandRatio();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "power_var" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "power_var" ) != "") {
             $this->file_POWERVARIATION = $this->SubmittedFileTmp;
             $this->Upload_PowerVariation();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "polarization_accuracy" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "polarization_accuracy" ) != "") {
             $this->file_POLACCURACY = $this->SubmittedFileTmp;
             $this->Upload_PolAccuracy();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "if_spectrum" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "if_spectrum" ) != "") {
             $this->file_IFSPECTRUM = $this->SubmittedFileTmp;
             $this->Upload_IFSpectrum();
         }
-        if (strpos(strtolower($this->SubmittedFileName), "noise_temperature" ) != ""){
+        if (strpos(strtolower($this->SubmittedFileName), "noise_temperature" ) != "") {
             $this->file_NOISETEMPERATURE = $this->SubmittedFileTmp;
             $this->Upload_NoiseTemperature();
         }
@@ -698,7 +718,7 @@ public function Display_uploadform_SingleCSVfile(){
 
     }
 
-    public function DeleteRecord_CCA(){
+    public function DeleteRecord_CCA() {
         $this->Delete_ALL_TestData();
         $qDel = "DELETE FROM FE_Components WHERE fkFE_Component = $this->keyId;";
         $rDel = @mysql_query($qDel,$this->dbconnection);
@@ -764,7 +784,7 @@ public function Display_uploadform_SingleCSVfile(){
     }
 
 
-    public function UploadExtractZipFile(){
+    public function UploadExtractZipFile() {
         $this->rmdir_recursive($this->ZipDirectory);
         mkdir($this->ZipDirectory);
         $upload_dir = $this->ZipDirectory; //your upload directory NOTE: CHMODD 0777
@@ -797,7 +817,7 @@ public function Display_uploadform_SingleCSVfile(){
         */
 
         $archive = new PclZip($upload_dir.'/'.$filename);
-        if ($archive->extract(PCLZIP_OPT_PATH, $upload_dir.'/'.$zip_dir) == 0){
+        if ($archive->extract(PCLZIP_OPT_PATH, $upload_dir.'/'.$zip_dir) == 0) {
             $this->AddError("Error : Unable to unzip archive");
         }
 
@@ -813,52 +833,52 @@ public function Display_uploadform_SingleCSVfile(){
             //echo "".$list[$i]['filename']."$bytes<br />";
             $this->UnzippedFiles[$i] = $upload_dir.'/'.$zip_dir . "/" . $list[$i]['filename'];
 
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "mixerparams" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "mixerparams" ) != "") {
                 $this->file_MIXERPARAMS = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "tempsensors" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "tempsensors" ) != "") {
                 $this->file_TEMPSENSORS = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "coldcarts" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "coldcarts" ) != "") {
                 $this->file_COLDCARTS = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "preampparams" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "preampparams" ) != "") {
                 $this->file_PREAMPPARAMS = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "amplitude_stability" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "amplitude_stability" ) != "") {
                 $this->file_AMPLITUDESTABILITY = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "gain_compression" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "gain_compression" ) != "") {
                 $this->file_GAIN_COMPRESSION = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "polarization_accuracy" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "polarization_accuracy" ) != "") {
                 $this->file_POLACCURACY = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "inband_power" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "inband_power" ) != "") {
                 $this->file_INBANDPOWER = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "total_power" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "total_power" ) != "") {
                 $this->file_TOTALPOWER = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "sideband_ratio" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "sideband_ratio" ) != "") {
                 $this->file_SIDEBANDRATIO = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "image_suppression" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "image_suppression" ) != "") {
                 $this->file_SIDEBANDRATIO = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "iv_curve" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "iv_curve" ) != "") {
                 $this->file_IVCURVE = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "power_var" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "power_var" ) != "") {
                 $this->file_POWERVARIATION = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "if_spectrum" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "if_spectrum" ) != "") {
                 $this->file_IFSPECTRUM = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "noise_temperature" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "noise_temperature" ) != "") {
                 $this->file_NOISETEMPERATURE = $this->UnzippedFiles[$i];
             }
-            if (strpos(strtolower($this->UnzippedFiles[$i]), "phase_drift" ) != ""){
+            if (strpos(strtolower($this->UnzippedFiles[$i]), "phase_drift" ) != "") {
                 $this->file_PHASE_DRIFT = $this->UnzippedFiles[$i];
             }
 
@@ -866,13 +886,13 @@ public function Display_uploadform_SingleCSVfile(){
 
         unlink($upload_dir.'/'.$filename); //delete uploaded file
 
-        if ($this->file_COLDCARTS != ""){
+        if ($this->file_COLDCARTS != "") {
             $this->Upload_CCAs_file();
 
             //UploadTF is set to 0 or 1 in Upload_CCAs_file.
             //0= This CCA SN not found in zip file
             //1= This CCA found, go ahead and upload everything.
-            if ($this->UploadTF == 1){
+            if ($this->UploadTF == 1) {
                 $this->UploadTempSensors();
                 $this->UploadMixerParams();
                 $this->UploadPreampParams();
@@ -884,38 +904,38 @@ public function Display_uploadform_SingleCSVfile(){
             }
         }
 
-        if ($this->UploadTF == 1){
-            if ($this->file_AMPLITUDESTABILITY != ""){
+        if ($this->UploadTF == 1) {
+            if ($this->file_AMPLITUDESTABILITY != "") {
                 $this->Upload_AmplitudeStability();
             }
-            if ($this->file_GAIN_COMPRESSION != ""){
+            if ($this->file_GAIN_COMPRESSION != "") {
                 $this->Upload_GainCompression();
             }
-            if ($this->file_POLACCURACY != ""){
+            if ($this->file_POLACCURACY != "") {
                 $this->Upload_PolAccuracy();
             }
-            if ($this->file_INBANDPOWER != ""){
+            if ($this->file_INBANDPOWER != "") {
                 $this->Upload_InBandPower();
             }
-            if ($this->file_TOTALPOWER != ""){
+            if ($this->file_TOTALPOWER != "") {
                 $this->Upload_TotalPower();
             }
-            if ($this->file_SIDEBANDRATIO != ""){
+            if ($this->file_SIDEBANDRATIO != "") {
                 $this->Upload_SidebandRatio();
             }
-            if ($this->file_IVCURVE != ""){
+            if ($this->file_IVCURVE != "") {
                 $this->Upload_IVCurve();
             }
-            if ($this->file_POWERVARIATION != ""){
+            if ($this->file_POWERVARIATION != "") {
                 $this->Upload_PowerVariation();
             }
-            if ($this->file_IFSPECTRUM != ""){
+            if ($this->file_IFSPECTRUM != "") {
                 $this->Upload_IFSpectrum();
             }
-            if ($this->file_NOISETEMPERATURE != ""){
+            if ($this->file_NOISETEMPERATURE != "") {
                 $this->Upload_NoiseTemperature();
             }
-            if ($this->file_PHASE_DRIFT != ""){
+            if ($this->file_PHASE_DRIFT != "") {
                 $this->Upload_PhaseDrift();
             }
         }
@@ -1023,7 +1043,7 @@ public function Display_uploadform_SingleCSVfile(){
         }
     }
 
-    public function UploadTempSensors(){
+    public function UploadTempSensors() {
         $qdelete = "DELETE FROM CCA_TempSensorConfig WHERE fkComponent = $this->keyId;";
         $rdelete = @mysql_query($qdelete,$this->dbconnection);
 
@@ -1031,10 +1051,10 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
                 $line_data = trim($filecontents[$i]);
                 $tempArray   = explode(",", $line_data);
-                if (count($tempArray) < 2){
+                if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-                  if (is_numeric(substr($tempArray[0],0,1)) == true){
+                  if (is_numeric(substr($tempArray[0],0,1)) == true) {
                     $TempSensor = new GenericTable();
                     $TempSensor->keyId_name = "keyId";
                     $TempSensor->dbconnection = $this->dbconnection;
@@ -1053,7 +1073,7 @@ public function Display_uploadform_SingleCSVfile(){
 
     }
 
-    public function UploadMixerParams(){
+    public function UploadMixerParams() {
         $qdelete = "DELETE FROM CCA_MixerParams WHERE fkComponent = $this->keyId;";
         $rdelete = @mysql_query($qdelete,$this->dbconnection);
 
@@ -1061,11 +1081,11 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
                 $line_data = trim($filecontents[$i]);
                 $tempArray   = explode(",", $line_data);
-                if (count($tempArray) < 2){
+                if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
 
-                  if (is_numeric(substr($tempArray[0],0,1)) == true){
+                  if (is_numeric(substr($tempArray[0],0,1)) == true) {
                       $MixerParam = new GenericTable();
                       $MixerParam->dbconnection = $this->dbconnection;
                     $MixerParam->keyId_name = "keyId";
@@ -1109,7 +1129,7 @@ public function Display_uploadform_SingleCSVfile(){
             }
     }
 
-    public function UploadPreampParams(){
+    public function UploadPreampParams() {
         $qdelete = "DELETE FROM CCA_PreampParams WHERE fkComponent = $this->keyId
                     AND fkFacility = " . $this->GetValue('keyFacility').";";
         $rdelete = @mysql_query($qdelete,$this->dbconnection);
@@ -1121,12 +1141,12 @@ public function Display_uploadform_SingleCSVfile(){
 
                 $line_data = trim($filecontents[$i]);
                 $tempArray   = explode(",", $line_data);
-                if (count($tempArray) < 2){
+                if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-                  if (is_numeric(substr($tempArray[0],0,1)) == true){
+                  if (is_numeric(substr($tempArray[0],0,1)) == true) {
                       //Don't import if temp> 10k
-                      if ($tempArray[3] < 10){
+                      if ($tempArray[3] < 10) {
                     $fkPreamps    = $tempArray[2];
                     $ImportPA = 0;
                     switch ($fkPreamps) {
@@ -1140,7 +1160,7 @@ public function Display_uploadform_SingleCSVfile(){
                             $ImportPA = 1;
                     }
 
-                    if ($ImportPA == 1){
+                    if ($ImportPA == 1) {
                           $PreampParam = new GenericTable();
                           $PreampParam->dbconnection = $this->dbconnection;
                         $PreampParam->keyId_name = "keyId";
@@ -1187,7 +1207,7 @@ public function Display_uploadform_SingleCSVfile(){
             }
     }
 
-    public function Upload_AmplitudeStability(){
+    public function Upload_AmplitudeStability() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1206,19 +1226,19 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-            if (count($tempArray) < 2){
+            if (count($tempArray) < 2) {
                 $tempArray   = explode("\t", $line_data);
             }
-            if (is_numeric(substr($tempArray[0],0,1)) == true){
+            if (is_numeric(substr($tempArray[0],0,1)) == true) {
                 $ds = $tempArray[1];
                 $FreqLO = $tempArray[4];
                 $Pol = $tempArray[5];
                 $SB = $tempArray[6];
                 $TS = $tempArray[3];
-                if (trim(strtoupper($SB)) == "U"){
+                if (trim(strtoupper($SB)) == "U") {
                   $SB = 1;
                 }
-                if (trim(strtoupper($SB)) == "L"){
+                if (trim(strtoupper($SB)) == "L") {
                   $SB = 2;
                 }
                 $Time = $tempArray[7];
@@ -1236,7 +1256,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_PhaseDrift(){
+    public function Upload_PhaseDrift() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1255,11 +1275,11 @@ public function Display_uploadform_SingleCSVfile(){
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
 
-            if (count($tempArray) < 2){
+            if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
-                  if ($this->GetValue('Band') != 7){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
+                  if ($this->GetValue('Band') != 7) {
                       $FreqLO      = $tempArray[4];
                       $FreqCarrier = $tempArray[5];
                       $Pol         = $tempArray[6];
@@ -1267,7 +1287,7 @@ public function Display_uploadform_SingleCSVfile(){
                       $Time        = $tempArray[8];
                       $AllanPhase    = $tempArray[9];
                   }
-                  if ($this->GetValue('Band') == 7){
+                  if ($this->GetValue('Band') == 7) {
                       $FreqLO      = $tempArray[4];
                       $FreqCarrier = 0;
                       $Pol         = $tempArray[5];
@@ -1277,10 +1297,10 @@ public function Display_uploadform_SingleCSVfile(){
                   }
                   $ds = $tempArray[1];
                   $TS = $tempArray[3];
-                  if (trim(strtoupper($SB)) == "U"){
+                  if (trim(strtoupper($SB)) == "U") {
                       $SB = 1;
                   }
-                  if (trim(strtoupper($SB)) == "L"){
+                  if (trim(strtoupper($SB)) == "L") {
                       $SB = 2;
                   }
 
@@ -1293,7 +1313,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_GainCompression(){
+    public function Upload_GainCompression() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1311,19 +1331,19 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-            if (count($tempArray) < 2){
+            if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $ds = $tempArray[1];
                   $FreqLO      = $tempArray[4];
                   $Pol         = $tempArray[5];
                   $SB          = $tempArray[6];
                   $TS          = $tempArray[3];
-                  if (trim(strtoupper($SB)) == "U"){
+                  if (trim(strtoupper($SB)) == "U") {
                       $SB = 1;
                   }
-                  if (trim(strtoupper($SB)) == "L"){
+                  if (trim(strtoupper($SB)) == "L") {
                       $SB = 2;
                   }
                   $Compression = $tempArray[7];
@@ -1337,7 +1357,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_PolAccuracy(){
+    public function Upload_PolAccuracy() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1355,10 +1375,10 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-            if (count($tempArray) < 2){
+            if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $FreqLO      = $tempArray[4];
                   $FreqCarrier = $tempArray[5];
                   $Pol         = $tempArray[6];
@@ -1375,7 +1395,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_InBandPower(){
+    public function Upload_InBandPower() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1393,19 +1413,19 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-        if (count($tempArray) < 2){
+        if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $ds = $tempArray[1];
                   $FreqLO      = $tempArray[4];
                   $Pol         = $tempArray[5];
                   $SB          = $tempArray[6];
                   $TS           = $tempArray[3];
-                  if (trim(strtoupper($SB)) == "U"){
+                  if (trim(strtoupper($SB)) == "U") {
                       $SB = 1;
                   }
-                  if (trim(strtoupper($SB)) == "L"){
+                  if (trim(strtoupper($SB)) == "L") {
                       $SB = 2;
                   }
                   $Power       = $tempArray[7];
@@ -1419,7 +1439,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_TotalPower(){
+    public function Upload_TotalPower() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1437,19 +1457,19 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-        if (count($tempArray) < 2){
+        if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $ds = $tempArray[1];
                   $FreqLO      = $tempArray[4];
                   $Pol         = $tempArray[5];
                   $SB          = $tempArray[6];
                   $TS             = $tempArray[3];
-                  if (trim(strtoupper($SB)) == "U"){
+                  if (trim(strtoupper($SB)) == "U") {
                       $SB = 1;
                   }
-                  if (trim(strtoupper($SB)) == "L"){
+                  if (trim(strtoupper($SB)) == "L") {
                       $SB = 2;
                   }
                   $Power       = $tempArray[7];
@@ -1464,7 +1484,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_SidebandRatio(){
+    public function Upload_SidebandRatio() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1482,10 +1502,10 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-        if (count($tempArray) < 2){
+        if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $ds = $tempArray[1];
                   $FreqLO      = $tempArray[4];
                   $CenterIF    = $tempArray[5];
@@ -1493,10 +1513,10 @@ public function Display_uploadform_SingleCSVfile(){
                   $Pol         = $tempArray[7];
                   $SB          = $tempArray[8];
                   $TS             = $tempArray[3];
-                  if (trim(strtoupper($SB)) == "U"){
+                  if (trim(strtoupper($SB)) == "U") {
                       $SB = 1;
                   }
-                  if (trim(strtoupper($SB)) == "L"){
+                  if (trim(strtoupper($SB)) == "L") {
                       $SB = 2;
                   }
                   $SBR         = $tempArray[9];
@@ -1510,7 +1530,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_IVCurve(){
+    public function Upload_IVCurve() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1528,19 +1548,19 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-        if (count($tempArray) < 2){
+        if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $ds = $tempArray[1];
                   $FreqLO      = $tempArray[4];
                   $Pol         = $tempArray[5];
                   $SB          = $tempArray[6];
                   $TS             = $tempArray[3];
-                  if (trim(strtoupper($SB)) == "U"){
+                  if (trim(strtoupper($SB)) == "U") {
                       $SB = 1;
                   }
-                  if (trim(strtoupper($SB)) == "L"){
+                  if (trim(strtoupper($SB)) == "L") {
                       $SB = 2;
                   }
                   $VJ          = $tempArray[7];
@@ -1555,7 +1575,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_PowerVariation(){
+    public function Upload_PowerVariation() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1573,19 +1593,19 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-        if (count($tempArray) < 2){
+        if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $ds = $tempArray[1];
                   $FreqLO      = $tempArray[4];
                   $Pol         = $tempArray[5];
                   $SB          = $tempArray[6];
                   $TS             = $tempArray[3];
-                  if (trim(strtoupper($SB)) == "U"){
+                  if (trim(strtoupper($SB)) == "U") {
                       $SB = 1;
                   }
-                  if (trim(strtoupper($SB)) == "L"){
+                  if (trim(strtoupper($SB)) == "L") {
                       $SB = 2;
                   }
                   $CenterIF    = $tempArray[7];
@@ -1601,7 +1621,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_IFSpectrum(){
+    public function Upload_IFSpectrum() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1619,19 +1639,19 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-        if (count($tempArray) < 2){
+        if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $ds = $tempArray[1];
                   $FreqLO      = $tempArray[4];
                   $Pol         = $tempArray[8];
                   $SB          = $tempArray[6];
                   $TS             = $tempArray[3];
-                  if (trim(strtoupper($SB)) == "U"){
+                  if (trim(strtoupper($SB)) == "U") {
                       $SB = 1;
                   }
-                  if (trim(strtoupper($SB)) == "L"){
+                  if (trim(strtoupper($SB)) == "L") {
                       $SB = 2;
                   }
                   $CenterIF    = $tempArray[5];
@@ -1647,7 +1667,7 @@ public function Display_uploadform_SingleCSVfile(){
         unset($TestData_header);
     }
 
-    public function Upload_NoiseTemperature(){
+    public function Upload_NoiseTemperature() {
         $TestData_header = new GenericTable();
         $TestData_header->keyId_name = "keyId";
 
@@ -1665,10 +1685,10 @@ public function Display_uploadform_SingleCSVfile(){
         for($i=0; $i<sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray   = explode(",", $line_data);
-        if (count($tempArray) < 2){
+        if (count($tempArray) < 2) {
                     $tempArray   = explode("\t", $line_data);
                 }
-              if (is_numeric(substr($tempArray[0],0,1)) == true){
+              if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $ds = $tempArray[1];
                   $FreqLO      = $tempArray[4];
                   $CenterIF    = $tempArray[5];
@@ -1677,10 +1697,10 @@ public function Display_uploadform_SingleCSVfile(){
                   $SB          = $tempArray[8];
                   $TS             = $tempArray[3];
 
-                  if (trim(strtoupper($SB)) == "U"){
+                  if (trim(strtoupper($SB)) == "U") {
                       $SB = 1;
                   }
-                  if (trim(strtoupper($SB)) == "L"){
+                  if (trim(strtoupper($SB)) == "L") {
                       $SB = 2;
                   }
 
@@ -1712,7 +1732,7 @@ public function Display_uploadform_SingleCSVfile(){
         rmdir($dir);
     }
 
-    public function Display_StatusSelector(){
+    public function Display_StatusSelector() {
         $qt = "SELECT keyStatusType, Status
                FROM StatusTypes
                ORDER BY keyStatusType ASC;";
@@ -1720,8 +1740,8 @@ public function Display_uploadform_SingleCSVfile(){
 
         echo "<select name = 'status_selector'>";
 
-        while ($rowt = @mysql_fetch_array($rt)){
-            if ($rowt[0] == $this->sln->GetValue('fkStatusType')){
+        while ($rowt = @mysql_fetch_array($rt)) {
+            if ($rowt[0] == $this->sln->GetValue('fkStatusType')) {
                 echo "<option  value='$rowt[0]' selected='selected'>$rowt[1]</option>";
             }
             else{
@@ -1731,7 +1751,7 @@ public function Display_uploadform_SingleCSVfile(){
         echo "</select>";
     }
 
-        public function Display_UpdatedBySelector(){
+        public function Display_UpdatedBySelector() {
         $qt = "SELECT keyStatusType, Status
                FROM StatusTypes
                ORDER BY keyStatusType ASC;";
@@ -1739,8 +1759,8 @@ public function Display_uploadform_SingleCSVfile(){
 
         echo "<select name = 'status_selector'>";
 
-        while ($rowt = @mysql_fetch_array($rt)){
-            if ($rowt[0] == $this->sln->GetValue('fkStatusType')){
+        while ($rowt = @mysql_fetch_array($rt)) {
+            if ($rowt[0] == $this->sln->GetValue('fkStatusType')) {
                 echo "<option  value='$rowt[0]' selected='selected'>$rowt[1]</option>";
             }
             else{
@@ -1751,7 +1771,7 @@ public function Display_uploadform_SingleCSVfile(){
     }
 
 
-    public function Display_LocationSelector(){
+    public function Display_LocationSelector() {
         $qt = "SELECT keyId, Description, Notes
                FROM Locations
                ORDER BY Description ASC;";
@@ -1759,8 +1779,8 @@ public function Display_uploadform_SingleCSVfile(){
 
         echo "<select name = 'location_selector'>";
 
-        while ($rowt = @mysql_fetch_array($rt)){
-            if ($rowt[0] == $this->sln->GetValue('fkLocationNames')){
+        while ($rowt = @mysql_fetch_array($rt)) {
+            if ($rowt[0] == $this->sln->GetValue('fkLocationNames')) {
                 echo "<option  value='$rowt[0]' selected='selected'>$rowt[1] ($rowt[2])</option>";
             }
             else{
@@ -1770,10 +1790,10 @@ public function Display_uploadform_SingleCSVfile(){
         echo "</select>";
     }
 
-    public function UpdateStatus($newStatus){
+    public function UpdateStatus($newStatus) {
         $sln = new GenericTable();
         $sln->Initialize("FE_StatusLocationAndNotes",$this->keyId,"fkFEComponents");
-        if ($sln->GetValue('keyId') == ""){
+        if ($sln->GetValue('keyId') == "") {
             unset($sln);
             $sln = new GenericTable();
             $sln->keyId_name = "keyId";
@@ -1785,10 +1805,10 @@ public function Display_uploadform_SingleCSVfile(){
         $sln->Update();
     }
 
-    public function UpdateLocation($newLocation){
+    public function UpdateLocation($newLocation) {
         $sln = new GenericTable();
         $sln->Initialize("FE_StatusLocationAndNotes",$this->keyId,"fkFEComponents");
-        if ($sln->GetValue('keyId') == ""){
+        if ($sln->GetValue('keyId') == "") {
             unset($sln);
             $sln = new GenericTable();
             $sln->keyId_name = "keyId";
@@ -1810,7 +1830,7 @@ public function Display_uploadform_SingleCSVfile(){
         $sectionname = '~ColdCart' . $this->GetValue('Band') . "-" . $this->GetValue('SN');
         $CheckBand = $ini_array[$sectionname]['Band'];
         $ccafound = false;
-        if ($CheckBand == $this->GetValue('Band')){
+        if ($CheckBand == $this->GetValue('Band')) {
             $ccafound = true;
         }
 
@@ -1828,7 +1848,7 @@ public function Display_uploadform_SingleCSVfile(){
 
             //Get old status and location for the front end
             $ccaFE = new FrontEnd();
-            $ccaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc);
+            $ccaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc, FrontEnd::INIT_SLN);
             $oldStatusFE = $ccaFE->fesln->GetValue('fkStatusType');
             $oldLocationFE = $ccaFE->fesln->GetValue('fkLocationNames');
 
@@ -1854,10 +1874,10 @@ public function Display_uploadform_SingleCSVfile(){
             $qdel = "DELETE FROM CCA_PreampParams WHERE fkComponent = $this->keyId;";
             $rdel = @mysql_query($qdel,$this->dbconnection);
 
-            for ($i_mp=0; $i_mp< 100; $i_mp++){
+            for ($i_mp=0; $i_mp< 100; $i_mp++) {
                 $keyName = "MixerParam" . str_pad($i_mp+1,2,"0",STR_PAD_LEFT);
                 $keyVal = $ini_array[$sectionname][$keyName ];
-                if (strlen($keyVal) > 2){
+                if (strlen($keyVal) > 2) {
                     $tempArray = explode(',',$keyVal);
 
                     //Create a set of four mixer params (or two if band 9)
@@ -1872,7 +1892,7 @@ public function Display_uploadform_SingleCSVfile(){
                     $qmx11 .= "VALUES('$lo','1','1','$this->keyId','" . $this->GetValue('keyFacility') . "');";
                     $rmx11 = @mysql_query($qmx11,$this->dbconnection);
 
-                    if ($this->GetValue('Band') < 9){
+                    if ($this->GetValue('Band') < 9) {
                         $qmx02 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                         $qmx02 .= "VALUES('$lo','0','2','$this->keyId','" . $this->GetValue('keyFacility') . "');";
                         $rmx02 = @mysql_query($qmx02,$this->dbconnection);
@@ -1904,7 +1924,7 @@ public function Display_uploadform_SingleCSVfile(){
             for ($i_pa=0; $i_pa < 100; $i_pa++) {
                 $keyName = "PreampParam" . str_pad(($i_pa+1),2,"0",STR_PAD_LEFT);
                 $keyVal = $ini_array[$sectionname][$keyName ];
-                if (strlen($keyVal) > 2){
+                if (strlen($keyVal) > 2) {
                     $tempArray = explode(',',$keyVal);
 
                     $this->PreampParams[$i_pa] = new GenericTable();
@@ -1937,7 +1957,7 @@ public function Display_uploadform_SingleCSVfile(){
             $dbops->UpdateStatusLocationAndNotes_FE($this->FEfc, $oldStatusFE, $oldLocationFE,$updatestring,$this->FEConfig, $this->FEConfig, ' ','');
             unset($dbops);
         }
-        if (file_exists($INIfile)){
+        if (file_exists($INIfile)) {
             unlink($INIfile);
         }
     }
@@ -1965,7 +1985,7 @@ public function Display_uploadform_SingleCSVfile(){
 
             //Get old status and location for the front end
             $ccaFE = new FrontEnd();
-            $ccaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc);
+            $ccaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc, FrontEnd::INIT_SLN);
             $oldStatusFE = $ccaFE->fesln->GetValue('fkStatusType');
             $oldLocationFE = $ccaFE->fesln->GetValue('fkLocationNames');
 
@@ -2013,7 +2033,7 @@ public function Display_uploadform_SingleCSVfile(){
                 $qmx11 .= "VALUES('$FreqLO','1','1','$this->keyId','" . $this->GetValue('keyFacility') . "');";
                 $rmx11 = @mysql_query($qmx11,$this->dbconnection);
 
-                if ($this->GetValue('Band') < 9){
+                if ($this->GetValue('Band') < 9) {
                     $qmx02 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                     $qmx02 .= "VALUES('$FreqLO','0','2','$this->keyId','" . $this->GetValue('keyFacility') . "');";
                     $rmx02 = @mysql_query($qmx02,$this->dbconnection);
@@ -2138,12 +2158,12 @@ public function Display_uploadform_SingleCSVfile(){
             $dbops->UpdateStatusLocationAndNotes_FE($this->FEfc, $oldStatusFE, $oldLocationFE,$updatestring,$this->FEConfig, $this->FEConfig, ' ','');
             unset($dbops);
         }
-        if (file_exists($XMLfile)){
+        if (file_exists($XMLfile)) {
             unlink($XMLfile);
         }
     }
 
-    private function DuplicateRecord_CCA(){
+    private function DuplicateRecord_CCA() {
         $old_id = $this->keyId;
         parent::DuplicateRecord();
 
@@ -2151,7 +2171,7 @@ public function Display_uploadform_SingleCSVfile(){
         $qmx = "SELECT keyId FROM CCA_MixerParams WHERE fkComponent = $old_id
                 AND fkFacility = " . $this->GetValue('keyFacility') . ";";
         $rmx = @mysql_query($qmx,$this->dbconnection);
-        while ($rowmx = @mysql_fetch_array($rmx)){
+        while ($rowmx = @mysql_fetch_array($rmx)) {
             $mx_temp = new GenericTable();
             $mx_temp->Initialize('CCA_MixerParams',$rowmx[0],'keyId',$this->GetValue('keyFacility'),'fkFacility');
             $mx_temp->DuplicateRecord();
@@ -2161,7 +2181,7 @@ public function Display_uploadform_SingleCSVfile(){
         }
 
         if (isset($this->PreampParams)) {
-            for ($i = 0; $i < count($this->PreampParams); $i++){
+            for ($i = 0; $i < count($this->PreampParams); $i++) {
                 $this->PreampParams[$i]->DuplicateRecord();
                 $this->PreampParams[$i]->SetValue('fkComponent',$this->keyId);
                 $this->PreampParams[$i]->Update();
@@ -2169,8 +2189,8 @@ public function Display_uploadform_SingleCSVfile(){
         }
 
         if (isset($this->TempSensors)) {
-            for ($i = 0; $i <= count($this->TempSensors); $i++){
-                if ($this->TempSensors[$i]->keyId != ''){
+            for ($i = 0; $i <= count($this->TempSensors); $i++) {
+                if ($this->TempSensors[$i]->keyId != '') {
                     $this->TempSensors[$i]->DuplicateRecord();
                     $this->TempSensors[$i]->SetValue('fkComponent',$this->keyId);
                     $this->TempSensors[$i]->Update();
@@ -2181,9 +2201,9 @@ public function Display_uploadform_SingleCSVfile(){
 
 
 
-    public function Display_MixerParams_Edit(){
-        for ($pol=0;$pol<=1;$pol++){
-            for ($sb=1;$sb<=2;$sb++){
+    public function Display_MixerParams_Edit() {
+        for ($pol=0;$pol<=1;$pol++) {
+            for ($sb=1;$sb<=2;$sb++) {
                 $q = "SELECT Temperature,FreqLO,VJ,IJ,IMAG,TS
                       FROM CCA_MixerParams
                       WHERE fkComponent = $this->keyId
@@ -2194,7 +2214,7 @@ public function Display_uploadform_SingleCSVfile(){
                 $r = @mysql_query($q,$this->dbconnection);
                 $ts = @mysql_result($r,0,5);
                 $r = @mysql_query($q,$this->dbconnection);
-                if (@mysql_num_rows($r) > 0 ){
+                if (@mysql_num_rows($r) > 0 ) {
                 echo "
                     <div style= 'width: 500px;'>
                     <table id = 'table6' border = '1'>";
@@ -2212,8 +2232,8 @@ public function Display_uploadform_SingleCSVfile(){
                         <th>IMAG</th>
                       </tr>";
                 $count= 0;
-                while($row = @mysql_fetch_array($r)){
-                    if ($count % 2 == 0){
+                while($row = @mysql_fetch_array($r)) {
+                    if ($count % 2 == 0) {
                         echo "<tr>";
                     }
                     else{
@@ -2234,14 +2254,14 @@ public function Display_uploadform_SingleCSVfile(){
         }//end for pol
     }
 
-    public function Display_PreampParams_Edit(){
+    public function Display_PreampParams_Edit() {
         $sbmax = 2;
-        if ($this->GetValue('Band') == 9){
+        if ($this->GetValue('Band') == 9) {
             $sbmax = 1;
         }
         $pcount = 0;
-        for ($pol=0;$pol<=1;$pol++){
-            for ($sb=1;$sb<=$sbmax;$sb++){
+        for ($pol=0;$pol<=1;$pol++) {
+            for ($sb=1;$sb<=$sbmax;$sb++) {
             echo "
                     <div style= 'width: 500px'>
                     <table id = 'table6' border = '1'>";
@@ -2251,7 +2271,7 @@ public function Display_uploadform_SingleCSVfile(){
                             SB ".$sb." <i>
                             (";
 
-                if ($this->PreampParams[$pcount]->keyId != ""){
+                if ($this->PreampParams[$pcount]->keyId != "") {
                 echo $this->PreampParams[$pcount]->GetValue('TS');
                 }
 
@@ -2272,13 +2292,13 @@ public function Display_uploadform_SingleCSVfile(){
                         <th>VG3</th>
                       </tr>";
                 $count= 0;
-                for ($i=0; $i<count($this->PreampParams); $i++){
-                //while($row = @mysql_fetch_array($r)){
+                for ($i=0; $i<count($this->PreampParams); $i++) {
+                //while($row = @mysql_fetch_array($r)) {
                     if (($this->PreampParams[$i]->GetValue('Pol') == $pol)
-                        && ($this->PreampParams[$i]->GetValue('SB') == $sb)){
+                        && ($this->PreampParams[$i]->GetValue('SB') == $sb)) {
 
 
-                    if ($count % 2 == 0){
+                    if ($count % 2 == 0) {
                         echo "<tr>";
                     }
                     else{
@@ -2309,7 +2329,7 @@ public function Display_uploadform_SingleCSVfile(){
     }
 
 
-    public function Display_TempSensors_Edit(){
+    public function Display_TempSensors_Edit() {
         $locs[0]= "Spare";
         $locs[1]= "110K Stage";
         $locs[2]= "15K Stage";
@@ -2319,7 +2339,7 @@ public function Display_uploadform_SingleCSVfile(){
 
 
         $ts = "";
-        if ($this->TempSensors[1]->keyId != ''){
+        if ($this->TempSensors[1]->keyId != '') {
             $ts = $this->TempSensors[1]->GetValue('TS') . ",";
         }
 
@@ -2335,9 +2355,9 @@ public function Display_uploadform_SingleCSVfile(){
 
               </tr>";
 
-        for ($i=1;$i<=count($this->TempSensors);$i++){
-            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != ""){
-                if ($i % 2 == 0){
+        for ($i=1;$i<=count($this->TempSensors);$i++) {
+            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != "") {
+                if ($i % 2 == 0) {
                     echo "<tr>";
                 }
                 else{
@@ -2355,7 +2375,7 @@ public function Display_uploadform_SingleCSVfile(){
         echo "</table></div><br><br>";
     }
 
-    public function Update_Configuration(){
+    public function Update_Configuration() {
         $dbops = new DBOperations();
         //This initialize function gets the front end info associated with this CCA.
         $this->Initialize_FEComponent($this->keyId, $this->GetValue('keyFacility'));
@@ -2366,7 +2386,7 @@ public function Display_uploadform_SingleCSVfile(){
 
         //Get old FE status and location
         $ccaFE = new FrontEnd();
-        $ccaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc);
+        $ccaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc, FrontEnd::INIT_SLN);
         $oldStatusFE = $ccaFE->fesln->GetValue('fkStatusType');
         $oldLocationFE = $ccaFE->fesln->GetValue('fkLocationNames');
 
@@ -2375,9 +2395,9 @@ public function Display_uploadform_SingleCSVfile(){
         $this->DuplicateRecord_CCA();
 
         //Update temp sensors
-        for ($i = 0; $i < count($this->TempSensors); $i++){
+        for ($i = 0; $i < count($this->TempSensors); $i++) {
 
-            if (isset($_REQUEST["TempSensorOffsetK_$i"])){
+            if (isset($_REQUEST["TempSensorOffsetK_$i"])) {
 
                 $this->TempSensors[$i]->SetValue('OffsetK',$_REQUEST["TempSensorOffsetK_$i"]);
             }
@@ -2386,8 +2406,8 @@ public function Display_uploadform_SingleCSVfile(){
         }
 
         //Update Preamps
-        for ($i = 0; $i < count($this->PreampParams); $i++){
-            if (isset($_REQUEST["PreampVD1_$i"])){
+        for ($i = 0; $i < count($this->PreampParams); $i++) {
+            if (isset($_REQUEST["PreampVD1_$i"])) {
                 $this->PreampParams[$i]->SetValue('VD1',$_REQUEST["PreampVD1_$i"]);
                 $this->PreampParams[$i]->SetValue('VD2',$_REQUEST["PreampVD2_$i"]);
                 $this->PreampParams[$i]->SetValue('VD3',$_REQUEST["PreampVD3_$i"]);
@@ -2403,8 +2423,8 @@ public function Display_uploadform_SingleCSVfile(){
         }
 
         //Update Mixer Params
-        for ($i = 0; $i < count($this->MixerParams); $i++){
-            if (isset($_REQUEST["Mixer$row[1]".$this->MixerParams[$i]->lo."VJ01"])){
+        for ($i = 0; $i < count($this->MixerParams); $i++) {
+            if (isset($_REQUEST["Mixer$row[1]".$this->MixerParams[$i]->lo."VJ01"])) {
                 $this->MixerParams[$i]->vj01 = $_REQUEST["Mixer$row[1]".$this->MixerParams[$i]->lo."VJ01"];
                 $this->MixerParams[$i]->vj02 = $_REQUEST["Mixer$row[1]".$this->MixerParams[$i]->lo."VJ02"];
                 $this->MixerParams[$i]->vj11 = $_REQUEST["Mixer$row[1]".$this->MixerParams[$i]->lo."VJ11"];
@@ -2421,9 +2441,7 @@ public function Display_uploadform_SingleCSVfile(){
                 $this->MixerParams[$i]->imag12 = $_REQUEST["Mixer$row[1]".$this->MixerParams[$i]->lo."IMAG12"];
                 $this->MixerParams[$i]->Update_MixerParams($this->keyId,$this->GetValue('keyFacility'));
             }
-
         }
-
 
         //Add CCA back to Front End
         $updatestring = "Edited Mixer/Preamp Params for CCA " . $this->GetValue('Band') . "-" . $this->GetValue('SN');

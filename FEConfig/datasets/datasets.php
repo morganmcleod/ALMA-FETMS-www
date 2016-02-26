@@ -34,7 +34,7 @@ $Band     = $_REQUEST['b'];
 $datatype = $_REQUEST['d'];
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd($FEid, $fc);
+$fe->Initialize_FrontEnd($FEid, $fc, FrontEnd::INIT_NONE);
 
 // get test description from the DB
 $q = "SELECT `Description`

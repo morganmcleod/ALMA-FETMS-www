@@ -77,7 +77,7 @@ class DataPlotter extends GenericTable{
         $this->CCASN = "N/A";
         if (@mysql_numrows($r) > 0){
             $this->cca = new CCA();
-            $this->cca->Initialize_CCA(@mysql_result($r,0,0), $this->fc);
+            $this->cca->Initialize_CCA(@mysql_result($r,0,0), $this->fc, CCA::INIT_NONE);
             $this->CCASN = $this->cca->GetValue('SN');
         }
         $this->measdate = $this->TestDataHeader->GetValue('TS');
@@ -749,7 +749,7 @@ class DataPlotter extends GenericTable{
         }
         if ($this->TestDataHeader->GetValue('fkFE_Config') > 0){
             $fe = new FrontEnd();
-            $fe->Initialize_FrontEnd_FromConfig($this->TestDataHeader->GetValue('fkFE_Config'),$this->TestDataHeader->GetValue('keyFacility'));
+            $fe->Initialize_FrontEnd_FromConfig($this->TestDataHeader->GetValue('fkFE_Config'),$this->TestDataHeader->GetValue('keyFacility'), FrontEnd::INIT_NONE);
             $sn = $fe->GetValue('SN');
             unset($fe);
         }

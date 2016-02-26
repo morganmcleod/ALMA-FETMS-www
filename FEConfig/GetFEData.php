@@ -24,7 +24,7 @@ if($ctype==100)
     while ($row = @mysql_fetch_array($rfe)){
 
         $fe = new FrontEnd();
-        $fe->Initialize_FrontEnd($row[0],$row[1],-1);
+        $fe->Initialize_FrontEnd($row[0], $row[1], FrontEnd::INIT_SLN);
 
         if ($rowcount == 0 ){
             $outstring .= "{'SN':'".$fe->GetValue('SN')."',";
@@ -34,14 +34,14 @@ if($ctype==100)
         }
         $outstring .= "'config':'".$fe->feconfig->keyId."',";    ;
 
-        if (isset($fe -> fesln)) {
-            if ($fe -> fesln -> keyId > 0) {
+        if (isset($fe->fesln)) {
+            if ($fe->fesln -> keyId > 0) {
                 $outstring .= "'Location':'".$fe->fesln->location."',";
                 $outstring .= "'Status':'".$fe->fesln->status."',";
                 $outstring .= "'Updated_By':'".$fe->fesln->GetValue('Updated_By')."',";
                 $Notes = @mysql_real_escape_string(stripslashes($fe->fesln->GetValue('Notes')));
             }
-            if ($fe -> fesln -> keyId < 1){
+            if ($fe->fesln -> keyId < 1){
                 $outstring .= "'Location':'',";
                 $outstring .= "'Status':'',";
                 $outstring .= "'Updated_By':'',";

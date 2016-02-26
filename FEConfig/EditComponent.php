@@ -8,8 +8,8 @@
 <link href="images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
 <title>Edit Component</title>
 </head>
-<div id='wrap' >
 <body>
+<div id='wrap'>
 
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
@@ -60,6 +60,9 @@ if (isset($_REQUEST['Updated_By'])){
     $Ctype_old    = $c->GetValue('fkFE_ComponentType');
     $Ctype_new    = $Ctype_old;
 
+    // Turn off E_NOTICE error reporting for this section because of all tha unguarded $_REQUEST[]s:
+    error_reporting($errorReportSettingsNo_E_NOTICE);
+
     $Link1_new = str_replace("\\\\","\\",$_REQUEST['Link1']);
     $Link2_new = str_replace("\\\\","\\",$_REQUEST['Link2']);
 
@@ -82,6 +85,10 @@ if (isset($_REQUEST['Updated_By'])){
     }
 
     $Notes = $_REQUEST['Updated_By'] . ' changed ';
+
+    // Turn back on E_NOTICE error reporting:
+    error_reporting($errorReportSettingsNormal);
+
     $changed = 0;
     if ($c->FE_ConfigLink->keyId != ''){
         if ($Qty_old != $c->FE_ConfigLink->GetValue('Quantity')){
@@ -126,7 +133,7 @@ if (isset($_REQUEST['Updated_By'])){
     if ($IsWCA == 1){
 
         $wca = new WCA();
-        $wca->Initialize_WCA($c->keyId,$c->GetValue('keyFacility'));
+        $wca->Initialize_WCA($c->keyId,$c->GetValue('keyFacility'), WCA::INIT_ALL);
         //Create records in WCAs if one doesn't exist.
         if ($wca->_WCAs->keyId == ''){
             $wca->_WCAs = New GenericTable();
@@ -355,7 +362,7 @@ echo "
                 }
                 if ($IsWCA == 1){
                     $wca = new WCA();
-                    $wca->Initialize_WCA($c->keyId,$c->GetValue('keyFacility'));
+                    $wca->Initialize_WCA($c->keyId, $c->GetValue('keyFacility'), WCA::INIT_ALL);
 
                     echo
 
@@ -439,6 +446,6 @@ include "footer.php";
 
 
 ?>
-</body>
 </div>
+</body>
 </html>

@@ -13,8 +13,6 @@
 
 <link rel="stylesheet" type="text/css" href="../../ext/examples/ux/css/RowEditor.css">
 
-<!-- <link rel="shortcut icon" href="../img/extjs.ico"> -->
-
 <link type="text/css" href="../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
 
 <script src="../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
@@ -54,7 +52,7 @@ $fc = $_REQUEST['fc'];
 $getqueries=new dbGetQueries;
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromSN($_REQUEST['sn'], $fc);
+$fe->Initialize_FrontEnd_FromSN($_REQUEST['sn'], $fc, FrontEnd::INIT_NONE);
 
 //These are used by header.php
 $feconfig = $fe->feconfig->keyId;

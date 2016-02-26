@@ -27,7 +27,7 @@ class TestData_header extends GenericTable{
     var $fc; //facility
     var $subheader; //Generic table object, for a record in a subheader table
 
-    public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '', $InitFEComps = -1) {
+    public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
         $this->swversion = "1.0.9";
         // 1.0.9 fixed instantiating DataPlotter in DrawPlot().
         // 1.0.8 minor fix to require(class.wca.php)
@@ -51,30 +51,29 @@ class TestData_header extends GenericTable{
 
         $this->Component = new FEComponent();
 
-        if ($this->GetValue('fkFE_Components') != ''){
+        if ($this->GetValue('fkFE_Components') != '') {
             $this->Component->Initialize_FEComponent($this->GetValue('fkFE_Components'), $this->GetValue('keyFacility'));
             $q = "SELECT Description FROM ComponentTypes WHERE keyId = " . $this->Component->GetValue('fkFE_ComponentType') . ";";
             $r = @mysql_query($q, $this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
             $this->Component->ComponentType = @mysql_result($r,0);
         }
 
-        if (($this->GetValue('fkFE_Config') != "") && ($this->GetValue('fkFE_Config') != "0")){
+        if (($this->GetValue('fkFE_Config') != "") && ($this->GetValue('fkFE_Config') != "0")) {
             $qfe = "SELECT fkFront_Ends from FE_Config
                     WHERE keyFEConfig = " . $this->GetValue('fkFE_Config') . ";";
             $rfe = @mysql_query($qfe,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
             $feid = @mysql_result($rfe,0);
             $this->fe_keyId = $feid;
             $this->FrontEnd = new FrontEnd();
-            $this->FrontEnd->Initialize_FrontEnd($feid, $this->GetValue('keyFacility'),$InitFEComps);
-
-            $this->Component->Initialize("Front_Ends",$feid,"keyFrontEnds",$this->GetValue('keyFacility'),'keyFacility');
+            $this->FrontEnd->Initialize_FrontEnd($feid, $this->GetValue('keyFacility'), FrontEnd::INIT_SLN | FrontEnd::INIT_CONFIGS);
+            $this->Component->Initialize("Front_Ends", $feid, "keyFrontEnds", $this->GetValue('keyFacility'), 'keyFacility');
             $this->Component->ComponentType = "Front End";
         }
     }
 
-    public function NewRecord_TestData_header($in_fc = ''){
+    public function NewRecord_TestData_header($in_fc = '') {
         $this->keyId_name = 'keyId';
-        if ($in_fc == ''){
+        if ($in_fc == '') {
             $in_fc = $fc;
         }
         parent::NewRecord('TestData_header','keyId',$in_fc,'keyFacility');
@@ -88,7 +87,7 @@ class TestData_header extends GenericTable{
     }
 
     public function RequestValues_TDH() {
-        if ($this->GetValue('fkTestData_Type') == 7){
+        if ($this->GetValue('fkTestData_Type') == 7) {
             //IF Spectrum, Get noisefloor key
             $qnf = "SELECT MIN(fkNoiseFloorHeader) FROM IFSpectrum_SubHeader
                     WHERE fkHeader = $this->keyId
@@ -98,12 +97,12 @@ class TestData_header extends GenericTable{
             $this->NoiseFloorHeader = @mysql_result($rnf,0);
         }
 
-        if (isset($_REQUEST['fkDataStatus'])){
+        if (isset($_REQUEST['fkDataStatus'])) {
             $this->SetValue('fkDataStatus', $_REQUEST['fkDataStatus']);
             $this->Update();
         }
 
-        if (isset($_REQUEST['nfheader'])){
+        if (isset($_REQUEST['nfheader'])) {
             $this->NoiseFloorHeader = $_REQUEST['nfheader'];
             //Update noisefloor values with selected value
             $qifs = "SELECT keyId FROM IFSpectrum_SubHeader
@@ -112,7 +111,7 @@ class TestData_header extends GenericTable{
 
             $rifs = @mysql_query($qifs,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
 
-            while ($rowifs = @mysql_fetch_array($rifs)){
+            while ($rowifs = @mysql_fetch_array($rifs)) {
                 $ifsub = new GenericTable();
                 $ifsub->Initialize('IFSpectrum_SubHeader',$rowifs[0],'keyId',$this->GetValue('keyFacility'),'keyFacility');
                 $ifsub->SetValue('fkNoiseFloorHeader', $this->NoiseFloorHeader);
@@ -120,13 +119,13 @@ class TestData_header extends GenericTable{
                 unset($ifsub);
             }
         }
-        if (isset($_REQUEST['Notes'])){
+        if (isset($_REQUEST['Notes'])) {
             $this->SetValue('Notes',$_REQUEST['Notes']);
             parent::Update();
         }
     }
 
-    public function Display_Data_Cryostat($datatype){
+    public function Display_Data_Cryostat($datatype) {
         //Array of TestData_header objects (TestData_header)
         //[1] = First Rate of Rise
         //[2] = Warmup
@@ -139,19 +138,19 @@ class TestData_header extends GenericTable{
 
         echo "<table>";
 
-        if ($c->tdheaders[$datatype]->subheader->GetValue('pic_rateofrise') != ""){
+        if ($c->tdheaders[$datatype]->subheader->GetValue('pic_rateofrise') != "") {
             echo "<tr><td><img src='" . $c->tdheaders[$datatype]->subheader->GetValue('pic_rateofrise') . "'></td></tr>";
         }
-        if ($c->tdheaders[$datatype]->subheader->GetValue('pic_pressure') != ""){
+        if ($c->tdheaders[$datatype]->subheader->GetValue('pic_pressure') != "") {
             echo "<tr><td><img src='" . $c->tdheaders[$datatype]->subheader->GetValue('pic_pressure') . "'></td></tr>";
         }
-        if ($c->tdheaders[$datatype]->subheader->GetValue('pic_temperature') != ""){
+        if ($c->tdheaders[$datatype]->subheader->GetValue('pic_temperature') != "") {
             echo "<tr><td><img src='" . $c->tdheaders[$datatype]->subheader->GetValue('pic_temperature') . "'></td></tr>";
         }
         echo "</table>";
     }
 
-    public function Display_DataForm(){
+    public function Display_DataForm() {
         echo "<div style='width:300px'>";
         echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
         echo "<table id = 'table1'>";
@@ -165,9 +164,9 @@ class TestData_header extends GenericTable{
         echo "</form></table></div>";
     }
 
-    public function Display_DataSetNotes(){
+    public function Display_DataSetNotes() {
         //Display information for all TestData_header records
-        if ( $this->GetValue('DataSetGroup') !=0 ){
+        if ( $this->GetValue('DataSetGroup') !=0 ) {
 
             echo "<br><br>
             <div style='width:900px'>
@@ -189,13 +188,13 @@ class TestData_header extends GenericTable{
             $rkeys = @mysql_query($qkeys,$this->dbconnection);
 
             $i=0;
-            while ($rowkeys = @mysql_fetch_array($rkeys)){
-            //for ($i=0;$i<count($this->TDHkeys);$i++){
+            while ($rowkeys = @mysql_fetch_array($rkeys)) {
+            //for ($i=0;$i<count($this->TDHkeys);$i++) {
 
-                if ($i % 2 == 0){
+                if ($i % 2 == 0) {
                     $trclass = "alt";
                 }
-                if ($i % 2 != 0){
+                if ($i % 2 != 0) {
                    $trclass = "";
                 }
                 $t = new TestData_header();
@@ -214,19 +213,19 @@ class TestData_header extends GenericTable{
         }
     }
 
-    public function Display_ExportToCSV(){
+    public function Display_ExportToCSV() {
         echo '<form name = "ExportCSVButton" action= "export_to_csv.php" method="get">';
         echo "<input type='hidden' name='keyheader' value='" . $this->keyId . "' />";
         echo "<br><input type='submit' name = 'exportcsv' value='EXPORT TO CSV'>";
         echo '</form></div>';
     }
 
-    public function Display_RawTestData(){
+    public function Display_RawTestData() {
         $fkHeader = $this->keyId;
         $qgetdata = "SELECT * FROM $this->TestDataTableName WHERE
         fkHeader = $fkHeader AND fkFacility = ".$this->GetValue('keyFacility').";";
 
-        switch($this->Component->GetValue('fkFE_ComponentType')){
+        switch($this->Component->GetValue('fkFE_ComponentType')) {
             case 6:
                 //Cryostat
                 $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
@@ -238,7 +237,7 @@ class TestData_header extends GenericTable{
                 break;
         }
 
-        switch($this->GetValue('fkTestData_Type')){
+        switch($this->GetValue('fkTestData_Type')) {
             case 57:
                 //LO Lock test
                 $qgetdata = "SELECT DT.*
@@ -283,16 +282,16 @@ class TestData_header extends GenericTable{
 
         echo        "<table id = 'table1'>";
 
-        while ($row = @mysql_fetch_array($r)){
+        while ($row = @mysql_fetch_array($r)) {
             echo "
                 <th>$row[0]</th>";
         }
 
 
         $r = @mysql_query ($qgetdata, $this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-        while($row = mysql_fetch_array($r)){
+        while($row = mysql_fetch_array($r)) {
             echo "<tr>";
-            for ($i=0;$i<count($row)/2;$i++){
+            for ($i=0;$i<count($row)/2;$i++) {
                 echo "<td>$row[$i]</td>";
             }
             echo"</tr>";
@@ -303,7 +302,7 @@ class TestData_header extends GenericTable{
         //echo "</div>";
     }
 
-    public function DrawPlot(){
+    public function DrawPlot() {
 
         $plt = new DataPlotter();
         $plt->Initialize_DataPlotter($this->keyId,$this->dbconnection,$this->GetValue('keyFacility'));
@@ -405,11 +404,11 @@ class TestData_header extends GenericTable{
         }
     }
 
-    public function Plot_WCA($datatype){
+    public function Plot_WCA($datatype) {
         $wca = new WCA();
-        $wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'));
+        $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->GetValue('keyFacility'), WCA::INIT_ALL);
 
-        switch($datatype){
+        switch($datatype) {
             case 44:
                 $wca->Plot_AMNoise();
                 break;
@@ -429,19 +428,18 @@ class TestData_header extends GenericTable{
                 $wca->Plot_PhaseNoise();
                 break;
 
-
         }
 
         unset($wca);
     }
 
 
-    public function Display_PhaseStabilitySubHeader(){
+    public function Display_PhaseStabilitySubHeader() {
         $sh = new GenericTable();
         $sh->Initialize('TEST_PhaseStability_SubHeader',$this->keyId,'fkHeader',$this->GetValue('keyFacility'),'fkFacility');
     }
 
-    public function Display_Data_PolAngles(){
+    public function Display_Data_PolAngles() {
         $pa = new GenericTable();
         $pa->Initialize("SourceRotationAngles",$this->GetValue('Band'),"band");
 
@@ -562,13 +560,13 @@ class TestData_header extends GenericTable{
         echo "<th>Actual - Nominal</th>";
         echo "</tr>";
 
-        if (abs($nom_0_m90) < 181){
+        if (abs($nom_0_m90) < 181) {
             $diff = round($angle_min0_1 - $nom_0_m90,2);
-            if($angle_min0_1 != ''){
+            if($angle_min0_1 != '') {
             echo "<tr><td><b>0</td><td><b>$nom_0_m90</b></td>";
             echo "<td><b>$angle_min0_1</b></td>";
 
-            if (abs($diff) > 2){
+            if (abs($diff) > 2) {
                 echo "<td bgcolor = '#ffccff'><b><font color='#ff0000'>$diff<font></b></td>";
             }
             else{
@@ -578,13 +576,13 @@ class TestData_header extends GenericTable{
             }
         }
 
-        if (abs($nom_1_m90) < 181){
+        if (abs($nom_1_m90) < 181) {
             $diff1 = round($angle_min1_1 - $nom_1_m90,2);
-            if ($angle_min1_1 != ''){
+            if ($angle_min1_1 != '') {
                 echo "<tr><td><b>1</td><td><b>$nom_1_m90</b></td>";
                 echo "<td><b>$angle_min1_1</b></td>";
 
-                if (abs($diff1 - $diff) > 2){
+                if (abs($diff1 - $diff) > 2) {
                     echo "<td bgcolor = '#ffccff'><b><font color='#ff0000'>$diff1<font></b></td>";
                 }
                 else{
@@ -594,13 +592,13 @@ class TestData_header extends GenericTable{
             }
         }
 
-        if (abs($nom_0_p90) < 181){
+        if (abs($nom_0_p90) < 181) {
             $diff0 = round($angle_min0_2 - $nom_0_p90 ,2);
-            if ($angle_min0_2 != ''){
+            if ($angle_min0_2 != '') {
             echo "<tr><td><b>0</td><td><b>$nom_0_p90</b></td>";
             echo "<td><b>$angle_min0_2</b></td>";
 
-            if (abs($diff0) > 2){
+            if (abs($diff0) > 2) {
                 echo "<td bgcolor = '#ffccff'><b><font color='#ff0000'>$diff0<font></b></td>";
             }
             else{
@@ -609,13 +607,13 @@ class TestData_header extends GenericTable{
             echo "</tr>";
             }
         }
-        if (abs($nom_1_p90) < 181){
+        if (abs($nom_1_p90) < 181) {
             $diff1 = round($angle_min1_2 - $nom_1_p90,2);
-            if ($angle_min1_2 != ''){
+            if ($angle_min1_2 != '') {
                 echo "<tr><td><b>1</td><td><b>$nom_1_p90</b></td>";
                 echo "<td><b>$angle_min1_2</b></td>";
 
-                if (abs($diff1 - $diff0) > 2){
+                if (abs($diff1 - $diff0) > 2) {
                     echo "<td bgcolor = '#ffccff'><b><font color='#ff0000'>$diff1<font></b></td>";
                 }
                 else{
@@ -629,7 +627,7 @@ class TestData_header extends GenericTable{
 
     }
 
-    public function UpdateIFPAIStatus($IFChannel = '%'){
+    public function UpdateIFPAIStatus($IFChannel = '%') {
         $qifs = "SELECT keyId FROM IFSpectrum_SubHeader
                    WHERE fkHeader = $this->keyId
                    AND IFChannel LIKE '$IFChannel'
@@ -637,16 +635,16 @@ class TestData_header extends GenericTable{
                    ORDER BY Band ASC, FreqLO ASC, IFChannel ASC, IFGain ASC;";
         $rifs = @mysql_query($qifs,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
 
-        while ($rowifs = @mysql_fetch_array($rifs)){
+        while ($rowifs = @mysql_fetch_array($rifs)) {
             $ifsub = new GenericTable();
             $ifsub->Initialize('IFSpectrum_SubHeader',$rowifs[0],'keyId',$this->GetValue('keyFacility'),'keyFacility');
 
                 $option_name = "pai_option_" . $ifsub->GetValue('keyId');
 
-                if (isset($_REQUEST[$option_name])){
+                if (isset($_REQUEST[$option_name])) {
                     $ispai = 1;
                 }
-                if (!isset($_REQUEST[$option_name])){
+                if (!isset($_REQUEST[$option_name])) {
                     $ispai = 0;
                 }
                 $ifsub->SetValue('IsPAI', $ispai);
@@ -661,14 +659,14 @@ class TestData_header extends GenericTable{
         $this->SelectDatasets = 1;
     }
     /*
-    public function UpdateLOLockIsIncludedStatus(){
+    public function UpdateLOLockIsIncludedStatus() {
         echo "Update lo lock data status...<br>";
         $qds = "SELECT keyId FROM TEST_LOLockTest_SubHeader
                        WHERE fkHeader = $this->keyId
                        AND fkFacility = ".$this->GetValue('keyFacility')."
                        ORDER BY TS ASC;";
         $rds = @mysql_query($qds, $this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-        while ($rowds = @mysql_fetch_array($rds)){
+        while ($rowds = @mysql_fetch_array($rds)) {
             $id_subheader = $rowds[0];
             $qdata = "SELECT keyId, IsIncluded FROM TEST_LOLockTest
                    WHERE fkHeader = $id_subheader
@@ -677,7 +675,7 @@ class TestData_header extends GenericTable{
 
 
             $rdata = @mysql_query($qdata,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-            while ($rowdata = @mysql_fetch_array($rdata)){
+            while ($rowdata = @mysql_fetch_array($rdata)) {
             $ifsub = new GenericTable();
                 $ifsub->Initialize('TEST_LOLockTest',$rowdata[0],'keyId',$this->GetValue('keyFacility'),'fkFacility');
 
@@ -685,10 +683,10 @@ class TestData_header extends GenericTable{
 
                     $option_name = "isincluded_option_" . $ifsub->GetValue('keyId');
 
-                    if (isset($_REQUEST[$option_name])){
+                    if (isset($_REQUEST[$option_name])) {
                         $isincluded = 1;
                     }
-                    if (!isset($_REQUEST[$option_name])){
+                    if (!isset($_REQUEST[$option_name])) {
                         $isincluded = 0;
                     }
                     $ifsub->SetValue('IsIncluded', $isincluded);
@@ -701,7 +699,7 @@ class TestData_header extends GenericTable{
             }
         }
 
-            while ($rowifs = @mysql_fetch_array($rifs)){
+            while ($rowifs = @mysql_fetch_array($rifs)) {
 
             }
             //echo '<meta http-equiv="Refresh" content="1;url=testdata.php?sd=1&keyheader='.$this->keyId.'">';
@@ -711,7 +709,7 @@ class TestData_header extends GenericTable{
             $this->SelectDatasets = 1;
     }*/
 
-    public function DisplayDataSetSelector_Form($IFChannel = '%'){
+    public function DisplayDataSetSelector_Form($IFChannel = '%') {
         echo "<form name='paiform' action='" . $_SERVER['PHP_SELF'] . "' method='POST'>";
         //echo "<div style='border-radius:10px;background-color:#ff0000;width:700px;height:60px;'>Select datasets to be included in plots and tables.<br><br>
         //      Check the 'PAI' box for each measurement to be included.</div><br>";
@@ -738,19 +736,19 @@ class TestData_header extends GenericTable{
 
             $rifs = @mysql_query($qifs,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
 
-            while ($rowifs = @mysql_fetch_array($rifs)){
+            while ($rowifs = @mysql_fetch_array($rifs)) {
                 $ifsub = new GenericTable();
                 $ifsub->Initialize('IFSpectrum_SubHeader',$rowifs[0],'keyId',$this->GetValue('keyFacility'),'keyFacility');
 
 
                 $qcheck = "SELECT * FROM IFSpectrum WHERE fkSubHeader = " . $ifsub->GetValue('keyId') . ";";
-                    if ($rowcount % 2 == 0){
+                    if ($rowcount % 2 == 0) {
                         $tdstyle = " ";
                     }
-                    if ($rowcount % 2 != 0){
+                    if ($rowcount % 2 != 0) {
                         $tdstyle = "class = 'alt'";
                     }
-                    if ($ifsub->GetValue('IsPAI') != '1'){
+                    if ($ifsub->GetValue('IsPAI') != '1') {
                         $tdstyle = "class = 'alt3'";
                     }
                     echo "<tr $tdstyle>";
@@ -764,7 +762,7 @@ class TestData_header extends GenericTable{
 
                     $option_name = "pai_option_" . $ifsub->GetValue('keyId');
 
-                    if ($ifsub->GetValue('IsPAI') == '1'){
+                    if ($ifsub->GetValue('IsPAI') == '1') {
                         echo "<td $tdstyle ><input type='checkbox' name='$option_name' value='1' checked> PAI<br></td></tr>";
                     }
                     else{
@@ -782,7 +780,7 @@ class TestData_header extends GenericTable{
 
 
 
-    public function Display_TestDataStatusSelector(){
+    public function Display_TestDataStatusSelector() {
         echo '
             <p><div style="width:500px;height:80px; align = "left"></p>
             <!-- The data encoding type, enctype, MUST be specified as below -->
@@ -795,13 +793,13 @@ class TestData_header extends GenericTable{
             echo "Test Data Status <select name = 'fkDataStatus' onChange = submit()>";
             //echo "Noise Floor Profile: <select name = 'nfheader'>";
             //echo "<option value = '0' selected = 'selected'>None</option>";
-            while ($row = @mysql_fetch_array($rdt)){
+            while ($row = @mysql_fetch_array($rdt)) {
                 $dt_id = $row[0];
                 $dt_desc = $row[1];
-                if ($dt_id == $this->GetValue('fkDataStatus')){
+                if ($dt_id == $this->GetValue('fkDataStatus')) {
                     echo "<option value = $dt_id selected = 'selected'>$dt_desc</option>";
                 }
-                if ($dt_id != $this->GetValue('fkDataStatus')){
+                if ($dt_id != $this->GetValue('fkDataStatus')) {
                      echo "<option value = $dt_id>$dt_desc</option>";
                  }
              }

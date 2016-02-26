@@ -25,7 +25,7 @@ $pb = $_REQUEST['pb'];
 $adn = $_REQUEST['adn'];
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($fecfg, $fc, 0);
+$fe->Initialize_FrontEnd_FromConfig($fecfg, $fc, FrontEnd::INIT_NONE);
 
 $title = "CIDL Front End " . $fe->GetValue('SN');
 include('header.php');

@@ -31,7 +31,7 @@ if ($get_all == 1){
 
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($id,$fc);
+$fe->Initialize_FrontEnd_FromConfig($id, $fc, FrontEnd::INIT_ALL);
 
 $lprSN = 1;
 if ($fe->lpr->GetValue('SN') != ''){
@@ -42,11 +42,7 @@ if ($get_all == 1){
 echo "[configuration]\r\n";
 echo "; options to select which configuration data is loaded\r\n";
 echo "providerCode=$fc\r\n";
-//echo "SN=WCA$band-$sn\r\n";
 echo "configId=" . ltrim($fe->GetValue('SN'),'0') . "\r\n\r\n";
-
-
-
 
 echo "[~Configuration$fc-". ltrim($fe->GetValue('SN'),'0')  ."]\r\n";
 echo "Description=FE-".ltrim($fe->GetValue('SN'),'0') . " bands ";

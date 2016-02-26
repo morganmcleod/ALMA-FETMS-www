@@ -9,26 +9,27 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_FEConfig . '/HelperFunctions.php');
 require_once($site_dbConnect);
 
-class FrontEnd extends GenericTable{
-    var $feconfig;          //fe config object
-    var $feconfigs;         //All config numbers for this front end
-    var $feconfig_id;       //FEConfig id used to initialize the object. This
-                            //may not be the latest config value. It is used
-                            //on ShowFEConfig.php when viewing a previous configuration.
-    var $feconfig_latest;   //LAtest FE Config value
-    var $ccas;              //array of cca objects
-    var $wcas;              //array of wca objects
-    var $lpr;               //lpr object
-    var $sln;               //Status location and notes
-    var $cryostat;          //cryostat object
-    var $fc;                //facility code
-    var $fesln;             //Object representing record in FEStatusLocationAndNotes
+class FrontEnd extends GenericTable {
+    public $feconfig;           //FE_Config record object to use. TODO: make private with accessor.
+    public $feconfig_id_latest; //newest found FE_Config id. TODO: make private with accessor.
 
-    var $bgcolor1;
+    public $fc;                 //facility code, considered part of keyId.  TODO: inherited from GenericTable.  Get rid of?
+    private $feconfig_id;       //FEConfig id used to initialize the object.
+                                //may not be the latest config value.
+                                //used on ShowFEConfig.php when viewing a previous configuration.
 
-    var $JSONstring; //JSON string representing the front end and some components
+    private $feconfig_ids_all;  //array of all FrontEnd config IDs for $in_keyId passed to this FrontEnd.
 
-    public function GetJSONstring() {
+    public $ccas;               //array of CCA objects. TODO: make private with accessor.
+    public $wcas;               //array of WCA objects. TODO: make private with accessor.
+    public $lpr;                //LPR object. TODO: make private with accessor.
+    public $cryostat;           //Cryostat object. TODO: make private with accessor.
+    public $fesln;              //FE_StatusLocationAndNotes record object. TODO: make private with accessor.
+
+    private $JSONstring;        //JSON string representing the front end and some components
+
+    private function GetJSONstring() {
+        // TODO:  This seems to be dead code -- not called from anywhere.
         //http://labs.adobe.com/technologies/spry/samples/data_region/JSONDataSetSample.html
 
         $jstring  = '{"frontend":{"id":"' . $this->keyId . '"';
@@ -41,8 +42,8 @@ class FrontEnd extends GenericTable{
         for ($iband = 1; $iband <= 10; $iband++) {
             if (isset($this -> ccas[$iband])) {
                 $ccas = $this -> ccas[$iband];
-                if ($ccas -> keyId > 0){
-                    if ($cnt > 0){
+                if ($ccas -> keyId > 0) {
+                    if ($cnt > 0) {
                         $jstring .= ",";
                     }
                     $jstring .=  '{ "id": "' . $this->ccas[$iband]->keyId . '", "sn": "' . $this->ccas[$iband]->GetValue('SN') . '", "band": "' . $this->ccas[$iband]->GetValue('Band') . '" }';
@@ -54,11 +55,11 @@ class FrontEnd extends GenericTable{
         //Get WCAs portion of the string
         $jstring .=  '],"wcas":[';
         $cnt = 0;
-        for ($iband = 1; $iband <= 10; $iband++){
+        for ($iband = 1; $iband <= 10; $iband++) {
             if (isset($this -> wcas[$iband])) {
                 $wcas = $this->wcas[$iband];
-                if ($wcas -> keyId > 0){
-                    if ($cnt > 0){
+                if ($wcas -> keyId > 0) {
+                    if ($cnt > 0) {
                         $jstring .= ",";
                     }
                     $jstring .=  '{ "id": "' . $this->wcas[$iband]->keyId . '", "sn": "' . $this->wcas[$iband]->GetValue('SN') . '", "band": "' . $this->wcas[$iband]->GetValue('Band') . '" }';
@@ -71,57 +72,71 @@ class FrontEnd extends GenericTable{
         $this->JSONstring = $jstring;
     }
 
-    public function Initialize_FrontEnd($in_keyId, $in_fc, $GetSubComponents = 1, $in_cfg=0){
-        $this->bgcolor1 = '#c0f7fe';
+    const INIT_SLN      = 0x01;
+    const INIT_CONFIGS  = 0x02;
+    const INIT_LPR      = 0x04;
+    const INIT_CRYOSTAT = 0x08;
+    const INIT_WCA      = 0x10;
+    const INIT_WCAPARAM = 0x20;
+    const INIT_CCA      = 0x40;
+    const INIT_CCAPARAM = 0x80;
+
+    const INIT_NONE     = 0x00;
+    const INIT_CART     = 0x50;   //self::INIT_WCA | self::INIT_CCA;
+    const INIT_ALL      = 0xFF;
+
+    public function Initialize_FrontEnd($in_keyId, $in_fc, $INIT_Options = self::INIT_ALL, $in_cfg=0) {
         $this->keyId = $in_keyId;
         parent::Initialize('Front_Ends',$this->keyId,'keyFrontEnds',$in_fc,'keyFacility');
         $this->fc = $in_fc;
 
         //Get FE Config object
         $qcfg = "SELECT MAX(FE_Config.keyFEConfig)
-                FROM Front_Ends,  FE_Config
-                WHERE FE_Config.fkFront_Ends = $this->keyId
-                GROUP BY FE_Config.keyFEConfig DESC LIMIT 1;";
+                FROM FE_Config
+                WHERE FE_Config.fkFront_Ends = $this->keyId;";
         $rcfg = @mysql_query($qcfg,$this->dbconnection);
-        $feconfig_id = @mysql_result($rcfg,0,0);
-        $this->feconfig_latest = $feconfig_id;
-        if ($in_cfg != 0){
-            $feconfig_id = $in_cfg;
+        $this->feconfig_id = @mysql_result($rcfg,0,0);
+        $this->feconfig_id_latest = $this->feconfig_id;
+        if ($in_cfg != 0) {
+            $this->feconfig_id = $in_cfg;
         }
         $this->feconfig = new GenericTable();
-        $this->feconfig->Initialize('FEConfig',$feconfig_id,'keyFEConfig');
+        $this->feconfig->Initialize('FEConfig',$this->feconfig_id,'keyFEConfig');
 
-        //Get sln
-        $slnid = '';
-
-        if ($this->feconfig->keyId > 0){
-            $qsln = "SELECT MAX(keyId) FROM FE_StatusLocationAndNotes
-                     WHERE fkFEConfig = ".$this->feconfig->keyId."
-                     AND keyFacility = ". $this->GetValue('keyFacility') ."
-                     ORDER BY keyId DESC LIMIT 1;";
-            $rsln = @mysql_query($qsln,$this->dbconnection);
-            $slnid = @mysql_result($rsln,0,0);
+        if ($INIT_Options & self::INIT_CONFIGS) {
+            //Get FE Configs
+            $qcfg = "SELECT keyFEConfig
+                    FROM FE_Config
+                    WHERE FE_Config.fkFront_Ends = $this->keyId
+                    ORDER BY keyFEConfig DESC;";
+            $rcfg = @mysql_query($qcfg,$this->dbconnection);
+            $count = 0;
+            while($rowcfg = @mysql_fetch_array($rcfg)) {
+                $this->feconfig_ids_all[$count] = $rowcfg[0];
+                $count += 1;
+            }
         }
 
-        if ($slnid != ''){
-            $this->fesln = new SLN();
-            $this->fesln->Initialize_SLN($slnid,$this->GetValue('keyFacility'));
+        if ($INIT_Options & self::INIT_SLN) {
+            //Get sln
+            $slnid = '';
+
+            if ($this->feconfig->keyId > 0) {
+                $qsln = "SELECT MAX(keyId) FROM FE_StatusLocationAndNotes
+                         WHERE fkFEConfig = ".$this->feconfig->keyId."
+                         AND keyFacility = ". $this->GetValue('keyFacility') ."
+                         ORDER BY keyId DESC LIMIT 1;";
+                $rsln = @mysql_query($qsln,$this->dbconnection);
+                $slnid = @mysql_result($rsln,0,0);
+            }
+
+            if ($slnid != '') {
+                $this->fesln = new SLN();
+                $this->fesln->Initialize_SLN($slnid,$this->GetValue('keyFacility'));
+            }
         }
 
-        //Get FE Configs
-        $qcfg = "SELECT FE_Config.keyFEConfig
-                FROM Front_Ends,  FE_Config
-                WHERE FE_Config.fkFront_Ends = $this->keyId
-                GROUP BY FE_Config.keyFEConfig DESC;";
-        $rcfg = @mysql_query($qcfg,$this->dbconnection);
-        $count = 0;
-        while($rowcfg = @mysql_fetch_array($rcfg)){
-            $this->feconfigs[$count] = $rowcfg[0];
-            //echo $this->feconfigs[$count] . "<br>";
-            $count += 1;
-        }
-
-        if ($GetSubComponents == 1){
+        if ($INIT_Options & self::INIT_LPR) {
             //Get LPR object
             $qlpr = "SELECT FE_Components.keyId, FE_Components.SN,FE_Components.ESN1
                     FROM FE_Components, FE_ConfigLink
@@ -132,7 +147,9 @@ class FrontEnd extends GenericTable{
             $lpr_id = @mysql_result($rlpr,0,0);
             $this->lpr = new GenericTable();
             $this->lpr->Initialize('FE_Components',$lpr_id,'keyId',$this->fc,'keyFacility');
+        }
 
+        if ($INIT_Options & self::INIT_CRYOSTAT) {
             //Get cryostat object
             $qcryo = "SELECT FE_Components.keyId, FE_Components.SN,FE_Components.ESN1
                     FROM FE_Components, FE_ConfigLink
@@ -144,10 +161,13 @@ class FrontEnd extends GenericTable{
             $cryo_id = @mysql_result($rcryo,0,0);
             $this->cryostat = new GenericTable();
             $this->cryostat->Initialize('FE_Components',$cryo_id,'keyId',$this->fc,'keyFacility');
+        }
 
+        if ($INIT_Options & self::INIT_WCA) {
+            $wca_INIT = ($INIT_Options & self::INIT_WCAPARAM) ? WCA::INIT_ALL : WCA::INIT_NONE;
 
-            for ($iw=1;$iw<=10;$iw++){
-                //Get WCA objects
+            //Get WCA objects
+            for ($band=1; $band<=10; $band++) {
                 $qwcas= "SELECT FE_Components.keyId, FE_Components.fkFE_ComponentType, FE_Config.keyFEConfig,
                         FE_Components.SN, FE_Components.Band,
                         FE_ConfigLink.keyId, Front_Ends.keyFrontEnds
@@ -155,22 +175,24 @@ class FrontEnd extends GenericTable{
                         WHERE FE_Components.fkFE_ComponentType = 11
                         AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
                         AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
-                        AND FE_Components.Band = $iw
+                        AND FE_Components.Band = $band
                         AND FE_Config.fkFront_Ends = $this->keyId
                         AND FE_Config.keyFEConfig = ".$this->feconfig->keyId.";";
                 //echo $qwcas . "<br>";
                 $rwcas = @mysql_query($qwcas,$this->dbconnection);
                 $wca_id = @mysql_result($rwcas,0,0);
-                if ($wca_id != ''){
-                    $this->wcas[$iw] = new WCA();
-
-                    $this->wcas[$iw]->Initialize_WCA($wca_id,$this->fc);
+                if ($wca_id != '') {
+                    $this->wcas[$band] = new WCA();
+                    $this->wcas[$band]->Initialize_WCA($wca_id, $this->fc, $wca_INIT);
                 }
-
             }
+        }
 
-            for ($iw=1;$iw<=10;$iw++){
-                //Get CCA objects
+        if ($INIT_Options & self::INIT_CCA) {
+            $cca_INIT = ($INIT_Options & self::INIT_CCAPARAM) ? CCA::INIT_ALL : CCA::INIT_NONE;
+
+            //Get CCA objects
+            for ($band=1; $band<=10; $band++) {
                 $qccas= "SELECT FE_Components.keyId, FE_Components.fkFE_ComponentType, FE_Config.keyFEConfig,
                         FE_Components.SN, FE_Components.Band,
                         FE_ConfigLink.keyId, Front_Ends.keyFrontEnds
@@ -178,38 +200,38 @@ class FrontEnd extends GenericTable{
                         WHERE FE_Components.fkFE_ComponentType = 20
                         AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
                         AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
-                        AND FE_Components.Band = $iw
+                        AND FE_Components.Band = $band
                         AND FE_Config.fkFront_Ends = $this->keyId
                         AND FE_Config.keyFEConfig = ".$this->feconfig->keyId.";";
                 $rccas = @mysql_query($qccas,$this->dbconnection);
                 $cca_id = @mysql_result($rccas,0,0);
-                if ($cca_id != ''){
-                    $this->ccas[$iw] = new CCA();
-                    $this->ccas[$iw]->Initialize_CCA($cca_id,$this->fc);
+                if ($cca_id != '') {
+                    $this->ccas[$band] = new CCA();
+                    $this->ccas[$band]->Initialize_CCA($cca_id, $this->fc, $cca_INIT);
                 }
             }
-        }//end if GetSubComponents = 1
+        }
         $this->GetJSONstring();
     }
 
-    public function Initialize_FrontEnd_FromSN($in_sn, $in_fc, $GetSubComponents = 1){
+    public function Initialize_FrontEnd_FromSN($in_sn, $in_fc, $INIT_Options = self::INIT_ALL) {
         $db = site_getDbConnection();
         $q = "SELECT max(keyFrontEnds) FROM Front_Ends WHERE SN = $in_sn;";
         $r = @mysql_query($q,$db);
         $this->keyId = @mysql_result($r,0,0);
-        $this->Initialize_FrontEnd($this->keyId, $in_fc, $GetSubComponents);
+        $this->Initialize_FrontEnd($this->keyId, $in_fc, $INIT_Options);
     }
 
-    public function Initialize_FrontEnd_FromConfig($in_cfg, $in_fc, $GetSubComponents = 1){
+    public function Initialize_FrontEnd_FromConfig($in_cfg, $in_fc, $INIT_Options = self::INIT_ALL) {
         $db = site_getDbConnection();
         $q = "SELECT fkFront_Ends FROM FE_Config WHERE keyFEConfig = $in_cfg;";
         $r = @mysql_query($q,$db);
         $this->keyId = @mysql_result($r,0,0);
-        $this->Initialize_FrontEnd($this->keyId, $in_fc, $GetSubComponents, $in_cfg);
+        $this->Initialize_FrontEnd($this->keyId, $in_fc, $INIT_Options, $in_cfg);
         $this->feconfig_id = $in_cfg;
     }
 
-    public function DisplayTable_BeamPatterns($in_band = "%"){
+    public function DisplayTable_BeamPatterns($in_band = "%") {
         echo "<div style= 'width:650px'>";
         echo "<table id='table1'>";
         echo "<tr class = 'alt'><th colspan='4'>BEAM PATTERNS</th></tr>";
@@ -249,8 +271,8 @@ class FrontEnd extends GenericTable{
         echo "<tr><th>Band</th>
                   <th>Date/Time</th>";
 
-        for($i=0;$i<count($this->feconfigs);$i++) {
-            $keyconfig = $this->feconfigs[$i];
+        for($i=0;$i<count($this->feconfig_ids_all);$i++) {
+            $keyconfig = $this->feconfig_ids_all[$i];
 
             $q = "SELECT band, keyId, TS, notes FROM TestData_header
                   WHERE fkFE_Config = $keyconfig
@@ -260,7 +282,7 @@ class FrontEnd extends GenericTable{
             //echo "<td>$q</td>";
             $r = @mysql_query($q,$this->dbconnection);
             if (@mysql_num_rows($r) > 0) {
-                while ($row = @mysql_fetch_array($r)){
+                while ($row = @mysql_fetch_array($r)) {
                     echo "<tr><td width='50px'>$row[0]</td>";
                     echo "<td width='150px'><a href='testdata.php?keyheader=$row[1]&fc=$this->fc'>$row[2]</a></td></tr>";
                 }
@@ -269,7 +291,7 @@ class FrontEnd extends GenericTable{
         echo "</table></div>";
     }
 
-    public function DisplayTable_LOLockTest(){
+    public function DisplayTable_LOLockTest() {
         echo "<br><br>";
         echo "<div style= 'width:200px'>";
         echo "<table id='table1'>";
@@ -277,11 +299,11 @@ class FrontEnd extends GenericTable{
         echo "<tr><th>Band</th>
                   <th>Date/Time</th>";
 
-        for($i=0;$i<count($this->feconfigs);$i++) {
-            $keyconfig = $this->feconfigs[$i];
+        for($i=0;$i<count($this->feconfig_ids_all);$i++) {
+            $keyconfig = $this->feconfig_ids_all[$i];
             for ($iBand=0; $iBand<=10; $iBand++) {
-                for($i=0;$i<count($this->feconfigs);$i++) {
-                    $keyconfig = $this->feconfigs[$i];
+                for($i=0;$i<count($this->feconfig_ids_all);$i++) {
+                    $keyconfig = $this->feconfig_ids_all[$i];
                     $q="SELECT TestData_header.keyId, TestData_header.TS
                     FROM TestData_header, TEST_LOLockTest_SubHeader
                     WHERE fkFE_Config = $keyconfig
@@ -317,7 +339,7 @@ class FrontEnd extends GenericTable{
         echo "</table></div>";
     }
 
-    public function DisplayTable_PolAngles(){
+    public function DisplayTable_PolAngles() {
         echo "<br><br>";
 
         echo "<div style= 'width:300px'>";
@@ -336,8 +358,8 @@ class FrontEnd extends GenericTable{
              GROUP BY TestData_header.band ASC, TestData_header.TS ASC;";
 
         $r = @mysql_query($q,$this->dbconnection);
-        if (@mysql_num_rows($r) > 0){
-            while ($row = @mysql_fetch_array($r)){
+        if (@mysql_num_rows($r) > 0) {
+            while ($row = @mysql_fetch_array($r)) {
                 echo "<tr><td width='50px'>$row[0]</td>";
                 echo "<td width='150px'><a href='testdata.php?keyheader=$row[1]&fc=$this->fc'>$row[2]</a></td></tr>";
             }
@@ -345,7 +367,7 @@ class FrontEnd extends GenericTable{
         echo "</table></div>";
     }
 
-    public function DisplayTable_WorkmanshipAmplitude(){
+    public function DisplayTable_WorkmanshipAmplitude() {
         echo "<br><br>";
         echo "<div style= 'width:200px'>";
         echo "<table id='table1'>";
@@ -362,8 +384,8 @@ class FrontEnd extends GenericTable{
         AND FE_Config.fkFront_Ends = $this->keyId
         GROUP BY TestData_header.band ASC, TestData_header.TS ASC;";
         $r = @mysql_query($q,$this->dbconnection);
-        if (@mysql_num_rows($r) > 0){
-            while ($row = @mysql_fetch_array($r)){
+        if (@mysql_num_rows($r) > 0) {
+            while ($row = @mysql_fetch_array($r)) {
                 echo "<tr><td width='50px'>$row[0]</td>";
                 echo "<td width='150px'><a href='testdata.php?keyheader=$row[1]&fc=$this->fc'>$row[2]</a></td></tr>";
             }
@@ -371,7 +393,7 @@ class FrontEnd extends GenericTable{
         echo "</table></div>";
     }
 
-    public function DisplayTable_WorkmanshipPhase(){
+    public function DisplayTable_WorkmanshipPhase() {
         echo "<br><br>";
         echo "<div style= 'width:400px'>";
         echo "<table id='table1'>";
@@ -394,8 +416,8 @@ class FrontEnd extends GenericTable{
         GROUP BY TestData_header.band ASC, TestData_header.TS ASC;";
 
         $r = @mysql_query($q,$this->dbconnection);
-        if (@mysql_num_rows($r) > 0){
-            while ($row = @mysql_fetch_array($r)){
+        if (@mysql_num_rows($r) > 0) {
+            while ($row = @mysql_fetch_array($r)) {
                 echo "<tr><td width='50px'>$row[0]</td>";
                 echo "<td width='50px'>$row[5]</td>";
                 echo "<td width='50px'>$row[6]</td>";
@@ -406,7 +428,7 @@ class FrontEnd extends GenericTable{
         echo "</table></div>";
     }
 
-    public function DisplayTable_Cryostat(){
+    public function DisplayTable_Cryostat() {
         echo "<br><br><h2>CRYOSTAT</h2>";
         echo "<div style= 'width:350px'>";
         echo "<table id='table1'>";
@@ -417,8 +439,8 @@ class FrontEnd extends GenericTable{
              AND Front_Ends.keyFrontEnds = $this->keyId;";
 
         $r = @mysql_query($q,$this->dbconnection);
-        if (@mysql_num_rows($r) > 0){
-            while ($row = @mysql_fetch_array($r)){
+        if (@mysql_num_rows($r) > 0) {
+            while ($row = @mysql_fetch_array($r)) {
                 echo "<tr><th>Cryostat $row[1]</th>";
                 echo "<td width='200px'><a href='https://safe.nrao.edu/php/ntc/cryostat/cryostat.php?keyId=$row[0]'>CLICK TO VIEW DATA</a></td></tr>";
             }
@@ -426,7 +448,7 @@ class FrontEnd extends GenericTable{
         echo "</table></div>";
     }
 
-    public function DisplayTable_SLN_History(){
+    public function DisplayTable_SLN_History() {
         echo "<div style= 'width:1100px'><font size='2'>";
         echo "<table id='table1'>";
         echo "<tr class = 'alt'><th colspan='7'>CONFIGURATION HISTORY</th></tr>";
@@ -440,13 +462,13 @@ class FrontEnd extends GenericTable{
                 </tr>";
 
         $trclass = '';
-        for ($i = 0; $i < count ($this->feconfigs); $i++){
+        for ($i = 0; $i < count ($this->feconfig_ids_all); $i++) {
             $q = "SELECT keyId FROM FE_StatusLocationAndNotes
-                  WHERE fkFEConfig = " .$this->feconfigs[$i]."
+                  WHERE fkFEConfig = " .$this->feconfig_ids_all[$i]."
                   ORDER BY keyId DESC";
             $r = @mysql_query($q,$this->dbconnection);
 
-            while ($row = @mysql_fetch_array($r)){
+            while ($row = @mysql_fetch_array($r)) {
                 $bg = ($bg=="#ffffff" ? "#E6E6FF" : "#ffffff");
                 $trclass = ($trclass=="" ? 'class="alt"' : "");
                 $sln = new SLN();
@@ -459,10 +481,10 @@ class FrontEnd extends GenericTable{
                 echo "<td width = '160px'>" .$sln->status . "</td>";
                 echo "<td>" .$sln->GetValue('Updated_By') . "</td>";
                 echo "<td width = '60px' align='center'>
-                <a href='../FEConfig/ShowFEConfig.php?key=".$this->feconfigs[$i]."&fc=".$this->GetValue('keyFacility') ."'>".
-                $this->feconfigs[$i] . "</a></td>";
+                <a href='../FEConfig/ShowFEConfig.php?key=".$this->feconfig_ids_all[$i]."&fc=".$this->GetValue('keyFacility') ."'>".
+                $this->feconfig_ids_all[$i] . "</a></td>";
 
-                if (strlen($sln->GetValue('lnk_Data')) > 5){
+                if (strlen($sln->GetValue('lnk_Data')) > 5) {
                     echo "<td width = '40px'>
                     <a href='".FixHyperLink($sln->GetValue('lnk_Data'))."'>
                     Link
@@ -471,7 +493,7 @@ class FrontEnd extends GenericTable{
                     //<a href= '".$sln->GetValue('lnk_Data')."'>LINK
                     //</a></td>";
                 }
-                if (strlen($sln->GetValue('lnk_Data')) <= 5){
+                if (strlen($sln->GetValue('lnk_Data')) <= 5) {
                     echo "<td></td>";
                 }
                 echo "<td>" .substr($sln->GetValue('Notes'),0,35) . "</td>";
@@ -484,29 +506,29 @@ class FrontEnd extends GenericTable{
     }
 
 
-    public function SLN_History_JSON(){
+    public function SLN_History_JSON() {
         $outstring = "[";
         $rowcount = 0;
 
-        for ($i = 0; $i < count ($this->feconfigs); $i++){
+        for ($i = 0; $i < count ($this->feconfig_ids_all); $i++) {
             $q = "SELECT keyId FROM FE_StatusLocationAndNotes
-                  WHERE fkFEConfig = " .$this->feconfigs[$i]."
+                  WHERE fkFEConfig = " .$this->feconfig_ids_all[$i]."
                   ORDER BY keyId DESC";
             $r = @mysql_query($q,$this->dbconnection);
 
-            while ($row = @mysql_fetch_array($r)){
+            while ($row = @mysql_fetch_array($r)) {
                 $sln = new SLN();
                 $sln->Initialize_SLN($row[0], $this->fc);
-            if ($rowcount == 0 ){
+            if ($rowcount == 0 ) {
                 $outstring .= "{'TS':'".$sln->GetValue('TS')."',";
             }
-            if ($rowcount > 0 ){
+            if ($rowcount > 0 ) {
                 $outstring .= ",{'TS':'".$sln->GetValue('TS')."',";
             }
             $outstring .= "'Location':'".$sln->location."',";
             $outstring .= "'Who':'".     $sln->GetValue('Updated_By')."',";
-            $outstring .= "'Status':'".     $sln->status."',";
-            $outstring .= "'Config':'".  $this->feconfigs[$i]."',";
+            $outstring .= "'Status':'".  $sln->status."',";
+            $outstring .= "'Config':'".  $this->feconfig_ids_all[$i]."',";
             $outstring .= "'Link':'".    FixHyperLink($sln->GetValue('lnk_Data'))."',";
 
             $notes = @mysql_real_escape_string($sln->GetValue('Notes'));
@@ -518,7 +540,7 @@ class FrontEnd extends GenericTable{
         echo $outstring;
     }
 
-    public function DisplayTable_ComponentData($band = "%", $ComponentType = "%"){
+    public function DisplayTable_ComponentData($band = "%", $ComponentType = "%") {
         $bandstring = "";
         echo "<div style= 'width:890px'>";
         echo "<table id='table1'>";
@@ -526,7 +548,7 @@ class FrontEnd extends GenericTable{
         echo "<tr><th>FE Config</th>
                   <th>Data Status</th>";
 
-        if ($band == '%'){
+        if ($band == '%') {
             echo "<th>Band</th>";
         }
         echo "<th>Description</th>
@@ -547,11 +569,11 @@ class FrontEnd extends GenericTable{
 
         $r = @mysql_query($q,$this->dbconnection);
         $trclass = '';
-        while ($row = @mysql_fetch_array($r)){
+        while ($row = @mysql_fetch_array($r)) {
             $tdh = new TestData_header();
             $tdh->Initialize_TestData_header($row['keyId'],$this->fc, $this->feconfig->keyId);
             $tdh->subheader = new GenericTable();
-            switch($tdh->GetValue('fkTestData_Type')){
+            switch($tdh->GetValue('fkTestData_Type')) {
                 case 29:
                     $tdh->subheader->Initialize('TEST_Workmanship_Amplitude_SubHeader',$tdh->keyId,'fkHeader');
                     $polstr = "(LO " . $tdh->subheader->GetValue('lo') . ")";
@@ -567,7 +589,7 @@ class FrontEnd extends GenericTable{
             $trclass = ($trclass=="" ? 'class="alt"' : "");
             echo "<tr $trclass><td width = '10px' align = 'center'>".$tdh->GetValue('fkFE_Config')."</td>";
             echo "<td width = '40px'>$tdh->DataStatus</td>";
-            if ($band == '%'){
+            if ($band == '%') {
                 echo "<td width = '10px' align = 'center'>".$tdh->GetValue('Band')."</td>";
             }
             echo "<td width='200px'><a href='../testdata/testdata.php?keyheader=$tdh->keyId' target = 'blank'>".$tdh->TestDataType." $polstr</a></td>";
@@ -578,11 +600,11 @@ class FrontEnd extends GenericTable{
         echo "</table></div>";
     }
 
-    public function DisplayTable_ComponentList($band = "%", $componenttype = "%"){
+    public function DisplayTable_ComponentList($band = "%", $componenttype = "%") {
         $bandstring = "FE_Components.Band LIKE '$band'";
         $componenttype_string = "FE_Components.fkFE_ComponentType LIKE '$componenttype'";
 
-        switch ($componenttype){
+        switch ($componenttype) {
             case "other":
                 $componenttype = "%";
                 $componenttype_string = "FE_Components.fkFE_ComponentType LIKE '%'";
@@ -605,7 +627,7 @@ class FrontEnd extends GenericTable{
                 <th style = 'width:50px'>LINKS</th>
               </tr>";
         $searchconfig = $this->feconfig->keyId;
-        if ($this->feconfig_id > 0){
+        if ($this->feconfig_id > 0) {
             $searchconfig = $this->feconfig_id;
         }
 
@@ -626,10 +648,10 @@ class FrontEnd extends GenericTable{
         $r = @mysql_query($q,$this->dbconnection);
 
         $trclass = '';
-        while ($row = @mysql_fetch_array($r)){
+        while ($row = @mysql_fetch_array($r)) {
             $Display = 1;
-            if ($band == ''){
-                switch($row['KeyComponent']){
+            if ($band == '') {
+                switch($row['KeyComponent']) {
                     case 217:
                         $Display = 0;
                         break;
@@ -648,13 +670,13 @@ class FrontEnd extends GenericTable{
                 }
             }
 
-            if ($Display == '1'){
+            if ($Display == '1') {
                 $trclass = ($trclass=='class="alt5"' ? 'class="alt4"' : 'class="alt5"');
                 echo "<tr $trclass><td align = 'center'>".$row['Description']."</td>";
 
                 $link = "ShowComponents.php?conf=". $row['keyId'] . "&fc=" . $row['keyFacility'];
                 $SN = "NA";
-                if (strlen($row['SN']) > 0){
+                if (strlen($row['SN']) > 0) {
                     $SN = $row['SN'];
                 }
                 echo "<td  align = 'center'><a href='$link'>$SN</a></td>";
@@ -666,14 +688,14 @@ class FrontEnd extends GenericTable{
                 $Link2 = FixHyperLink($row['Link2']);
 
                 $Links = "";
-                if (strlen($Link1) > 5){
+                if (strlen($Link1) > 5) {
                     $Links .= "<a href='$Link1'>SICL</a>";
-                    if ($Link2 != ''){
+                    if ($Link2 != '') {
                         $Links .= ",";
                     }
 
                 }
-                if (strlen($Link2) > 5){
+                if (strlen($Link2) > 5) {
                     $Links .= "<a href='$Link2'>CIDL</a>";
                 }
                 echo "<td  align = 'center'>$Links</td></tr>";
@@ -683,7 +705,7 @@ class FrontEnd extends GenericTable{
     }
 
 
-    public function DisplayTable_AllPAITestData($band = "%"){
+    public function DisplayTable_AllPAITestData($band = "%") {
     	/*
     	 * 2015-04-28 jee for pattern data, added test number and day of week to date
     	 */
@@ -695,7 +717,7 @@ class FrontEnd extends GenericTable{
                 <th width='10px'>FE Config</th>
                 <th>Data Status</th>";
 
-        if ($band == '%'){
+        if ($band == '%') {
             echo "<th align = 'center'>Band</th>";
         }
 
@@ -722,7 +744,7 @@ class FrontEnd extends GenericTable{
         $r = @mysql_query($q,$this->dbconnection);
 
         $trclass = '';
-        while ($row = @mysql_fetch_array($r)){
+        while ($row = @mysql_fetch_array($r)) {
             // exclude test data types which are shown health check and PAS reference data table:
             if (!(in_array($row[2], array(1,2,3,4,5,6,8,9,10,12,13,14,15,24,39)))) {
 
@@ -733,19 +755,19 @@ class FrontEnd extends GenericTable{
                 $dataset_cnt = array_count_values ( $record_list[$row[2]]);
 
                 // display row if there is only one entry for the dataset or the dataset is 0
-                if ($dataset_cnt[$row[10]] <= 1 || $row[10] == 0 ){
+                if ($dataset_cnt[$row[10]] <= 1 || $row[10] == 0 ) {
 
                     $TestNotes = $row[5];
                     $trclass = ($trclass=="" ? 'class="alt"' : "");
                     echo "<tr $trclass><td width = '10px' align = 'center'>".$row[3]."</td>";
                     echo "<td width = '70px'>$row[9]</td>";
-                    if ($band == '%'){
+                    if ($band == '%') {
                         echo "<td width = '10px' align = 'center'>".$row[4]."</td>";
                     }
 
                     $testpage = 'testdata/testdata.php';
 
-                    switch($row['fkTestData_Type']){
+                    switch($row['fkTestData_Type']) {
                         case 55:
                             //Beam patterns
                             $testpage = 'bp/bp.php';
@@ -772,7 +794,7 @@ class FrontEnd extends GenericTable{
                         case 57:
                         case 58:
                             //LO Lock Test or noise temp
-                            if ($row[10] != 0){
+                            if ($row[10] != 0) {
                                 $Description = "$row[1] Group " . $row[10];
                                 echo "<td width='180px'><a href='$testpage?keyheader=$row[0]" . "&g=" . $row[10] . "&fc=". $row[8] ."' target = 'blank'>$Description</a></td>";
                                 echo "<td width = '150px'>".$TestNotes."</td>";
@@ -811,7 +833,7 @@ class FrontEnd extends GenericTable{
         echo "</table></div>";
     }
 
-    public function DisplayTable_BeamPatternsNoHeader($in_band = "%"){
+    public function DisplayTable_BeamPatternsNoHeader($in_band = "%") {
         $q = "SELECT ScanSetDetails.band, ScanSetDetails.keyId,
         ScanSetDetails.TS, ScanSetDetails.notes, ScanSetDetails.f, FE_Config.keyFEConfig
             FROM ScanSetDetails, Front_Ends, FE_Config
@@ -826,12 +848,12 @@ class FrontEnd extends GenericTable{
         $r = @mysql_query($q,$this->dbconnection);
 
         $trclass = '';
-        while ($row = @mysql_fetch_array($r)){
+        while ($row = @mysql_fetch_array($r)) {
 
             $trclass = ($trclass=="" ? 'class="alt"' : "");
             echo "<tr $trclass><td width = '10px' align = 'center'>$row[5]</td>";
             echo "<td>Cold PAI</td>";
-            if ($in_band == '%'){
+            if ($in_band == '%') {
                 echo "<td width = '30px' align = 'center'>$row[0]</td>";
             }
             echo "<td><a href='../testdata/bp.php?id=$row[1]&band=$row[0]&keyconfig=$row[5]&fc=$this->fc' target = 'blank'>Beam Patterns ($row[4] GHz)</a></td>";
@@ -840,13 +862,13 @@ class FrontEnd extends GenericTable{
         }
     }
 
-    public function Display_Table_Documents(){
+    public function Display_Table_Documents() {
         $doctypeNames = array('PAI and PAS Reports','Requests for Waiver','Non-Conformances','CAR Notices','Other Documents');
         $doctypeKeys = array(217,218,219,222,220);
 
         echo "<div style = 'width:820px'>";
 
-        for ($i = 0; $i< count($doctypeKeys); $i++){
+        for ($i = 0; $i< count($doctypeKeys); $i++) {
             //Get all docs of this type
             $q = "SELECT FE_Components.keyId, FE_Components.keyFacility
                     FROM FE_Components, FE_ConfigLink
@@ -867,7 +889,7 @@ class FrontEnd extends GenericTable{
             echo "</tr>";
 
             $trclass = '';
-            while ($row = @mysql_fetch_array($r)){
+            while ($row = @mysql_fetch_array($r)) {
                 $trclass = ($trclass=='class="alt5"' ? 'class="alt4"' : 'class="alt5"');
                 $doc = new FEComponent();
                 $doc->Initialize_FEComponent($row['keyId'], $row['keyFacility']);
@@ -886,7 +908,7 @@ class FrontEnd extends GenericTable{
         echo "</div>";
     }
 
-    public function DisplayTable_PAITestData_Summary($band = "%"){
+    public function DisplayTable_PAITestData_Summary($band = "%") {
 
         echo "<div style= 'width:500px'>";
         echo "<table id='table1'>";

@@ -101,7 +101,7 @@ else if($command =="saveData")
     $FEkey=$_POST['fekey'];
 
     $fe = new FrontEnd();
-    $fe->Initialize_FrontEnd_FromConfig($FEkey,$fc);
+    $fe->Initialize_FrontEnd_FromConfig($FEkey, $fc, FrontEnd::INIT_NONE);
 
     $FE_sn = $fe->GetValue('SN');
 

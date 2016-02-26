@@ -51,7 +51,7 @@ if ($id == '') {
 $ifspec = new IFSpectrum_impl();
 $ifspec -> Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $fc);
 
-$feconfig = $ifspec -> FrontEnd -> feconfig_latest;
+$feconfig = $ifspec -> FrontEnd -> feconfig_id_latest;
 $fesn = $ifspec -> FrontEnd -> GetValue('SN');
 $ccasn = $ifspec -> FrontEnd -> ccas[$band] -> GetValue('SN');
 

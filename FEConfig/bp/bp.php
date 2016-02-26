@@ -55,7 +55,7 @@ $eff->Initialize_eff_SingleScanSet($ssid,$fc);
 
 // Create the FrontEnd recorod object corresponding to the TestDataHeader configuration:
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($tdh->GetValue('fkFE_Config'),$fc);
+$fe->Initialize_FrontEnd_FromConfig($tdh->GetValue('fkFE_Config'), $fc, FrontEnd::INIT_NONE);
 
 // feconfig is the configuration number for the front end:
 $feconfig = $fe->feconfig->keyId;

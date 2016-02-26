@@ -38,7 +38,7 @@ class DBOperations{
         $this->fc_comp         = $in_fc_comp;
 
         $this->FrontEnd = new FrontEnd;
-        $this->FrontEnd->Initialize_FrontEnd($in_FEid, $in_fc_fe);
+        $this->FrontEnd->Initialize_FrontEnd($in_FEid, $in_fc_fe, FrontEnd::INIT_NONE);
 
         $this->Component = new FEComponent();
         $this->Component->Initialize_FEComponent($in_COMPid, $in_fc_comp);

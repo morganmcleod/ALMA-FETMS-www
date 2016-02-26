@@ -13,7 +13,7 @@ $fc = $_REQUEST['fc'];
 $tabtype = $_REQUEST['tabtype'];
 
 $cca = new CCAPAS();
-$cca->Initialize_CCA($id,$fc);
+$cca->Initialize_CCA($id, $fc, CCA::INIT_ALL);
 
 switch($tabtype){
 	case 'info':

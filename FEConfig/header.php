@@ -9,7 +9,6 @@ if (!isset($showConfig))
 // URL for bug reporting:
 $bugsTo = "http://jira.alma.cl/browse/FETMS/";
 ?>
-
 <div id="header">
     <div id="header_inside">
         <h1><span>

@@ -13,7 +13,7 @@ $fc = $_REQUEST['fc'];
 $id = $_REQUEST['keyId'];
 
 $cca = new CCA();
-$cca->Initialize_CCA($id,$fc);
+$cca->Initialize_CCA($id, $fc, CCA::INIT_ALL);
 
 $l = new Logger('exportINI.txt');
 $l->WriteLogFile('test');

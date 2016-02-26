@@ -15,7 +15,7 @@ $fecomponent = new FEComponent();
 $fecomponent->Initialize_FEComponent($selected_key,$fc, -1);
 
 $cca = new CCA();
-$cca->Initialize_CCA($selected_key,$fc);
+$cca->Initialize_CCA($selected_key, $fc, CCA::INIT_ALL);
 switch($tabtype){
 	case 2:
 		$cca->Display_MixerParams_Edit();

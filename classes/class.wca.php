@@ -44,6 +44,16 @@ class WCA extends FEComponent{
 
     function __construct() {
         $this->fkDataStatus = '7';
+        $this->swversion = "1.0.7";
+        /*
+         * 1.0.7 MM Added INIT_Options to Initialize_WCA()
+         * 1.0.6 Fix more plotting errors in WCA electronic data upload (step size plots.)
+         * 1.0.5 Fix plotting errors in WCA electronic data upload.
+         * 1.0.4 Added XML config file upload and fixed related bugs.
+         * 1.0.3 calculate max safe power table from output power data in database.
+         * 1.0.2 fix "set label...screen" commands to gnuplot
+         */
+
         require(site_get_config_main());
         $this->writedirectory = $wca_write_directory;
         $this->dbconnection = site_getDbConnection();
@@ -59,91 +69,81 @@ class WCA extends FEComponent{
         $this->ErrorArray[] = $ErrorString;
     }
 
-    public function Initialize_WCA($in_keyId, $in_fc){
-        $this->logging = 0;
-        $this->fc = $in_fc;
-        $this->fkDataStatus = '7';
-        $this->swversion = "1.0.6";
-        /*
-         * 1.0.6 Fix more plotting errors in WCA electronic data upload (step size plots.)
-         * 1.0.5 Fix plotting errors in WCA electronic data upload.
-         * 1.0.4 Added XML config file upload and fixed related bugs.
-         * 1.0.3 calculate max safe power table from output power data in database.
-         * 1.0.2 fix "set label...screen" commands to gnuplot
-         */
+    const INIT_SLN      = 0x0001;
+    const INIT_LOPARAMS = 0x0002;
+    const INIT_TESTDATA = 0x0004;
 
+    const INIT_NONE     = 0x0000;
+    const INIT_ALL      = 0x001F;
+
+    public function Initialize_WCA($in_keyId, $in_fc, $INIT_Options = self::INIT_ALL){
+        $this->fc = $in_fc;
         parent::Initialize_FEComponent($in_keyId, $in_fc);
 
-        $this->writedirectory = $this->writedirectory . "wca"
-        . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
+        $this->writedirectory = $this->writedirectory . "wca". $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
+        $this->url_directory = $this->url_directory . "wca" . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
 
-
-        $this->url_directory = $this->url_directory . "wca"
-        . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
-
-        //$qWCA="SELECT keyId FROM WCAs WHERE fkFE_Component = $this->keyId LIMIT 1;";
+        //Get WCA record:
         $rWCA = $this->db_pull->q_other('WCA', $this->keyId);
         $WCAs_id = @mysql_result($rWCA,0);
         $this->_WCAs = New GenericTable();
         $this->_WCAs->Initialize("WCAs", $WCAs_id,"keyId",$this->fc,'fkFacility');
 
-        /*$q = "SELECT keyId
-              FROM LOParams
-              WHERE fkComponent = " . $this->keyId . "
-              ORDER BY FreqLO ASC;";
-        $r = @mysql_query($q,$this->dbconnection);//*/
-        $r = $this->db_pull->q(1, $this->keyId);
-        $lopcount = 1;
-        while ($row = @mysql_fetch_array($r)){
-            $this->LOParams[$lopcount] = new GenericTable();
-            $this->LOParams[$lopcount]->Initialize('WCA_LOParams',$row[0],'keyId',$this->fc,'fkFacility');
-            $lopcount += 1;
-        }
-
         //Get FE_Config information
-        //echo $qcfg . "<br>";
         $rcfg = $this->db_pull->q_other('cfg', $this->keyId, $this->fc);
-
         $this->ConfigId     = @mysql_result($rcfg,0,0);
         $this->ConfigLinkId = @mysql_result($rcfg,0,1);
         $this->FEId         = @mysql_result($rcfg,0,2);
         $this->FESN         = @mysql_result($rcfg,0,3);
 
-        //Status location and notes
-        $rsln = $this->db_pull->q_other('sln', $this->keyId);
-        $slnid = @mysql_result($rsln,0,0);
-        $this->sln = new GenericTable();
-        $this->sln->Initialize("FE_StatusLocationAndNotes",$slnid,"keyId");
+        if ($INIT_Options & self::INIT_SLN) {
+            //Status location and notes
+            $rsln = $this->db_pull->q_other('sln', $this->keyId);
+            $slnid = @mysql_result($rsln,0,0);
+            $this->sln = new GenericTable();
+            $this->sln->Initialize("FE_StatusLocationAndNotes",$slnid,"keyId");
+        }
 
-        //Test data header objects
-		$rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseJitter');
-        $this->tdh_phasejitter = new TestData_header();
-        $this->tdh_phasejitter->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
+        if ($INIT_Options & self::INIT_LOPARAMS) {
+            $r = $this->db_pull->q(1, $this->keyId);
+            $lopcount = 1;
+            while ($row = @mysql_fetch_array($r)){
+                $this->LOParams[$lopcount] = new GenericTable();
+                $this->LOParams[$lopcount]->Initialize('WCA_LOParams',$row[0],'keyId',$this->fc,'fkFacility');
+                $lopcount += 1;
+            }
+        }
 
-        $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AmplitudeStability');
-        $this->tdh_ampstab = new TestData_header();
-        $this->tdh_ampstab->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
+        if ($INIT_Options & self::INIT_TESTDATA) {
+            //Test data header objects
+    		$rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseJitter');
+            $this->tdh_phasejitter = new TestData_header();
+            $this->tdh_phasejitter->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
 
-        $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_OutputPower');
-        $this->tdh_outputpower = new TestData_header();
-        $this->tdh_outputpower->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
+            $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AmplitudeStability');
+            $this->tdh_ampstab = new TestData_header();
+            $this->tdh_ampstab->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
 
-        $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseNoise');
-        $this->tdh_phasenoise = new TestData_header();
-        $this->tdh_phasenoise->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
+            $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_OutputPower');
+            $this->tdh_outputpower = new TestData_header();
+            $this->tdh_outputpower->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
 
-        $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AMNoise');
-        $this->tdh_amnoise = new TestData_header();
-        $this->tdh_amnoise->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
+            $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseNoise');
+            $this->tdh_phasenoise = new TestData_header();
+            $this->tdh_phasenoise->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
 
-        /*
-        echo "ids...<br>";
-        echo "amnoise= " . $this->tdh_amnoise->keyId . "<br>";
-        echo "pj= " . $this->tdh_phasejitter->keyId . "<br>";
-        echo "pn= " . $this->tdh_phasenoise->keyId . "<br>";
-        echo "op= " . $this->tdh_outputpower->keyId . "<br>";
-        echo "ampstab= " . $this->tdh_ampstab->keyId . "<br>";
-        */
+            $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AMNoise');
+            $this->tdh_amnoise = new TestData_header();
+            $this->tdh_amnoise->Initialize_TestData_header(@mysql_result($rtdh,0,0), $this->GetValue('keyFacility'));
+            /*
+            echo "ids...<br>";
+            echo "amnoise= " . $this->tdh_amnoise->keyId . "<br>";
+            echo "pj= " . $this->tdh_phasejitter->keyId . "<br>";
+            echo "pn= " . $this->tdh_phasenoise->keyId . "<br>";
+            echo "op= " . $this->tdh_outputpower->keyId . "<br>";
+            echo "ampstab= " . $this->tdh_ampstab->keyId . "<br>";
+            */
+        }
     }
 
     public function NewRecord_WCA(){
@@ -952,7 +952,7 @@ class WCA extends FEComponent{
             //Get old status and location for the front end
             $wcaFE = new FrontEnd();
             $this->GetFEConfig();
-            $wcaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc);
+            $wcaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc, FrontEnd::INIT_SLN);
             $oldStatusFE = $wcaFE->fesln->GetValue('fkStatusType');
             $oldLocationFE = $wcaFE->fesln->GetValue('fkLocationNames');
             $dbops->RemoveComponentFromFrontEnd($this->GetValue('keyFacility'), $this->keyId, '',-1,-1);
@@ -1062,7 +1062,7 @@ class WCA extends FEComponent{
             //Get old status and location for the front end
             $wcaFE = new FrontEnd();
             $this->GetFEConfig();
-            $wcaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc);
+            $wcaFE->Initialize_FrontEnd_FromConfig($this->FEConfig, $this->FEfc, FrontEnd::INIT_SLN);
             $oldStatusFE = $wcaFE->fesln->GetValue('fkStatusType');
             $oldLocationFE = $wcaFE->fesln->GetValue('fkLocationNames');
             $dbops->RemoveComponentFromFrontEnd($this->GetValue('keyFacility'), $this->keyId, '',-1,-1);
