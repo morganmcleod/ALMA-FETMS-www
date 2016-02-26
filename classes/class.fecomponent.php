@@ -582,7 +582,7 @@ class FEComponent extends GenericTable{
     public function Display_ALLUpdateConfigForm_CCA(){
         require_once(site_get_classes() . '/class.wca.php');
         $cca = new CCA();
-        $cca->Initialize_CCA($this->keyId,$this->GetValue('keyFacility'));
+        $cca->Initialize_CCA($this->keyId,$this->GetValue('keyFacility'), CCA::INIT_NONE);
         echo "<div style='width:850px'>";
         echo "<table id = 'table8'>";
 

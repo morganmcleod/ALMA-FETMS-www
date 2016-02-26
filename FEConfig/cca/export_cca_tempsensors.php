@@ -5,7 +5,7 @@ require_once($site_classes . '/class.cca.php');
 $fc = $_REQUEST['fc'];
 $cca = new CCA();
 $id = $_REQUEST['keyId'];
-$cca->Initialize_CCA($id,$fc);
+$cca->Initialize_CCA($id, $fc, CCA::INIT_TEMPSENSORS);
 $band = $cca->GetValue('Band');
 $sn   = ltrim($cca->GetValue('SN'),'0');
 $esn  = $cca->GetValue('ESN1');

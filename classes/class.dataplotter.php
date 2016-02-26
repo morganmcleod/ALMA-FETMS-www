@@ -77,7 +77,7 @@ class DataPlotter extends GenericTable{
         $this->CCASN = "N/A";
         if (@mysql_numrows($r) > 0){
             $this->cca = new CCA();
-            $this->cca->Initialize_CCA(@mysql_result($r,0,0), $this->fc);
+            $this->cca->Initialize_CCA(@mysql_result($r,0,0), $this->fc, CCA::INIT_NONE);
             $this->CCASN = $this->cca->GetValue('SN');
         }
         $this->measdate = $this->TestDataHeader->GetValue('TS');

@@ -27,7 +27,7 @@ if (isset($_REQUEST['fc'])){
 
 $comp_key=$_REQUEST['conf'];
 $cca = new CCA();
-$cca->Initialize_CCA($comp_key, $fc);
+$cca->Initialize_CCA($comp_key, $fc, CCA::INIT_SLN);
 
 $title="Edit CCA " . $cca->GetValue('Band') . "-" . $cca->GetValue('SN') . " Configuration";
 

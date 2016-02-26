@@ -9,7 +9,7 @@ $type = isset($_REQUEST['type']) ? $_REQUEST['type'] : 'fec';
 // type is expected to be 'fec' or 'wca'
 
 $wca = new WCA();
-$wca->Initialize_WCA($id,$fc);
+$wca->Initialize_WCA($id, $fc, WCA::INIT_ALL);
 
 $band = $wca->GetValue('Band');
 $fname = ($type=='wca') ? "WCA$band.ini" : "FrontEndControlDLL.ini";

@@ -8,7 +8,7 @@ $fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '';
 $keyWCA = isset($_REQUEST['keyId']) ? $_REQUEST['keyId'] : '';
 
 $wca = new WCA;
-$wca->Initialize_WCA($keyWCA,$fc);
+$wca->Initialize_WCA($keyWCA, $fc, WCA::INIT_ALL);
 $wca->RequestValues_WCA();
 
 if ((isset($_REQUEST['submit_datafile'])) || (isset($_REQUEST['submitted']))){

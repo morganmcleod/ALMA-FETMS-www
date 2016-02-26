@@ -7,8 +7,8 @@ $fileName = $_FILES['filedata']['name'];
 $tmpName  = $_FILES['filedata']['tmp_name'];
 
 $wca = new WCA();
-$wca->Initialize_WCA($_REQUEST['id'],$_REQUEST['fc']);
-$wca->UploadConfiguration($fileName,$tmpName);
+$wca->Initialize_WCA($_REQUEST['id'], $_REQUEST['fc'], WCA::INIT_ALL);
+$wca->UploadConfiguration($fileName, $tmpName);
 
 $errorstring = '';
 $errordetected = 0;

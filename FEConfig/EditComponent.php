@@ -133,7 +133,7 @@ if (isset($_REQUEST['Updated_By'])){
     if ($IsWCA == 1){
 
         $wca = new WCA();
-        $wca->Initialize_WCA($c->keyId,$c->GetValue('keyFacility'));
+        $wca->Initialize_WCA($c->keyId,$c->GetValue('keyFacility'), WCA::INIT_ALL);
         //Create records in WCAs if one doesn't exist.
         if ($wca->_WCAs->keyId == ''){
             $wca->_WCAs = New GenericTable();
@@ -362,7 +362,7 @@ echo "
                 }
                 if ($IsWCA == 1){
                     $wca = new WCA();
-                    $wca->Initialize_WCA($c->keyId,$c->GetValue('keyFacility'));
+                    $wca->Initialize_WCA($c->keyId, $c->GetValue('keyFacility'), WCA::INIT_ALL);
 
                     echo
 

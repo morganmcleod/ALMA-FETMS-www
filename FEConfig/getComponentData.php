@@ -101,7 +101,7 @@ if($tabtype != 1)
     if($comp_type == 11)
     {
         $wca = new WCA();
-        $wca->Initialize_WCA($selected_key,$fc);
+        $wca->Initialize_WCA($selected_key, $fc, WCA::INIT_ALL);
         switch($tabtype){
             case 2:
                 $wca->DisplayMainDataNonEdit();
