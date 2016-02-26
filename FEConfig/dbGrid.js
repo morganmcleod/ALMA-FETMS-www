@@ -41,20 +41,25 @@ function creategrid(type, CreateToolbar) {
                 handler : function() {
                     window.location = 'testdata/RecentTestList.php';
                 }
-            }, {
-                xtype : 'tbbutton',
-                text : 'Import CIDL',
-                style : 'margin: 1px;',
-                icon : 'icons/application_go.png',
-                handler : function() {
-                    window.location = 'ImportCIDLform.php';
-                }
+            },
+            // {
+            // xtype : 'tbbutton',
+            // text : 'Import CIDL',
+            // style : 'margin: 1px;',
+            // icon : 'icons/application_go.png',
+            // handler : function() {
+            // window.location = 'ImportCIDLform.php';
+            // }
+            // },
+            {
+                xtype : 'tbspacer',
+                width : 30
             }, {
                 xtype : 'combo',
                 style : 'margin: 1px;',
                 id : 'search2',
                 name : 'state',
-                width : 350,
+                width : 400,
                 height : 20,
                 displayField : 'stateName',
                 hiddenValue : 'stateCode',
