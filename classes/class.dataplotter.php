@@ -749,7 +749,7 @@ class DataPlotter extends GenericTable{
         }
         if ($this->TestDataHeader->GetValue('fkFE_Config') > 0){
             $fe = new FrontEnd();
-            $fe->Initialize_FrontEnd_FromConfig($this->TestDataHeader->GetValue('fkFE_Config'),$this->TestDataHeader->GetValue('keyFacility'));
+            $fe->Initialize_FrontEnd_FromConfig($this->TestDataHeader->GetValue('fkFE_Config'),$this->TestDataHeader->GetValue('keyFacility'), FrontEnd::INIT_NONE);
             $sn = $fe->GetValue('SN');
             unset($fe);
         }

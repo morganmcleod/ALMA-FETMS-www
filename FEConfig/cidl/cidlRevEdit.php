@@ -25,7 +25,7 @@ $fc = $_REQUEST['fc'];
 
 //Instantiate a FrontEnd object from the feconfig value.
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($feconfig,$fc,0);
+$fe->Initialize_FrontEnd_FromConfig($feconfig, $fc, FrontEnd::INIT_NONE);
 $fesn = $fe->GetValue('SN');
 
 $title="CIDL Front End " . $fe->GetValue('SN');

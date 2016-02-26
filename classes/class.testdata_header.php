@@ -27,7 +27,7 @@ class TestData_header extends GenericTable{
     var $fc; //facility
     var $subheader; //Generic table object, for a record in a subheader table
 
-    public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '', $InitFEComps = -1) {
+    public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
         $this->swversion = "1.0.9";
         // 1.0.9 fixed instantiating DataPlotter in DrawPlot().
         // 1.0.8 minor fix to require(class.wca.php)
@@ -65,9 +65,8 @@ class TestData_header extends GenericTable{
             $feid = @mysql_result($rfe,0);
             $this->fe_keyId = $feid;
             $this->FrontEnd = new FrontEnd();
-            $this->FrontEnd->Initialize_FrontEnd($feid, $this->GetValue('keyFacility'),$InitFEComps);
-
-            $this->Component->Initialize("Front_Ends",$feid,"keyFrontEnds",$this->GetValue('keyFacility'),'keyFacility');
+            $this->FrontEnd->Initialize_FrontEnd($feid, $this->GetValue('keyFacility'), FrontEnd::INIT_SLN | FrontEnd::INIT_CONFIGS);
+            $this->Component->Initialize("Front_Ends", $feid, "keyFrontEnds", $this->GetValue('keyFacility'), 'keyFacility');
             $this->Component->ComponentType = "Front End";
         }
     }

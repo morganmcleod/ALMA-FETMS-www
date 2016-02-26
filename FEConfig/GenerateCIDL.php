@@ -11,7 +11,7 @@ $PreparedBy = $_REQUEST['pb'];
 $ALMADocNum = $_REQUEST['adn'];
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($fecfg,$fc);
+$fe->Initialize_FrontEnd_FromConfig($fecfg, $fc, FrontEnd::INIT_NONE);
 
 //Create progress update ini file
 $url = '"' . $rootdir_url . "FEConfig/ShowFEConfig.php?key=$fecfg&fc=$fc" . '"';

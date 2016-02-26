@@ -38,7 +38,7 @@ $CIDLSpreadsheetVersion = "1.0.7";
 $errors = "";
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd($keyFE,$fc,-1);
+$fe->Initialize_FrontEnd($keyFE, $fc, FrontEnd::INIT_NONE);
 $feconfig = $fe->feconfig->keyId;
 $fe_sn = $fe->GetValue('SN');
 $title="Front End-" . $fe->GetValue('SN');
@@ -425,7 +425,7 @@ if ($Import == 1){
     $dbops->UpdateStatusLocationAndNotes_FE($fc, '', '',$SLNNotes,$fe->feconfig->keyId, $fe->feconfig->keyId, $UpdatedBy,' ');
 
     $oldfeconfig = $fe->feconfig->keyId;
-    $fe->Initialize_FrontEnd($keyFE,$fc);
+    $fe->Initialize_FrontEnd($keyFE, $fc, FrontEnd::INIT_NONE);
     $newfeconfig = $fe->feconfig->keyId;
 }
 

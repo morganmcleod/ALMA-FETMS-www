@@ -10,7 +10,7 @@ $feConfig=$_POST['key'];
 $facility=$_REQUEST['fc'];
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($feConfig,$facility, -1);
+$fe->Initialize_FrontEnd_FromConfig($feConfig, $facility, FrontEnd::INIT_NONE);
 $fc   = $fe->GetValue('keyFacility');
 $fesn = $fe->GetValue('SN');
 

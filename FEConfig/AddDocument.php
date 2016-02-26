@@ -8,8 +8,8 @@
 <link href="images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
 <title>Edit Component</title>
 </head>
-<div id='wrap' >
 <body>
+<div id='wrap' >
 
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
@@ -22,23 +22,31 @@ $feconfig = $_REQUEST['conf'];  //keyId of FE_Components table
 $fc = $_REQUEST['fc'];
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($feconfig,$fc);
+$fe->Initialize_FrontEnd_FromConfig($feconfig, $fc, FrontEnd::INIT_NONE);
 
 $fesn=$fe->GetValue('SN');
 
-$title.= "Add Document To FE $fesn";
+$title = "Add Document To FE $fesn";
 
 include('header.php');
 
 if (isset($_REQUEST['Updated_By'])){
     $c = new FEComponent();
     $c->NewRecord_FEComponent($fc);
+
+    // Turn off E_NOTICE error reporting for this section because of all tha unguarded $_REQUEST[]s:
+    error_reporting($errorReportSettingsNo_E_NOTICE);
+
     $c->SetValue('fkFE_ComponentType',$_REQUEST['fkFE_ComponentType']);
     $c->SetValue('Link1',$_REQUEST['Link1']);
     $c->SetValue('Link2',$_REQUEST['Link2']);
     $c->SetValue('Description',$_REQUEST['Description']);
     $c->SetValue('DocumentTitle',$_REQUEST['DocumentTitle']);
     $c->SetValue('Production_Status',$_REQUEST['StatusType']);
+
+    // Turn back on E_NOTICE error reporting:
+    error_reporting($errorReportSettingsNormal);
+
     $c->Update();
     $dbops = new DBOperations();
     $dbops->AddComponentToFrontEnd($fe->keyId, $c->keyId, $fe->GetValue('keyFacility'), $fc, '','', $_REQUEST['Updated_By']);
@@ -169,6 +177,6 @@ echo "
 include('footer.php');
 
 ?>
-</body>
 </div>
+</body>
 </html>

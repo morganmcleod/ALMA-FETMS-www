@@ -15,14 +15,14 @@ require_once($site_classes . '/class.dboperations.php');
 require_once($site_classes . '/class.fecomponent.php');
 require_once($site_classes . '/class.logger.php');
 
-$l = new Logger('SLNBROKEN.txt');
-$l->WritELogFile('test');
+// $l = new Logger('SLNBROKEN.txt');
+// $l->WritELogFile('test');
 
 $keyId = $_REQUEST['id'];  //keyId of FE
 $fc = $_REQUEST['fc'];
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd($keyId,$fc);
+$fe->Initialize_FrontEnd($keyId, $fc, FrontEnd::INIT_SLN);
 //This is used by the header to display a link back to the FE page
 $feconfig = $fe->feconfig->keyId;
 $fesn=$fe->GetValue('SN');
@@ -87,21 +87,14 @@ if (isset($_REQUEST['Updated_By'])){
             $NewFEConfig = $dbops->UpdateStatusLocationAndNotes_FE($fc, $_REQUEST['fkStatusType'], $_REQUEST['fkLocationNames'],$ChangedNotes,$fe->feconfig->keyId,$fe->feconfig->keyId, $_REQUEST['Updated_By'],$newlink);
         }
 
-
-        //uncomment when done
         echo "<meta http-equiv='Refresh' content='0.1;url=ShowFEConfig.php?key=$NewFEConfig&fc=$fc'>";
     }
-
-
 }
 
 
 
 echo "
 <div id='wrap2' >";
-
-//if (!isset($_REQUEST['Updated_By'])){
-
 
 echo "
 <form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>
@@ -176,8 +169,8 @@ echo "
                         $r = @mysql_query($q,$db);
                         while($row = @mysql_fetch_Array($r)){
 
-                            $l->WriteLogFile("Status Option: $row[0]");
-                            $l->WriteLogFile("Current status= " . $fe->fesln->keyId);
+//                             $l->WriteLogFile("Status Option: $row[0]");
+//                             $l->WriteLogFile("Current status= " . $fe->fesln->keyId);
 
                             if ($row[0] == $fe->fesln->GetValue('fkStatusType')){
                                 echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";

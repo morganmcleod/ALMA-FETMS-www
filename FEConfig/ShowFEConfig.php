@@ -34,7 +34,7 @@ require('jsFunctions.php');
 $keyFE=$_GET['key'];
 $fc = $_REQUEST['fc'];
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($keyFE, $fc, -1);
+$fe->Initialize_FrontEnd_FromConfig($keyFE, $fc, FrontEnd::INIT_CONFIGS);
 $fe_sn = $fe->GetValue('SN');
 
 $title="Front End-" . $fe->GetValue('SN');
@@ -46,9 +46,9 @@ include "header.php";
     <?php
         //Display a warning if the current page is not for the latest configuration
 
-        if ($fe->feconfig->keyId != $fe->feconfig_latest) {
+        if ($fe->feconfig->keyId != $fe->feconfig_id_latest) {
             echo "<font color='#ff0000'>
-                  Warning: This configuration (".$fe->feconfig->keyId.") is not the most current configuration ($fe->feconfig_latest).
+                  Warning: This configuration (".$fe->feconfig->keyId.") is not the most current configuration ($fe->feconfig_id_latest).
                   </font><br>";
         }
 

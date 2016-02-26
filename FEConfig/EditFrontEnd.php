@@ -8,8 +8,8 @@
 <link href="images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
 <title>Edit Front End</title>
 </head>
-<div id='wrap'>
 <body>
+<div id='wrap'>
 <?
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.dboperations.php');
@@ -20,7 +20,7 @@ $keyId = $_REQUEST['id'];  //keyId of FE_Components table
 $fc = $_REQUEST['fc'];
 
 $fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($keyId,$fc);
+$fe->Initialize_FrontEnd_FromConfig($keyId, $fc, FrontEnd::INIT_NONE);
 //This is used by the header to display a link back to the FE page
 $feconfig = $fe->feconfig->keyId;
 $fesn=$fe->GetValue('SN');
@@ -159,6 +159,6 @@ echo "
 include "footer.php";
 
 ?>
-</body>
 </div>
+</body>
 </html>

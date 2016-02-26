@@ -72,7 +72,8 @@ class IFSpectrum_impl extends TestData_header {
     var $swVersion;               //software version string for this class.
 
     public function __construct() {
-        $this->swVersion = "1.3.2";
+        $this->swVersion = "1.3.3";
+        // 1.3.3  MTM: Initializes FrontEnd object with INIT_CARTS for speed.
         // 1.3.2  MTM: fixed IF spectrum plotting bugs: Wrong URLs table name;  Out-of-spec pVar mark not shown on 0th LO trace.
         // 1.3.1  MTM: refactoring done.  B5 special powervar plot temporarily disabled.
         // 1.3.0  MTM: still refactoring with new IFSpectrum_calc, _db, and _plot classes.
@@ -143,13 +144,13 @@ class IFSpectrum_impl extends TestData_header {
 
         // load FrontEnd info:
         $this->FrontEnd = new FrontEnd();
-        $this->FrontEnd->Initialize_FrontEnd($this->FEid, $this->facilityCode);
+        $this->FrontEnd->Initialize_FrontEnd($this->FEid, $this->facilityCode, FrontEnd::INIT_CART);
 
         // make the data labels which go at the bottom of every plot:
         $this->TDHdataLabels = array();
         $this->TDHdataLabels[] = "TestData_header.keyId: ". $this->TDHkeyString;
         $this->TDHdataLabels[] = "$this->TS, FE Configuration "
-        . $this->FrontEnd->feconfig_latest
+        . $this->FrontEnd->feconfig_id_latest
         . "; DataSetGroup: "
         . $this->dataSetGroup
         . "; IFSpectrum Ver. "
