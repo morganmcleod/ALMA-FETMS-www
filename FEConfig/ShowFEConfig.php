@@ -13,7 +13,6 @@
 <script type="text/javascript" src="loadFEConfig.js"></script>
 <script type="text/javascript" src="AddNotesEtc.js"></script>
 <script type="text/javascript" src="EditFE.js"></script>
-<script type="text/javascript" src="cidl.js"></script>
 <script type="text/javascript" src="Ext.ux.plugins.HeaderButtons.js"></script>
 <link rel="stylesheet" type="text/css" href="Ext.ux.plugins.HeaderButtons.css">
 <link href="images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
