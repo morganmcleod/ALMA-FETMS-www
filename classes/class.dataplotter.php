@@ -1019,6 +1019,7 @@ class DataPlotter extends GenericTable{
 
             $row=@mysql_fetch_array($r);
             $timeStart = 0;
+            $minutes = 0;
             $once = true;
             while($row=@mysql_fetch_array($r)){
                 $ts = $row[5];
@@ -1039,14 +1040,20 @@ class DataPlotter extends GenericTable{
                     $once = false;
                 }
 
-                $elapsed = $timeStart->diff($ts);
-                $minutes = $elapsed->d * 1440 + $elapsed->h * 60 + $elapsed->i + $elapsed->s / 60;
+                if ($ts !== false) {
+                    $elapsed = $timeStart->diff($ts);
+                    $minutes = $elapsed->d * 1440 + $elapsed->h * 60 + $elapsed->i + $elapsed->s / 60;
+                }
                 $d1 = $row[1];
                 $d2 = $row[2];
                 $d3 = $row[3];
                 $d4 = $row[4];
                 $stringData = "$minutes\t$row[0]\t$d1\t$d2\t$d3\t$d4\r\n";
                 fwrite($fh, $stringData);
+                if ($ts === false) {
+                    $minutes += 1.0 / (60.0 * 4.0);
+                    // assume 1/4 second interval
+                }
             }
             fclose($fh);
             $datafile_count++;
