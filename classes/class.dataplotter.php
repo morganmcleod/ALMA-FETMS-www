@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.1";
+        $this->swversion = "1.2.2";
 
         /*
+         * 1.2.2:  Fixed Plot_WorkmanshipAmplitude not displaying X axis as minutes.
          * 1.2.1:  Fixed Plot_WorkmanshipAmplitude
          * 1.2.0:  Fixed Plot_LOLockTest
          * 1.1.0:  Uses dbCode/dataplotterdb for database calls
@@ -1017,31 +1018,36 @@ class DataPlotter extends GenericTable{
             $fh = fopen($data_file, 'w');
 
             $row=@mysql_fetch_array($r);
-            $timeval = 0;
-            $once = 0;
-                while($row=@mysql_fetch_array($r)){
-                    if ($once != 1){
-                        if ($this->TestDataHeader->GetValue('Band') != 9){
-                            $maxtemp = max($row[1],$row[2],$row[3],$row[4]);
-                        }
-                        if ($this->TestDataHeader->GetValue('Band') == 9){
-                            $maxtemp = max($row[1],$row[3]);
-                        }
-                        $o1 = $row[1] - $maxtemp;
-                        $o2 = $row[2] - $maxtemp;
-                        $o3 = $row[3] - $maxtemp;
-                        $o4 = $row[4] - $maxtemp;
-                        $once = 1;
-                    }
+            $timeStart = 0;
+            $once = true;
+            while($row=@mysql_fetch_array($r)){
+                $ts = $row[5];
+                $ts = DateTime::createFromFormat("Y-m-d H:i:s+", $ts);
 
-                    $d1 = $row[1];
-                    $d2 = $row[2];
-                    $d3 = $row[3];
-                    $d4 = $row[4];
-                    $stringData = "$timeval\t$row[0]\t$d1\t$d2\t$d3\t$d4\r\n";
-                    fwrite($fh, $stringData);
-                    $timeval += (1/60);
+                if ($once) {
+                    $timeStart = $ts;
+
+                    if ($this->TestDataHeader->GetValue('Band') >= 9) {
+                        $maxtemp = max($row[1],$row[3]);
+                    } else {
+                        $maxtemp = max($row[1],$row[2],$row[3],$row[4]);
+                    }
+                    $o1 = $row[1] - $maxtemp;
+                    $o2 = $row[2] - $maxtemp;
+                    $o3 = $row[3] - $maxtemp;
+                    $o4 = $row[4] - $maxtemp;
+                    $once = false;
                 }
+
+                $elapsed = $timeStart->diff($ts);
+                $minutes = $elapsed->d * 1440 + $elapsed->h * 60 + $elapsed->i + $elapsed->s / 60;
+                $d1 = $row[1];
+                $d2 = $row[2];
+                $d3 = $row[3];
+                $d4 = $row[4];
+                $stringData = "$minutes\t$row[0]\t$d1\t$d2\t$d3\t$d4\r\n";
+                fwrite($fh, $stringData);
+            }
             fclose($fh);
             $datafile_count++;
         }

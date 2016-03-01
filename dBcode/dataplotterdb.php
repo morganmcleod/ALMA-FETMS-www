@@ -171,7 +171,7 @@ class DPdb{ //extends DBRetrieval{
 			WHERE fkHeader = $TestData_Id AND fkFacility = $fc;";
 		} elseif ($occur==4) {
 			$q = "SELECT tilt,power_pol0_chA,power_pol0_chB,
-			power_pol1_chA,power_pol1_chB
+			power_pol1_chA,power_pol1_chB, TS
 			FROM TEST_Workmanship_Amplitude
 			WHERE fkHeader = $TestData_Id AND fkFacility = $fc ORDER BY TS ASC;";
 		} elseif ($occur==5) {
