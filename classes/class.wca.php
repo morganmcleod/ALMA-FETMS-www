@@ -754,7 +754,7 @@ class WCA extends FEComponent{
         $where = $_SERVER['PHP_SELF'];
         $where = '';
         echo '
-        <p><div style="width:500px;height:80px; align = "left"></p>
+        <p><div style="width:800px;height:80px; align = "left"></p>
         <!-- The data encoding type, enctype, MUST be specified as below -->
         <form enctype="multipart/form-data" action="' . $where . '" method="POST">
             <!-- MAX_FILE_SIZE must precede the file input field -->
