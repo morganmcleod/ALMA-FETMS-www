@@ -208,7 +208,7 @@ function LNA_results($td_keyID){
     // get specifications array
     $new_spec= new Specifications();
     $spec = $new_spec->getSpecs('CCA_LNA_bias', 0);
-    
+
     //$spec = get_specs(1,0);
 
     $tdh = new TestData_header();
@@ -344,102 +344,102 @@ function LNA_results($td_keyID){
 */
 function SIS_results($td_keyID){
 
-    // get specifications array
-    //$spec = get_specs(3,0);
+    // get specs object for SIS bias:
     $new_spec = new Specifications();
     $spec = $new_spec->getSpecs('CCA_SIS_bias', 0);
 
+    //get and save Monitor Data
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
 
-    //get and save Monitor Data
-    $q = "SELECT `Pol`,`SB`,`VjRead`,`IjRead`,`VmagRead`,`ImagRead`, FreqLO
+    $q = "SELECT `Pol`,`SB`,`FreqLO`,`VjRead`,`IjRead`,`VmagRead`,`ImagRead`
         FROM `CCA_SIS_bias`
         WHERE `fkHeader` = $td_keyID ORDER BY `Pol`ASC, `SB` ASC";
     $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");
 
-    // format data to put in table
-    $cnt=0;
-    while ($row = @mysql_fetch_array($r)){
-        for ($i = 0; $i < 6; $i++) {
-            // format monitor data only for floats
-            if ($i > 1){
-                $mon_data = mon_data ($row[$i]);
-            } else {
-                $mon_data = $row[$i];
-            }
-            $SIS_Mon[$cnt][$i] = $mon_data;
-        }
-        $cnt++;
+    $FreqLO = 0;
+    $output = array();
+    while ($row = @mysql_fetch_array($r)) {
+        // insert the results keyed by Pol and SIS description:
+        $key = 'Pol' . $row[0] . " SIS" . $row[1];
+        $output[$key] = array (
+                'VjRead' => mon_data($row[3]),
+                'IjRead' => mon_data($row[4]),
+                'VmagRead' => mon_data($row[5]),
+                'ImagRead' => mon_data($row[6])
+        );
+        if (!$FreqLO)
+            $FreqLO = $row[2];
     }
-    // get LO freq to get Control Data
-    $FreqLO = @mysql_result($r,0,6);
 
-    //get and save Control Data
-    $q_CompID = "SELECT DISTINCT MAX(FE_Components.keyId)
-        FROM `FE_Components` JOIN `FE_ConfigLink`
-        ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
-        WHERE  FE_ConfigLink.fkFE_Config =". $tdh->GetValue('fkFE_Config')."
-        AND `fkFE_ComponentType`= 20 AND Band =". $tdh->GetValue('Band')."";
+    // If any rows found, so FreqLO got assigned:
+    if ($FreqLO) {
 
-    $q = "SELECT `VJ`,`IJ`,`IMAG`,`Pol`, `SB` FROM `CCA_MixerParams`
+        //get and save Control Data
+        $q_CompID = "SELECT DISTINCT MAX(FE_Components.keyId)
+            FROM `FE_Components` JOIN `FE_ConfigLink`
+            ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
+            WHERE  FE_ConfigLink.fkFE_Config =". $tdh->GetValue('fkFE_Config')."
+            AND `fkFE_ComponentType`= 20 AND Band =". $tdh->GetValue('Band')."";
+
+        $q = "SELECT `Pol`,`SB`,`VJ`,`IJ`,`IMAG` FROM `CCA_MixerParams`
         WHERE `fkComponent` = ($q_CompID) AND `FreqLO` = $FreqLO
         ORDER BY `Pol`ASC, `SB` ASC";
 
-    $r = @mysql_query($q,$tdh->dbconnection);
+        $r = @mysql_query($q,$tdh->dbconnection);
 
-    if (!$r) {
-    	echo "No data for TDH=$td_keyID and LO=$FreqLO<br>";
+        // Match up control data with monitor data:
+        while ($row = @mysql_fetch_array($r)) {
+            $key = 'Pol' . $row[0] . " SIS" . $row[1];
+            if (isset($output[$key])) {
+                $output[$key]['VJ'] = mon_data($row[2]);
+                $output[$key]['IJ'] = mon_data($row[3]);
+                $output[$key]['IMAG'] = mon_data($row[4]);
+            }
+        }
+    }
+
+    table_header(700, $tdh);
+    echo "<tr><th rowspan='2'>Device</th>
+        <th colspan='3'>Control Values</th>
+        <th colspan='4'>Monitor Values</th></tr>
+        <th>Bias Voltage (mV)</th>
+        <th>Bias Current (uA)</th>
+        <th>Magnet Current (mA)</th>
+        <th>Bias Voltage (mV)</th>
+        <th>Bias Current (uA)</th>
+        <th>Magnet Voltage (V)</th>
+        <th>Magnet Current (mA)</th>";
+
+    if (!count($output)) {
+        echo "<tr><td colspan='8'>NO DATA</td></tr>";
 
     } else {
-	    // reformat data to put in table
-	    $cnt=0;
-	    while ($row = @mysql_fetch_array($r)){
-	        for ($i = 0; $i < 4; $i++) {
-	            $SIS_Cntrl[$cnt][$i] = $row[$i];
-	        }
-	        $cnt++;
-	    }
+        foreach ($output as $key => $row) {
+            echo "<tr>
+            <td width = '100px'>" . $key . "</td>
+            <td width = '75px'>" . $row['VJ'] . "</td>
+            <td width = '75px'>" . $row['IJ'] . "</td>
+            <td width = '75px'>" . $row['IMAG'] . "</td>";
 
-	    table_header ( 700,$tdh);
-	    echo "<tr><th rowspan='2'>Device</th>
-	        <th colspan='3'>Control Values</th>
-	        <th colspan='4'>Monitor Values</th></tr>
-	        <th>Bias Voltage (mV)</th>
-	        <th>Bias Current (uA)</th>
-	        <th>Magnet Current (mA)</th>
-	        <th>Bias Voltage (mV)</th>
-	        <th>Bias Current (uA)</th>
-	        <th>Magnet Voltage (V)</th>
-	        <th>Magnet Current (mA)</th>";
+            // check to see if Bias voltage is in spec
+            $mon_Bias_V = $new_spec->numWithinPercent($row['VjRead'], $row['VJ'], $spec['bias_V_diff']);
+            echo "<td width = '75px'>$mon_Bias_V</td>";
 
-	    $cnt = count($SIS_Cntrl);
-	    if ($cnt ==0){
-	        $cnt = count($SIS_Mon);
-	    }
-	    for ($i = 0; $i < $cnt; $i++) {
-	        echo "<tr>
-	        <td width = '100px'>Pol".$SIS_Mon[$i][0]." SIS".$SIS_Mon[$i][1]. "</td>
-	        <td width = '75px'>".$SIS_Cntrl[$i][0]."</td>
-	        <td width = '75px'>".$SIS_Cntrl[$i][1]."</td>
-	        <td width = '75px'>".$SIS_Cntrl[$i][2]."</td>";
+            // check to see if Bias currrent is in spec
+            $mon_Bias_I = $new_spec->numWithinPercent($row['IjRead'], $row['IJ'], $spec['bias_I_diff']);
+            echo "<td width = '75px'>$mon_Bias_I</td>";
 
-	        // check to see if Bias voltage is in spec
-	        $mon_Bias_V = $new_spec->numWithinPercent( $SIS_Mon[$i][2], $SIS_Cntrl[$i][0], $spec['bias_V_diff'] );
-	        echo "<td width = '75px'>$mon_Bias_V</td> ";
+            // display magnet voltage:
+            echo "<td width = '75px'>" . $row['VmagRead'] . "</td>";
 
-	        // check to see if Bias currrent is in spec
-	        $mon_Bias_I = $new_spec->numWithinPercent( $SIS_Mon[$i][3], $SIS_Cntrl[$i][1], $spec['bias_I_diff'] );
-	        echo "<td width = '75px'>$mon_Bias_I</td> ";
-
-	        echo "<td width = '75px'>".$SIS_Mon[$i][4]."</td>";
-
-	        // check to see if Magnet currrent is in spec
-	        $mon_Mag_I = $new_spec->numWithinPercent( $SIS_Mon[$i][5], $SIS_Cntrl[$i][2], $spec['magI_diff'] );
-	        echo "<td width = '75px'>$mon_Mag_I</td> ";
-	    }
-	    echo "</table></div>";
+            // check to see if Magnet currrent is in spec
+            $mon_Mag_I = $new_spec->numWithinPercent($row['ImagRead'], $row['IMAG'], $spec['magI_diff']);
+            echo "<td width = '75px'>$mon_Mag_I</td>";
+            echo "</tr>";
+        }
     }
+    echo "</table></div>";
 }
 
 // Temperature Sensors – Actual Readings
@@ -657,9 +657,9 @@ function IF_Power_results($td_keyID){
 
     $atten_cnt = 0;
     $att_sum = 0;
-	
+
     $new_spec = new Specifications();
-    
+
     while ($row = @mysql_fetch_array($r)){
         echo "<tr>";
         $att_sum = $att_sum + abs($row[2] - $row[1]);
@@ -859,7 +859,7 @@ function Y_factor_results($td_keyID){
     //$spec=get_specs ( 15 , $tdh->GetValue('Band') );
     $new_spec = new Specifications();
     $spec = $new_spec->getSpecs('Yfactor', $tdh->GetValue('Band'));
-    
+
 
     $Col_name = array("IFchannel","Phot_dBm","Pcold_dBm","Y","FreqLO" );
     $col_strg = implode(",",$Col_name);
@@ -944,14 +944,14 @@ function Band3_NT_results($td_keyID){
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
-    
-    
-    //get specs    
+
+
+    //get specs
     $spec_names = array();
     for ($i=1; $i<6; $i++) {
     	$spec_names[] = 'Bspec_bbTSSB' . $i . 'f';
     	$spec_names[] = 'Bspec_bbTSSB' . $i . 's';
-    }  
+    }
     $new_spec = new Specifications();
     $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
     $specs = array();
@@ -959,7 +959,7 @@ function Band3_NT_results($td_keyID){
     	$specs[$spec['Bspec_bbTSSB' . (string)$i . 'f']] = $spec['Bspec_bbTSSB' . (string)$i . 's'];
     }
 
-    
+
     $col_name = array("FreqLO","Pol0USB","Pol0LSB","Pol1USB","Pol1LSB","AvgNT" );
     $col_strg = implode(",",$col_name);
     $q = "SELECT $col_strg
@@ -1047,7 +1047,7 @@ function Band3_CCA_NT_results($td_keyID){
     	$specs[$spec['Bspec_bbTSSB' . (string)$i . 'f']] = $spec['Bspec_bbTSSB' . (string)$i . 's'];
     }
 
-    
+
     //Query to get CCA Serial Number
     $q ="SELECT MAX(FE_Components.SN) FROM FE_Components, FE_ConfigLink, FE_Config
          WHERE FE_ConfigLink.fkFE_Config = " .$tdh->GetValue('fkFE_Config'). "
@@ -1154,7 +1154,7 @@ function Band3_CCA_NT_results($td_keyID){
     $last_sb = $row[1];
     $last_NT = $row[4];
     }
-    
+
     // calculate last average point
     $AVG_NT_Pol1_Sb2[] = array_sum($NT_Pol1_Sb2)/count($NT_Pol1_Sb2);
 
