@@ -5,8 +5,9 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header ( $width , &$tdh ){
-    $table_ver = "1.1.0";
+    $table_ver = "1.1.1";
     /*
+     * 1.1.1 Fix SIS buggy alignment of PAS monitor data with control data.
      * 1.1.0 Now pulls specifications from new class that pulls from files instead of database.
      * 1.0.6 MM fixed query fetching LNA config data for band 4.
      * 1.0.5 MM fixed error in calculating average attenuation in IF_Power_results()
@@ -416,27 +417,30 @@ function SIS_results($td_keyID){
 
     } else {
         foreach ($output as $key => $row) {
-            echo "<tr>
-            <td width = '100px'>" . $key . "</td>
-            <td width = '75px'>" . $row['VJ'] . "</td>
-            <td width = '75px'>" . $row['IJ'] . "</td>
-            <td width = '75px'>" . $row['IMAG'] . "</td>";
+            // Only display rows with valid control values:
+            if (isset($row['VJ'])) {
+                echo "<tr>
+                <td width = '100px'>" . $key . "</td>
+                <td width = '75px'>" . $row['VJ'] . "</td>
+                <td width = '75px'>" . $row['IJ'] . "</td>
+                <td width = '75px'>" . $row['IMAG'] . "</td>";
 
-            // check to see if Bias voltage is in spec
-            $mon_Bias_V = $new_spec->numWithinPercent($row['VjRead'], $row['VJ'], $spec['bias_V_diff']);
-            echo "<td width = '75px'>$mon_Bias_V</td>";
+                // check to see if Bias voltage is in spec
+                $mon_Bias_V = $new_spec->numWithinPercent($row['VjRead'], $row['VJ'], $spec['bias_V_diff']);
+                echo "<td width = '75px'>$mon_Bias_V</td>";
 
-            // check to see if Bias currrent is in spec
-            $mon_Bias_I = $new_spec->numWithinPercent($row['IjRead'], $row['IJ'], $spec['bias_I_diff']);
-            echo "<td width = '75px'>$mon_Bias_I</td>";
+                // check to see if Bias currrent is in spec
+                $mon_Bias_I = $new_spec->numWithinPercent($row['IjRead'], $row['IJ'], $spec['bias_I_diff']);
+                echo "<td width = '75px'>$mon_Bias_I</td>";
 
-            // display magnet voltage:
-            echo "<td width = '75px'>" . $row['VmagRead'] . "</td>";
+                // display magnet voltage:
+                echo "<td width = '75px'>" . $row['VmagRead'] . "</td>";
 
-            // check to see if Magnet currrent is in spec
-            $mon_Mag_I = $new_spec->numWithinPercent($row['ImagRead'], $row['IMAG'], $spec['magI_diff']);
-            echo "<td width = '75px'>$mon_Mag_I</td>";
-            echo "</tr>";
+                // check to see if Magnet currrent is in spec
+                $mon_Mag_I = $new_spec->numWithinPercent($row['ImagRead'], $row['IMAG'], $spec['magI_diff']);
+                echo "<td width = '75px'>$mon_Mag_I</td>";
+                echo "</tr>";
+            }
         }
     }
     echo "</table></div>";
