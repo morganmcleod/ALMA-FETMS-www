@@ -210,84 +210,84 @@ function LNA_results($td_keyID){
     $new_spec= new Specifications();
     $spec = $new_spec->getSpecs('CCA_LNA_bias', 0);
 
-    //$spec = get_specs(1,0);
-
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
 
     //get and save Monitor Data
-    $q = "SELECT Pol, SB, Stage, VdRead, IdRead, VgRead, FreqLO
+    $q = "SELECT Pol, SB, Stage, FreqLO, VdRead, IdRead, VgRead
         FROM CCA_LNA_bias
         WHERE fkHeader = $td_keyID ORDER BY `Pol`ASC, `SB` ASC, Stage ASC";
     $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");
 
-    // format data to put in table
-    $cnt=0;
-    while ($row = @mysql_fetch_array($r)){
-        for ($i = 0; $i < 6; $i++) {
-            // format monitor data only for floats
-            if ($i > 2){
-                $mon_data = mon_data ($row[$i]);
-            } else {
-                $mon_data = $row[$i];
-            }
-            $LNA_Mon[$cnt][$i] = $mon_data;
-        }
-    $cnt++;
+    $FreqLO = 0;
+    $Cntrl_FreqLO = 0;
+    $output = array();
+    while ($row = @mysql_fetch_array($r)) {
+        // cache the LO frequency:
+        if (!$FreqLO)
+            $FreqLO = $row[3];
+        // insert the results keyed by Pol, LNA, and Stage:
+        $key = 'Pol' . $row[0] . " LNA" . $row[1];
+        $stageKey = 'Stage ' . $row[2];
+        $stageData = array (
+                'VdRead' => mon_data($row[4]),
+                'IdRead' => mon_data($row[5]),
+                'VgRead' => mon_data($row[6])
+        );
+        if (!isset($output[$key]))
+            $output[$key] = array();
+        $output[$key][$stageKey] = $stageData;
     }
-    // get LO freq to get Control Data
-    $FreqLO = @mysql_result($r,0,6);
 
-    //get and save Control Data
-    $q_CompID = "SELECT MAX(FE_Components.keyId)
-        FROM `FE_Components` JOIN `FE_ConfigLink`
-        ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
-        WHERE  FE_ConfigLink.fkFE_Config =" .$tdh->GetValue('fkFE_Config')."
-        AND `fkFE_ComponentType`= 20 AND Band =". $tdh->GetValue('Band')."";
+    // If any rows found, so FreqLO got assigned:
+    if ($FreqLO) {
+        //get and save Control Data
+        $q_CompID = "SELECT MAX(FE_Components.keyId)
+            FROM `FE_Components` JOIN `FE_ConfigLink`
+            ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
+            WHERE  FE_ConfigLink.fkFE_Config =" .$tdh->GetValue('fkFE_Config')."
+            AND `fkFE_ComponentType`= 20 AND Band =". $tdh->GetValue('Band')."";
 
-    // data queries
+        // data queries
         // default query looks for exact LO match
         $q_default = "SELECT `VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`,`FreqLO`
                 FROM `CCA_PreampParams`
                 WHERE `fkComponent`=($q_CompID)
-                AND `FreqLO`= $FreqLO ORDER BY `Pol`ASC, `SB` ASC";
+                AND `FreqLO`= $FreqLO ORDER BY `Pol` ASC, `SB` ASC";
 
-        // query for band 4, 6, 7, 9 matches any LO
+        // alternate query matches any LO
         $q_any_lo = "SELECT `VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`,`FreqLO`
                 FROM `CCA_PreampParams`
                 WHERE `fkComponent`=($q_CompID)
-                ORDER BY `Pol`ASC, `SB` ASC";
+                ORDER BY `Pol` ASC, `SB` ASC";
 
-    switch( $tdh->GetValue('Band') ){
-        case 4:
-        case 6:
-        case 7:
-        case 9:
-            $q = $q_any_lo;
-            break;
+        // try the exact LO match query:
+        $r = @mysql_query($q_default, $tdh->dbconnection) or die("QUERY FAILED: $q");
 
-        Default:
-            $q = $q_default;
-            break;
+        // if no result, try the any LO query:
+        if (!mysql_num_rows($r))
+            $r = @mysql_query($q_any_lo, $tdh->dbconnection) or die("QUERY FAILED: $q");
 
-    }
-
-    $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");
-
-    // reformat data to put in table
-    $cnt=0;    // initialize counter
-    while ($row = @mysql_fetch_array($r)){
-        for ($i = 0; $i <= 2; $i++) {
-            $index = $i + (3* $cnt);
-            $LNA_Cntrl[$index][0] = $row[$i];
-            $LNA_Cntrl[$index][1] = $row[$i+3];
-            $LNA_Cntrl[$index][2] = $row[$i+6];
+        // Match up control data with monitor data:
+        while ($row = @mysql_fetch_array($r)) {
+            // cache the LO frequency:
+            if (!$Cntrl_FreqLO)
+                $Cntrl_FreqLO = $row[9];
+            // insert the results keyed by Pol, LNA, and Stage:
+            $key = 'Pol' . $row[0] . " LNA" . $row[1];
+            if (isset($output[$key])) {
+                for ($stage = 0; $stage < 3; $stage++) {
+                    $stageKey = 'Stage ' . ($stage + 1);
+                    if (isset($output[$key][$stageKey])) {
+                        $output[$key][$stageKey]['VD'] = $row[0 + $stage];
+                        $output[$key][$stageKey]['ID'] = $row[3 + $stage];
+                        $output[$key][$stageKey]['VG'] = $row[6 + $stage];
+                    }
+                }
+            }
         }
-    $cnt++;
     }
-    $Cntrl_FreqLO = @mysql_result($r,0,9);
-
-    table_header ( 700,$tdh);
+    table_header(700, $tdh);
     echo "<tr><th colspan='2' rowspan='2'>Device</th>
         <th colspan='3'>Control Values: (LO $Cntrl_FreqLO Ghz)</th>
         <th colspan='3'>Monitor Values: (LO $FreqLO Ghz)</th></tr>
@@ -298,38 +298,35 @@ function LNA_results($td_keyID){
         <th>Id(mA)</th>
         <th>Vg(V)</th>";
 
-    $prev_SB = -1;
-    $prev_Pol = -1;
-    $cnt = count($LNA_Cntrl);
-    if ($cnt ==0){
-        $cnt = count($LNA_Mon);
-    }
+    if (!count($output)) {
+        echo "<tr><td colspan='8'>NO DATA</td></tr>";
 
-    for ($i = 0; $i < $cnt; $i++) {
-        if (isset($LNA_Mon[$i])) {
-            echo "<tr>";
-            // don't display cell unless is has changed
-            if ( $prev_SB  != $LNA_Mon[$i][1] || $prev_Pol  != $LNA_Mon[$i][0]){
-                echo "<td width = '100px'>Pol".    $LNA_Mon[$i][0]." LNA".$LNA_Mon[$i][1]. "</td>";
-            } else {
-                echo "<td width = '100px'></td>";
+    } else {
+        foreach ($output as $key => $device) {
+            $first = true;
+            foreach ($device as $stageKey => $row) {
+                echo "<tr><td width = '100px'>";
+                if ($first) {
+                    echo $key;
+                    $first = false;
+                }
+                echo "</td>";
+                echo "<td width = '75px'>" . $stageKey . "</td>";
+                echo "<td width = '75px'>" . $row['VD'] . "</td>";
+                echo "<td width = '75px'>" . $row['ID'] . "</td>";
+                echo "<td width = '75px'>" . $row['VG'] . "</td>";
+
+                // check to see if Vd is in spec
+                $mon_Vd = $new_spec->numWithinPercent($row['VdRead'], $row['VD'], $spec['Vd_diff']);
+                echo "<td width = '75px'>$mon_Vd</td>";
+
+                // check to see if Id is in spec
+                $mon_Id = $new_spec->numWithinPercent($row['IdRead'], $row['ID'], $spec['Id_diff'] );
+                echo "<td width = '75px'>$mon_Id</td>";
+
+                // display Vg:
+                echo "<td width = '75px'>" . $row['VgRead'] . "</td></tr>";
             }
-            $prev_Pol =$LNA_Mon[$i][0];
-            $prev_SB = $LNA_Mon[$i][1];
-
-            echo "<td width = '75px'> Stage ".$LNA_Mon[$i][2]."</td>
-                <td width = '75px'>".$LNA_Cntrl[$i][0]."</td>
-                <td width = '75px'>".$LNA_Cntrl[$i][1]."</td>
-                <td width = '75px'>".$LNA_Cntrl[$i][2]."</td>";
-
-            // check to see if Vd is in spec
-            $mon_Vd = $new_spec->numWithinPercent( $LNA_Mon[$i][3], $LNA_Cntrl[$i][0], $spec['Vd_diff'] );
-            echo "<td width = '75px'>$mon_Vd</td> ";
-
-            // check to see if Id is in spec
-            $mon_Id = $new_spec->numWithinPercent( $LNA_Mon[$i][4], $LNA_Cntrl[$i][1], $spec['Id_diff'] );
-            echo "<td width = '75px'>$mon_Id</td>
-                <td width = '75px'>".$LNA_Mon[$i][5]."</td></tr>";
         }
     }
     echo "</table></div>";
@@ -361,6 +358,9 @@ function SIS_results($td_keyID){
     $FreqLO = 0;
     $output = array();
     while ($row = @mysql_fetch_array($r)) {
+        // cache the LO frequency:
+        if (!$FreqLO)
+            $FreqLO = $row[2];
         // insert the results keyed by Pol and SIS description:
         $key = 'Pol' . $row[0] . " SIS" . $row[1];
         $output[$key] = array (
@@ -369,8 +369,6 @@ function SIS_results($td_keyID){
                 'VmagRead' => mon_data($row[5]),
                 'ImagRead' => mon_data($row[6])
         );
-        if (!$FreqLO)
-            $FreqLO = $row[2];
     }
 
     // If any rows found, so FreqLO got assigned:
