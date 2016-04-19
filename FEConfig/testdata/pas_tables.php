@@ -250,13 +250,13 @@ function LNA_results($td_keyID){
 
         // data queries
         // default query looks for exact LO match
-        $q_default = "SELECT `VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`,`FreqLO`
+        $q_default = "SELECT `Pol`,`SB`,`FreqLO`,`VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`
                 FROM `CCA_PreampParams`
                 WHERE `fkComponent`=($q_CompID)
                 AND `FreqLO`= $FreqLO ORDER BY `Pol` ASC, `SB` ASC";
 
         // alternate query matches any LO
-        $q_any_lo = "SELECT `VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`,`FreqLO`
+        $q_any_lo = "SELECT `Pol`,`SB`,`FreqLO`,`VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`
                 FROM `CCA_PreampParams`
                 WHERE `fkComponent`=($q_CompID)
                 ORDER BY `Pol` ASC, `SB` ASC";
@@ -265,23 +265,24 @@ function LNA_results($td_keyID){
         $r = @mysql_query($q_default, $tdh->dbconnection) or die("QUERY FAILED: $q");
 
         // if no result, try the any LO query:
-        if (!mysql_num_rows($r))
+        $numRows = mysql_num_rows($r);
+        if (!$numRows)
             $r = @mysql_query($q_any_lo, $tdh->dbconnection) or die("QUERY FAILED: $q");
 
         // Match up control data with monitor data:
         while ($row = @mysql_fetch_array($r)) {
             // cache the LO frequency:
             if (!$Cntrl_FreqLO)
-                $Cntrl_FreqLO = $row[9];
+                $Cntrl_FreqLO = $row[2];
             // insert the results keyed by Pol, LNA, and Stage:
             $key = 'Pol' . $row[0] . " LNA" . $row[1];
             if (isset($output[$key])) {
                 for ($stage = 0; $stage < 3; $stage++) {
                     $stageKey = 'Stage ' . ($stage + 1);
                     if (isset($output[$key][$stageKey])) {
-                        $output[$key][$stageKey]['VD'] = $row[0 + $stage];
-                        $output[$key][$stageKey]['ID'] = $row[3 + $stage];
-                        $output[$key][$stageKey]['VG'] = $row[6 + $stage];
+                        $output[$key][$stageKey]['VD'] = $row[3 + $stage];
+                        $output[$key][$stageKey]['ID'] = $row[6 + $stage];
+                        $output[$key][$stageKey]['VG'] = $row[9 + $stage];
                     }
                 }
             }
@@ -312,20 +313,35 @@ function LNA_results($td_keyID){
                 }
                 echo "</td>";
                 echo "<td width = '75px'>" . $stageKey . "</td>";
-                echo "<td width = '75px'>" . $row['VD'] . "</td>";
-                echo "<td width = '75px'>" . $row['ID'] . "</td>";
-                echo "<td width = '75px'>" . $row['VG'] . "</td>";
+                echo "<td width = '75px'>" . (isset($row['VD']) ? $row['VD'] : "") . "</td>";
+                echo "<td width = '75px'>" . (isset($row['ID']) ? $row['ID'] : "") . "</td>";
+                echo "<td width = '75px'>" . (isset($row['VG']) ? $row['VG'] : "") . "</td>";
 
                 // check to see if Vd is in spec
-                $mon_Vd = $new_spec->numWithinPercent($row['VdRead'], $row['VD'], $spec['Vd_diff']);
+                $mon_Vd = "";
+                if (isset($row['VdRead'])) {
+                    $mon_Vd = $row['VdRead'];
+                    if (isset($row['VD'])) {
+                        $mon_Vd = $new_spec->numWithinPercent($mon_Vd, $row['VD'], $spec['Vd_diff']);
+                    }
+                }
                 echo "<td width = '75px'>$mon_Vd</td>";
 
                 // check to see if Id is in spec
-                $mon_Id = $new_spec->numWithinPercent($row['IdRead'], $row['ID'], $spec['Id_diff'] );
+                $mon_Id = "";
+                if (isset($row['IdRead'])) {
+                    $mon_Id = $row['IdRead'];
+                    if (isset($row['ID'])) {
+                        $mon_Id = $new_spec->numWithinPercent($mon_Id, $row['ID'], $spec['Id_diff']);
+                    }
+                }
                 echo "<td width = '75px'>$mon_Id</td>";
 
                 // display Vg:
-                echo "<td width = '75px'>" . $row['VgRead'] . "</td></tr>";
+                $mon_Vg = "";
+                if (isset($row['VgRead']))
+                    $mon_Vg = $row['VgRead'];
+                echo "<td width = '75px'>" . $mon_Vg . "</td></tr>";
             }
         }
     }
@@ -415,30 +431,59 @@ function SIS_results($td_keyID){
 
     } else {
         foreach ($output as $key => $row) {
-            // Only display rows with valid control values:
+            $VJ = "";
+            if (isset($row['VJ']))
+                $VJ = $row['VJ'];
+            $IJ = "";
+            if (isset($row['IJ']))
+                $IJ = $row['IJ'];
+            $IMAG = "";
+            if (isset($row['IMAG']))
+                $IMAG = $row['IMAG'];
+
+            echo "<tr>
+                  <td width = '100px'>$key</td>
+                  <td width = '75px'>$VJ</td>
+                  <td width = '75px'>$IJ</td>
+                  <td width = '75px'>$IMAG</td>";
+
+            // check to see if Bias voltage is in spec
+            $mon_Bias_V = "";
             if (isset($row['VjRead'])) {
-                echo "<tr>
-                <td width = '100px'>" . $key . "</td>
-                <td width = '75px'>" . $row['VJ'] . "</td>
-                <td width = '75px'>" . $row['IJ'] . "</td>
-                <td width = '75px'>" . $row['IMAG'] . "</td>";
-
-                // check to see if Bias voltage is in spec
-                $mon_Bias_V = $new_spec->numWithinPercent($row['VjRead'], $row['VJ'], $spec['bias_V_diff']);
-                echo "<td width = '75px'>$mon_Bias_V</td>";
-
-                // check to see if Bias currrent is in spec
-                $mon_Bias_I = $new_spec->numWithinPercent($row['IjRead'], $row['IJ'], $spec['bias_I_diff']);
-                echo "<td width = '75px'>$mon_Bias_I</td>";
-
-                // display magnet voltage:
-                echo "<td width = '75px'>" . $row['VmagRead'] . "</td>";
-
-                // check to see if Magnet currrent is in spec
-                $mon_Mag_I = $new_spec->numWithinPercent($row['ImagRead'], $row['IMAG'], $spec['magI_diff']);
-                echo "<td width = '75px'>$mon_Mag_I</td>";
-                echo "</tr>";
+                $mon_Bias_V = $row['VjRead'];
+                if (isset($row['VJ'])) {
+                    $mon_Bias_V = $new_spec->numWithinPercent($mon_Bias_V, $row['VJ'], $spec['bias_V_diff']);
+                }
             }
+
+            // check to see if Bias currrent is in spec
+            $mon_Bias_I = "";
+            if (isset($row['IjRead'])) {
+                $mon_Bias_I = $row['IjRead'];
+                if (isset($row['IJ'])) {
+                    $mon_Bias_I = $new_spec->numWithinPercent($mon_Bias_I, $row['IJ'], $spec['bias_I_diff']);
+                }
+            }
+
+            // display magnet voltage:
+            $mon_Mag_V = "";
+            if (isset($row['VmagRead']))
+                $mon_Mag_V = $row['VmagRead'];
+
+            // check to see if Magnet currrent is in spec
+            $mon_Mag_I = "";
+            if (isset($row['ImagRead'])) {
+                $mon_Mag_I = $row['ImagRead'];
+                if (isset($row['IMAG'])) {
+                    $mon_Mag_I = $new_spec->numWithinPercent($mon_Mag_I, $row['IMAG'], $spec['magI_diff']);
+                }
+            }
+
+            echo "<td width = '75px'>$mon_Bias_V</td>
+                  <td width = '75px'>$mon_Bias_I</td>
+                  <td width = '75px'>$mon_Mag_V</td>
+                  <td width = '75px'>$mon_Mag_I</td>
+                  </tr>";
         }
     }
     echo "</table></div>";
