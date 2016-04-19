@@ -406,7 +406,7 @@ class IFSpectrum_calc {
                 // if the previous LO seen is not our start token:
                 if ($lastLO != self::BAD_LO) {
                     // output the previous LO record:
-                    $appendResult(&$output, $lastLO, $mindBm, $maxdBm);
+                    $appendResult($output, $lastLO, $mindBm, $maxdBm);
                 }
                 // reset the output record to accumulate for the next LO:
                 $lastLO = $LO;
@@ -423,7 +423,7 @@ class IFSpectrum_calc {
             }
         }
         // output data for the last LO:
-        $appendResult(&$output, $lastLO, $mindBm, $maxdBm);
+        $appendResult($output, $lastLO, $mindBm, $maxdBm);
         return $output;
     }
 

@@ -17,6 +17,7 @@ if($ctype==100)
     $outstring = "[";
     $rowcount = 0;
     $Notes = "";
+    $TS = "";
 
     $qfe = "SELECT keyFrontEnds, keyFacility FROM Front_Ends ORDER BY SN ASC;";
     $rfe = @mysql_query($qfe,$db);
@@ -39,18 +40,20 @@ if($ctype==100)
                 $outstring .= "'Location':'".$fe->fesln->location."',";
                 $outstring .= "'Status':'".$fe->fesln->status."',";
                 $outstring .= "'Updated_By':'".$fe->fesln->GetValue('Updated_By')."',";
+                $TS = $fe->fesln->GetValue('TS');
                 $Notes = @mysql_real_escape_string(stripslashes($fe->fesln->GetValue('Notes')));
             }
             if ($fe->fesln -> keyId < 1){
                 $outstring .= "'Location':'',";
                 $outstring .= "'Status':'',";
                 $outstring .= "'Updated_By':'',";
+                $TS = $fe->GetValue('TS');
                 $Notes = '';
             }
         }
         $outstring .= "'Docs':'" . FixHyperLink($fe->GetValue('Docs')). "',";
-        $outstring .= "'TS':'".$fe->GetValue('TS')."',";
-        $outstring .= "'keyFacility':'".$fe->GetValue('keyFacility')."',";
+        $outstring .= "'TS':'" . $TS . "',";
+        $outstring .= "'keyFacility':'" . $fe->GetValue('keyFacility') . "',";
         $outstring .= "'Notes':'$Notes'}";
 
         unset($fe);

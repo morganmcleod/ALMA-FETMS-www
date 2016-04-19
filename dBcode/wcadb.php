@@ -244,7 +244,7 @@ class WCAdb { //extends DBRetrieval {
 		        $colNames = array('TS', 'FreqLO', 'VD0_setting', 'VD1_setting', 'VD0', 'VD1', 'fkFE_Component', 'fkFacility');
 		        break;
 		    case 'WCA_OutputPower':
-		        $colNames = array('fkHeader', 'keyDataSet', 'FreqLO', 'Power', 'Pol', 'VD0', 'VD1', 'VG0', 'VG1', 'fkFacility');
+		        $colNames = array('fkHeader', 'keyDataSet', 'TS', 'FreqLO', 'Power', 'Pol', 'VD0', 'VD1', 'VG0', 'VG1', 'fkFacility');
 		        break;
 		    case 'WCA_AmplitudeStability':
 		        $colNames = array('fkHeader', 'FreqLO', 'Pol', 'Time', 'AllanVar');
@@ -322,6 +322,7 @@ class WCAdb { //extends DBRetrieval {
 		                }
 		                $values = array($object->keyId, //fkHeader
 		                                $tempArray[1], //keyDataSet
+		                                "'" . $tempArray[3] . "'",   //TS
 		                                $tempArray[4], //FreqLO
 		                                $tempArray[5], //Power
 		                                $PolTemp,      //Pol
