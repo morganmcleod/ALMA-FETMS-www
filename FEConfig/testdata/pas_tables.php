@@ -249,25 +249,25 @@ function LNA_results($td_keyID){
             AND `fkFE_ComponentType`= 20 AND Band =". $tdh->GetValue('Band')."";
 
         // data queries
-        // default query looks for exact LO match
-        $q_default = "SELECT `Pol`,`SB`,`FreqLO`,`VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`
+        $q = "SELECT `Pol`,`SB`,`FreqLO`,`VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`
                 FROM `CCA_PreampParams`
-                WHERE `fkComponent`=($q_CompID)
-                AND `FreqLO`= $FreqLO ORDER BY `Pol` ASC, `SB` ASC";
+                WHERE `fkComponent`=($q_CompID)";
+
+        $ord = " ORDER BY `Pol` ASC, `SB` ASC;";
+
+        // default query looks for exact LO match
+        $q_default = $q . " AND `FreqLO`= $FreqLO" . $ord;
 
         // alternate query matches any LO
-        $q_any_lo = "SELECT `Pol`,`SB`,`FreqLO`,`VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`
-                FROM `CCA_PreampParams`
-                WHERE `fkComponent`=($q_CompID)
-                ORDER BY `Pol` ASC, `SB` ASC";
+        $q_any_lo = $q . $ord;
 
         // try the exact LO match query:
-        $r = @mysql_query($q_default, $tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = @mysql_query($q_default, $tdh->dbconnection) or die("QUERY FAILED: $q_default");
 
         // if no result, try the any LO query:
         $numRows = mysql_num_rows($r);
         if (!$numRows)
-            $r = @mysql_query($q_any_lo, $tdh->dbconnection) or die("QUERY FAILED: $q");
+            $r = @mysql_query($q_any_lo, $tdh->dbconnection) or die("QUERY FAILED: $q_any_lo");
 
         // Match up control data with monitor data:
         while ($row = @mysql_fetch_array($r)) {
@@ -397,11 +397,20 @@ function SIS_results($td_keyID){
             WHERE  FE_ConfigLink.fkFE_Config =". $tdh->GetValue('fkFE_Config')."
             AND `fkFE_ComponentType`= 20 AND Band =". $tdh->GetValue('Band')."";
 
-        $q = "SELECT `Pol`,`SB`,`VJ`,`IJ`,`IMAG` FROM `CCA_MixerParams`
-        WHERE `fkComponent` = ($q_CompID) AND `FreqLO` = $FreqLO
-        ORDER BY `Pol`ASC, `SB` ASC";
+        $q = "SELECT `Pol`,`SB`,`VJ`,`IJ`,`IMAG` FROM `CCA_MixerParams` WHERE `fkComponent` = ($q_CompID)";
 
-        $r = @mysql_query($q,$tdh->dbconnection);
+        $ord = " ORDER BY `Pol`ASC, `SB` ASC;";
+
+        $q_default = $q . " AND `FreqLO` = $FreqLO" . $ord;
+        $q_any_lo = $q . $ord;
+
+        // try the exact LO match query:
+        $r = @mysql_query($q_default, $tdh->dbconnection) or die("QUERY FAILED: $q_default");
+
+        // if no result, try the any LO query:
+        $numRows = mysql_num_rows($r);
+        if (!$numRows)
+            $r = @mysql_query($q_any_lo, $tdh->dbconnection) or die("QUERY FAILED: $q_any_lo");
 
         // Match up control data with monitor data:
         while ($row = @mysql_fetch_array($r)) {
