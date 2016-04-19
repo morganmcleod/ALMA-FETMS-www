@@ -416,7 +416,7 @@ function SIS_results($td_keyID){
     } else {
         foreach ($output as $key => $row) {
             // Only display rows with valid control values:
-            if (isset($row['VJ'])) {
+            if (isset($row['VjRead'])) {
                 echo "<tr>
                 <td width = '100px'>" . $key . "</td>
                 <td width = '75px'>" . $row['VJ'] . "</td>
