@@ -28,7 +28,8 @@ class TestData_header extends GenericTable{
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
-        $this->swversion = "1.0.9";
+        $this->swversion = "1.0.10";
+        // 1.0.10 fix LO Lock Test: Show Raw Data displaying results from multiple TDH.
         // 1.0.9 fixed instantiating DataPlotter in DrawPlot().
         // 1.0.8 minor fix to require(class.wca.php)
         // 1.0.7 MM fixes so that we can run with E_NOTIFY
@@ -244,6 +245,7 @@ class TestData_header extends GenericTable{
                             FROM TEST_LOLockTest as DT, TEST_LOLockTest_SubHeader as SH, TestData_header as TDH
                             WHERE DT.fkHeader = SH.keyId AND DT.fkFacility = SH.keyFacility
                             AND SH.fkHeader = TDH.keyId AND SH.keyFacility = TDH.keyFacility"
+                          . " AND TDH.keyId = " . $fkHeader
                           . " AND TDH.Band = " . $this->GetValue('Band')
                           . " AND TDH.DataSetGroup = " . $this->GetValue('DataSetGroup')
                           . " AND TDH.fkFE_Config = " . $this->GetValue('fkFE_Config')
