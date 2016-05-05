@@ -23,9 +23,17 @@ switch ($_SERVER['SERVER_NAME']) {
         die ("Unknown database credentials for server'" . $_SERVER['SERVER_NAME'] . "'");
 }
 
-$db = mysql_pconnect($dbserver, $dbusername, $dbpassword)
-OR die ('Could not connect to MySQL: ' . mysql_error() );
-mysql_select_db($dbname, $db);
+$db = mysql_pconnect($dbserver, $dbusername, $dbpassword);
+if (!$db) {
+    echo "<font size='+2' color='#ff0000' face='serif'><h><b>";
+    die('Could not connect to MySQL: ' . mysql_error());
+}
+
+$db_selected = mysql_select_db($dbname, $db);
+if (!$db_selected) {
+    echo "<font size='+2' color='#ff0000' face='serif'><h><b>";
+    die ('Accessing database(' .$dbname . ") causes the following error:<br>" . mysql_error());
+}
 
 function site_getDbConnection() {
     global $db;
