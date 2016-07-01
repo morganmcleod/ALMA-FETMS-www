@@ -79,6 +79,12 @@ class DPdb{ //extends DBRetrieval{
 			WHERE fkHeader = $TestData_Id;";
 			$r = $this->run_query($q);
 			return @mysql_result($r, 0, 0);
+		} elseif ($request == 'wkamp_sh') {
+			$q = "SELECT keyTEST_Workmanship_Amplitude_SubHeader
+			FROM TEST_Workmanship_Amplitude_SubHeader
+			WHERE fkHeader = $TestData_Id;";
+			$r = $this->run_query($q);
+			return @mysql_result($r, 0, 0);
 		} elseif ($request == 'sub') {
 			$q = "SELECT MAX(keyId) FROM TEST_LOLockTest_SubHeader
 					WHERE fkHeader = ".$TestDataHeader->keyId."

@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.2";
+        $this->swversion = "1.2.3";
 
         /*
+         * 1.2.3:  Added LO frequency to workmanship amplitude plot.
          * 1.2.2:  Fixed Plot_WorkmanshipAmplitude not displaying X axis as minutes.
          * 1.2.1:  Fixed Plot_WorkmanshipAmplitude
          * 1.2.0:  Fixed Plot_LOLockTest
@@ -1059,6 +1060,14 @@ class DataPlotter extends GenericTable{
             $datafile_count++;
         }
 
+        //Lookup the WkAmp subheader ID:
+        $subheader_id = $this->db_pull->q_other('wkamp_sh', NULL, $TestData_Id);
+        //Use it to finde the subheader record:
+        $wsub = new GenericTable();
+        $wsub->Initialize('TEST_Workmanship_Amplitude_SubHeader',$subheader_id,'keyTEST_Workmanship_Amplitude_SubHeader');
+        //Get the measurement LO frequency:
+        $fLO = $wsub->GetValue('lo');
+
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "wkm_amp_command_tdh$TestData_Id.txt.txt";
         $imagedirectory = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
@@ -1068,7 +1077,9 @@ class DataPlotter extends GenericTable{
         }
         $imagename = "WorkmanshipAmplitude_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "Workmanship Amplitude, FE" . $this->TestDataHeader->Component->GetValue('SN') . " Band " . $this->TestDataHeader->GetValue('Band');
+        $plot_title = "Workmanship Amplitude, FE" . $this->TestDataHeader->Component->GetValue('SN')
+                    . " Band " . $this->TestDataHeader->GetValue('Band')
+                    . ", LO " . $fLO . " GHz";
 
         //Update plot url
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
@@ -1095,7 +1106,7 @@ class DataPlotter extends GenericTable{
         //fwrite($fh, "set y3range[-181:181]\r\n");
         //fwrite($fh, "set y4range[-1:2]\r\n");
         fwrite($fh, "set bmargin 6\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter Ver. $this->swversion' at screen 0.01, 0.01\r\n");
+        fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
         fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
 
         //fwrite($fh, "set linestyle 1 lt 1 lw 1\r\n");
