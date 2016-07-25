@@ -7,100 +7,107 @@ require_once($site_dbConnect);
 
 $fc = $_REQUEST['fc'];
 
-if ((isset($_REQUEST['keyheader']) && (!isset($_REQUEST['ifsub'])))) {
-    $TestData_header_keyId = $_REQUEST['keyheader'];
-    $td = new TestData_header();
-    $td->Initialize_TestData_header($TestData_header_keyId,$fc);
+// this block does NOT handle IF spectrum:
+if (!isset($_REQUEST['ifsub'])) {
 
-    header("Content-type: application/x-msdownload");
-    $csv_filename = str_replace(" ","_",$td->TestDataType . ".csv");
+    // this block any other data with a TDH key provided:
+    if (isset($_REQUEST['keyheader'])) {
+        $TestData_header_keyId = $_REQUEST['keyheader'];
+        $td = new TestData_header();
+        $td->Initialize_TestData_header($TestData_header_keyId,$fc);
 
-    header("Content-Disposition: attachment; filename=$csv_filename");
-    header("Pragma: no-cache");
-    header("Expires: 0");
+        header("Content-type: application/x-msdownload");
+        $csv_filename = str_replace(" ","_",$td->TestDataType . ".csv");
 
-    switch($td->GetValue('fkTestData_Type')){
+        header("Content-Disposition: attachment; filename=$csv_filename");
+        header("Pragma: no-cache");
+        header("Expires: 0");
 
-        case 57: //LO Lock Test
-            $q1 = "select keyId from TEST_LOLockTest_SubHeader where fkHeader = $td->keyId;";
-            $r1 = @mysql_query($q1,$db);
-            $subh_id = @mysql_result($r1,0,0);
-            $qdata = "SELECT DT.*
-                     FROM TEST_LOLockTest as DT, TEST_LOLockTest_SubHeader as SH, TestData_header as TDH
-                     WHERE DT.fkHeader = SH.keyId AND DT.fkFacility = SH.keyFacility
-                     AND SH.fkHeader = TDH.keyId AND SH.keyFacility = TDH.keyFacility"
-                   . " AND TDH.Band = " . $td->GetValue('Band')
-                   . " AND TDH.DataSetGroup = " . $td->GetValue('DataSetGroup')
-                   . " AND TDH.fkFE_Config = " . $td->GetValue('fkFE_Config')
-                   . " AND DT.IsIncluded = 1
-                     ORDER BY DT.LOFreq ASC;";
+        switch($td->GetValue('fkTestData_Type')){
 
-            $td->TestDataTableName = 'TEST_LOLockTest';
-            break;
+            case 57: //LO Lock Test
+                $q1 = "select keyId from TEST_LOLockTest_SubHeader where fkHeader = $td->keyId;";
+                $r1 = @mysql_query($q1,$db);
+                $subh_id = @mysql_result($r1,0,0);
+                $qdata = "SELECT DT.*
+                         FROM TEST_LOLockTest as DT, TEST_LOLockTest_SubHeader as SH, TestData_header as TDH
+                         WHERE DT.fkHeader = SH.keyId AND DT.fkFacility = SH.keyFacility
+                         AND SH.fkHeader = TDH.keyId AND SH.keyFacility = TDH.keyFacility"
+                       . " AND TDH.keyId = " . $TestData_header_keyId
+                       . " AND TDH.Band = " . $td->GetValue('Band')
+                       . " AND TDH.DataSetGroup = " . $td->GetValue('DataSetGroup')
+                       . " AND TDH.fkFE_Config = " . $td->GetValue('fkFE_Config')
+                       . " AND DT.IsIncluded = 1
+                         ORDER BY DT.LOFreq ASC;";
 
-        case 58:
-            //Noise Temperature
-            $q = "SELECT keyId FROM Noise_Temp_SubHeader
-                  WHERE fkHeader = $td->keyId
-                  AND keyFacility = " . $td->GetValue('keyFacility');
-            $r = @mysql_query($q,$db);
-            $subid = @mysql_result($r,0,0);
-            $qdata = "SELECT * FROM Noise_Temp WHERE
-            fkSub_Header = $subid AND keyFacility = ".$td->GetValue('keyFacility').";";
-            $td->TestDataTableName = 'Noise_Temp';
-            break;
+                $td->TestDataTableName = 'TEST_LOLockTest';
+                break;
 
-        case 59:
-            //fine LO Sweep
-            $q = "SELECT keyId FROM TEST_FineLOSweep_SubHeader
-                  WHERE fkHeader = $td->keyId
-                  AND keyFacility = " . $td->GetValue('keyFacility');
-            $r = @mysql_query($q,$td->dbconnection);
-            $subid = @mysql_result($r,0,0);
-            $qdata = "SELECT * FROM TEST_FineLOSweep WHERE
-            fkSubHeader = $subid AND fkFacility = ".$td->GetValue('keyFacility').";";
-            $td->TestDataTableName = 'TEST_FineLOSweep';
-            break;
+            case 58:
+                //Noise Temperature
+                $q = "SELECT keyId FROM Noise_Temp_SubHeader
+                      WHERE fkHeader = $td->keyId
+                      AND keyFacility = " . $td->GetValue('keyFacility');
+                $r = @mysql_query($q,$db);
+                $subid = @mysql_result($r,0,0);
+                $qdata = "SELECT * FROM Noise_Temp WHERE
+                fkSub_Header = $subid AND keyFacility = ".$td->GetValue('keyFacility').";";
+                $td->TestDataTableName = 'Noise_Temp';
+                break;
 
-        default:
-            $qdata = "SELECT * FROM $td->TestDataTableName WHERE fkHeader = $td->keyId;";
-            break;
-    }
+            case 59:
+                //fine LO Sweep
+                $q = "SELECT keyId FROM TEST_FineLOSweep_SubHeader
+                      WHERE fkHeader = $td->keyId
+                      AND keyFacility = " . $td->GetValue('keyFacility');
+                $r = @mysql_query($q,$td->dbconnection);
+                $subid = @mysql_result($r,0,0);
+                $qdata = "SELECT * FROM TEST_FineLOSweep WHERE
+                fkSubHeader = $subid AND fkFacility = ".$td->GetValue('keyFacility').";";
+                $td->TestDataTableName = 'TEST_FineLOSweep';
+                break;
 
-    switch($td->Component->GetValue('fkFE_ComponentType')){
-        case 6:
-            //Cryostat
-            $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
-                  WHERE fkHeader = $td->keyId;";
-            $r = @mysql_query($q,$td->dbconnection);
-            $fkHeader = @mysql_result($r,0,0);
-            $qdata = "SELECT * FROM $td->TestDataTableName WHERE
-            fkSubHeader = $fkHeader AND fkFacility = ".$td->GetValue('keyFacility').";";
-            break;
-    }
+            default:
+                $qdata = "SELECT * FROM $td->TestDataTableName WHERE fkHeader = $td->keyId;";
+                break;
+        }
 
-    //Output records to csv file
-    $qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
+        switch($td->Component->GetValue('fkFE_ComponentType')){
+            case 6:
+                //Cryostat
+                $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
+                      WHERE fkHeader = $td->keyId;";
+                $r = @mysql_query($q,$td->dbconnection);
+                $fkHeader = @mysql_result($r,0,0);
+                $qdata = "SELECT * FROM $td->TestDataTableName WHERE
+                fkSubHeader = $fkHeader AND fkFacility = ".$td->GetValue('keyFacility').";";
+                break;
+        }
 
-    $rcols = @mysql_query ($qcols, $db);
-    while($rowcols = mysql_fetch_array($rcols)){
-        echo $rowcols[0] . ",";
-    }
-    echo "\r\n";
+        //Output records to csv file
+        $qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
 
-    $rdata = @mysql_query ($qdata, $db);
-    while($rowdata = mysql_fetch_array($rdata)) {
-        for ($i=0; $i<count($rowdata); $i++) {
-            if (isset($rowdata[$i]))
-                echo "$rowdata[$i],";
-            else
-                echo ",";
+        $rcols = @mysql_query ($qcols, $db);
+        while($rowcols = mysql_fetch_array($rcols)){
+            echo $rowcols[0] . ",";
         }
         echo "\r\n";
+
+        $rdata = @mysql_query ($qdata, $db);
+        while($rowdata = mysql_fetch_array($rdata)) {
+            for ($i=0; $i<count($rowdata); $i++) {
+                if (isset($rowdata[$i]))
+                    echo "$rowdata[$i],";
+                else
+                    echo ",";
+            }
+            echo "\r\n";
+        }
     }
 }
 
-if (isset($_REQUEST['ssdid'])){
+// This block handles only beam scan data:
+if (isset($_REQUEST['ssdid'])) {
     $ssdid = $_REQUEST['ssdid'];
 
 
@@ -137,8 +144,8 @@ if (isset($_REQUEST['ssdid'])){
     }
 }
 
-
-if (isset($_REQUEST['ifsub'])){
+// This block handles only IF spectrum data:
+if (isset($_REQUEST['ifsub'])) {
     $ifsub_id = $_REQUEST['ifsub'];
     $TestData_header_keyId = $_REQUEST['keyheader'];
     $fc = $_REQUEST['fc'];
