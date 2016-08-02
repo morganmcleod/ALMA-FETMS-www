@@ -16,13 +16,14 @@ if (!isset($_REQUEST['ifsub'])) {
         $td = new TestData_header();
         $td->Initialize_TestData_header($TestData_header_keyId,$fc);
         $testDataType = $td->GetValue('fkTestData_Type');
-        $csv_filename = str_replace(" ", "_", $td->TestDataType);
+        $csv_filename = str_replace(" ", "_", $td->TestDataType) . "_Band". $td->GetValue('Band');
 
         if ($testDataType == 29) {
             //Workmanship Amplitude:  get the LO frequency to include in the filename.
             $q1 = "SELECT lo from TEST_Workmanship_Amplitude_SubHeader WHERE fkHeader = $td->keyId;";
             $r1 = @mysql_query($q1,$db);
             $LO = @mysql_result($r1,0,0);
+
             $csv_filename .= "_LO$LO";
         }
         $csv_filename .= ".csv";
