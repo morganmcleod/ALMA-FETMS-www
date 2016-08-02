@@ -11,7 +11,7 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 class TestData_header extends GenericTable{
-    var $TestDataType;
+    var $TestDataType;          // text description
     var $TestDataTableName;
     var $DataStatus;
     var $FE_Config;

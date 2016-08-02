@@ -10,23 +10,32 @@ $fc = $_REQUEST['fc'];
 // this block does NOT handle IF spectrum:
 if (!isset($_REQUEST['ifsub'])) {
 
-    // this block any other data with a TDH key provided:
+    // this block handles any other data with a TDH key provided:
     if (isset($_REQUEST['keyheader'])) {
         $TestData_header_keyId = $_REQUEST['keyheader'];
         $td = new TestData_header();
         $td->Initialize_TestData_header($TestData_header_keyId,$fc);
+        $testDataType = $td->GetValue('fkTestData_Type');
+        $csv_filename = str_replace(" ", "_", $td->TestDataType);
+
+        if ($testDataType == 29) {
+            //Workmanship Amplitude:  get the LO frequency to include in the filename.
+            $q1 = "SELECT lo from TEST_Workmanship_Amplitude_SubHeader WHERE fkHeader = $td->keyId;";
+            $r1 = @mysql_query($q1,$db);
+            $LO = @mysql_result($r1,0,0);
+            $csv_filename .= "_LO$LO";
+        }
+        $csv_filename .= ".csv";
 
         header("Content-type: application/x-msdownload");
-        $csv_filename = str_replace(" ","_",$td->TestDataType . ".csv");
-
         header("Content-Disposition: attachment; filename=$csv_filename");
         header("Pragma: no-cache");
         header("Expires: 0");
 
-        switch($td->GetValue('fkTestData_Type')){
+        switch($td->GetValue('fkTestData_Type')) {
 
             case 57: //LO Lock Test
-                $q1 = "select keyId from TEST_LOLockTest_SubHeader where fkHeader = $td->keyId;";
+                $q1 = "SELECT keyId FROM TEST_LOLockTest_SubHeader WHERE fkHeader = $td->keyId;";
                 $r1 = @mysql_query($q1,$db);
                 $subh_id = @mysql_result($r1,0,0);
                 $qdata = "SELECT DT.*
@@ -72,7 +81,7 @@ if (!isset($_REQUEST['ifsub'])) {
                 break;
         }
 
-        switch($td->Component->GetValue('fkFE_ComponentType')){
+        switch($td->Component->GetValue('fkFE_ComponentType')) {
             case 6:
                 //Cryostat
                 $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
@@ -88,7 +97,7 @@ if (!isset($_REQUEST['ifsub'])) {
         $qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
 
         $rcols = @mysql_query ($qcols, $db);
-        while($rowcols = mysql_fetch_array($rcols)){
+        while($rowcols = mysql_fetch_array($rcols)) {
             echo $rowcols[0] . ",";
         }
         echo "\r\n";
@@ -129,15 +138,15 @@ if (isset($_REQUEST['ssdid'])) {
 
     $q = "SHOW COLUMNS FROM BeamListings_farfield;";
     $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)){
+    while($row = mysql_fetch_array($r)) {
         echo $row[0] . ",";
     }
     echo "\r\n";
 
     $q = "SELECT * FROM BeamListings_farfield WHERE fkScanDetails = $ssdid;";
     $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)){
-        for ($i=0;$i<count($row);$i++){
+    while($row = mysql_fetch_array($r)) {
+        for ($i=0;$i<count($row);$i++) {
             echo "$row[$i],";
         }
         echo "\r\n";
@@ -175,15 +184,15 @@ if (isset($_REQUEST['ifsub'])) {
 
     $q = "SHOW COLUMNS FROM IFSpectrum;";
     $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)){
+    while($row = mysql_fetch_array($r)) {
         echo $row[0] . ",";
     }
     echo "\r\n";
 
     $q = "SELECT * FROM IFSpectrum WHERE fkSubHeader = $ifsub_id AND fkFacility = $fc;";
     $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)){
-        for ($i=0;$i<count($row);$i++){
+    while($row = mysql_fetch_array($r)) {
+        for ($i=0;$i<count($row);$i++) {
             echo "$row[$i],";
         }
         echo "\r\n";
