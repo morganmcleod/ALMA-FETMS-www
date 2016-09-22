@@ -38,11 +38,13 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.2.0";
+        $this->software_version_class_eff = "1.2.1";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
 
         /* Version history:
+         * 1.2.1  Get phase center corrections x_corr, y_corr from pol1 if necessary.
+         *        Formatting in Phase Center Offset table.
          * 1.2.0  Switch to BeamEff 2.0.2
          *        Removed ReplacePlotURLs() instead calling PlotPathToURL() inline.
          *        Remove unused initializer functions.  Removed dead code.  Marked methods private.
@@ -584,7 +586,7 @@ class eff {
                     $beameff-> SetValue('x90', $correctedX);
                     $beameff-> SetValue('y90', $correctedY);
                     // Set x_corr, y_corr if this is the pol which was corrected:
-                    if ($correctedX != $deltaX || $correctedY != $deltaY) {
+                    if ($corrected_pol == $ini_array[$section]['pol']) {
                         $beameff-> SetValue('x_corr', $x_corr);
                         $beameff-> SetValue('y_corr', $y_corr);
                     }
@@ -1012,8 +1014,16 @@ class eff {
             </tr>";
 
         // get the x and y correction factor to be applied to x90, y90 for computing difference below:
+        $corrected_pol = 0;
         $x_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x_corr');
         $y_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y_corr');
+
+        if ($x_corr == 0 && $y_corr == 0) {
+            $corrected_pol = 1;
+            // UGLY: have to get this from pol1 since we're not storing corrected_pol:
+            $x_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x_corr');
+            $y_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y_corr');
+        }
 
         echo "<tr>";
         echo "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
@@ -1031,7 +1041,7 @@ class eff {
         echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_y'),2) . "</td>";
         echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_z'),2) . "</td></tr>";
 
-        echo "<tr><th colspan='3'>Phase center correction:</th>";
+        echo "<tr><th colspan='3'>Phase center correction (pol $corrected_pol):</th>";
         echo "<td>" . round($x_corr, 2) . "</td>";
         echo "<td>" . round($y_corr, 2) . "</td>";
         echo "<th></th></tr>";
@@ -1052,8 +1062,8 @@ class eff {
         echo "<th></th></tr>";
 
         //echo "<tr class = 'alt'><th colspan='6'></th></tr>";
-        echo "<tr><th colspan='5'>Distance between pol 0 and pol 1 phase centers (mm):</th>";
-        echo"<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('DistanceBetweenBeamCenters'),2) . "</td></tr>";
+        echo "<tr><th colspan='3'>Distance between pol 0 and pol 1 phase centers:</th>";
+        echo"<td colspan='2'><center>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('DistanceBetweenBeamCenters'),2) . "</th><th></td></tr>";
         echo "</tr>";
         echo "<tr><td colspan='6'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div>";
