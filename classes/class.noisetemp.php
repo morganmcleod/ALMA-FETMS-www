@@ -215,7 +215,7 @@ class NoiseTemperature extends TestData_header{
             $temp = $row[0];
             $this->CCA_componentKeys[] = $row[0];
         }
-        $this->NT_Logger->WriteLogFile("CCA FE_Component key: $this->CCA_componentKeys[0]");
+        $this->NT_Logger->WriteLogFile("CCA FE_Component key: " . $this->CCA_componentKeys[0]);
     }
 
     private function LoadImageRejectionData() {
@@ -232,8 +232,9 @@ class NoiseTemperature extends TestData_header{
         $CCA_TD_key = FALSE;    // the test data header ID for the IR data goes here.
         $this->foundIRData = false;
 
-        // don't load IR data for bands 9 or 10:
-        if ($this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
+        // don't load IR data for bands 1, 9 or 10:
+        $band = $this->GetValue('Band');
+        if ($band != 1 && $band != 9 && $band != 10) {
 
             //Find the first matching Image Rejection Data corresponding to one of the CCA componentKeys:
             //TODO: should we be finding the newest IR data?
@@ -254,10 +255,10 @@ class NoiseTemperature extends TestData_header{
             } while ($CCA_TD_key === FALSE && $index < count($this->CCA_componentKeys));
         }
 
-        // didn't find IR data or band is 9 or 10:
+        // didn't find IR data or band is 1, 9 or 10:
         if ($CCA_TD_key === FALSE) {
             $this->foundIRData = false;
-            if ($this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
+            if ($band != 1 && $band != 9 && $band != 10) {
                 echo "<B>NO CARTRIDGE IMAGE REJECTION DATA FOUND<B><BR><BR>";
                 $this->NT_Logger->WriteLogFile("No Cartridge Image Rejection Data Found");
             }
@@ -1169,7 +1170,9 @@ class NoiseTemperature extends TestData_header{
         $imagepath = $this->plotDir . $imagename;
         $this->NT_Logger->WriteLogFile("image path: $imagepath");
         $plot_title = "Receiver Noise Temperature ";
-        if ($this->foundIRData)
+        if ($this->GetValue('Band') == 1)
+        	$plot_title .= "Tssb";
+        elseif ($this->foundIRData)
             $plot_title .= "Tssb corrected";
         else
             $plot_title .= "T_rec uncorrected";
@@ -1184,7 +1187,7 @@ class NoiseTemperature extends TestData_header{
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'IF(GHz)'\r\n");
-        if ($this->foundIRData)
+        if ($this->GetValue('Band') == 1 || $this->foundIRData)
             fwrite($f, "set ylabel 'Tssb (K)'\r\n");
         else
             fwrite($f, "set ylabel 'T_Rec (K)'\r\n");
@@ -1224,7 +1227,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger->WriteLogFile("image path: $imagepath");
 
         $plot_title = "Receiver Noise Temperature ";
-        if ($this->foundIRData)
+        if ($this->GetValue('Band') == 1)
+        	$plot_title .= "Tssb";
+      	elseif ($this->foundIRData)
             $plot_title .= "Tssb corrected";
         else
             $plot_title .= "T_Rec uncorrected";
@@ -1238,7 +1243,7 @@ class NoiseTemperature extends TestData_header{
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'LO(GHz)'\r\n");
-        if ($this->foundIRData)
+        if ($this->GetValue('Band') == 1 || $this->foundIRData)
             fwrite($f, "set ylabel 'Average Tssb (K)'\r\n");
         else
             fwrite($f, "set ylabel 'Average T_Rec (K)'\r\n");
@@ -1342,7 +1347,9 @@ class NoiseTemperature extends TestData_header{
             fwrite($f, "set terminal png size 900,600 crop\r\n");
             fwrite($f, "set output '$imagepath'\r\n");
             fwrite($f, "set xlabel 'RF (GHz)'\r\n");
-            if ($this->foundIRData) {
+            if ($this->GetValue('Band') == 1) {
+            	fwrite($f, "set ylabel 'Tssb (K)'\r\n");
+            } elseif ($this->foundIRData) {
                 fwrite($f, "set ylabel 'Tssb corrected (K)'\r\n");
             } else {
                 fwrite($f, "set ylabel 'T_Rec uncorrected (K)'\r\n");
