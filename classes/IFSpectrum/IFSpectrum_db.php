@@ -340,8 +340,10 @@ class IFSpectrum_db {
 	    $PV1 = 0;    // IF channel 1 variation
 	    $PV2 = 0;    // IF channel 2 variation
 	    $PV3 = 0;    // IF channel 3 variation
-	    $outputRow = FALSE;
-
+	    $outputRow = false;
+	    $noLSB = ($band == 1 || $band == 9 || $band == 10);
+	    
+		// loop on results sorted by LO, IFChannel
 	    $r = $this->run_query($q);
 	    while ($row = @mysql_fetch_array($r)) {
 	        $LO = $row[0];
@@ -349,24 +351,24 @@ class IFSpectrum_db {
 
 	        if ($IF == 0) {
 	            $PV0 = $row[2];
-	            $outputRow = false;
+	            $outputRow = false;	// row not yet finished
 	        }
 	        if ($IF == 1) {
 	            $PV1 = $row[2];
-	            $outputRow = ($band == 9 || $band == 10);
+	            $outputRow = $noLSB; // row finished for DSB/SSB bands
 	        }
 	        if ($IF == 2) {
 	            $PV2 = $row[2];
-	            $outputRow = false;
+	            $outputRow = false; // row not yet finished if we got here
 	        }
 	        if ($IF == 3) {
 	            $PV3 = $row[2];
-	            $outputRow = true;
+	            $outputRow = true;  // row finished for 2SB bands
 	        }
 
 	        if ($outputRow) {
-	            if ($band == 9 || $band == 10)
-	                $PV2 = $PV3 = 0;
+	        	if ($noLSB)
+	                $PV2 = $PV3 = 0;  // clear the IF2, IF3 values for DSB/2SB bands
 
 	            $output[] = array(
 	                    'FreqLO' => $LO,

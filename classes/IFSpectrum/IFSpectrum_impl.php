@@ -72,7 +72,8 @@ class IFSpectrum_impl extends TestData_header {
     var $swVersion;               //software version string for this class.
 
     public function __construct() {
-        $this->swVersion = "1.3.3";
+        $this->swVersion = "1.3.4";
+        // 1.3.4  MTM: Band 1 is SSB
         // 1.3.3  MTM: Initializes FrontEnd object with INIT_CARTS for speed.
         // 1.3.2  MTM: fixed IF spectrum plotting bugs: Wrong URLs table name;  Out-of-spec pVar mark not shown on 0th LO trace.
         // 1.3.1  MTM: refactoring done.  B5 special powervar plot temporarily disabled.
@@ -231,6 +232,8 @@ class IFSpectrum_impl extends TestData_header {
             echo "<tr><th colspan = '5'><b>IF Channel $ifChannel</b></th></tr>";
             echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
             echo "<tr><td>LO (GHz)</td><td>In-Band (dBm)</td><td>In-Band (dBm)</td><td>Total (dBm)</td><td>Total - In-Band</td></tr>";
+            $sawRed = false;
+            
             foreach ($data as $row) {
                 $LO = $row['FreqLO'];
                 $pwr0 = round($row['pwr0'], 1);        // in-band power 0 dB gain
@@ -241,7 +244,9 @@ class IFSpectrum_impl extends TestData_header {
 
                 // if the difference in gain is not 15 +/- 1 dB, color in red:
                 $red = ($gainDiff < 14 || $gainDiff > 16);
-
+				if ($red)
+					$sawRed = true;
+                
                 // LO column:
                 echo "<tr><td>$LO</td>";
 
@@ -284,6 +289,9 @@ class IFSpectrum_impl extends TestData_header {
                 echo "</td></tr>";
 
             }
+            if ($sawRed) {
+            	echo "<tr><td colspan = '4'><span><font color='#FF0000'>In-band diffs not between 14 and 16 dB</font></span></td><td></td></tr>";
+            }
             foreach ($this->TDHdataLabels as $label)
                 echo "<tr class = 'alt3'><th colspan = '5'>$label</th></tr>";
             echo "</table></div>";
@@ -293,14 +301,17 @@ class IFSpectrum_impl extends TestData_header {
     public function DisplayPowerVarFullBandTable() {
         $data = $this->ifSpectrumDb -> getPowerVarFullBand($this->FEid, $this->band, $this->dataSetGroup);
         if ($data) {
+            $noLSB = ($this->band == 1 || $this->band == 9 || $this->band == 10);
+            $colSpan = ($noLSB ? 3 : 5);
+            
             // TODO: add back in borders/shading.
             echo "<div style='width:400px' border='1'>";
             echo "<table id = 'table7' border='1'>";
-            echo "<tr class='alt'><th colspan = '5'>Band $this->band Power Variation Full Band</th></tr>";
+            echo "<tr class='alt'><th colspan = '$colSpan'>Band $this->band Power Variation Full Band</th></tr>";
             echo "<tr class='alt3'><td style='border-right:solid 1px #000000;'><b>LO (GHz)</td>";
             echo "<td><b>IF0</b></td>";
             echo "<td><b>IF1</b></td>";
-            if ($this->band < 9) {
+            if (!$noLSB) {
                 echo "<td><b>IF2</b></td>";
                 echo "<td><b>IF3</b></td>";
             }
@@ -327,9 +338,9 @@ class IFSpectrum_impl extends TestData_header {
 
                 // IF1 column:
                 $fontcolor = ($pVar_IF1 > $maxVar) ? $badColor : $okColor;
-                echo "<td><font color = $fontcolor><b>$pVar_IF0</b></font></td>";
+                echo "<td><font color = $fontcolor><b>$pVar_IF1</b></font></td>";
 
-                if ($this->band < 9) {
+                if (!$noLSB) {
                     // IF2 column:
                     $fontcolor = ($pVar_IF2 > $maxVar) ? $badColor : $okColor;
                     echo "<td><font color = $fontcolor><b>$pVar_IF2</b></font></td>";
@@ -337,13 +348,11 @@ class IFSpectrum_impl extends TestData_header {
                     // IF3 column:
                     $fontcolor = ($pVar_IF3 > $maxVar) ? $badColor : $okColor;
                     echo "<td><font color = $fontcolor><b>$pVar_IF3</b></font></td>";
-                } else {
-                    echo "<td></td><td></td>";
-                }
+                } 
                 echo "</tr>";
             }
             foreach ($this->TDHdataLabels as $label)
-                echo "<tr class = 'alt3'><th colspan = '5'>$label</th></tr>";
+                echo "<tr class = 'alt3'><th colspan = '$colSpan'>$label</th></tr>";
             echo "</table></div>";
         }
     }
