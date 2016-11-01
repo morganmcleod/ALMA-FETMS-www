@@ -33,7 +33,7 @@ switch ($site_hostname){
         break;
 
     case "localhost":
-        $rootdir_url = "http://localhost/ALMA-FETMS-www/";
+        $rootdir_url = "http://band1-fetms/ALMA-FETMS-www/";
         $GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
         $beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
         break;

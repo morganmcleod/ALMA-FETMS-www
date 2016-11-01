@@ -30,6 +30,8 @@ class IFSpectrum_calc {
     private $badVarLOs;           // array of LO freqs where power var crossed spec line.
     private $badVarThisRange;     // True= most recently processed power var range crossed spec line.
 
+//     private $logger1;
+    
     const BAD_LO = -999;          // GHz  Invalid value for LO
     const HUGE_POWER = 999;       // dBm  Invalid big value for power
     const TINY_POWER = -999;      // dBm  Invalid small value for power
@@ -48,6 +50,8 @@ class IFSpectrum_calc {
         $this->cablePad = self::DFLT_CABLEPAD;
         unset($this->noiseFloorData);
         $this->noiseFloorData = array();
+//         $this->logger1 = new Logger("getPowerVarWindowForRange_" . GetDateTimeString() . ".txt");
+        
     }
 
     /**
@@ -250,7 +254,10 @@ class IFSpectrum_calc {
      * }
      */
     private function getPowerVarWindowForRange($minIndex, $maxIndex, $fMin = 4.0, $fMax = 8.0, $fWindow = 2.0, $spec = 0.0) {
-        $output = array();
+        
+//     	$this->logger1->WriteLogFile("getPowerVarWindowForRange($minIndex, $maxIndex, $fMin, $fMax, $fWindow, $spec)");
+    	
+    	$output = array();
 
         // sanity check inputs:
         if (empty($this->data))
@@ -267,6 +274,8 @@ class IFSpectrum_calc {
         // compute lower and upper center frequencies:
         $fLower = $fMin + ($fWindow / 2);
         $fUpper = $fMax - ($fWindow / 2);
+        
+//         $this->logger1->WriteLogFile("fLower=$fLower fUpper=$fUpper");
 
         // find the index of the lower center frequency:
         $iLower = $this->findWindowEdge($minIndex, $maxIndex, $fLower, false);
@@ -280,14 +289,20 @@ class IFSpectrum_calc {
 
         // adjust in case $fLower == $fUpper:
         if ($fLower == $fUpper && $iUpper < $iLower)
-            $iLower = $iUpper;
+            $iLower = $iLower;
 
+//         $this->logger1->WriteLogFile("iLower=$iLower iUpper=$iUpper");
+            
         // find the index of the lower window edge:
         $iLowerWindow = $this->findWindowEdge($minIndex, $iLower, $fMin, false);
 
         // assuming the frequency data is evenly spaced, find the window span in index counts:
         $iSpan = $iLower - $iLowerWindow;
 
+//         $this->logger1->WriteLogFile("iLowerWindow=$iLowerWindow iSpan=$iSpan");
+        
+//         $first = true;
+        
         // loop the window center from the lower to upper index:
         for ($iCenter = $iLower; $iCenter <= $iUpper; $iCenter++) {
             $fCenter = $this->data[$iCenter]['Freq_GHz'];
@@ -296,6 +311,12 @@ class IFSpectrum_calc {
             // loop across the window around the moving center:
             $iWinMin = $iCenter - $iSpan;
             $iWinMax = $iCenter + $iSpan;
+            
+//             if ($first) {
+//             	$this->logger1->WriteLogFile("fCenter=$fCenter iWinMin=$iWinMin iWinMax=$iWinMax");
+//             	$first = false;
+//             }
+            
             for ($index = $iWinMin; $index <= $iWinMax; $index++) {
                 $row = $this->data[$index];
                 $PW = $row['Power_dBm'];
@@ -335,7 +356,7 @@ class IFSpectrum_calc {
      * @return index value or false if not found.
      */
     private function findWindowEdge($minIndex, $maxIndex, $findFreq, $reverse) {
-        $index = (!$reverse) ? $minIndex : $maxIndex;
+        $index = ($reverse) ? $maxIndex : $minIndex;
         $done = false;
         while (!$done) {
             $freq = $this->data[$index]['Freq_GHz'];
