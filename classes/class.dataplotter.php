@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.3";
+        $this->swversion = "1.2.4";
 
         /*
+         * 1.2.4:  LO Lock test plots:  tot.pwr cols were reversed in DB schema, added RefTotalPower trace
          * 1.2.3:  Added LO frequency to workmanship amplitude plot.
          * 1.2.2:  Fixed Plot_WorkmanshipAmplitude not displaying X axis as minutes.
          * 1.2.1:  Fixed Plot_WorkmanshipAmplitude
@@ -1394,6 +1395,7 @@ class DataPlotter extends GenericTable{
         if ($this->TestDataHeader->GetValue('DataSetGroup') == 0) {
             $qdata= "SELECT TEST_LOLockTest.LOFreq,
             TEST_LOLockTest.PhotomixerCurrent,
+            TEST_LOLockTest.PLLIFTotalPower,
             TEST_LOLockTest.PLLRefTotalPower,
             TEST_LOLockTest.LORTMLocked,
             TEST_LOLockTest.LOLocked
@@ -1409,6 +1411,7 @@ class DataPlotter extends GenericTable{
             // query to get data
             $qdata = "SELECT TEST_LOLockTest.LOFreq,
             TEST_LOLockTest.PhotomixerCurrent,
+            TEST_LOLockTest.PLLIFTotalPower,
             TEST_LOLockTest.PLLRefTotalPower,
             TEST_LOLockTest.LORTMLocked,
             TEST_LOLockTest.LOLocked
@@ -1435,7 +1438,10 @@ class DataPlotter extends GenericTable{
             if (($rowdata['LOLocked'] == 0) || ($rowdata['LORTMLocked'] == 0)) {
                 $UnlocksFound[] = $rowdata['LOFreq'];
             }
-            $stringData = $rowdata['LOFreq'] . "\t" . $rowdata['PhotomixerCurrent'] . "\t" . $rowdata['PLLRefTotalPower'] . "\r\n";
+            $stringData = $rowdata['LOFreq'] . "\t"
+                        . $rowdata['PhotomixerCurrent'] . "\t"
+                        . $rowdata['PLLIFTotalPower'] . "\t"
+                        . $rowdata['PLLRefTotalPower'] . "\r\n";
             fwrite($fh, $stringData);
 
             $previousLO = $rowdata['LOFreq'];
@@ -1543,7 +1549,7 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set y2tics\r\n");
         fwrite($fh, "set yrange[-5:0]\r\n");
         fwrite($fh, "set ytics\r\n");
-        fwrite($fh, "set ylabel 'PLL IF Detected Power (Volts)'\r\n");
+        fwrite($fh, "set ylabel 'PLL Detected Power (Volts)'\r\n");
         fwrite($fh, "set bmargin 6\r\n");
         fwrite($fh, $plot_label_1);
         fwrite($fh, $plot_label_2);
@@ -1563,7 +1569,9 @@ class DataPlotter extends GenericTable{
 
         $plot_string = "plot '$data_file' using 1:2 title 'Photomixer Current' lt 8 with lines axis x1y2";
         $plot_string .= ", '$data_file'  using 1:3 title 'PLL IF Total Power' with lines axis x1y1";
-        $plot_string .= ", -0.5  title 'spec' lt 1 with lines axis x1y1";
+        $plot_string .= ", '$data_file'  using 1:4 title 'PLL Ref Total Power' lt 9 with lines axis x1y1";
+        $plot_string .= ", -0.5  title 'PLL detectors spec' lt 1 with lines axis x1y1";
+        $plot_string .= ", -4.5  notitle lt 1 with lines axis x1y1";
 
         if (!empty($UnlocksFound)){
             //Plot points where lock failed
@@ -1573,9 +1581,7 @@ class DataPlotter extends GenericTable{
                 $plot_string .= ", p$j(x) with linespoints notitle pt 5 lt 12 pointsize 1 axis x1y1";
             }
         }
-        $plot_string .= ", -4.5  notitle lt 1 with lines axis x1y1";
 
-        //Plot markers at points where lock was lost
         $plot_string .= "\r\n";
         fwrite($fh, $plot_string);
         fclose($fh);
