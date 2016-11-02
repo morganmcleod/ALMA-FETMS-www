@@ -1,5 +1,7 @@
 <?php
 
+$mySQL57 = false;
+
 switch ($_SERVER['SERVER_NAME']) {
     case "fetms.osf.alma.cl":
         $dbname     = 'fetms';
@@ -19,6 +21,12 @@ switch ($_SERVER['SERVER_NAME']) {
         require_once("/home/safe.nrao.edu/conf/mtm-dbConnect.conf");
         break;
 
+	case "localhost":
+	case "band1-fetms":
+	    $mySQL57 = true;
+	    include("C:/wamp64/dbConnect_private.php");
+	    break;
+
     default:
         die ("Unknown database credentials for server'" . $_SERVER['SERVER_NAME'] . "'");
 }
@@ -33,6 +41,12 @@ $db_selected = mysql_select_db($dbname, $db);
 if (!$db_selected) {
     echo "<font size='+2' color='#ff0000' face='serif'><h><b>";
     die ('Accessing database(' .$dbname . ") causes the following error:<br>" . mysql_error());
+}
+
+if ($mySQL57) {
+    // workaround for MySQL 5.7, this application only:
+    $q = "SET sql_mode=''";
+    $r = @mysql_query($q, $db);
 }
 
 function site_getDbConnection() {
