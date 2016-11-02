@@ -11,6 +11,7 @@
 <script src="../ext/examples/simple-widgets/qtips.js" type="text/javascript"></script>
 <script type="text/javascript" src="confighistory/dbGridConfigHistory.js"></script>
 <script type="text/javascript" src="loadFEConfig.js"></script>
+<script type="text/javascript" src="testdata/PAICheckBox.js"></script>
 <script type="text/javascript" src="AddNotesEtc.js"></script>
 <script type="text/javascript" src="EditFE.js"></script>
 <script type="text/javascript" src="Ext.ux.plugins.HeaderButtons.js"></script>

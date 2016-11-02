@@ -12,14 +12,25 @@
 <script src="dbGrid.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="headerbuttons.css">
 
-<title>FrontEnd Home</title>
-</head>
-
-<div id = "wrap">
-<body onload="javascript:creategrid(100,1);" style="background-color: #19475E; ">
-
 <?php
-    $title="Front Ends";
+    require_once(dirname(__FILE__) . '/../SiteConfig.php');
+    require_once(site_get_config_main());
+    $pageTitle = "FrontEnd Home";
+    $pageHeader = "Front Ends";
+    $pageComponent = "100";
+    if ($FETMS_CCA_MODE) {
+        $pageTitle = "CCAs Home";
+        $pageHeader = "CCAs";
+        $pageComponent = "20";
+    }
+    echo "<title>$pageTitle</title>";
+
+    echo "</head>";
+
+    echo "<body onload='javascript:creategrid(" . $pageComponent . ", 1);' style='background-color: #19475E; '>";
+    echo "<div id = 'wrap'>";
+
+    $title=$pageHeader;
     include "header.php";
     $where = $_SERVER["PHP_SELF"];
 ?>
@@ -30,10 +41,10 @@
 <div id="toolbar" style="margin-top:10px;"></div>
 <div id="db-grid"></div>
 
-</form>
 </div>
-
+</form>
 <?php
+    echo "</div>";
     include "footer.php";
 ?>
 </body>

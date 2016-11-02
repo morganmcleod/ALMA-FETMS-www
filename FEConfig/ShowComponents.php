@@ -28,6 +28,7 @@
 <script type="text/javascript" src="wca/UploadWCAconfig.js"></script>
 <script type="text/javascript" src="cca/UploadCCAconfig.js"></script>
 <script type="text/javascript" src="loadComponents.js"></script>
+<script type="text/javascript" src="testdata/PAICheckBox.js"></script>
 
 <title>Show Component</title>
 </head>
@@ -99,9 +100,9 @@ if ($comp_type == 6){
 }
 ?>
 
-<div id="wrap">
 <body id = 'body3' onload="createCompTabs(<?php echo "$band,$comp_type,$comp_key,$fc,'$CompDescription'"; ?>); creategridConfigHistoryComp(<?php echo "$comp_key,$fc"?>);" BGCOLOR="#19475E">
-    <?php
+<div id="wrap">
+<?php
     //Display a warning if the current page is not for the latest configuration
     $component->GetMaxConfig();
     if ($component->MaxConfig != $component->keyId){
@@ -111,7 +112,7 @@ if ($comp_type == 6){
                   </font><br>";
         }
     }
-    ?>
+?>
 
     <div style='padding-left:20px;padding-top:20px'>
         <div id='toolbar'></div>
@@ -123,10 +124,7 @@ if ($comp_type == 6){
         </div>
         <br>
     </div>
-</body>
 </div>
-
-</div></div>
 
 <div id="maincontent4" >
     <br>
@@ -135,5 +133,5 @@ if ($comp_type == 6){
 <?php
 unset ($component);
 include "footer.php" ;?>
-
+</body>
 </html>

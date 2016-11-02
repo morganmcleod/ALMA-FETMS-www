@@ -204,14 +204,15 @@ class FEComponent extends GenericTable{
     }
 
     public function DisplayTable_TestData(){
+        require_once(site_get_config_main());
         require_once(site_get_classes() . '/class.testdata_header.php');
-
         $databutton = "";
         $note = "";
         $testdatapage = "testdata/testdata.php";
 
+        $compType = $this->GetValue('fkFE_ComponentType');
 
-        if ($this->GetValue('fkFE_ComponentType') == 6){
+        if ($compType == 6){
             $testdatapage = "testdata/testdata_cryostat.php";
             $url = "../cryostat/cryostat.php?keyId=$this->keyId&fc=" . $this->GetValue('keyFacility');
         }
@@ -222,11 +223,12 @@ class FEComponent extends GenericTable{
                 <table id = 'table1'>
                     <tr class='alt'><th colspan = '8'>TEST DATA $note</th></tr>
                     <tr>
-                        <th>Component<br>Config#</th>
+                        <th>Config</th>
                         <th>Data Status</th>
                         <th>Description</th>
                         <th>Notes</th>
                         <th>TS</th>
+                        <th width='10px'>for PAI</th>
                     </tr>
                     <tr>";
 
@@ -245,11 +247,17 @@ class FEComponent extends GenericTable{
             AND FE_Components.SN LIKE '$SN'
             AND FE_Components.Band LIKE '$Band'
             AND TestData_header.fkTestData_Type = TestData_Types.keyId
-            AND FE_Components.fkFE_ComponentType = ".$this->GetValue('fkFE_ComponentType')."
-            AND TestData_header.fkFE_Config < 1
-            ORDER BY COMPID DESC,
-            TestData_Types.Description ASC;";
+            AND FE_Components.fkFE_ComponentType = ".$this->GetValue('fkFE_ComponentType');
 
+        if (!$FETMS_CCA_MODE && $compType != 11) {
+            // show all data associated with CCA if $FETMS_CCA_MODE
+            // show all data associated with WCA
+            $q .= " AND TestData_header.fkFE_Config < 1";
+        }
+
+        $q .= " ORDER BY COMPID DESC, TestData_Types.Description ASC;";
+
+//         echo $q . "<br>";
 
         $r = @mysql_query($q,$this->dbconnection);
         $trclass = "";
@@ -265,6 +273,18 @@ class FEComponent extends GenericTable{
             echo "<td width = '140px'><a href='$testdatapage?keyheader=$tdh->keyId&fc=" . $this->GetValue('keyFacility') . "'>" . $tdh->TestDataType . "</a></td>";
             echo "<td width = '150px'>" . $tdh->GetValue('Notes') . "</td>";
             echo "<td width = '100px'>" . $tdh->GetValue('TS') . "</td>";
+
+            // In the "for PAI" column show a checkbox corresponding to the value of UseForPAI:
+            echo "<td width = '10px'>";
+            if ($tdh->GetValue('UseForPAI'))
+                $checked = "checked='checked'";
+            else
+                $checked = "";
+
+            $cboxId = "PAI_" . $row[0];
+            // Call the PAIcheckBox JS function when the checkbox is clicked:
+            echo "<input type='checkbox' name='$cboxId' id='$cboxId' $checked
+                   onchange=\"PAIcheckBox($row[0], document.getElementById('$cboxId').checked);\" />";
             echo "</tr>";
             unset($tdh);
         }

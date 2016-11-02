@@ -12,6 +12,9 @@ $rootdir_data = $site_root . '/';
 // the beameff_64 application is deployed to a fixed location in the code:
 $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff2_64";
 
+// switch for operating as a CCA database
+$FETMS_CCA_MODE = false;
+
 // set up some variables specific to particular hosts:
 $site_hostname = $_SERVER['SERVER_NAME'];
 
@@ -33,17 +36,19 @@ switch ($site_hostname){
         break;
 
     case "localhost":
+        $FETMS_CCA_MODE = false;
         $rootdir_url = "http://band1-fetms/ALMA-FETMS-www/";
         $GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
         $beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
         break;
 
     case "band1-fetms":
-     	$rootdir_url = "http://band1-fetms/ALMA-FETMS-www/";
+        $FETMS_CCA_MODE = false;
+        $rootdir_url = "http://band1-fetms/ALMA-FETMS-www/";
        	$GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
        	$beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
        	break;
-                
+
     default:
         echo "<font size = '+3' color = '#ff0000'><h><b>
         This application is not configured for host $site_hostname. <br>
