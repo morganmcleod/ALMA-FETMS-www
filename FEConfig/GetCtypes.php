@@ -15,6 +15,7 @@ if ($NumArgs > 0){
 }
 else{
 		$q = "SELECT Description, keyId FROM ComponentTypes
+		WHERE Description in ('CCA', 'WCA')
 		ORDER BY Description ASC;";
 }
 $r = @mysql_query($q,$db);

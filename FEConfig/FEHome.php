@@ -15,12 +15,9 @@
 <?php
     require_once(dirname(__FILE__) . '/../SiteConfig.php');
     require_once(site_get_config_main());
-    $pageTitle = "FrontEnd Home";
-    $pageHeader = "Front Ends";
+    $pageTitle = "FETMS Database Home";
     $pageComponent = "100";
     if ($FETMS_CCA_MODE) {
-        $pageTitle = "CCAs Home";
-        $pageHeader = "CCAs";
         $pageComponent = "20";
     }
     echo "<title>$pageTitle</title>";
@@ -30,7 +27,7 @@
     echo "<body onload='javascript:creategrid(" . $pageComponent . ", 1);' style='background-color: #19475E; '>";
     echo "<div id = 'wrap'>";
 
-    $title=$pageHeader;
+    $title=$pageTitle;
     include "header.php";
     $where = $_SERVER["PHP_SELF"];
 ?>

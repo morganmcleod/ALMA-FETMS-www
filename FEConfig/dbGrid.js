@@ -8,9 +8,28 @@
 
 var ListTitle = "Front Ends";
 
+StateStore = Ext.extend(Ext.data.JsonStore, {
+    constructor : function(cfg) {
+        cfg = cfg || {};
+        StateStore.superclass.constructor.call(this, Ext.apply({
+            storeId : 'StateStore',
+            root : 'records',
+            url : 'GetCtypes.php',
+            idProperty : 'stateCode',
+            messageProperty : 'message',
+            fields : [ {
+                name : 'stateName'
+            }, {
+                name : 'stateCode'
+            } ]
+        }, cfg));
+    }
+});
+Ext.reg('stateStore', StateStore);
+
 function creategrid(type, CreateToolbar) {
     if (CreateToolbar == 1) {
-
+        new StateStore();
         ToolBar = new Ext.Toolbar({
             width : 900,
             height : 35,
@@ -112,7 +131,7 @@ function creategrid(type, CreateToolbar) {
             }, 'Notes', 'TS', 'keyFacility' ]
         });
         store.load();
-
+        
         // Front End row values
         var grid = new Ext.grid.GridPanel({
 
@@ -195,6 +214,12 @@ function creategrid(type, CreateToolbar) {
     }
 
     else {
+        if (type == 20) {
+            ListTitle = "CCA";
+        } else if (type == 11) {
+            ListTitle = "WCA";
+        }
+        
         // This grid is for components
         var store = new Ext.data.JsonStore({
             url : "GetFEData.php?ctype=" + type,
@@ -324,26 +349,6 @@ function creategrid(type, CreateToolbar) {
 
     grid.render('db-grid');
 }
-
-StateStore = Ext.extend(Ext.data.JsonStore, {
-    constructor : function(cfg) {
-        cfg = cfg || {};
-        StateStore.superclass.constructor.call(this, Ext.apply({
-            storeId : 'StateStore',
-            root : 'records',
-            url : 'GetCtypes.php',
-            idProperty : 'stateCode',
-            messageProperty : 'message',
-            fields : [ {
-                name : 'stateName'
-            }, {
-                name : 'stateCode'
-            } ]
-        }, cfg));
-    }
-});
-Ext.reg('stateStore', StateStore);
-new StateStore();
 
 function FixHyperlink(value) {
     var result = value;

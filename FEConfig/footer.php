@@ -5,7 +5,7 @@ $g = new GitInfo();
 $br = $g->getCurrentBranch();
 
 echo "<div id='footer'>";
-echo    "<h3>FETMS Configuration Management by NRAO.  On branch: ";
+echo    "<h3>FETMS Database by NRAO.  On branch: ";
 echo    "<a href='https://github.com/morganmcleod/ALMA-FETMS-www' target='_blank'>";
 echo    "<font color='#ffffff'>'$br' at " . $g->getCurrentHash();
 if ($br != 'master')
