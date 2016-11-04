@@ -12,7 +12,7 @@
 
 <script type="text/javascript" src="../../ext/adapter/ext/ext-base.js"></script>
 <script type="text/javascript" src="../../ext/ext-all.js"></script>
-<script type="text/javascript" src="../spin.js"></script>
+<!-- <script type="text/javascript" src="../spin.js"></script> -->
 <script type="text/javascript" src="loadBP.js"></script>
 
 <title>Beam Patterns</title>
@@ -20,6 +20,7 @@
 
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
+require_once($site_config_main);
 require_once($site_classes . '/class.eff.php');
 require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.scansetdetails.php');

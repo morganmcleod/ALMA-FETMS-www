@@ -9,12 +9,13 @@
 <script src="../../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
 <script src="../../ext/ext-all.js" type="text/javascript"></script>
 <script src="../dbGrid.js" type="text/javascript"></script>
-<script type="text/javascript" src="../spin.js"></script>
+<!-- <script type="text/javascript" src="../spin.js"></script> -->
 
 <body style="background-color: #19475E">
 
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
+require_once($site_config_main);
 require_once($site_dbConnect);
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.cca_image_rejection.php');
@@ -37,8 +38,15 @@ $td->TestDataHeader = $TestData_header_keyId;
 
 echo "<title>" . $td->TestDataType . "</title></head>";
 
-if ($td->GetValue('fkTestData_Type') == 55){
-    echo '<meta http-equiv="Refresh" content="0.1;url=bp.php?fc='.$td->GetValue('keyFacility').'&id='.$td->keyId.'&band='.$td->GetValue('Band') . '&keyconfig=' .$td->GetValue('fkFE_Config') . '">';
+if ($td->GetValue('fkTestData_Type') == 55) {
+    $url = $rootdir_url . "FEConfig/bp/bp.php";
+    echo '<meta http-equiv="Refresh" content="0.1;' . $url .
+         '?fc=' . $td->GetValue('keyFacility') .
+         '&id=' . $td->keyId .
+         '&band=' . $td->GetValue('Band') .
+         '&keyconfig=' . $td->GetValue('fkFE_Config') .
+         '&keyheader=' . $TestData_header_keyId . '">';
+    exit();  // don't load the rest of this page.
 }
 
 if ($td->Component->ComponentType != "Front End") {

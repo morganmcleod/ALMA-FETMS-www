@@ -36,6 +36,7 @@
 <?php
 
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
+require_once(site_get_config_main());
 require_once($site_classes . '/class.cca.php');
 require_once($site_classes . '/class.cryostat.php');
 require_once($site_classes . '/class.fecomponent.php');
@@ -51,11 +52,34 @@ $component = new FEComponent();
 $component->Initialize_FEComponent($comp_key, $fc);
 $band=$component->GetValue('Band');
 $comp_type=$component->GetValue('fkFE_ComponentType');
-
-$title="FE-$component->FESN Component";
-
 $feconfig = $component->FEConfig;
 $fesn = $component->FESN;
+$compsn = $component->GetValue('SN');
+
+if ($band < 1)
+    $band = 0;
+
+if ($component -> IsDocument)
+    $CompDescription = 'Document';
+else
+    $CompDescription = 'Component';
+
+$title = "FE-$fesn Component";
+
+if ($comp_type == 20) {
+    $CompDescription = 'CCA';
+    if ($FETMS_CCA_MODE)
+        $title = $CompDescription . $band . "-" . $compsn;
+
+} elseif ($comp_type == 11) {
+    $CompDescription = 'WCA';
+    if ($FETMS_CCA_MODE)
+        $title = $CompDescription . $band . "-" . $compsn;
+
+} elseif ($comp_type == 6) {
+    $CompDescription = 'Cryostat';
+    $title = $CompDescription . " " . $compsn;
+}
 
 include "header.php";
 
@@ -79,25 +103,6 @@ if (isset($_REQUEST['submit_datafile_cryostat'])){
     //echo "<meta http-equiv='Refresh' content='1;url=$url'>";
 }
 
-if ($band < 1){
-    $band = 0;
-}
-
-if ($component->IsDocument == 1){
-    $CompDescription = 'Document';
-}
-else{
-    $CompDescription = 'Component';
-}
-if ($comp_type == 20){
-    $CompDescription = 'CCA';
-}
-if ($comp_type == 11){
-    $CompDescription = 'WCA';
-}
-if ($comp_type == 6){
-    $CompDescription = 'Cryostat';
-}
 ?>
 
 <body id = 'body3' onload="createCompTabs(<?php echo "$band,$comp_type,$comp_key,$fc,'$CompDescription'"; ?>); creategridConfigHistoryComp(<?php echo "$comp_key,$fc"?>);" BGCOLOR="#19475E">

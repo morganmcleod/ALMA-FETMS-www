@@ -208,7 +208,7 @@ class FEComponent extends GenericTable{
         require_once(site_get_classes() . '/class.testdata_header.php');
         $databutton = "";
         $note = "";
-        $testdatapage = "testdata/testdata.php";
+        $testdatapage = $rootdir_url . "FEConfig/testdata/testdata.php";
 
         $compType = $this->GetValue('fkFE_ComponentType');
 

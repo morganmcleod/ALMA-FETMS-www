@@ -6,6 +6,7 @@ if (!isset($home))
     $home = $rootdir_url . "FEConfig/FEHome.php";
 if (!isset($showConfig))
     $showConfig = $rootdir_url . "FEConfig/ShowFEConfig.php";
+
 // URL for bug reporting:
 $bugsTo = "http://jira.alma.cl/browse/FETMS/";
 ?>
@@ -21,7 +22,7 @@ $bugsTo = "http://jira.alma.cl/browse/FETMS/";
             <td><a href=<?php echo "'$home'" ?> class="button gray biground"><span>Home</span>
             </a></td>
 <?php
-        if (isset($feconfig) && $feconfig != '') {
+        if (!$FETMS_CCA_MODE && isset($feconfig) && $feconfig != '') {
 ?>
             <td><a href=<?php echo "'$showConfig?key=$feconfig&fc=$fc'" ?> class="button gray biground">
             <span>Front End <?php echo $fesn; ?></span></a></td>
