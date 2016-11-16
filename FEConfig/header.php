@@ -1,6 +1,6 @@
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
-require_once($site_config_main);
+require(site_get_config_main());
 require_once($site_dbConnect);
 if (!isset($home))
     $home = $rootdir_url . "FEConfig/FEHome.php";

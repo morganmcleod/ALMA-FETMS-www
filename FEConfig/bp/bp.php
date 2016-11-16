@@ -20,7 +20,6 @@
 
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
-require_once($site_config_main);
 require_once($site_classes . '/class.eff.php');
 require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.scansetdetails.php');

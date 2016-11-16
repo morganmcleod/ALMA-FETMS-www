@@ -15,7 +15,6 @@
 
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
-require_once($site_config_main);
 require_once($site_dbConnect);
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.cca_image_rejection.php');
