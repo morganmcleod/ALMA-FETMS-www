@@ -91,9 +91,8 @@ class NoiseTemperature extends TestData_header{
             echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl6') . "'><br><br>";
         }
         echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl3') . "'><br><br>";
-        if ($this->GetValue('Band') != 3) {
-            echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl4') . "'><br><br>";
-        } else {
+        echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl4') . "'><br><br>";
+        if ($this->GetValue('Band') == 3) {
             Band3_NT_results($this->GetValue('keyId'));
             Band3_CCA_NT_results($this->GetValue('keyId'));
         }
@@ -104,8 +103,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.2.3";
+        $this->Plot_SWVer = "1.2.4";
         /*
+         * 1.2.4 Display averaged graphs for band 3 in addition to tables.
          * 1.2.3 Fixed bugs in band 9 & 10 plots.
          * 1.2.2 Added band 5 production changes to noise temp plots.
          * 1.2.1 Uses only MAX(keyDataSet) when loading CCA NT and IR data.
