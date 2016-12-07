@@ -662,15 +662,21 @@ class WCA extends FEComponent {
 
         // Remove redundant rows:
         for($index = 0; $index < $tableSize; $index++) {
+            // Always output first and last rows:
             if ($index == 0 || $index == $tableSize - 1) {
-                // Always output first and last rows:
                 $this->maxSafePowerTable [] = $tableWithDups [$index];
-            } else if ($tableWithDups [$index] ['VD0'] != $tableWithDups [$index - 1] ['VD0'] || $tableWithDups [$index] ['VD1'] != $tableWithDups [$index - 1] ['VD1']) {
+
+            // Output any row which differs from previous or next row in VD0 or VD1:
+            } else if ($tableWithDups [$index] ['VD0'] != $tableWithDups [$index - 1] ['VD0'] ||
+                       $tableWithDups [$index] ['VD1'] != $tableWithDups [$index - 1] ['VD1'] ||
+                       $tableWithDups [$index] ['VD0'] != $tableWithDups [$index + 1] ['VD0'] ||
+                       $tableWithDups [$index] ['VD1'] != $tableWithDups [$index + 1] ['VD1']) {
+
                 $this->maxSafePowerTable [] = $tableWithDups [$index];
             }
         }
 
-        $this->maxSafePowerTable = $tableWithDups;
+//         $this->maxSafePowerTable = $tableWithDups;
 
         return $this->maxSafePowerTable;
     }
@@ -1746,6 +1752,11 @@ class WCA extends FEComponent {
             if (!isset($specs [$specLineName]))
                 $done = true;
             else {
+                if ($i == 1) {
+                    $plot_string .= "plot ";
+                } else {
+                    $plot_string .= ", ";
+                }
                 $lineCmd = $specs [$specLineName];
                 fwrite($fh, $lineCmd . "\r\n");
                 $plot_string .= $specs [$plotStringName];
@@ -1969,7 +1980,7 @@ class WCA extends FEComponent {
         fwrite($fh, "set key outside\r\n");
         $Band = $this->GetValue('Band');
         $specs = $this->new_spec->getSpecs('wca', $Band);
-        fwrite($fh, $specs ['fwrite_set'] . "\r\n");
+        fwrite($fh, $specs ['xRangeSS'] . "\r\n");
 
         $i = 1;
         $done = false;
@@ -1980,6 +1991,11 @@ class WCA extends FEComponent {
             if (!isset($specs [$specLineName]))
                 $done = true;
             else {
+                if ($i == 1) {
+                    $plot_string .= "plot ";
+                } else {
+                    $plot_string .= ", ";
+                }
                 fwrite($fh, $specs [$specLineName] . "\r\n");
                 $plot_string .= $specs [$plotStringName];
                 $i++;

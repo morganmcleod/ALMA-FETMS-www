@@ -76,7 +76,7 @@ class WCAdb { //extends DBRetrieval {
 		} elseif($request == 'n') {
 			$q = "Insert into WCA_LOParams(fkComponent,FreqLO,VDP0,VDP1,VGP0,VGP1) VALUES ($keyId,$FreqLO, 0,0,'".$values[0]."','".$values[1]."');";
 		} elseif($request == 'MSP') {
-			$q = "SELECT * FROM WCA_MaxSafePower WHERE fkFE_Component = $keyId AND fkFacility = $fc;";
+			$q = "SELECT * FROM WCA_MaxSafePower WHERE fkFE_Component = $keyId AND fkFacility = $fc ORDER By FreqLO ASC;";
 		} elseif($request == 'MS') {
 			$q = "SELECT * FROM WCA_MaxSafePower WHERE fkFE_Component = ".$keys['old']." ORDER BY FreqLO ASC;";
 			$rMS = $this->run_query($q);
