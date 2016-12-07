@@ -38,7 +38,7 @@ class WCA extends FEComponent {
         $this->fkDataStatus = '7';
         $this->swversion = "1.0.8";
         /*
-         * 1.0.8 Units -> mW on Max Safe Power tables
+         * 1.0.8 Units -> mW on Max Safe Power tables, Output power plotting fixes and improvements.
          * 1.0.7 MM Added INIT_Options to Initialize_WCA()
          * 1.0.6 Fix more plotting errors in WCA electronic data upload (step size plots.)
          * 1.0.5 Fix plotting errors in WCA electronic data upload.
@@ -1798,12 +1798,7 @@ class WCA extends FEComponent {
             while ($rowLO = mysql_fetch_array($rFindLO)) {
                 $CurrentLO = @mysql_result($rFindLO, $i);
 
-                if ($Band != 3) {
-                    $req = 13;
-                } else {
-                    $req = 14;
-                }
-                $r = $this->db_pull->q($req, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
+                $r = $this->db_pull->q(14, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
 
                 if (@mysql_num_rows($r) > 1) {
                     $plottitle [$datafile_count] = "$CurrentLO GHz";
