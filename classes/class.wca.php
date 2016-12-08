@@ -770,7 +770,7 @@ class WCA extends FEComponent {
             <!-- Name of input element determines name in $_FILES array -->
             <table id="table1"><tr class="alt"><th>Upload CSV Data files</th><th>Draw Plots</th></tr>
                 <tr><td align = "right">WCAs file:           </b><input name="file_wcas" type="file" /></td><td></td></tr>
-                <tr class = "alt"><td align = "right">Max Safe Power:      </b><input name="file_maxsafepower" type="file" /><td></td></tr>
+                <tr><td align = "right">Max Safe Power:      </b><input name="file_maxsafepower" type="file" /><td></td></tr>
                 <tr><td align = "right">Amplitude Stability: </b><input name="file_amplitudestability" type="file" /></td>
                     <td align = "center"><input type="submit" name="draw_amplitudestability" value="Redraw Amp. Stability"></td></tr>
                 <tr><td align = "right">AM Noise:            </b><input name="file_amnoise" type="file" /></td>
