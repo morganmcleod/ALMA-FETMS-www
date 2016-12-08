@@ -22,19 +22,18 @@
           <li><a href="wca_list2.php"><span>WCA List</span></a></li>
           <li><a href="wca.php"><span>Add a WCA</span></a></li>
           <li><a href="http://jira.alma.cl/browse/FETMS/"><span>Report a Bug</span></a></li>
-
         </ul>
         <div class="clr"></div>
       </div>
       <div class="clr"></div>
       <a href="http://science.nrao.edu/alma/index.shtml">
-          <div class="header_img"><img src="images/alma1.jpg" alt="" width="160" height="200" />
+      	<div class="header_img"><img src="images/alma1.jpg" alt="" width="160" height="200" />
       </a>
-        <h2>WCA Data</h2>
-        <p><strong>Warm Cartridge Assemblies </strong><br />
-          Add new records, or browse existing records.
+     	<h2>WCA Data</h2>
+      	<p><strong>Warm Cartridge Assemblies</strong><br />
+      	Add new records, or browse existing records.</p>
         <div class="clr"></div>
-      </div>
+        </div>
     </div>
   </div>
   <div class="clr"></div>
@@ -47,4 +46,5 @@
       </div>
     </div>
   </div>
+</div>
 

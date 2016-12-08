@@ -39,3 +39,10 @@ echo '
 </div></form></div>';
 
 ?>
+<div class='footer'>
+    <div style="margin-left:30px;">
+<?php
+    include "../FEConfig/footer.php";
+?>
+	</div>
+</div>

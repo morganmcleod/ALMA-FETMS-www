@@ -26,5 +26,11 @@ if ((isset($_REQUEST['submit_datafile'])) || (isset($_REQUEST['submitted']))){
 $wca->DisplayData_WCA();
 unset($wca);
 
-echo "<br><br><br><br><br><br><br><br><br><br><br><br>";
 ?>
+<div class='footer' style="margin-top:20px;">
+	<div style="margin-left:30px;">
+<?php
+    include "../FEConfig/footer.php";
+?>
+	</div>
+</div>

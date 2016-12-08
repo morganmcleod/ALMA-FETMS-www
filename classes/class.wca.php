@@ -36,8 +36,9 @@ class WCA extends FEComponent {
     var $ErrorArray; // Array of errors
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.8";
+        $this->swversion = "1.1.0";
         /*
+         * 1.1.0 Reformatted all HTML to be not so terrible.  export_to_ini for FEMC 2.8.x
          * 1.0.8 Units -> mW on Max Safe Power tables, Output power plotting fixes and improvements.
          * 1.0.7 MM Added INIT_Options to Initialize_WCA()
          * 1.0.6 Fix more plotting errors in WCA electronic data upload (step size plots.)
@@ -173,8 +174,8 @@ class WCA extends FEComponent {
         $where = $_SERVER ["PHP_SELF"];
         $where = '';
         echo "<form action='" . $where . "' method='POST'>";
-        echo "<div style ='width:100%;height:50%;margin-left:30px'>";
-        echo "<br><font size='+2'><b>WCA Information</b></font><br>";
+        echo "<div style ='width:100%;height:50%;margin-left:30px;'>";
+        echo "<br><font size='+2'><b>WCA Information</b></font>";
 
         $this->DisplayMainData();
 
@@ -192,68 +193,78 @@ class WCA extends FEComponent {
         echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'><br>";
 
         echo "</div>";
-        echo "<div style ='width:100%;height:50%'>";
+
+        echo "<div style ='width:100%;height:50%;margin-top:20px;margin-left:30px;'>";
 
         if ($this->keyId != "") {
-            echo "<table cellspacing='20'>";
+            echo "<table>";
             echo "<tr><td>";
             $this->Compute_MaxSafePowerLevels(FALSE);
             $this->Display_MaxSafePowerLevels();
             echo "</td></tr>";
-            echo "<tr><td>";
+            echo "<tr><td><br>";
             $this->Display_LOParams();
-            echo "<tr><td>";
+            echo "</tr></td>";
+            echo "</table>";
         }
         echo "</div>";
-        echo "<br>";
 
         if ($this->_WCAs->GetValue('amp_stability_url') != "") {
-            echo "<div>";
+            echo "<div style='margin-top:20px;margin-bottom:20px;'>";
             echo "<img src='" . $this->_WCAs->GetValue('amp_stability_url') . "'>";
-            echo "</div><br><br><br>";
+            echo "</div>";
             // echo "<br><input type='submit' name = 'exportcsv_amplitudestability' value='EXPORT TO CSV'>";
         }
         if ($this->_WCAs->GetValue('amnz_avgdsb_url') != "") {
-            echo "<br><img src='" . $this->_WCAs->GetValue('amnz_avgdsb_url') . "'>";
-            echo "<br><br><br>";
+            echo "<div style='margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('amnz_avgdsb_url') . "'>";
+            echo "</div>";
             // echo "<br><input type='submit' name = 'exportcsv_amnz_dsb' value='EXPORT TO CSV'>";
         }
         if ($this->_WCAs->GetValue('amnz_pol0_url') != "") {
-            echo "<br><img src='" . $this->_WCAs->GetValue('amnz_pol0_url') . "'>";
-            echo "<br><br><br>";
+            echo "<div style='margin-left:20px;margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('amnz_pol0_url') . "'>";
+            echo "</div>";
             // echo "<br><input type='submit' name = 'exportcsv_amnz_pol0' value='EXPORT TO CSV'>";
         }
         if ($this->_WCAs->GetValue('amnz_pol1_url') != "") {
-            echo "<br><img src='" . $this->_WCAs->GetValue('amnz_pol1_url') . "'>";
-            echo "<br><br><br>";
+            echo "<div style='margin-left:20px;margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('amnz_pol1_url') . "'>";
+            echo "</div>";
             // echo "<br><input type='submit' name = 'exportcsv_amnz_pol1' value='EXPORT TO CSV'>";
         }
 
+        echo "<div style='margin-top:20px;margin-bottom:20px;'>";
         $this->Display_PhaseNoise();
+        echo "</div>";
 
         if ($this->_WCAs->GetValue('op_vs_freq_url') != "") {
-            echo "<br><img src='" . $this->_WCAs->GetValue('op_vs_freq_url') . "'>";
-            echo "<br><br><br>";
+            echo "<div style='margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('op_vs_freq_url') . "'>";
+            echo "</div>";
             // echo "<br><input type='submit' name = 'exportcsv_op_vs_freq' value='EXPORT TO CSV'>";
         }
         if ($this->_WCAs->GetValue('op_vs_dv_pol0_url') != "") {
-            echo "<br><img src='" . $this->_WCAs->GetValue('op_vs_dv_pol0_url') . "'>";
-            echo "<br><br><br>";
+            echo "<div style='margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('op_vs_dv_pol0_url') . "'>";
+            echo "</div>";
         }
         if ($this->_WCAs->GetValue('op_vs_dv_pol1_url') != "") {
-            echo "<br><img src='" . $this->_WCAs->GetValue('op_vs_dv_pol1_url') . "'>";
-            echo "<br><br><br>";
+            echo "<div style='margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('op_vs_dv_pol1_url') . "'>";
+            echo "</div>";
         }
         if ($this->_WCAs->GetValue('op_vs_ss_pol0_url') != "") {
-            echo "<br><img src='" . $this->_WCAs->GetValue('op_vs_ss_pol0_url') . "'>";
-            echo "<br><br><br>";
+            echo "<div style='margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('op_vs_ss_pol0_url') . "'>";
+            echo "</div>";
         }
         if ($this->_WCAs->GetValue('op_vs_ss_pol1_url') != "") {
-            echo "<br><img src='" . $this->_WCAs->GetValue('op_vs_ss_pol1_url') . "'>";
-            echo "<br><br><br>";
+            echo "<div style='margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('op_vs_ss_pol1_url') . "'>";
+            echo "</div>";
         }
         echo "</form>";
-        echo "<br>";
         $this->Display_uploadform();
     }
     public function Display_AmplitudeStability() {
@@ -276,18 +287,15 @@ class WCA extends FEComponent {
         echo "</table>";
     }
     public function Display_PhaseNoise() {
-        echo "<table><tr><td>";
         echo "<img src='" . $this->_WCAs->GetValue('phasenoise_url') . "'>";
-        echo "</td></tr><tr><td>";
-        echo "<div style = 'width:500px'>
-            <table id = 'table2'>
-                <tr><th colspan = '3'><b>Phase Jitter</b></td></tr>
-                <tr>
-                    <td>LO</td>
-                    <td>Pol</td>
-                    <td>Jitter (fs)</td>
-                </tr>
-            </div>";
+        echo "<div style = 'margin-top:20px;width:500px;'>
+                <table id = 'table2'>
+                    <tr><th colspan = '3'><b>Phase Jitter</b></th></tr>
+                    <tr>
+                        <td>LO</td>
+                        <td>Pol</td>
+                        <td>Jitter (fs)</td>
+                    </tr>";
 
         $rpj = $this->db_pull->qpj('select', $this->tdh_phasejitter->keyId);
 
@@ -296,16 +304,16 @@ class WCA extends FEComponent {
             $jitter = $rowpj [1];
             $pol = $rowpj [2];
 
-            echo "<tr>
-                  <td>" . round($lo, 0) . "</td>
-                  <td>$pol</td>
-                  <td>" . round($jitter, 1) . "</td>
-                </tr>";
+            echo   "<tr>
+                        <td>" . round($lo, 0) . "</td>
+                        <td>$pol</td>
+                        <td>" . round($jitter, 1) . "</td>
+                    </tr>";
         }
-        echo "</td></tr></table></div>";
+        echo "</td></table></div>";
     }
     public function DisplayMainData() {
-        echo "<div style = 'width: 300px'><br><br>";
+        echo "<div style = 'width: 300px;margin-top:20px'>";
         echo "<table id = 'table1'>";
 
         echo "<tr>";
@@ -315,9 +323,9 @@ class WCA extends FEComponent {
         if ($this->FESN === FALSE)
             echo "-none-";
         else {
-            echo "<a href='https://safe.nrao.edu/php/ntc/FEConfig/ShowFEConfig.php?key=" . $this->ConfigId . "&fc=" . $this->fc . "'>" . $this->FESN . "</a></b></td>";
+            echo "<a href='../FEConfig/ShowFEConfig.php?key=" . $this->ConfigId . "&fc=" . $this->fc . "'>" . $this->FESN . "</a>";
         }
-        echo "</tr>";
+        echo "</b></td></tr>";
 
         echo "<tr>";
         echo "<th>Band</th>";
@@ -676,8 +684,6 @@ class WCA extends FEComponent {
             }
         }
 
-//         $this->maxSafePowerTable = $tableWithDups;
-
         return $this->maxSafePowerTable;
     }
     public function Display_MaxSafePowerLevels() {
@@ -756,14 +762,13 @@ class WCA extends FEComponent {
         $where = $_SERVER ['PHP_SELF'];
         $where = '';
         echo '
-        <p><div style="width:800px;height:80px; align = "left"></p>
+        <div style="width:600px;margin-top:20px;margin-left:30px;">
         <!-- The data encoding type, enctype, MUST be specified as below -->
         <form enctype="multipart/form-data" action="' . $where . '" method="POST">
             <!-- MAX_FILE_SIZE must precede the file input field -->
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
             <!-- Name of input element determines name in $_FILES array -->
-            <br>
-            <table id="table1"><tr class="alt"><th>CSV Data files</th><th></th></tr>
+            <table id="table1"><tr class="alt"><th>Upload CSV Data files</th><th>Draw Plots</th></tr>
                 <tr><td align = "right">WCAs file:           </b><input name="file_wcas" type="file" /></td><td></td></tr>
                 <tr class = "alt"><td align = "right">Max Safe Power:      </b><input name="file_maxsafepower" type="file" /><td></td></tr>
                 <tr><td align = "right">Amplitude Stability: </b><input name="file_amplitudestability" type="file" /></td>
@@ -781,8 +786,6 @@ class WCA extends FEComponent {
             </table>
         </form>
         </div>';
-        echo "<br>";
-        echo "<br>";
     }
     public function RequestValues_WCA() {
         parent::RequestValues();
@@ -808,7 +811,6 @@ class WCA extends FEComponent {
             $this->_WCAs->SetValue('VG1', $_REQUEST ['VG1']);
         }
         if (isset($_REQUEST ['submit_datafile'])) {
-            // if($this->password == "nrao1234"){
             if (isset($_FILES ['file_wcas'] ['name'])) {
                 if ($this->keyId == "") {
                     $this->NewRecord_WCA();
@@ -847,7 +849,6 @@ class WCA extends FEComponent {
                     $this->Upload_MaxSafePower_file($_FILES ['file_maxsafepower'] ['tmp_name']);
                 }
             }
-            // }
         }
         if (isset($_REQUEST ['draw_all'])) {
             $this->RedrawAllPlots();

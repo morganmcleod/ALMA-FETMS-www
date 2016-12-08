@@ -4,7 +4,7 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
 
 include('header_js.php');
-echo '<div class="article" style="margin:30px">';
+echo '<div style="margin-left:30px">';
 
 echo 'To search for a WCA, enter the Band followed by serial number,<br>
       separated by a space.
@@ -34,4 +34,14 @@ if (isset($_REQUEST['band_sn'])){
 echo '</div>';
 
 include('wca_search.php');
+
 ?>
+<div class='footer' style="margin-top:20px;">
+	<div style="margin-left:30px;">
+<?php
+    include "../FEConfig/footer.php";
+?>
+	</div>
+</div>
+</body>
+</html>

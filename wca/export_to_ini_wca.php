@@ -15,7 +15,7 @@ $band = $wca->GetValue('Band');
 $fname = ($type=='wca') ? "WCA$band.ini" : "FrontEndControlDLL.ini";
 $sn   = ltrim($wca->GetValue('SN'),'0');
 $esn  = $wca->GetValue('ESN1');
-$description = "Description=Band $band SN$sn";
+$description = "Description=WCA$band-$sn";
 if ($esn == $wca->keyId) {
     $esn = '';
 }
@@ -39,6 +39,12 @@ if ($type == 'fec') {
     //TODO: move into specs class
     $lowlo = "0.000";
     switch ($band){
+        case 1:
+            $lowlo = "35.00";
+            break;
+        case 2:
+            $lowlo = "67.00";
+            break;
         case 3:
             $lowlo = "92.00";
             break;
@@ -80,11 +86,17 @@ if ($type == 'fec') {
     // TODO: move into specs class.
     $loopBW = 9;
     switch ($band){
+        case 1:
+            $loopBW = 1;  // band 1  1 -> 2.5MHz/V
+            break;
+        case 2:
+            $loopBW = 1;  // band 2  1 -> 15MHz/V (Band 2,3,5,6,7,10)
+            break;
         case 3:
-            $loopBW = 1;  // band 3  1 -> 15MHz/V (Band 3,6,7,10)
+            $loopBW = 1;
             break;
         case 4:
-            $loopBW = 0;  // band 4  0 -> 7.5MHz/V (Band 4,5,8,9)
+            $loopBW = 0;  // band 4  0 -> 7.5MHz/V (Band 4,8,9)
             break;
         case 5:
             $loopBW = 1;
@@ -115,34 +127,16 @@ echo <<<EOS
 ; Make sure to end every line containing data with a LF or CR/LF
 ;
 
-[INFO]
-; Electronic Serial Number (ESN)
-ESN=$esn
-; WCA Serial Number
-SN="$sn"
-
 [PLL]
 ; PLL loop bandwidth select (0 - 7.5MHz/V, 1 - 15 MHz/V, 9 - not defined)
 LOOP_BW=$loopBW
-
-[SCALING]
-; PLL lock voltage
-PLL_LOCK=19.09090909
-; PLL correction voltage
-PLL_CORR=19.09090909
-; Power supply voltage
-SUPPLY_V=20.0
-; Multiplier bias current
-MULT_C=100.0
-; YIG heater current scale
-PLL_YIG_C_SCALE=400.0
-; YIG heater current offset
-PLL_YIG_C_OFFSET=150.0
 
 [PA_LIMITS]
 EOS;
 
     echo "\r\n";
+
+    echo "ESN=$esn\r\n";
 
     $powerLimit = $wca->maxSafePowerForBand($band);
 
