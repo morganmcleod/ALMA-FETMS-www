@@ -1,0 +1,143 @@
+I've attached the steps that my LabView VI uses to calculate the max safe power levels.  In your implementation you could probably skip step 1) which converts fine-sweep data into a course-sweep format. At the time this step seemed to make the code more simple.  There are 256 possible voltage values for the WCA, which is the number of data points in the fine-sweep power vs drain voltage data; the course-sweep data has 51 voltage points.  Due to the way we wrote the WCA test software there is never both course and fine sweep data for any given frequency point, ie. a frequency only has one power vs drain voltage curve.
+
+Also attached are the max safe power limits I used in the VI, it would be best if Saini verified that these are still valid.
+
+If the pseudo code is a bit difficult to follow, I apologize. Transcribing LabView into pseudo code form is an interesting and somewhat challenging exercise given the graphical drag-and-drop nature of the "language" and the high degree of parallelism that often occurs.
+
+
+Band	Multiplier limit [mW]	Adding 2dB loss	WCA limit - with 15% safety factor
+4	15	23.77339789	20
+6	40	63.3957277	53
+8	75	118.8669894	101
+9	125	198.1116491	168
+
+
+1. Band 4 safe limits (15 mW) in the spreadsheet are stale. Since we incorporated an input attenuator, it should now be able to withstand up to 25 mW. The WCA PAI reports even have a line corresponding to this revised number at 30 mW consistent with 2 dB loss and 10% margin (1.5*30*0.9=33 so call it 30). So this must be the case where this information was not flowed back into the vi routines generating the VD limit files.
+
+2. The Band 8 multiplier limits are also slightly more than what is in the excel spreadsheet. Here again, our PAI report mentions the correct value of 90 mW multiplier specification. So the WCA output limit should be 1.5*90*0.9=121.
+
+3. Added rows for Band 7 (same as Band 6) and Band 10 (same as Band 9).
+
+Modified spreadsheet is attached (changes are in red), and it does not have the specifications tab from the original which I did not check - Dustin, do we need to do that? If so please (re)send your excel file and have Mark review those numbers.
+
+Anyway, looks like we should review the raw PAI test data and regenerate the limit files.
+
+Band	Multiplier limit [mW]	Adding 2dB loss	WCA limit - with 15% safety factor
+4	25	39.62232981	33
+6	40	63.3957277	53
+7	40	63.3957277	53
+8	90	142.6403873	121
+9	125	198.1116491	168
+10	125	198.1116491	168
+
+
+
+See my replies below.  I should mention that nearly all of the power vs voltage sweep data has a monotonically increasing curve, the only exceptions to this are as follows:
+1) older WCAs that had drain voltages much higher than necessary, this often created a peaking power curve where at some point increasing the drain voltage only decreased the output power
+2) oscillations in the MMIC can sometimes be seen as a small anomoly in the power curve where the power drops a small amount with increased voltage before continuing to increase as expected. This typically looks like a small discontinuity in the data.
+
+We shouldn't run across any of case #2 with any of the WCAs in the field as oscillation problems are usually spotted in the lab, but case #1 could be an issue with old Band 8,9 cartridges.
+
+
+On 4/29/2014 4:36 PM, Morgan McLeod wrote:
+> In step 4.1.1 you are actually looking at the measured output power and then recording the corresponding voltage, right?
+>
+
+You are correct, in 4.1.1. I meant to say that you find the first power value that is higher than the max power limit and then use the voltage of the previous power in the ascending array as the max safe value.
+
+> What is the purpose of carrying forward both fine-sweep and course sweep data sets?
+
+If I understand your question correctly, the reason I use both course and fine sweep data sets is to use the maximum number of frequency points.  There are only 3 frequencies at which the fine-sweep data is taken, most of the sweep data is of the course-sweep type. The algorithm could conceivable use only the course sweep data with minimal loss of information.
+
+>
+> Is course vs. fine in the frequency axis only, or is it in the voltage axis also?
+Only the voltage steps are either course or fine. Each frequency in sweep test is designated as either a course or fine voltage sweep.
+
+
+
+That is correct, each polarization may have its own unique maximum drain voltage.  The maximum drain voltage for each polarization can be extracted from the largest Vd value in the test data, and that value can be used to translate the drain sweep voltage in Volts to the unitless 0-2.5 range.
+
+On 5/1/2014 9:42 AM, Kamaljeet S Saini wrote:
+> I can maybe agree that there is a separate number per polarization. But from how I understand it, the largest Vd in the test data, should correspond to 2.5 set value. And we should be able to scale based on that scale factor - Dustin?
+
+
+
+
+
+pseudo-code-algorithm.txt
+
+Steps:
+For each polarization:
+	1) convert fine-sweep power vs drain voltage data to course sweep resolution,
+	1.1) For each fine sweep frequency:
+	1.1.1) Sort the fine sweep data points by ascending drain voltage
+	1.1.1.1) For each course sweep voltage:
+	1.1.1.1.1) If there is an exact voltage match between the course and fine sweep data that data point is kept, Else the two closest fine sweep frequency points are found and linear interpolation on the data is used to determine the correct power data for that voltage.
+
+	2) Concatenate the array of converted fine-sweep data with course sweep data
+
+	3) reorder the array of voltage sweep data so that the data points ascend in both frequency and voltage
+
+	4) For each frequency:
+	4.1) Sequentially go through the voltage array starting at lowest value (should be zero, note that this array was previously sorted to be in ascending order)
+	4.1.1) Find first voltage value that is higher than max safe value, if found record the previous voltage value as the highest possible safe value.
+	4.1.2) If the end of the voltage array is reached without finding a power level higher than the max safe value, record this highest voltage value as the maximum possible safe value.
+	4.2) convert the voltage values previously found into the unitless 0-2.5 range
+
+	5) Find max safe power values that are redundant:
+	5.1) Find and remove any frequency points in the previously determined array of max safe voltages that have an adjacent upper and lower frequency points with exactly the same max safe value
+
+Combine the polarization data together into a listing of frequency vs max safe voltage level for Pol 0 and Pol 1:
+	Note that there is the possibility of having redundant values for one polarization if the power level of one polarization is above the max safe level and power level of the other polarization is below the max safe level.
+   
+
+
+
+
+#Coarse VD steps:
+select distinct FreqLO from WCA_OutputPower where fkFacility = 40 and `fkHeader` = '16455' and keyDataSet=2;
+
+#Fine VD steps:
+select distinct FreqLO from WCA_OutputPower where fkFacility = 40 and `fkHeader` = '16455' and keyDataSet=3;
+
+#Coarse VD voltages:
+select distinct VD0 from WCA_OutputPower where fkFacility = 40 and `fkHeader` = '16455' and keyDataSet=2;
+
+#fine VD voltages:
+select distinct VD0 from WCA_OutputPower where fkFacility = 40 and `fkHeader` = '16455' and keyDataSet=3;
+
+
+select distinct FreqLO, Pol, max(VD0), max(VD1), max(Power) from WCA_OutputPower where 
+fkFacility = 40 and `fkHeader` = '16455' and keyDataSet=3
+group by FreqLO, Pol;
+
+#all data for pol0:
+select FreqLO, VD0, Power from WCA_OutputPower where 
+fkFacility = 40 and `fkHeader` = '16455' and (keyDataSet=2 or keyDataSet=3) and Pol=0
+order by FreqLO ASC, VD0 DESC;
+
+
+Steps:
+For each polarization:
+	1) convert fine-sweep power vs drain voltage data to course sweep resolution,
+	1.1) For each fine sweep frequency:
+	1.1.1) Sort the fine sweep data points by ascending drain voltage
+	1.1.1.1) For each course sweep voltage:
+	1.1.1.1.1) If there is an exact voltage match between the course and fine sweep data that data point is kept, Else the two closest fine sweep frequency points are found and linear interpolation on the data is used to determine the correct power data for that voltage.
+
+	2) Concatenate the array of converted fine-sweep data with course sweep data
+
+	3) reorder the array of voltage sweep data so that the data points ascend in both frequency and voltage
+
+	4) For each frequency:
+	4.1) Sequentially go through the voltage array starting at lowest value (should be zero, note that this array was previously sorted to be in ascending order)
+	4.1.1) Find first voltage value that is higher than max safe value, if found record the previous voltage value as the highest possible safe value.
+	4.1.2) If the end of the voltage array is reached without finding a power level higher than the max safe value, record this highest voltage value as the maximum possible safe value.
+	4.2) convert the voltage values previously found into the unitless 0-2.5 range
+
+	5) Find max safe power values that are redundant:
+	5.1) Find and remove any frequency points in the previously determined array of max safe voltages that have an adjacent upper and lower frequency points with exactly the same max safe value
+
+Combine the polarization data together into a listing of frequency vs max safe voltage level for Pol 0 and Pol 1:
+	Note that there is the possibility of having redundant values for one polarization if the power level of one polarization is above the max safe level and power level of the other polarization is below the max safe level.
+   
