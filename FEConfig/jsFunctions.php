@@ -1,5 +1,3 @@
-<html>
-<head>
 <script type='text/javascript' language='JavaScript'>
 function RecAddedAlert(loc)
 {
@@ -232,8 +230,4 @@ function getWarmPASConfig(fesn)
 //        }
 //    });
 }
-
-
 </script>
-</head>
-</html>

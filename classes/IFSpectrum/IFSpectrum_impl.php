@@ -233,7 +233,7 @@ class IFSpectrum_impl extends TestData_header {
             echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
             echo "<tr><td>LO (GHz)</td><td>In-Band (dBm)</td><td>In-Band (dBm)</td><td>Total (dBm)</td><td>Total - In-Band</td></tr>";
             $sawRed = false;
-            
+
             foreach ($data as $row) {
                 $LO = $row['FreqLO'];
                 $pwr0 = round($row['pwr0'], 1);        // in-band power 0 dB gain
@@ -246,7 +246,7 @@ class IFSpectrum_impl extends TestData_header {
                 $red = ($gainDiff < 14 || $gainDiff > 16);
 				if ($red)
 					$sawRed = true;
-                
+
                 // LO column:
                 echo "<tr><td>$LO</td>";
 
@@ -303,7 +303,7 @@ class IFSpectrum_impl extends TestData_header {
         if ($data) {
             $noLSB = ($this->band == 1 || $this->band == 9 || $this->band == 10);
             $colSpan = ($noLSB ? 3 : 5);
-            
+
             // TODO: add back in borders/shading.
             echo "<div style='width:400px' border='1'>";
             echo "<table id = 'table7' border='1'>";
@@ -348,7 +348,7 @@ class IFSpectrum_impl extends TestData_header {
                     // IF3 column:
                     $fontcolor = ($pVar_IF3 > $maxVar) ? $badColor : $okColor;
                     echo "<td><font color = $fontcolor><b>$pVar_IF3</b></font></td>";
-                } 
+                }
                 echo "</tr>";
             }
             foreach ($this->TDHdataLabels as $label)
