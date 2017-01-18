@@ -8,6 +8,7 @@ require_once ($site_classes . '/class.frontend.php');
 require_once ($site_dBcode . '/../dBcode/wcadb.php');
 require_once ($site_classes . '/class.spec_functions.php');
 require_once ($site_dbConnect);
+
 class WCA extends FEComponent {
     var $_WCAs;
     var $LOParams; // array of LO Params (Generic Table objects)
@@ -36,8 +37,9 @@ class WCA extends FEComponent {
     var $ErrorArray; // Array of errors
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.1.0";
+        $this->swversion = "1.1.1";
         /*
+         * 1.1.1 Moved ini format code into this->GetIniFileContent().
          * 1.1.0 Reformatted all HTML to be not so terrible.  export_to_ini for FEMC 2.8.x
          * 1.0.8 Units -> mW on Max Safe Power tables, Output power plotting fixes and improvements.
          * 1.0.7 MM Added INIT_Options to Initialize_WCA()
@@ -408,6 +410,104 @@ class WCA extends FEComponent {
 
         echo "</table></div>";
     }
+    public function GetIniFileContent($type) {
+        // type is either 'fec' or 'wca'.
+
+        $band = $this->GetValue('Band');
+        $sn   = ltrim($this->GetValue('SN'),'0');
+        $esn  = $this->GetValue('ESN1');
+        $description = "Description=WCA$band-$sn";
+
+        $ret = "";
+        if ($type == 'fec') {
+            $ret .= "[~WCA$band-$sn]\r\n";
+            $ret .= "$description\r\n";
+            $ret .= "Band=$band\r\n";
+            $ret .= "SN=$sn\r\n";
+            $ret .= "ESN=$esn\r\n";
+            $ret .= "FLOYIG=" . $this->_WCAs->GetValue('FloYIG') . "\r\n";
+            $ret .= "FHIYIG=" . $this->_WCAs->GetValue('FhiYIG') . "\r\n";
+
+            //Get lowest LO
+            //TODO: move into specs class
+            $lowlo = "0.000";
+            switch ($band){
+                case 1:
+                    $lowlo = "35.00";
+                    break;
+                case 2:
+                    $lowlo = "67.00";
+                    break;
+                case 3:
+                    $lowlo = "92.00";
+                    break;
+                case 4:
+                    $lowlo = "133.00";
+                    break;
+                case 5:
+                    $lowlo = "171.00";
+                    break;
+                case 6:
+                    $lowlo = "221.00";
+                    break;
+                case 7:
+                    $lowlo = "283.00";
+                    break;
+                case 8:
+                    $lowlo = "393.00";
+                    break;
+                case 9:
+                    $lowlo = "614.00";
+                    break;
+                case 10:
+                    $lowlo = "795.00";
+                    break;
+            }
+
+            $ret .= "LOParams=1\r\n";
+            $mstring = "LOParam01=$lowlo";
+            $mstring .= ",1.00,1.00,";
+
+            $mstring .= number_format(floatval($this->_WCAs->GetValue('VG0')),2) . ",";
+            $mstring .= number_format(floatval($this->_WCAs->GetValue('VG1')),2) . "\r\n";
+            $ret .= $mstring;
+            $ret .= "\r\n\r\n\r\n";
+
+        } else if ($type=='wca') {
+
+            $ret .= ";
+; WCA configuration file
+;
+; Make sure to end every line containing data with a LF or CR/LF
+;
+
+[PA_LIMITS]";
+
+            $ret .= "\r\n";
+            $ret .= "ESN=$esn\r\n";
+            $ret .= "SN=WCA$band-$sn\r\n";
+            $ret .= "FLOYIG=" . $this->_WCAs->GetValue('FloYIG') . "\r\n";
+            $ret .= "FHIYIG=" . $this->_WCAs->GetValue('FhiYIG') . "\r\n";
+
+            $powerLimit = $this->maxSafePowerForBand($band);
+
+            if ($powerLimit == 0)
+                $ret .= "ENTRIES=0\r\n";
+            else {
+                $table = $this->Compute_MaxSafePowerLevels(TRUE);
+                $ret .= "ENTRIES=" . count($table) . "\r\n";
+
+                $entry = 0;
+                foreach ($table as $row) {
+                    $entry++;
+                    $ret .= "ENTRY_$entry=" . $row['YTO'] . ", " . number_format($row['VD0'], 2, '.', '') . ", " .
+                                                                   number_format($row['VD1'], 2, '.', '') . "\r\n";
+                }
+            }
+            $ret .= "\r\n";
+        }
+        return $ret;
+    }
     public function Display_LOParams() {
         /*
          * $q = "SELECT TS FROM WCA_LOParams
@@ -570,17 +670,28 @@ class WCA extends FEComponent {
         return $allRows;
     }
     private function loadMaxDrainVoltages($tdhArray) {
+        $ret = array();
+        $tdhList = $this->FormatTDHList($tdhArray);
+
         // Load and return an array having the maximum drain voltages
         // found for Pol0 and Pol1 in the fine output power data.
-        $q = "SELECT MAX(VD0), MAX(VD1) FROM WCA_OutputPower WHERE
-        fkHeader in " . $this->FormatTDHList($tdhArray);
-        $q .= " AND fkFacility = $this->fc
-                AND keyDataSet=2";
+        $q = "SELECT MAX(VD0) FROM WCA_OutputPower WHERE
+              Pol = 0 AND keyDataSet=2
+              AND fkHeader in $tdhList";
 
         $r = @mysql_query($q, $this->dbconnection);
-        $r = $this->db_pull->q(6, NULL, NULL, $this->fc, $this->FormatTDHList($tdhArray));
         $row = @mysql_fetch_array($r);
-        return $row;
+        $ret[0] = $row[0];
+
+        $q = "SELECT MAX(VD1) FROM WCA_OutputPower WHERE
+              Pol = 1 AND keyDataSet=2
+              AND fkHeader in $tdhList";
+
+        $r = @mysql_query($q, $this->dbconnection);
+        $row = @mysql_fetch_array($r);
+        $ret[1] = $row[0];
+
+        return $ret;
     }
     public function Compute_MaxSafePowerLevels($allHistory) {
         $eof = array (
@@ -650,8 +761,8 @@ class WCA extends FEComponent {
 
             $LO = $values [0] ['FreqLO'];
             $YIG0 = round(((($LO / $warmMult) - $loYig) / ($hiYig - $loYig)) * 4095);
-            $VD0 = round($values [0] ['VD'] * $pol0scale, 3);
-            $VD1 = round($values [1] ['VD'] * $pol1scale, 3);
+            $VD0 = round($values [0] ['VD'] * $pol0scale, 4);
+            $VD1 = round($values [1] ['VD'] * $pol1scale, 4);
             $P0 = round($values [0] ['Power'], 1);
             $P1 = round($values [1] ['Power'], 1);
 
