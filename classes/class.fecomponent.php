@@ -3,9 +3,10 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.logger.php');
 require_once($site_classes . '/class.sln.php');
+require_once($site_classes . '/class.testdata_table.php');
 require_once($site_FEConfig . '/HelperFunctions.php');
 
-class FEComponent extends GenericTable{
+class FEComponent extends GenericTable {
     var $ComponentType;    //object representing record of ComponentTypes table
     var $FESN;             //SN of the Front End
     var $FEid;             //keyId of the Front End
@@ -84,12 +85,7 @@ class FEComponent extends GenericTable{
 
         $slnid = @mysql_result($rsln,0,0);
 
-
-        //echo "id, fc= $slnid, $slnfc<br><br>";
         if ($slnid != ''){
-            //$this->sln = new GenericTable();
-            //$this->sln->Initialize('FE_StatusLocationAndNotes',$slnid,'keyId',$in_fc,'keyFacility');
-
             $this->sln = new SLN();
             $this->sln->Initialize_SLN($slnid,$in_fc);
         }
@@ -203,93 +199,10 @@ class FEComponent extends GenericTable{
                 </div>";
     }
 
-    public function DisplayTable_TestData(){
-        require_once(site_get_config_main());
-        require_once(site_get_classes() . '/class.testdata_header.php');
-        $databutton = "";
-        $note = "";
-        $testdatapage = $rootdir_url . "FEConfig/testdata/testdata.php";
-
-        $compType = $this->GetValue('fkFE_ComponentType');
-
-        if ($compType == 6){
-            $testdatapage = "testdata/testdata_cryostat.php";
-            $url = "../cryostat/cryostat.php?keyId=$this->keyId&fc=" . $this->GetValue('keyFacility');
-        }
-
-        echo "
-        <div style='width:1000px'>
-                <font size='+1'>
-                <table id = 'table1'>
-                    <tr class='alt'><th colspan = '8'>TEST DATA $note</th></tr>
-                    <tr>
-                        <th>Config</th>
-                        <th>Data Status</th>
-                        <th>Description</th>
-                        <th>Notes</th>
-                        <th>TS</th>
-                        <th width='10px'>for PAI</th>
-                    </tr>
-                    <tr>";
-
-
-        $SN = "%";
-        if ($this->GetValue('SN') != ''){
-            $SN = $this->GetValue('SN');
-        }
-        $Band = "%";
-        if ($this->GetValue('Band') != ''){
-            $Band = $this->GetValue('Band');
-        }
-        $q = "SELECT TestData_header.keyId, FE_Components.keyId as COMPID
-            FROM TestData_header, TestData_Types, FE_Components
-            WHERE TestData_header.fkFE_Components = FE_Components.keyId
-            AND FE_Components.SN LIKE '$SN'
-            AND FE_Components.Band LIKE '$Band'
-            AND TestData_header.fkTestData_Type = TestData_Types.keyId
-            AND FE_Components.fkFE_ComponentType = ".$this->GetValue('fkFE_ComponentType');
-
-        if (!$FETMS_CCA_MODE && $compType != 11) {
-            // show all data associated with CCA if $FETMS_CCA_MODE
-            // show all data associated with WCA
-            $q .= " AND TestData_header.fkFE_Config < 1";
-        }
-
-        $q .= " ORDER BY COMPID DESC, TestData_Types.Description ASC;";
-
-//         echo $q . "<br>";
-
-        $r = @mysql_query($q,$this->dbconnection);
-        $trclass = "";
-        while ($row = @mysql_fetch_array($r)){
-            $trclass = ($trclass=="" ? 'class="alt"' : "");
-
-            $tdh = new TestData_header();
-            $tdh->Initialize_TestData_header($row[0],$this->GetValue('keyFacility'));
-            echo "<tr $trclass>";
-            $url = "ShowComponents.php?conf=$row[1]&fc=" . $this->GetValue('keyFacility');
-            echo "<td width = '20px'><a href='$url'>$row[1]</a></td>";
-            echo "<td width = '60px'>" . $tdh->DataStatus . "</td>";
-            echo "<td width = '140px'><a href='$testdatapage?keyheader=$tdh->keyId&fc=" . $this->GetValue('keyFacility') . "'>" . $tdh->TestDataType . "</a></td>";
-            echo "<td width = '150px'>" . $tdh->GetValue('Notes') . "</td>";
-            echo "<td width = '100px'>" . $tdh->GetValue('TS') . "</td>";
-
-            // In the "for PAI" column show a checkbox corresponding to the value of UseForPAI:
-            echo "<td width = '10px'>";
-            if ($tdh->GetValue('UseForPAI'))
-                $checked = "checked='checked'";
-            else
-                $checked = "";
-
-            $cboxId = "PAI_" . $row[0];
-            // Call the PAIcheckBox JS function when the checkbox is clicked:
-            echo "<input type='checkbox' name='$cboxId' id='$cboxId' $checked
-                   onchange=\"PAIcheckBox($row[0], document.getElementById('$cboxId').checked);\" />";
-            echo "</tr>";
-            unset($tdh);
-        }
-        echo "</font></table>";
-
+    public function DisplayTable_TestData() {
+        $td = new TestDataTable($this->GetValue('Band'));
+        $td->setComponent($this->GetValue('fkFE_ComponentType'), $this->GetValue('SN'));
+        $td->DisplayAllMatching();
     }
 
     public function Display_UpdateConfigForm_CCA(){
@@ -482,8 +395,6 @@ class FEComponent extends GenericTable{
 
             }
             echo "</table></div>";
-        //}
-
     }
 
     public function ComponentHistory_JSON(){

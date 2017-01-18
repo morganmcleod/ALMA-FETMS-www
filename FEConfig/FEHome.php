@@ -42,6 +42,7 @@
 </form>
 <?php
     echo "</div>";
+    echo "<br><br><br>";
     include "footer.php";
 ?>
 </body>

@@ -2,6 +2,7 @@
 
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.frontend.php');
+require_once($site_classes . '/class.testdata_table.php');
 require_once($site_FEConfig . '/HelperFunctions.php');
 require_once($site_dbConnect);
 
@@ -13,16 +14,6 @@ $fe = new FrontEnd();
 $fe->Initialize_FrontEnd_FromConfig($feConfig, $facility, FrontEnd::INIT_NONE);
 $fc   = $fe->GetValue('keyFacility');
 $fesn = $fe->GetValue('SN');
-
-$ComponentType = "%";
-// if($band == 'cryo') {
-//     $ComponentType = 6;
-//     $band = 0;
-// }
-
-if("$band" == 'docs') {
-    $fe->Display_Table_Documents();
-}
 
 if($band == 100) {
     //Front End tab panel
@@ -47,31 +38,32 @@ if($band == 100) {
             </div>
         </td></tr>
     </table>
+
 <?php
 
 } else {
-    // Documents, Components, or Band tab
-    if ($band == "other") {
-        // For the 'other' components page, pass '' as band and 'other' as type:
-        $fe->DisplayTable_ComponentList('', 'other');
+    // Components, or Band tab
+    if ($band == "other")
+        $band = 0;
 
-    } else if ($band != "docs") {
-        // For bands 1-10, pass the actual band number:
-        $fe->DisplayTable_ComponentList($band);
-    }
-    if ($band != "docs") {
-        // Display HC and PAS reference data for all bands, plus 'other' as band 0:
-        if ($band == "other")
-            $band = 0;
-        $fe->DisplayTable_PAITestData_Summary($band);
-        // For real bands show PAI data:
-        if ($band >= 1 && $band <= 10)
-            $fe->DisplayTable_AllPAITestData($band);
+    // Display components matching band:
+    $fe->DisplayTable_ComponentList($band);
+
+    // Display HC and PAS reference data matching band:
+    $fe->DisplayTable_PAITestData_Summary($band);
+
+    // For real bands show PAI data:
+    if ($band >= 1 && $band <= 10) {
+        $td = new TestDataTable($band);
+        $td->setFrontEnd($fe->keyId);
+        $td->DisplayAllMatching();
+        unset($td);
     }
 }
 
 ?>
-    <br><br>
+
+<br><br>
 
 <?php
     unset($fe);

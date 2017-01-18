@@ -90,18 +90,6 @@ function createtabs(keyfe, fesn, fc, fe_id) {
                 } ]
     });
 
-    var more = tabs.add({
-        title : 'Documents',
-        autoLoad : {
-            url : 'getFrontEndData.php',
-            params : {
-                band : 'docs',
-                key : keyfe,
-                fc : fc
-            }
-        }
-    });
-
     // for components with band 0 or null
     var more = tabs.add({
         title : 'Components',

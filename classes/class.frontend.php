@@ -540,77 +540,7 @@ class FrontEnd extends GenericTable {
         echo $outstring;
     }
 
-    public function DisplayTable_ComponentData($band = "%", $ComponentType = "%") {
-        $bandstring = "";
-        echo "<div style= 'width:890px'>";
-        echo "<table id='table1'>";
-        echo "<tr class = 'alt'><th colspan='6'>TEST DATA</th></tr>";
-        echo "<tr><th>FE Config</th>
-                  <th>Data Status</th>";
-
-        if ($band == '%') {
-            echo "<th>Band</th>";
-        }
-        echo "<th>Description</th>
-              <th>Notes</th>
-              <th>TS</th>
-              </tr>";
-        $this->DisplayTable_BeamPatternsNoHeader($band);
-        $q = "SELECT DISTINCT(TestData_header.keyId),TestData_Types.Description
-            FROM TestData_header,FE_Config,Front_Ends,TestData_Types, FE_Components
-            WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
-            AND FE_Config.fkFront_Ends = $this->keyId
-            AND TestData_header.band LIKE '$band'
-            AND TestData_header.fkTestData_Type = TestData_Types.keyId
-            ORDER BY
-            TestData_Types.Description ASC, TestData_header.Band ASC,
-            TestData_header.TS DESC;";
-        echo $q;
-
-        $r = @mysql_query($q,$this->dbconnection);
-        $trclass = '';
-        while ($row = @mysql_fetch_array($r)) {
-            $tdh = new TestData_header();
-            $tdh->Initialize_TestData_header($row['keyId'],$this->fc, $this->feconfig->keyId);
-            $tdh->subheader = new GenericTable();
-            switch($tdh->GetValue('fkTestData_Type')) {
-                case 29:
-                    $tdh->subheader->Initialize('TEST_Workmanship_Amplitude_SubHeader',$tdh->keyId,'fkHeader');
-                    $polstr = "(LO " . $tdh->subheader->GetValue('lo') . ")";
-                    break;
-                case 30:
-                    $tdh->subheader->Initialize('TEST_Workmanship_Phase_SubHeader',$tdh->keyId,'fkHeader');
-                    $polstr = "(Pol " . $tdh->subheader->GetValue('pol');
-                    $polstr .= ", LO " . $tdh->subheader->GetValue('lo') . ")";
-                    break;
-            }
-            unset($tdh->subheader);
-
-            $trclass = ($trclass=="" ? 'class="alt"' : "");
-            echo "<tr $trclass><td width = '10px' align = 'center'>".$tdh->GetValue('fkFE_Config')."</td>";
-            echo "<td width = '40px'>$tdh->DataStatus</td>";
-            if ($band == '%') {
-                echo "<td width = '10px' align = 'center'>".$tdh->GetValue('Band')."</td>";
-            }
-            echo "<td width='200px'><a href='../testdata/testdata.php?keyheader=$tdh->keyId' target = 'blank'>".$tdh->TestDataType." $polstr</a></td>";
-            echo "<td width = '150px'>".$tdh->GetValue('Notes')."</td>";
-            echo "<td width = '120px'>".$tdh->GetValue('TS')."</td></tr>";
-            unset($tdh);
-        }
-        echo "</table></div>";
-    }
-
-    public function DisplayTable_ComponentList($band = "%", $componenttype = "%") {
-        $bandstring = "FE_Components.Band LIKE '$band'";
-        $componenttype_string = "FE_Components.fkFE_ComponentType LIKE '$componenttype'";
-
-        switch ($componenttype) {
-            case "other":
-                $componenttype = "%";
-                $componenttype_string = "FE_Components.fkFE_ComponentType LIKE '%'";
-                $bandstring = " FE_Components.Band < 1 ";
-                break;
-        }
+    public function DisplayTable_ComponentList($band) {
 
         echo "<div style= 'width:900px'>";
         echo "<table id='table1'>";
@@ -626,24 +556,22 @@ class FrontEnd extends GenericTable {
                 <th style = 'width:90px'>TS</th>
                 <th style = 'width:50px'>LINKS</th>
               </tr>";
+
         $searchconfig = $this->feconfig->keyId;
         if ($this->feconfig_id > 0) {
             $searchconfig = $this->feconfig_id;
         }
 
-        $q = "SELECT ComponentTypes.Description, FE_Components.SN,
-        FE_Components.ESN1, FE_Components.ESN2, FE_Components.TS,
-        FE_Components.keyFacility, FE_Components.keyId,
-        FE_Components.Link1,FE_Components.Link2, ComponentTypes.keyId AS KeyComponent
-        FROM FE_Components,FE_ConfigLink,FE_Config, ComponentTypes
-        WHERE FE_ConfigLink.fkFE_Components = FE_Components.keyId
-        AND FE_ConfigLink.fkFE_ComponentFacility = FE_Components.keyFacility
-        AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-        AND ComponentTypes.keyId = FE_Components.fkFE_ComponentType
-        AND $bandstring
-        AND $componenttype_string
-        AND FE_ConfigLink.fkFE_Config = ".$searchconfig ."
-        GROUP BY ComponentTypes.Description ASC, FE_Components.SN ASC;";
+        $bandLike = ($band) ? "$band" : "0";
+
+        $q = "SELECT CT.keyId AS keyCompType, CT.Description,
+              COMP.keyFacility, COMP.SN, COMP.ESN1, COMP.ESN2, COMP.TS, COMP.keyId AS keyComponent, COMP.Link1, COMP.Link2
+              FROM FE_ConfigLink AS LINK, FE_Components as COMP, ComponentTypes AS CT
+              WHERE LINK.fkFE_Components = COMP.keyId
+              AND COMP.fkFE_ComponentType = CT.keyId
+              AND COMP.Band LIKE '$bandLike'
+              AND LINK.fkFE_Config = $searchconfig
+              ORDER BY CT.Description ASC, COMP.SN ASC;";
 
         $r = @mysql_query($q,$this->dbconnection);
 
@@ -651,7 +579,7 @@ class FrontEnd extends GenericTable {
         while ($row = @mysql_fetch_array($r)) {
             $Display = 1;
             if ($band == '') {
-                switch($row['KeyComponent']) {
+                switch($row['keyCompType']) {
                     case 217:
                         $Display = 0;
                         break;
@@ -674,7 +602,7 @@ class FrontEnd extends GenericTable {
                 $trclass = ($trclass=='class="alt5"' ? 'class="alt4"' : 'class="alt5"');
                 echo "<tr $trclass><td align = 'center'>".$row['Description']."</td>";
 
-                $link = "ShowComponents.php?conf=". $row['keyId'] . "&fc=" . $row['keyFacility'];
+                $link = "ShowComponents.php?conf=". $row['keyComponent'] . "&fc=" . $row['keyFacility'];
                 $SN = "NA";
                 if (strlen($row['SN']) > 0) {
                     $SN = $row['SN'];
@@ -699,135 +627,6 @@ class FrontEnd extends GenericTable {
                     $Links .= "<a href='$Link2'>CIDL</a>";
                 }
                 echo "<td  align = 'center'>$Links</td></tr>";
-            }
-        }
-        echo "</table></div>";
-    }
-
-
-    public function DisplayTable_AllPAITestData($band = "%") {
-    	/*
-    	 * 2015-04-28 jee for pattern data, added test number and day of week to date
-    	 */
-        $bandstring = "";
-        echo "<div style= 'width:900px'>";
-        echo "<table id='table1'>";
-        echo "<tr class = 'alt'><th colspan='7'>TEST DATA</th></tr>";
-        echo "<tr>
-                <th width='10px'>FE Config</th>
-                <th>Data Status</th>";
-
-        if ($band == '%') {
-            echo "<th align = 'center'>Band</th>";
-        }
-
-        echo "  <th>Description</th>
-                <th>Notes</th>
-                <th>TS</th>
-                <th width='10px'>for PAI</th>
-              </tr>";
-
-        $q = "SELECT DISTINCT(TestData_header.keyId),TestData_Types.Description,
-        TestData_header.fkTestData_Type,FE_Config.keyFEConfig,
-        TestData_header.Band,TestData_header.Notes,
-        TestData_header.fkDataStatus, TestData_header.TS,
-        TestData_header.keyFacility, DataStatus.Description,
-        TestData_header.DataSetGroup, TestData_header.UseForPAI
-        FROM TestData_header,FE_Config,Front_Ends,TestData_Types, DataStatus
-        WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
-        AND FE_Config.fkFront_Ends = $this->keyId
-        AND TestData_header.fkDataStatus = DataStatus.keyId
-        AND TestData_header.band LIKE '$band'
-        AND TestData_header.fkTestData_Type = TestData_Types.keyId
-        ORDER BY TestData_Types.Description ASC, TestData_header.Band ASC, TestData_header.TS DESC;";
-
-        $r = @mysql_query($q,$this->dbconnection);
-
-        $trclass = '';
-        while ($row = @mysql_fetch_array($r)) {
-            // exclude test data types which are shown health check and PAS reference data table:
-            if (!(in_array($row[2], array(1,2,3,4,5,6,8,9,10,12,13,14,15,24,39)))) {
-
-                // save newdata header record data set in a two dimentional array
-                // first dimension is test data type, second is the dataset group
-                $record_list[$row[2]][] = $row[10];
-                // count how many times each dataset group occurs
-                $dataset_cnt = array_count_values ( $record_list[$row[2]]);
-
-                // display row if there is only one entry for the dataset or the dataset is 0
-                if ($dataset_cnt[$row[10]] <= 1 || $row[10] == 0 ) {
-
-                    $TestNotes = $row[5];
-                    $trclass = ($trclass=="" ? 'class="alt"' : "");
-                    echo "<tr $trclass><td width = '10px' align = 'center'>".$row[3]."</td>";
-                    echo "<td width = '70px'>$row[9]</td>";
-                    if ($band == '%') {
-                        echo "<td width = '10px' align = 'center'>".$row[4]."</td>";
-                    }
-
-                    $testpage = 'testdata/testdata.php';
-
-                    switch($row['fkTestData_Type']) {
-                        case 55:
-                            //Beam patterns
-                            $testpage = 'bp/bp.php';
-                            // hyperlink with test URL and key ID
-                            echo "<td width='180px'><a href='$testpage?keyheader=$row[0]&fc=". $row[8] ."' target = 'blank'>".$row[1]." ".$row['keyId']."</a></td>";
-                            echo "<td width = '150px'>".$TestNotes."</td>";		// notes
-                            // add the day of the week to the date:
-                            $ymd = DateTime::createFromFormat('Y-m-d H:i:s', $row[7])->format('D Y-m-d H:i:s');
-                            echo "<td width = '120px'>".$ymd."</td>";
-                            break;
-                        case 7:
-                            //IFSpectrum
-                            $testpage = 'ifspectrum/ifspectrumplots.php';
-
-                            $url  = $testpage . "?fc=". $row['keyFacility'];
-                            $url .= "&fe=" . $this->keyId . "&b=" . $row['Band'];
-                            $url .= "&id=" . $row[0];
-
-                            echo "<td width='180px'><a href='$url' target = 'blank'>".$row[1]." Group " . $row[10]. "</a></td>";
-                            echo "<td width = '150px'>".$TestNotes."</td>";
-                            echo "<td width = '120px'>".$row[7]."</td>";
-                            break;
-
-                        case 57:
-                        case 58:
-                            //LO Lock Test or noise temp
-                            if ($row[10] != 0) {
-                                $Description = "$row[1] Group " . $row[10];
-                                echo "<td width='180px'><a href='$testpage?keyheader=$row[0]" . "&g=" . $row[10] . "&fc=". $row[8] ."' target = 'blank'>$Description</a></td>";
-                                echo "<td width = '150px'>".$TestNotes."</td>";
-                                echo "<td width = '120px'>".$row[7]."</td>";
-                            } else {
-                                echo "<td width='180px'><a href='$testpage?keyheader=$row[0]&fc=". $row[8] ."' target = 'blank'>".$row[1]."</a></td>";
-                                echo "<td width = '150px'>".$TestNotes."</td>";
-                                echo "<td width = '120px'>".$row[7]."</td>";
-                            }
-                            break;
-
-                        default:
-                            echo "<td width='180px'><a href='$testpage?keyheader=$row[0]&fc=". $row[8] ."' target = 'blank'>".$row[1]."</a></td>";
-                            echo "<td width = '150px'>".$TestNotes."</td>";
-                            echo "<td width = '120px'>".$row[7]."</td>";
-                            break;
-                    }
-                    // In the "for PAI" column show a checkbox corresponding to the value of UseForPAI:
-                    echo "<td width = '10px'>";
-                    if ($row[11])
-                        $checked = "checked='checked'";
-                    else
-                        $checked = "";
-                    $cboxId = "PAI_" . $row[0];
-                    // Call the PAIcheckBox JS function when the checkbox is clicked:
-                    echo "<input type='checkbox'
-                            name='$cboxId'
-                            id='$cboxId'
-                            $checked
-                            onchange=\"PAIcheckBox($row[0], document.getElementById('$cboxId').checked);\" />";
-                    echo "</td></tr>";
-                }
-                unset($tdh);
             }
         }
         echo "</table></div>";
@@ -860,52 +659,6 @@ class FrontEnd extends GenericTable {
             echo "<td>$row[3]</td>";
             echo "<td>$row[2]</td></tr>";
         }
-    }
-
-    public function Display_Table_Documents() {
-        $doctypeNames = array('PAI and PAS Reports','Requests for Waiver','Non-Conformances','CAR Notices','Other Documents');
-        $doctypeKeys = array(217,218,219,222,220);
-
-        echo "<div style = 'width:820px'>";
-
-        for ($i = 0; $i< count($doctypeKeys); $i++) {
-            //Get all docs of this type
-            $q = "SELECT FE_Components.keyId, FE_Components.keyFacility
-                    FROM FE_Components, FE_ConfigLink
-                    WHERE FE_Components.fkFE_ComponentType = $doctypeKeys[$i]
-                    AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-                    AND FE_ConfigLink.fkFE_Config = " . $this->feconfig->keyId . "
-                    GROUP BY FE_Components.Documenttitle ASC
-                    ;";
-
-            $r = @mysql_query($q,$this->dbconnection);
-
-            echo "<table id='table1'>";
-            echo "<tr class='alt'><th colspan='4'>$doctypeNames[$i]</th></tr>";
-            echo "<tr>";
-                echo "<th style='width:400px'>Title</th>
-                      <th style='width:300px'>Comments</th>
-                      <th>Status</th>";
-            echo "</tr>";
-
-            $trclass = '';
-            while ($row = @mysql_fetch_array($r)) {
-                $trclass = ($trclass=='class="alt5"' ? 'class="alt4"' : 'class="alt5"');
-                $doc = new FEComponent();
-                $doc->Initialize_FEComponent($row['keyId'], $row['keyFacility']);
-                echo "<tr $trclass>";
-
-                $url = "ShowComponents.php?conf=" . $doc->keyId . "&fc=" . $doc->GetValue('keyFacility');
-
-                echo "<td><a href=$url>" . $doc->GetValue('DocumentTitle')."</a></td>";
-                echo "<td>" . $doc->GetValue('Description')."</td>";
-                echo "<td>" . $doc->GetValue('Production_Status')."</td>";
-                echo "</tr>";
-                unset($doc);
-            }
-            echo "</table><br>";
-        }
-        echo "</div>";
     }
 
     public function DisplayTable_PAITestData_Summary($band = "%") {
