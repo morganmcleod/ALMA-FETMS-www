@@ -10,25 +10,22 @@ require_once($site_classes . '/class.spec_functions.php');
 
 require_once($site_dbConnect);
 
-class TestData_header extends GenericTable{
+class TestData_header extends GenericTable {
     var $TestDataType;          // text description
     var $TestDataTableName;
     var $DataStatus;
-    var $FE_Config;
     var $FrontEnd;
     var $Component;
     var $fe_keyId;
     var $NoiseFloorHeader;
-    var $TestDataHeader;
-    var $fWindow_Low;
-    var $fWindow_High;
-    var $SelectDatasets;
+    var $TestDataHeader;    //TODO:  Not used?
     var $swversion;
     var $fc; //facility
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
-        $this->swversion = "1.0.10";
+        $this->swversion = "1.0.11";
+        // 1.0.11 delete dead code.
         // 1.0.10 fix LO Lock Test: Show Raw Data displaying results from multiple TDH.
         // 1.0.9 fixed instantiating DataPlotter in DrawPlot().
         // 1.0.8 minor fix to require(class.wca.php)
@@ -70,21 +67,6 @@ class TestData_header extends GenericTable{
             $this->Component->Initialize("Front_Ends", $feid, "keyFrontEnds", $this->GetValue('keyFacility'), 'keyFacility');
             $this->Component->ComponentType = "Front End";
         }
-    }
-
-    public function NewRecord_TestData_header($in_fc = '') {
-        $this->keyId_name = 'keyId';
-        if ($in_fc == '') {
-            $in_fc = $fc;
-        }
-        parent::NewRecord('TestData_header','keyId',$in_fc,'keyFacility');
-    }
-
-    public function getTestDataTypeNum($test_type) {
-    	$q = "SELECT keyId FROM TestData_Types WHERE TestData_TableName = '" . $test_type ."'";
-    	$r = @mysql_query($q, $this->dbconnection);
-    	$value = @mysql_fetch_array($r);
-    	return $value[0];
     }
 
     public function RequestValues_TDH() {
@@ -214,13 +196,6 @@ class TestData_header extends GenericTable{
         }
     }
 
-    public function Display_ExportToCSV() {
-        echo '<form name = "ExportCSVButton" action= "export_to_csv.php" method="get">';
-        echo "<input type='hidden' name='keyheader' value='" . $this->keyId . "' />";
-        echo "<br><input type='submit' name = 'exportcsv' value='EXPORT TO CSV'>";
-        echo '</form></div>';
-    }
-
     public function Display_RawTestData() {
         $fkHeader = $this->keyId;
         $qgetdata = "SELECT * FROM $this->TestDataTableName WHERE
@@ -297,7 +272,7 @@ class TestData_header extends GenericTable{
                 echo "<td>$row[$i]</td>";
             }
             echo"</tr>";
-}
+        }
 
         echo "</table>";
 
@@ -434,7 +409,6 @@ class TestData_header extends GenericTable{
 
         unset($wca);
     }
-
 
     public function Display_PhaseStabilitySubHeader() {
         $sh = new GenericTable();
@@ -626,190 +600,6 @@ class TestData_header extends GenericTable{
         }
 
         echo "</table></div><br>";
-
-    }
-
-    public function UpdateIFPAIStatus($IFChannel = '%') {
-        $qifs = "SELECT keyId FROM IFSpectrum_SubHeader
-                   WHERE fkHeader = $this->keyId
-                   AND IFChannel LIKE '$IFChannel'
-                   AND keyFacility = ".$this->GetValue('keyFacility')."
-                   ORDER BY Band ASC, FreqLO ASC, IFChannel ASC, IFGain ASC;";
-        $rifs = @mysql_query($qifs,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-
-        while ($rowifs = @mysql_fetch_array($rifs)) {
-            $ifsub = new GenericTable();
-            $ifsub->Initialize('IFSpectrum_SubHeader',$rowifs[0],'keyId',$this->GetValue('keyFacility'),'keyFacility');
-
-                $option_name = "pai_option_" . $ifsub->GetValue('keyId');
-
-                if (isset($_REQUEST[$option_name])) {
-                    $ispai = 1;
-                }
-                if (!isset($_REQUEST[$option_name])) {
-                    $ispai = 0;
-                }
-                $ifsub->SetValue('IsPAI', $ispai);
-                $ifsub->Update();
-
-            unset($ifsub);
-        }
-
-        $localtime = localtime();
-        echo "<b>Status changes saved.</b><br>";
-
-        $this->SelectDatasets = 1;
-    }
-    /*
-    public function UpdateLOLockIsIncludedStatus() {
-        echo "Update lo lock data status...<br>";
-        $qds = "SELECT keyId FROM TEST_LOLockTest_SubHeader
-                       WHERE fkHeader = $this->keyId
-                       AND fkFacility = ".$this->GetValue('keyFacility')."
-                       ORDER BY TS ASC;";
-        $rds = @mysql_query($qds, $this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-        while ($rowds = @mysql_fetch_array($rds)) {
-            $id_subheader = $rowds[0];
-            $qdata = "SELECT keyId, IsIncluded FROM TEST_LOLockTest
-                   WHERE fkHeader = $id_subheader
-                   AND fkFacility = ".$this->GetValue('keyFacility')."
-                   ORDER BY LOFreq ASC;";
-
-
-            $rdata = @mysql_query($qdata,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-            while ($rowdata = @mysql_fetch_array($rdata)) {
-            $ifsub = new GenericTable();
-                $ifsub->Initialize('TEST_LOLockTest',$rowdata[0],'keyId',$this->GetValue('keyFacility'),'fkFacility');
-
-
-
-                    $option_name = "isincluded_option_" . $ifsub->GetValue('keyId');
-
-                    if (isset($_REQUEST[$option_name])) {
-                        $isincluded = 1;
-                    }
-                    if (!isset($_REQUEST[$option_name])) {
-                        $isincluded = 0;
-                    }
-                    $ifsub->SetValue('IsIncluded', $isincluded);
-                    $ifsub->Update();
-                    //echo "Setting value: $option_name = " . $isincluded . "<br>";
-
-
-                unset($ifsub);
-
-            }
-        }
-
-            while ($rowifs = @mysql_fetch_array($rifs)) {
-
-            }
-            //echo '<meta http-equiv="Refresh" content="1;url=testdata.php?sd=1&keyheader='.$this->keyId.'">';
-            $localtime = localtime();
-            echo "<b>Status changes saved.</b><br>";
-
-            $this->SelectDatasets = 1;
-    }*/
-
-    public function DisplayDataSetSelector_Form($IFChannel = '%') {
-        echo "<form name='paiform' action='" . $_SERVER['PHP_SELF'] . "' method='POST'>";
-        //echo "<div style='border-radius:10px;background-color:#ff0000;width:700px;height:60px;'>Select datasets to be included in plots and tables.<br><br>
-        //      Check the 'PAI' box for each measurement to be included.</div><br>";
-
-        echo "<div style = 'width:550px'>";
-        echo "<table id = 'table8'>";
-                echo "<tr class='alt' ><th colspan = '6'>IF SPECTRUM MEASUREMENTS &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp";
-                echo "<input name = 'submit_pai' type='submit' value='SAVE' /></th></tr>";
-
-
-                echo "<th>Band</th>
-                      <th>LO</th>
-                      <th>IF Channel</th>
-                      <th>IF Gain</th>
-                      <th>Date</th>
-                      <th>Status</th>";
-            $rowcount = 0;
-
-            $qifs = "SELECT keyId, IFChannel FROM IFSpectrum_SubHeader
-                       WHERE fkHeader = $this->keyId
-                       AND IFChannel LIKE '$IFChannel'
-                       AND keyFacility = ".$this->GetValue('keyFacility')."
-                       ORDER BY TS ASC;";
-
-            $rifs = @mysql_query($qifs,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-
-            while ($rowifs = @mysql_fetch_array($rifs)) {
-                $ifsub = new GenericTable();
-                $ifsub->Initialize('IFSpectrum_SubHeader',$rowifs[0],'keyId',$this->GetValue('keyFacility'),'keyFacility');
-
-
-                $qcheck = "SELECT * FROM IFSpectrum WHERE fkSubHeader = " . $ifsub->GetValue('keyId') . ";";
-                    if ($rowcount % 2 == 0) {
-                        $tdstyle = " ";
-                    }
-                    if ($rowcount % 2 != 0) {
-                        $tdstyle = "class = 'alt'";
-                    }
-                    if ($ifsub->GetValue('IsPAI') != '1') {
-                        $tdstyle = "class = 'alt3'";
-                    }
-                    echo "<tr $tdstyle>";
-                    echo "<td>" . $ifsub->GetValue('Band') . "</td>";
-                    echo "<td>" . $ifsub->GetValue('FreqLO') . "</td>";
-                    echo "<td>" . $ifsub->GetValue('IFChannel') . "</td>";
-                    echo "<td>" . $ifsub->GetValue('IFGain') . "</td>";
-                    $csvurl = "../testdata/export_to_csv.php?keyheader=$this->keyId&ifsub=$ifsub->keyId&fc=" . $this->GetValue('keyFacility');
-
-                    echo "<td><a href='$csvurl'>" . $ifsub->GetValue('TS') . "</a></td>";
-
-                    $option_name = "pai_option_" . $ifsub->GetValue('keyId');
-
-                    if ($ifsub->GetValue('IsPAI') == '1') {
-                        echo "<td $tdstyle ><input type='checkbox' name='$option_name' value='1' checked> PAI<br></td></tr>";
-                    }
-                    else{
-                        echo "<td $tdstyle ><input type='checkbox' name='$option_name' value='0'> PAI<br></td></tr>";
-                    }
-
-                    $rowcount += 1;
-
-                unset($ifsub);
-            }
-            echo "</table></div>";
-            echo "<input type='hidden' name = 'ifchannel' value='$IFChannel'>";
-            echo "</form>";
-    }
-
-
-
-    public function Display_TestDataStatusSelector() {
-        echo '
-            <p><div style="width:500px;height:80px; align = "left"></p>
-            <!-- The data encoding type, enctype, MUST be specified as below -->
-            <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">';
-
-            $qdt = "SELECT keyId, Description FROM DataStatus
-                ORDER BY keyId ASC;";
-            $rdt = @mysql_query($qdt,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-
-            echo "Test Data Status <select name = 'fkDataStatus' onChange = submit()>";
-            //echo "Noise Floor Profile: <select name = 'nfheader'>";
-            //echo "<option value = '0' selected = 'selected'>None</option>";
-            while ($row = @mysql_fetch_array($rdt)) {
-                $dt_id = $row[0];
-                $dt_desc = $row[1];
-                if ($dt_id == $this->GetValue('fkDataStatus')) {
-                    echo "<option value = $dt_id selected = 'selected'>$dt_desc</option>";
-                }
-                if ($dt_id != $this->GetValue('fkDataStatus')) {
-                     echo "<option value = $dt_id>$dt_desc</option>";
-                 }
-             }
-
-            echo "</select>";
-            echo "<input type = 'hidden' name = 'keyheader' value = $this->TestDataHeader>";
-            echo '</form>
-                </div>';
 
     }
 }
