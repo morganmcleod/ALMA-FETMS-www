@@ -48,12 +48,14 @@ function createIFSpectrumTabs(fc,id,fe,datasetgroup,band){
             defaults:{autoHeight:true},
             bodyStyle:{"background-color":"#ff0000"},
             items:[
-                    {contentEl: 'tab_info'     , title: 'Info', autoLoad:{url: 'getIFspectrumplotdata.php',params:{id:id,fe:fe,g:datasetgroup,fc:fc,tabtype:'1',b:band}}},
+                    {contentEl: 'tab_info'     , title: 'Info', 
+                        autoLoad:{url: 'getIFspectrumplotdata.php',params:{id:id,fe:fe,g:datasetgroup,fc:fc,tabtype:'1',b:band}}},
                     {contentEl: 'tab_spurious' , title:'Spurious Noise'},
                     {contentEl: 'tab_spurious2', title:'Spurious Noise (Expanded Plots)'},
                     {contentEl: 'tab_pwrvar2'  , title:'Power Variation (2 GHz)'},
                     {contentEl: 'tab_pwrvar31' , title:'Power Variation (31 MHz)'},            
-                    {                            title:'Power Variation Full Band', autoLoad:{url:'getIFspectrumplotdata.php' ,params:{id:id,fe:fe,g:datasetgroup,b:band,fc:fc,tabtype:'pwrvarfullband'}}},
+                    {contentEl: 'pwrvarfullband',title:'Power Variation Full Band', 
+                        autoLoad:{url:'getIFspectrumplotdata.php' ,params:{id:id,fe:fe,g:datasetgroup,b:band,fc:fc,tabtype:'pwrvarfullband'}}},
                     {contentEl: 'tab_totpwr'   , title:'Total and In-Band Power'  }
                    
                   ]

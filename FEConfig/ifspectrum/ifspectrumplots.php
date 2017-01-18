@@ -60,7 +60,7 @@ if ($drawPlots) {
     $ifspec -> DeleteProgressFile();
     exit();
 
-} else {
+}
 
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -83,12 +83,10 @@ if ($drawPlots) {
 <link rel="stylesheet" type="text/css" href="../headerbuttons.css">
 
 <title>IF Spectrum</title>
+</head>
 
 <?php
-
     require_once($site_FEConfig . '/jsFunctions.php');
-
-    echo "</head>";
 
     $title = "IF Spectrum Band $band DataSet $dataSetGroup";
     include "header_ifspectrum.php";
@@ -96,21 +94,18 @@ if ($drawPlots) {
     echo "<body id = 'body3' onload='createIFSpectrumTabs($fc, $id, $FEid, $dataSetGroup, $band);' BGCOLOR='#19475E'>";
 
     echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
-
-    echo '
-        <div id="content_inside_main2">
-            <div id="toolbar" style="margin-top:10px;"></div>
-            <div id="tabs1"  ></div>
-            <div id="tab_info" class="x-hide-display"></div>
-            <div id="tab_spurious" class="x-hide-display"></div>
-            <div id="tab_spurious2" class="x-hide-display"></div>
-            <div id="tab_pwrvar2" class="x-hide-display"></div>
-            <div id="tab_pwrvar31" class="x-hide-display"></div>
-            <div id="tab_totpwr" class="x-hide-display"></div>
-            <div id="tab_datasets" class="x-hide-display"></div>
-            <div id="subtab" class="x-hide-display"></div>
-        </div>
-        </body>
-        </html>';
-}
 ?>
+
+<div id="content_inside_main2">
+	<div id="toolbar" style="margin-top:10px;"></div>
+    <div id="tabs1"></div>
+    <div id="tab_info" class="x-hide-display"></div>
+    <div id="tab_spurious" class="x-hide-display"></div>
+    <div id="tab_spurious2" class="x-hide-display"></div>
+    <div id="tab_pwrvar2" class="x-hide-display"></div>
+    <div id="tab_pwrvar31" class="x-hide-display"></div>
+    <div id="pwrvarfullband" class="x-hide-display"></div>
+    <div id="tab_totpwr" class="x-hide-display"></div>
+</div>
+</body>
+</html>

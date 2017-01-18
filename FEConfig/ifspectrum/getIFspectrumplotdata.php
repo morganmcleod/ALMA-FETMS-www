@@ -203,25 +203,6 @@ switch($tabtype){
         echo "<br><br><br></div>";
         break;
 
-    case 'dataset0':
-        //DataSets tab was selected, IF0 subtab was selected.
-        $ifspec -> DisplayDataSetSelector_Form('0');
-        break;
-
-    case 'dataset1':
-        //DataSets tab was selected, IF1 subtab was selected.
-        $ifspec -> DisplayDataSetSelector_Form('1');
-        break;
-
-    case 'dataset2':
-        //DataSets tab was selected, IF2 subtab was selected.
-        $ifspec -> DisplayDataSetSelector_Form('2');
-        break;
-
-    case 'dataset3':
-        //DataSets tab was selected, IF3 subtab was selected.
-        $ifspec -> DisplayDataSetSelector_Form('3');
-        break;
 }
 echo "</div>";
 
