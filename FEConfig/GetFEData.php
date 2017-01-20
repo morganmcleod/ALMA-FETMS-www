@@ -15,10 +15,12 @@ $getqueries=new dbGetQueries;
 if($ctype==100)
 {
     //Front Ends
-    $q = "SELECT keyFrontEnds, SN, Docs, MAX(FE_Config.keyFEConfig) AS keyConfig, FE_Config.TS
-          FROM Front_Ends, FE_Config
-          WHERE Front_Ends.keyFrontEnds = FE_Config.fkFront_Ends
-          GROUP BY SN
+    $q = "SELECT SN, keyFrontEnds, Docs, A.keyFEConfig, A.TS
+          FROM Front_Ends, FE_Config A
+          LEFT OUTER JOIN FE_Config B
+          ON (A.fkFront_Ends = B.fkFront_Ends AND A.keyFEConfig < B.keyFEConfig)
+          WHERE B.keyFEConfig IS NULL
+          AND Front_Ends.keyFrontEnds = A.fkFront_Ends
           ORDER BY SN;";
 
     $rfe = mysql_query($q, $db);
@@ -32,7 +34,7 @@ if($ctype==100)
             $configIds .= ",";
         else
             $configIds = "";
-        $configIds .= $row['keyConfig'];
+        $configIds .= $row['keyFEConfig'];
     };
 
     // Status, location, notes
@@ -59,9 +61,9 @@ if($ctype==100)
         else
             $retJSON .= ",";
 
-        $slKey = array_search($row['keyConfig'], array_column($slnRecs, 'fkFEConfig'));
+        $slKey = array_search($row['keyFEConfig'], array_column($slnRecs, 'fkFEConfig'));
 
-        $retJSON .= "{'config':'" . $row['keyConfig'] . "'";
+        $retJSON .= "{'config':'" . $row['keyFEConfig'] . "'";
         $retJSON .= ",'keyFacility':'40'";
         $retJSON .= ",'SN':'" . $row['SN'] . "'";
         $retJSON .= ",'TS':'" . (($slKey) ? $slnRecs[$slKey]['TS'] : $row['TS']) . "'";
