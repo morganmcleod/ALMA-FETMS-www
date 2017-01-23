@@ -84,12 +84,18 @@ class NoiseTemperature extends TestData_header{
     }
 
     public function DisplayPlots() {
+        $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
+
         echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl1') . "'><br><br>";
-        echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl2') . "'><br><br>";
-        if (($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10)) {
-            echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl5') . "'><br><br>";
+
+        if ($hasSB2)
+            echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl2') . "'><br><br>";
+
+        echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl5') . "'><br><br>";
+
+        if ($hasSB2)
             echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl6') . "'><br><br>";
-        }
+
         echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl3') . "'><br><br>";
         echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl4') . "'><br><br>";
         if ($this->GetValue('Band') == 3) {
@@ -1197,7 +1203,9 @@ class NoiseTemperature extends TestData_header{
         fwrite($f, $this->plot_label_1);
         fwrite($f, $this->plot_label_2);
         // band dependent plotting
-        if ($this->GetValue('Band') == 9 || $this->GetValue('Band') == 10) {
+        $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
+
+        if (!$hasSB2) {
             fwrite($f, "plot  '$this->if_datafile' using 1:2 with lines lt 1 lw 1 title 'Pol0',");
             fwrite($f, "'$this->if_datafile' using 1:4 with lines lt 3 lw 1 title 'Pol1'\r\n");
         } else {
@@ -1254,6 +1262,7 @@ class NoiseTemperature extends TestData_header{
         fwrite($f, $this->plot_label_2);
 
         switch ( $this->GetValue('Band') ) {
+            case 1:
             case 9:
                 fwrite($f, "plot  '$this->avg_datafile' using 1:2 with linespoints lt 1 lw 1 title 'Pol0',");
                 fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1',");
