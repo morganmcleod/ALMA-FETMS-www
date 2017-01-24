@@ -54,8 +54,15 @@ class TestDataTable {
               <th width='10px'>for PAI</th>
               </tr>";
 
-        // These data types are shown in the Health Check tables so don't show in test data table:
-        $excludeDataTypes = '(1,2,3,4,5,6,8,9,10,12,13,14,15,24,39)';
+        // Filter on data status depending on whether this is FE data or component data, and FETMS_CCA_MODE:
+        //"3"	"Cold PAI"        = data which is taken on the FETMS
+        //"7"	"Cartridge PAI"   = data which is delivered with a CCA or WCA
+
+        $dataStatus = '()';
+        if ($this->keyFrontEnd)
+            $dataStatus = '(3)';
+        else
+            $dataStatus = ($this->FETMS_CCA_MODE) ? '(3, 7)' : '(7)';
 
         // Left-hand (LH) table for join is either FE_Config or FE_Components
         $lhTable = ($this->keyFrontEnd) ? "FE_Config" : "FE_Components";
@@ -80,7 +87,7 @@ class TestDataTable {
              TDH.DataSetGroup, TDH.UseForPAI
              FROM $lhTable as LH, TestData_header as TDH, TestData_Types, DataStatus
              WHERE TDH.Band like '$likeBand'
-             AND TDH.fkTestData_Type NOT IN $excludeDataTypes";
+             AND TDH.fkDataStatus IN $dataStatus";
 
         // Either matching keyFrontEnd or a particular Component serial number...
         if ($this->keyFrontEnd)
