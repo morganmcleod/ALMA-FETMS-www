@@ -40,7 +40,7 @@ function makeOutputDirectory($band, $deleteContents = false) {
 }
 
 $q = "select Band, SN, max(keyId) from FE_Components
-where fkFE_ComponentType = 11 and Band >= 4 and Band <= 10
+where fkFE_ComponentType = 11 and Band >= 7 and Band <= 9
 group by Band, SN;";
 
 $r = @mysql_query($q, site_getDbConnection());
