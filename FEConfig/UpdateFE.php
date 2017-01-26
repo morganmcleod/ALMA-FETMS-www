@@ -59,17 +59,8 @@ $feconfig = $fe->feconfig->keyId;
 $fesn = $fe->GetValue('SN');
 $title="Front End-$fesn";
 
-if (strpos($_SERVER['HTTP_USER_AGENT'],'MSIE') > 0){
-    //In IE, the header is pushed down from the top for some reqason.
-    //Until I can figure out why, this code will push it back up.
-    echo "<div style='margin-top:-60px;'>";
-}
-
 Include "header.php";
 
-if (strpos($_SERVER['HTTP_USER_AGENT'],'MSIE') > 0){
-    echo "</div>";
-}
 ?>
 <body onload="javascript:showsubform(<?php echo $feconfig . "," . $fc; ?>)">
     <div id="wrap">
@@ -84,9 +75,9 @@ if (strpos($_SERVER['HTTP_USER_AGENT'],'MSIE') > 0){
         <div id="win_req_in">
         </div>
     </div>
-</body>
 <?php
 Include "footer.php";
 ?>
+</body>
 </html>
 

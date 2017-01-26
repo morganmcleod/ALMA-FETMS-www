@@ -40,7 +40,7 @@ hr {
 /* for main page */
 #wrap{
         height: auto !important;    
-	    min-height:100%;	
+	    min-height:90%;	
 	    margin: 0 auto -50px;
 	    /* background-color:#E0E0E0 ;  */
 	    background-color:#19475E; 
@@ -355,7 +355,7 @@ li.listbottom a:hover{
        padding-left:10px;
        padding-right:10px;
        margin-bottom: 0px;
-       width: 700px;
+       /*width: 550px;*/
 }
 #header h1 span {
        color: #fff;

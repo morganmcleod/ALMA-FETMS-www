@@ -28,8 +28,10 @@ include "header.php";
 
 $getqueries=new dbGetQueries;
 $addqueries=new dbInsertQueries;
+$status_block = "";
+$location_block = "";
 
-$status_query=$getqueries->getStatusLocation(StatusTypes);
+$status_query=$getqueries->getStatusLocation('StatusTypes');
 while($stat_rs=mysql_fetch_array($status_query))
 {
 	$name=$stat_rs['Status'];
@@ -37,7 +39,7 @@ while($stat_rs=mysql_fetch_array($status_query))
 	$status_block .= "<option value=\"$keystat\">$name</option>";
 }
 
-$location_query=$getqueries->getStatusLocation(Locations);
+$location_query=$getqueries->getStatusLocation('Locations');
 while($loc_rs=mysql_fetch_array($location_query))
 {
 	$location=$loc_rs['Description'];

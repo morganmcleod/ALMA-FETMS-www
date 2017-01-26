@@ -34,41 +34,25 @@
 
 <title>Add Components</title>
 </head>
+<body onload="javascript:AddComponents();">
 
 <?php
 $title="Add Components";
-
-
-if (strpos($_SERVER['HTTP_USER_AGENT'],'MSIE') > 0){
-    //In IE, the header is pushed down from the top for some reqason.
-    //Until I can figure out why, this code will push it back up.
-    echo "<div style='margin-top:-60px;'>";
-}
-
 include "header.php";
-
-if (strpos($_SERVER['HTTP_USER_AGENT'],'MSIE') > 0){
-    echo "</div>";
-}
-
 ?>
-
-    <div id="wrap" >
-
-        <body onload="javascript:AddComponents();">
-
-            <form action='AddComponents.php' method='post' name="addComponents" id="addComponents">
-                <input type=hidden name="submitornot" id="submitornot" value=0>
-                <div id="spe">
-                    <div id="west-content" class="x-hidden">
-                        <div id="Description">
-                        </div>
+	<div id="wrap">
+        <form action='AddComponents.php' method='post' name="addComponents" id="addComponents">
+            <input type=hidden name="submitornot" id="submitornot" value=0>
+            <div id="spe">
+                <div id="west-content" class="x-hidden">
+                    <div id="Description">
                     </div>
                 </div>
-            </form>
-        </body>
-    </div>
+            </div>
+        </form>
+	</div>
 <?php
 include "footer.php";
 ?>
+</body>
 </html>
