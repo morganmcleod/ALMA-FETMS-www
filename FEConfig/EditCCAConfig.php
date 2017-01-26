@@ -15,7 +15,9 @@
 
 <title>EDIT CCA Configuration</title>
 </head>
+
 <?php
+
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.cca.php');
 require_once('HelperFunctions.php');
@@ -33,10 +35,13 @@ $title="Edit CCA " . $cca->GetValue('Band') . "-" . $cca->GetValue('SN') . " Con
 
 $feconfig = $cca->FEConfig;
 $fesn = $cca->FESN;
+$band = $cca->GetValue('Band');
+
+echo "<body id = 'body3' onload='createCompTabs(" . $band . ", 20, " . $comp_key . ")' BGCOLOR='#19475E'>";
 
 include "header.php";
 
-if (isset($_REQUEST['submit'])){
+if (isset($_REQUEST['submit'])) {
     //CCA, update configuration
 
     echo "UPDATED<br>";
@@ -57,9 +62,6 @@ if (isset($_REQUEST['submit'])){
     //Update sln info for component and front end
     $dbops->UpdateStatusLocationAndNotes_FE($cca->FEfc, '', '',$updatestring,$feconfig, $feconfig, ' ','');
 }
-?>
-<body id = 'body3' onload="createCompTabs(<?php echo $cca->GetValue('Band'); ?>,20,<?php echo $comp_key; ?>)" BGCOLOR="#19475E">
-<?php
 echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
 echo "
     <div id='sidebar2' >
@@ -91,11 +93,9 @@ echo "
 
 </form>
 <br><br>
-</body>
-
 <?php
-//include "footer.php";
+// include "footer.php";
 ?>
-
+</body>
 </html>
 

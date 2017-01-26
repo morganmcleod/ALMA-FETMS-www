@@ -2260,70 +2260,72 @@ public function Display_uploadform_SingleCSVfile() {
             $sbmax = 1;
         }
         $pcount = 0;
-        for ($pol=0;$pol<=1;$pol++) {
-            for ($sb=1;$sb<=$sbmax;$sb++) {
-            echo "
-                    <div style= 'width: 500px'>
-                    <table id = 'table6' border = '1'>";
+        if (isset($this->PreampParams[0])) {
+            for ($pol=0;$pol<=1;$pol++) {
+                for ($sb=1;$sb<=$sbmax;$sb++) {
+                echo "
+                        <div style= 'width: 500px'>
+                        <table id = 'table6' border = '1'>";
 
-                echo "<tr class='alt'><th colspan = '11'>
-                            Preamp Pol ".$pol."
-                            SB ".$sb." <i>
-                            (";
+                    echo "<tr class='alt'><th colspan = '11'>
+                                Preamp Pol ".$pol."
+                                SB ".$sb." <i>
+                                (";
 
-                if ($this->PreampParams[$pcount]->keyId != "") {
-                echo $this->PreampParams[$pcount]->GetValue('TS');
+                    if ($this->PreampParams[$pcount]->keyId != "") {
+                        echo $this->PreampParams[$pcount]->GetValue('TS');
+                    }
+
+                    echo ", CCA ". $this->GetValue('Band')."-".$this->GetValue('SN').")</i>
+
+                                </th>
+                            </tr>";
+
+                    echo "<th>LO (GHz)</th>
+                            <th>VD1</th>
+                            <th>VD2</th>
+                            <th>VD3</th>
+                            <th>ID1</th>
+                            <th>ID2</th>
+                            <th>ID3</th>
+                            <th>VG1</th>
+                            <th>VG2</th>
+                            <th>VG3</th>
+                          </tr>";
+                    $count= 0;
+                    for ($i=0; $i<count($this->PreampParams); $i++) {
+                    //while($row = @mysql_fetch_array($r)) {
+                        if (($this->PreampParams[$i]->GetValue('Pol') == $pol)
+                            && ($this->PreampParams[$i]->GetValue('SB') == $sb)) {
+
+
+                        if ($count % 2 == 0) {
+                            echo "<tr>";
+                        }
+                        else{
+                            echo "<tr class = 'alt'>";
+                        }
+                        echo "
+                            <td>".$this->PreampParams[$i]->GetValue('FreqLO')."</td>
+                            <td><input name = 'PreampVD1_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VD1')."'></input></td>
+                            <td><input name = 'PreampVD2_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VD2')."'></input></td>
+                            <td><input name = 'PreampVD3_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VD3')."'></input></td>
+                            <td><input name = 'PreampID1_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('ID1')."'></input></td>
+                            <td><input name = 'PreampID2_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('ID2')."'></input></td>
+                            <td><input name = 'PreampID3_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('ID3')."'></input></td>
+                            <td><input name = 'PreampVG1_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VG1')."'></input></td>
+                            <td><input name = 'PreampVG2_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VG2')."'></input></td>
+                            <td><input name = 'PreampVG3_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VG3')."'></input></td>
+                        </tr>";
+                        $count+=1;
+                            }
+                    }// end for count preampparams
+                        //}//end check for numrows
+                    echo "</table></div><br>";
+                    $pcount += 1;
                 }
 
-                echo ", CCA ". $this->GetValue('Band')."-".$this->GetValue('SN').")</i>
-
-                            </th>
-                        </tr>";
-
-                echo "<th>LO (GHz)</th>
-                        <th>VD1</th>
-                        <th>VD2</th>
-                        <th>VD3</th>
-                        <th>ID1</th>
-                        <th>ID2</th>
-                        <th>ID3</th>
-                        <th>VG1</th>
-                        <th>VG2</th>
-                        <th>VG3</th>
-                      </tr>";
-                $count= 0;
-                for ($i=0; $i<count($this->PreampParams); $i++) {
-                //while($row = @mysql_fetch_array($r)) {
-                    if (($this->PreampParams[$i]->GetValue('Pol') == $pol)
-                        && ($this->PreampParams[$i]->GetValue('SB') == $sb)) {
-
-
-                    if ($count % 2 == 0) {
-                        echo "<tr>";
-                    }
-                    else{
-                        echo "<tr class = 'alt'>";
-                    }
-                    echo "
-                        <td>".$this->PreampParams[$i]->GetValue('FreqLO')."</td>
-                        <td><input name = 'PreampVD1_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VD1')."'></input></td>
-                        <td><input name = 'PreampVD2_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VD2')."'></input></td>
-                        <td><input name = 'PreampVD3_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VD3')."'></input></td>
-                        <td><input name = 'PreampID1_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('ID1')."'></input></td>
-                        <td><input name = 'PreampID2_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('ID2')."'></input></td>
-                        <td><input name = 'PreampID3_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('ID3')."'></input></td>
-                        <td><input name = 'PreampVG1_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VG1')."'></input></td>
-                        <td><input name = 'PreampVG2_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VG2')."'></input></td>
-                        <td><input name = 'PreampVG3_$i' size = '5' value = '".$this->PreampParams[$i]->GetValue('VG3')."'></input></td>
-                    </tr>";
-                    $count+=1;
-                        }
-                }// end for count preampparams
-                    //}//end check for numrows
-                echo "</table></div><br>";
-                $pcount += 1;
             }
-
         }
         echo "<br><br><br><br><br><br><br><br><br><br><br>.<br>";
     }
@@ -2339,7 +2341,7 @@ public function Display_uploadform_SingleCSVfile() {
 
 
         $ts = "";
-        if ($this->TempSensors[1]->keyId != '') {
+        if (isset($this->TempSensors[1]) && $this->TempSensors[1]->keyId != '') {
             $ts = $this->TempSensors[1]->GetValue('TS') . ",";
         }
 

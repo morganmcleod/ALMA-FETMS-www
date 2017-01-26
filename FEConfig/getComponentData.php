@@ -7,7 +7,7 @@ require_once($site_classes . '/class.fecomponent.php');
 require_once($site_classes . '/class.wca.php');
 require_once("dbGetQueries.php");
 
-$fc=(isset($_REQUEST['fc'])) ? $_REQUEST['fc'] : '';
+$fc=(isset($_REQUEST['fc'])) ? $_REQUEST['fc'] : '40';
 $band=(isset($_POST['band'])) ? $_POST['band'] : '';
 $comp_type=(isset($_POST['type'])) ? $_POST['type'] : '';
 $selected_key=(isset($_POST['config'])) ? $_POST['config'] : '';
