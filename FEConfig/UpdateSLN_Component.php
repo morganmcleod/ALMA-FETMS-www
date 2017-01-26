@@ -24,7 +24,7 @@ $c->Initialize_FEComponent($keyId,$fc);
 $feconfig = $c->FEConfig;
 $fesn=$c->FESN;
 
-$title.=$c->ComponentType->GetValue('Description');
+$title = $c->ComponentType->GetValue('Description');
 if ($c->GetValue('Band') > 0){
 	$title.= " Band" . $c->GetValue('Band');
 }

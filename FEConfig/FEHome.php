@@ -33,7 +33,7 @@
 ?>
 
 <form action='<?php echo $where ?>' method='post' name='fehome' id='fehome'>
-<div style= 'padding-left: 2em; padding-top: 1em; width:900px; background-color: #19475E;'>
+<div style= 'padding-left: 2em; padding-top: 20px; width:900px; background-color: #19475E;'>
 
 <div id="toolbar" style="margin-top:10px;"></div>
 <div id="db-grid"></div>

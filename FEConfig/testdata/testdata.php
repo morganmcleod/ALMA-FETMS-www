@@ -9,9 +9,6 @@
 <script src="../../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
 <script src="../../ext/ext-all.js" type="text/javascript"></script>
 <script src="../dbGrid.js" type="text/javascript"></script>
-<!-- <script type="text/javascript" src="../spin.js"></script> -->
-
-<body style="background-color: #19475E">
 
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
@@ -21,7 +18,6 @@ require_once($site_classes . '/class.cca_image_rejection.php');
 require_once($site_classes . '/class.finelosweep.php');
 require_once($site_classes . '/class.noisetemp.php');
 require_once($site_classes . '/class.wca.php');
-
 
 $fc = $_REQUEST['fc'];
 
@@ -36,6 +32,7 @@ $td->Initialize_TestData_header($TestData_header_keyId, $fc);
 $td->TestDataHeader = $TestData_header_keyId;
 
 echo "<title>" . $td->TestDataType . "</title></head>";
+echo "<body style='background-color: #19475E'>";
 
 if ($td->GetValue('fkTestData_Type') == 55) {
     $url = $rootdir_url . "FEConfig/bp/bp.php";
