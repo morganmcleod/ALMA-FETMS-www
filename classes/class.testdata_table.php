@@ -56,13 +56,14 @@ class TestDataTable {
 
         // Filter on data status depending on whether this is FE data or component data, and FETMS_CCA_MODE:
         //"3"	"Cold PAI"        = data which is taken on the FETMS
+        //"4"   "Health Check"    = warm and cold health check data taken on FETMS
         //"7"	"Cartridge PAI"   = data which is delivered with a CCA or WCA
 
         $dataStatus = '()';
         if ($this->keyFrontEnd)
             $dataStatus = '(3)';
         else
-            $dataStatus = ($this->FETMS_CCA_MODE) ? '(3, 7)' : '(7)';
+            $dataStatus = ($this->FETMS_CCA_MODE) ? '(3, 4, 7)' : '(7)';
 
         // Left-hand (LH) table for join is either FE_Config or FE_Components
         $lhTable = ($this->keyFrontEnd) ? "FE_Config" : "FE_Components";
