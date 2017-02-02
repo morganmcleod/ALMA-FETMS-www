@@ -317,7 +317,7 @@ class IFSpectrum_impl extends TestData_header {
             }
             echo "</tr>";
 
-            $maxVar = $this->specs['pwr'];
+            $maxVar = $this->specs['powerVarFullBand'];
             $okColor = $this->specs['fontcolor'];
             $badColor = $this->specs["fontcolor$maxVar"];
 
@@ -499,12 +499,12 @@ class IFSpectrum_impl extends TestData_header {
             $typeURL = 'powervar_31MHz_url';
             $fWindow = 0.031;   // Window size GHz.
             $winText = '31 MHz';
-            $spec = $this->specs['spec_value_var31MHz'];    //1.35;
+            $spec = $this->specs['powerVar31MHz'];    //1.35;
         } else {
             $typeURL = 'powervar_2GHz_url';
             $fWindow = 2.0;     // Window size GHz.
             $winText = '2 GHz';
-            $spec = $this->specs['spec_value'];
+            $spec = $this->specs['powerVar2GHz'];
         }
         $progress = $progressStart;
 
