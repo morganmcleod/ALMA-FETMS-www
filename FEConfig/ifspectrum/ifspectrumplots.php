@@ -9,30 +9,16 @@ $fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '';
 $FEid = isset($_REQUEST['fe']) ? $_REQUEST['fe'] : '';
 $band = isset($_REQUEST['b']) ? $_REQUEST['b'] : '';
 $dataSetGroup = isset($_REQUEST['g']) ? $_REQUEST['g'] : '';
-$id = isset($_REQUEST['id']) ? $_REQUEST['id'] : '';
+$TDHid = isset($_REQUEST['id']) ? $_REQUEST['id'] : '0';
 $drawPlots = isset($_REQUEST['d']) ? $_REQUEST['d'] : 0;
 
-if ($dataSetGroup == '' || $id != '') {
-    // Get DataSet Group from testdata key ID
-    // TODO:  move into database library.
-    $q = "SELECT `DataSetGroup`
-    FROM `TestData_header`
-    WHERE `keyId` = $id";
-    $r = @mysql_query($q,$db);
-    $dataSetGroup = @mysql_result($r,0,0);
-}
-
-if ($id == '') {
-    // a non-empty ID is required for the javascript call to createIFSpectrumTabs() below.
-    $id = '0';
-}
-
+// Make a new IF Spectrum object
 $ifspec = new IFSpectrum_impl();
-$ifspec -> Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $fc);
+$ifspec -> Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $TDHid);
 
-$feconfig = $ifspec -> FrontEnd -> feconfig_id_latest;
-$fesn = $ifspec -> FrontEnd -> GetValue('SN');
-$ccasn = $ifspec -> FrontEnd -> ccas[$band] -> GetValue('SN');
+// Use $dataSetGroup from the IFSpectrum_impl if we don't have it yet.
+if (!$dataSetGroup)
+    $dataSetGroup = $ifspec->getDataSetGroup();
 
 if ($drawPlots) {
     // If drawing plots, create a file for the progress page to use:
@@ -44,7 +30,7 @@ if ($drawPlots) {
 
     /* close out the server process, release to the client */
     header ('Content-Length: 0');
-    header("location: $rootdir_url/FEConfig/pbar/status.php?lf=$ifspec->progressfile");
+    header("location: $rootdir_url/FEConfig/pbar/status.php?lf=" . $ifspec -> getProgressFile());
     ob_end_flush();
     flush();
 
@@ -91,7 +77,7 @@ if ($drawPlots) {
     $title = "IF Spectrum Band $band DataSet $dataSetGroup";
     include "header_ifspectrum.php";
 
-    echo "<body id = 'body3' onload='createIFSpectrumTabs($fc, $id, $FEid, $dataSetGroup, $band);' BGCOLOR='#19475E'>";
+    echo "<body id = 'body3' onload='createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band);' BGCOLOR='#19475E'>";
 
     echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
 ?>

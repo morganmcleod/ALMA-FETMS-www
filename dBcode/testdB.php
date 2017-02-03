@@ -28,7 +28,6 @@ while($rowTDH = @mysql_fetch_Array($rTDH)){
 	echo $rowTDH['keyId'];
 	$TDHkeys[$count] = $rowTDH['keyId'];
 	$TS = $rowTDH['TS'];
-	//         $this->logger->WriteLogFile('Initialize_IFSpectrum: TDHkey=' . $this->TDHkeys[$count] . ' TS=' . $this->TS);
 	$count += 1;
 }
 echo count($TDHkeys), $TS;

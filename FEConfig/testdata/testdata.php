@@ -233,6 +233,10 @@ if (($td->GetValue('PlotURL') == '')) {
             // don't draw plots for health check tabular data
             break;
 
+        case 7:
+            //Don't automatically draw IF Spectrum
+            break;
+
         case 57:
             //Don't automatically draw LO Lock test
             break;

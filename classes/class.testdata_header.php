@@ -17,14 +17,15 @@ class TestData_header extends GenericTable {
     var $FrontEnd;
     var $Component;
     var $fe_keyId;
-    var $NoiseFloorHeader;
-    var $TestDataHeader;    //TODO:  Not used?
+//     var $NoiseFloorHeader;   //TODO: Removed this for 1.0.12.  Doesn't belong in this class!
+    var $TestDataHeader;        //TODO: Being set after Initialize by calling code!
     var $swversion;
     var $fc; //facility
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
-        $this->swversion = "1.0.11";
+        $this->swversion = "1.0.12";
+        // 1.0.12 remove $NoiseFloorHeader
         // 1.0.11 delete dead code.
         // 1.0.10 fix LO Lock Test: Show Raw Data displaying results from multiple TDH.
         // 1.0.9 fixed instantiating DataPlotter in DrawPlot().
@@ -70,38 +71,38 @@ class TestData_header extends GenericTable {
     }
 
     public function RequestValues_TDH() {
-        if ($this->GetValue('fkTestData_Type') == 7) {
-            //IF Spectrum, Get noisefloor key
-            $qnf = "SELECT MIN(fkNoiseFloorHeader) FROM IFSpectrum_SubHeader
-                    WHERE fkHeader = $this->keyId
-                    AND keyFacility = ". $this->GetValue('keyFacility') ."
-                    LIMIT 1;";
-            $rnf = @mysql_query($qnf,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-            $this->NoiseFloorHeader = @mysql_result($rnf,0);
-        }
+//         if ($this->GetValue('fkTestData_Type') == 7) {
+//             //IF Spectrum, Get noisefloor key
+//             $qnf = "SELECT MIN(fkNoiseFloorHeader) FROM IFSpectrum_SubHeader
+//                     WHERE fkHeader = $this->keyId
+//                     AND keyFacility = ". $this->GetValue('keyFacility') ."
+//                     LIMIT 1;";
+//             $rnf = @mysql_query($qnf,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+//             $this->NoiseFloorHeader = @mysql_result($rnf,0);
+//         }
 
         if (isset($_REQUEST['fkDataStatus'])) {
             $this->SetValue('fkDataStatus', $_REQUEST['fkDataStatus']);
             $this->Update();
         }
 
-        if (isset($_REQUEST['nfheader'])) {
-            $this->NoiseFloorHeader = $_REQUEST['nfheader'];
-            //Update noisefloor values with selected value
-            $qifs = "SELECT keyId FROM IFSpectrum_SubHeader
-                   WHERE fkHeader = $this->keyId
-                   AND keyFacility = ".$this->GetValue('keyFacility').";";
+//         if (isset($_REQUEST['nfheader'])) {
+//             $this->NoiseFloorHeader = $_REQUEST['nfheader'];
+//             //Update noisefloor values with selected value
+//             $qifs = "SELECT keyId FROM IFSpectrum_SubHeader
+//                    WHERE fkHeader = $this->keyId
+//                    AND keyFacility = ".$this->GetValue('keyFacility').";";
 
-            $rifs = @mysql_query($qifs,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+//             $rifs = @mysql_query($qifs,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
 
-            while ($rowifs = @mysql_fetch_array($rifs)) {
-                $ifsub = new GenericTable();
-                $ifsub->Initialize('IFSpectrum_SubHeader',$rowifs[0],'keyId',$this->GetValue('keyFacility'),'keyFacility');
-                $ifsub->SetValue('fkNoiseFloorHeader', $this->NoiseFloorHeader);
-                $ifsub->Update();
-                unset($ifsub);
-            }
-        }
+//             while ($rowifs = @mysql_fetch_array($rifs)) {
+//                 $ifsub = new GenericTable();
+//                 $ifsub->Initialize('IFSpectrum_SubHeader',$rowifs[0],'keyId',$this->GetValue('keyFacility'),'keyFacility');
+//                 $ifsub->SetValue('fkNoiseFloorHeader', $this->NoiseFloorHeader);
+//                 $ifsub->Update();
+//                 unset($ifsub);
+//             }
+//         }
         if (isset($_REQUEST['Notes'])) {
             $this->SetValue('Notes',$_REQUEST['Notes']);
             parent::Update();
@@ -321,10 +322,6 @@ class TestData_header extends GenericTable {
             $plt->Plot_CCA_IVCurve();
             break;
         case "7":
-            //IFSpectrum
-//            $ifspec = new IFSpectrum();
-//            $ifspec->Initialize_IFSpectrum($this->keyId,$this->GetValue('keyFacility'));
-//            $ifspec->GeneratePlots();
             break;
         case "56":
             $plt->Plot_PolAngles();

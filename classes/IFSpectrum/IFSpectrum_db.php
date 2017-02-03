@@ -223,6 +223,37 @@ class IFSpectrum_db {
 	}
 
 	/**
+	 * Helper function that finds TestData_Header keys for the given parameters.
+	 * @param int $DataSetGroup
+	 * @param int $Band
+	 * @param int $componentId
+	 *
+	 * @return array of TDH keys
+	 *
+	 * Side-effect:  sets $this->lastTS to the timestamp header with the max keyID.
+	 *  Retrieve it using getLastTS()
+	 */
+	public function getTestDataHeaderKeysForComp($componentId, $band, $dataSetGroup) {
+	    $q = "SELECT TestData_header.keyId, TestData_header.TS
+	    FROM TestData_header
+	    WHERE TestData_header.DataSetGroup = $dataSetGroup
+	    AND TestData_header.fkTestData_Type = 7
+	    AND TestData_header.Band = $band
+	    AND TestData_header.fkFE_Components = $componentId
+	    ORDER BY TestData_header.keyId ASC";
+
+	    $r = $this->run_query($q);
+
+	    $tdh = array();
+	    $TS = 0;
+	    while ($row = @mysql_fetch_array($r)) {
+	        $tdh[] = $row[0];
+	        $this->lastTS = $row[1];
+	    }
+	    return $tdh;
+	}
+
+	/**
 	 * Retrieve the newest timestamp seen in the last call to getTestDataHeaderKeys()
 	 * @return string TS
 	 */
@@ -342,7 +373,7 @@ class IFSpectrum_db {
 	    $PV3 = 0;    // IF channel 3 variation
 	    $outputRow = false;
 	    $noLSB = ($band == 1 || $band == 9 || $band == 10);
-	    
+
 		// loop on results sorted by LO, IFChannel
 	    $r = $this->run_query($q);
 	    while ($row = @mysql_fetch_array($r)) {

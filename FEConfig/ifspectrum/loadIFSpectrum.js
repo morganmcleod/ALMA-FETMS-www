@@ -24,7 +24,7 @@ function createIFSpectrumTabs(fc,id,fe,datasetgroup,band){
                 icon:'../icons/application_view_gallery.png',
                 handler: function() {
                 //When this button is pressed, open ifspectrumplots.php. The "d=1" parameter tells it to draw plots.
-                 window.location = '../ifspectrum/ifspectrumplots.php?d=1&g=' + datasetgroup + '&fc=' + fc + '&fe=' + fe + '&b=' + band;
+                 window.location = '../ifspectrum/ifspectrumplots.php?d=1&g=' + datasetgroup + '&fc=' + fc + '&id=' + id + '&fe=' + fe + '&b=' + band;
              	}
             }
             ,{
