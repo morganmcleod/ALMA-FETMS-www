@@ -169,17 +169,17 @@ class DPdb{ //extends DBRetrieval{
 			MAX(power_pol0_chA),MAX(power_pol0_chB),
 			MAX(power_pol1_chA),MAX(power_pol1_chB)
 			FROM TEST_Workmanship_Amplitude
-			WHERE fkHeader = $TestData_Id AND fkFacility = $fc;";
+			WHERE fkHeader = $TestData_Id;";
 		} elseif ($occur==3) {
 			$q = "SELECT MIN(tilt), MAX(tilt), MIN(power_pol0_chA),
 			MIN(power_pol1_chA), MAX(power_pol0_chA), MAX(power_pol1_chA)
 			FROM TEST_Workmanship_Amplitude
-			WHERE fkHeader = $TestData_Id AND fkFacility = $fc;";
+			WHERE fkHeader = $TestData_Id;";
 		} elseif ($occur==4) {
 			$q = "SELECT tilt,power_pol0_chA,power_pol0_chB,
 			power_pol1_chA,power_pol1_chB, TS
 			FROM TEST_Workmanship_Amplitude
-			WHERE fkHeader = $TestData_Id AND fkFacility = $fc ORDER BY TS ASC;";
+			WHERE fkHeader = $TestData_Id ORDER BY TS ASC;";
 		} elseif ($occur==5) {
 			$q = "SELECT MIN(tilt), MAX(tilt)
 			FROM TEST_Workmanship_Phase

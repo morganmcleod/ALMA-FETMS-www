@@ -24,7 +24,8 @@ class TestData_header extends GenericTable {
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
-        $this->swversion = "1.0.11";
+        $this->swversion = "1.0.12";
+        // 1.0.12 Cleanup testdata.php
         // 1.0.11 delete dead code.
         // 1.0.10 fix LO Lock Test: Show Raw Data displaying results from multiple TDH.
         // 1.0.9 fixed instantiating DataPlotter in DrawPlot().
@@ -35,7 +36,8 @@ class TestData_header extends GenericTable {
 
         $this->fc = $in_fc;
         parent::Initialize("TestData_header",$in_keyId,"keyId",$in_fc,'keyFacility');
-
+        $this->TestDataHeader = $in_keyId;
+        
         $q = "SELECT Description, TestData_TableName FROM TestData_Types
               WHERE keyId = " . $this->GetValue('fkTestData_Type') . ";";
         $r = @mysql_query($q,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
@@ -133,6 +135,105 @@ class TestData_header extends GenericTable {
         echo "</table>";
     }
 
+    public function Display_TestDataMain() {
+    
+    	switch ($this->GetValue('fkTestData_Type')) {
+    		case 27:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$this->Display_PhaseStabilitySubHeader();
+    			break;
+    
+    		case 7:
+    			//IF Spectrum
+    			break;
+    
+    		case 56:
+    			//Pol Angles
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$this->Display_Data_PolAngles();
+    			break;
+    
+    		case 57:
+    			//LO Lock Test
+    			$this->Display_DataSetNotes();
+    			echo "<br>";
+    			break;
+    
+    		case 58:
+    			//Noise Temperature
+    			$this->Display_DataSetNotes();
+    			echo "<br>";
+    			break;
+    
+    		case 50:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$this->Display_Data_Cryostat(1);
+    			break;
+    		case 52:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$this->Display_Data_Cryostat(3);
+    			break;
+    		case 53:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$this->Display_Data_Cryostat(2);
+    			break;
+    		case 54:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$this->Display_Data_Cryostat(4);
+    			break;
+    		case 25:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$this->Display_Data_Cryostat(5);
+    			break;
+    		case 45:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$wca = new WCA();
+    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'), WCA::INIT_ALL);
+    			$wca->Display_AmplitudeStability();
+    			break;
+    		case 44:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$wca = new WCA();
+    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'), WCA::INIT_ALL);
+    			$wca->Display_AMNoise();
+    			break;
+    		case 46:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$wca = new WCA();
+    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'), WCA::INIT_ALL);
+    			$wca->Display_OutputPower();
+    			break;
+    		case 47:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$wca = new WCA();
+    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'), WCA::INIT_ALL);
+    			$wca->Display_PhaseNoise();
+    			break;
+    		case 48:
+    			$this->Display_DataForm();
+    			echo "<br>";
+    			$wca = new WCA();
+    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->GetValue('keyFacility'), WCA::INIT_ALL);
+    			$wca->Display_PhaseNoise();
+    			break;
+    		default:
+    			$this->Display_DataForm();
+    			break;
+    	}
+    }
+ 
+    
     public function Display_DataForm() {
         echo "<div style='width:300px'>";
         echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
@@ -277,6 +378,40 @@ class TestData_header extends GenericTable {
         echo "</table>";
 
         //echo "</div>";
+    }
+    
+    public function AutoDrawThis() {
+    	// return true if this plot type should be automatically drawn on page load.
+    	switch($this->GetValue('fkTestData_Type')) {
+    		case 1:		// health check tabular data
+    		case 2:
+    		case 3:
+    		case 4:
+    		case 5:
+    		case 8:
+    		case 9:
+    		case 10:
+    		case 12:
+    		case 13:
+    		case 14:
+    		case 15:
+    
+    		case 57: 	// LO lock test
+    		case 58: 	// Noise temoerature
+    		case 59:	// fine LO sweep
+    
+    		case 44:	// WCA cartridge PAI plots
+    		case 45:
+    		case 46:
+    		case 47:
+    		case 48:
+    
+    		case 42:	//CCA cartridge PAI plots
+    			return false;
+    
+    		default:
+    			return true;
+    	}
     }
 
     public function DrawPlot() {

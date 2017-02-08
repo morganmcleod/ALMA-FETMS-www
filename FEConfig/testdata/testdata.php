@@ -8,7 +8,7 @@
 <link type="text/css" href="../../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
 <script src="../../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
 <script src="../../ext/ext-all.js" type="text/javascript"></script>
-<script src="../dbGrid.js" type="text/javascript"></script>
+<!-- <script src="../dbGrid.js" type="text/javascript"></script> -->
 
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
@@ -19,17 +19,19 @@ require_once($site_classes . '/class.finelosweep.php');
 require_once($site_classes . '/class.noisetemp.php');
 require_once($site_classes . '/class.wca.php');
 
-$fc = $_REQUEST['fc'];
+$fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '40';
+$drawplot = isset($_REQUEST['drawplot']) ? $_REQUEST['drawplot'] : false;
+$keyHeader = isset($_REQUEST['keyheader']) ? $_REQUEST['keyheader'] : false;
+$showrawdata = isset($_REQUEST['showrawdata']) ? $_REQUEST['showrawdata'] : false;
 
-if (isset($_REQUEST['drawplot']) && $_REQUEST['drawplot'] == 1 ) {
-    //Show a spinner while plots are being drawn.
-    include($site_FEConfig . '/spin.php');
-}
-
-$TestData_header_keyId = $_REQUEST['keyheader'];
+if (!$keyHeader)
+	exit();		// nothing to do.
+	
 $td = new TestData_header();
-$td->Initialize_TestData_header($TestData_header_keyId, $fc);
-$td->TestDataHeader = $TestData_header_keyId;
+$td->Initialize_TestData_header($keyHeader, $fc);
+
+if (!$td->GetValue('PlotURL') && $td->AutoDrawThis())
+	$drawplot = true;
 
 echo "<title>" . $td->TestDataType . "</title></head>";
 echo "<body style='background-color: #19475E'>";
@@ -41,7 +43,7 @@ if ($td->GetValue('fkTestData_Type') == 55) {
          '&id=' . $td->keyId .
          '&band=' . $td->GetValue('Band') .
          '&keyconfig=' . $td->GetValue('fkFE_Config') .
-         '&keyheader=' . $TestData_header_keyId . '">';
+         '&keyheader=' . $keyHeader . '">';
     exit();  // don't load the rest of this page.
 }
 
@@ -209,222 +211,69 @@ switch ($td->GetValue('fkTestData_Type')) {
 
 $td->RequestValues_TDH();
 
-if (isset($_REQUEST['drawplot']) && ($_REQUEST['drawplot'] == 1 )){
-    $td->DrawPlot();
-    $refurl = "testdata.php?keyheader=$TestData_header_keyId";
+if ($drawplot){
+	//Show a spinner while plots are being drawn.
+	include($site_FEConfig . '/spin.php');
+	$td->DrawPlot();
+    $refurl = "testdata.php?keyheader=$keyHeader";
     $refurl .= "&fc=$fc";
     echo '<meta http-equiv="Refresh" content="1;url='.$refurl.'">';
 }
 
-if (($td->GetValue('PlotURL') == '')) {
-    switch($td->GetValue('fkTestData_Type')) {
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 8:
-        case 9:
-        case 10:
-        case 12:
-        case 13:
-        case 14:
-        case 15:
-            // don't draw plots for health check tabular data
-            break;
-
-        case 57:
-            //Don't automatically draw LO Lock test
-            break;
-        case 58:
-            //Don't automatically draw noise temperature
-            break;
-        case 59:
-            //Don't automatically draw fine LO sweep
-            break;
-        case 44:
-        case 45:
-        case 46:
-        case 47:
-        case 48:
-            //Don't automatically draw WCA cartridge PAI plots
-            break;
-
-        case 42:
-            //Don't automatically draw CCA cartridge PAI plots
-            break;
-
-        default:
-            //Show a spinner while plots are being drawn.
-            include($site_FEConfig . '/spin.php');
-            $td->DrawPlot();
-            $refurl = "testdata.php?keyheader=$TestData_header_keyId";
-            $refurl .= "&fc=$fc";
-            echo '<meta http-equiv="Refresh" content="1;url='. $refurl .'">';
-            break;
-    }
-}
-
-
-function Display_TestDataMain($td) {
-
-    switch ($td->GetValue('fkTestData_Type')) {
-        case 27:
-            $td->Display_DataForm();
-            echo "<br>";
-            $td->Display_PhaseStabilitySubHeader();
-            break;
-
-        case 7:
-            //IF Spectrum
-            break;
-
-        case 56:
-            //Pol Angles
-            $td->Display_DataForm();
-            echo "<br>";
-            $td->Display_Data_PolAngles();
-            break;
-
-        case 57:
-            //LO Lock Test
-            $td->Display_DataSetNotes();
-            echo "<br>";
-            break;
-
-        case 58:
-            //Noise Temperature
-            $td->Display_DataSetNotes();
-            echo "<br>";
-            break;
-
-        case 50:
-            $td->Display_DataForm();
-            echo "<br>";
-            $td->Display_Data_Cryostat(1);
-            break;
-        case 52:
-            $td->Display_DataForm();
-            echo "<br>";
-            $td->Display_Data_Cryostat(3);
-            break;
-        case 53:
-            $td->Display_DataForm();
-            echo "<br>";
-            $td->Display_Data_Cryostat(2);
-            break;
-        case 54:
-            $td->Display_DataForm();
-            echo "<br>";
-            $td->Display_Data_Cryostat(4);
-            break;
-        case 25:
-            $td->Display_DataForm();
-            echo "<br>";
-            $td->Display_Data_Cryostat(5);
-            break;
-        case 45:
-            $td->Display_DataForm();
-            echo "<br>";
-            $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
-            $wca->Display_AmplitudeStability();
-            break;
-        case 44:
-            $td->Display_DataForm();
-            echo "<br>";
-            $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
-            $wca->Display_AMNoise();
-            break;
-        case 46:
-            $td->Display_DataForm();
-            echo "<br>";
-            $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
-            $wca->Display_OutputPower();
-            break;
-        case 47:
-            $td->Display_DataForm();
-            echo "<br>";
-            $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
-            $wca->Display_PhaseNoise();
-            break;
-        case 48:
-            $td->Display_DataForm();
-            echo "<br>";
-            $wca = new WCA();
-            $wca->Initialize_WCA($td->GetValue('fkFE_Components'),$td->GetValue('keyFacility'), WCA::INIT_ALL);
-            $wca->Display_PhaseNoise();
-            break;
-        default:
-            $td->Display_DataForm();
-            break;
-    }
-}
-
-
-
-function Display_Plot($td){
-    switch($td->GetValue('fkTestData_Type')){
-        case 59:
-            //Fine LO Sweep
-            $finelosweep = new FineLOSweep();
-            $finelosweep->Initialize_FineLOSweep($td->keyId,$td->GetValue('keyFacility'));
-            $finelosweep->DisplayPlots();
-            unset($finelosweep);
-            break;
-        case 58:
-            //Noise Temperature
-            $nztemp = new NoiseTemperature();
-            $nztemp->Initialize_NoiseTemperature($td->keyId,$td->GetValue('keyFacility'));
-            $nztemp->DisplayPlots();
-            unset($nztemp);
-            break;
-        case 38:
-            //CCA Image Rejection
-            $ccair = new cca_image_rejection();
-            $ccair->Initialize_cca_image_rejection($td->keyId,$td->GetValue('keyFacility'));
-            $ccair->DisplayPlots();
-            unset($ccair);
-            break;
-
-        default:
-            $urlarray = explode(",",$td->GetValue('PlotURL'));
-            for ($i=0;$i<count($urlarray);$i++){
-                echo "<img src='" . $urlarray[$i] . "'><br>";
-            }
-            break;
-    }
-}
-
-Display_TestDataMain($td);
-Display_Plot($td);
-
-$showrawdata = isset($_REQUEST['showrawdata']) ? $_REQUEST['showrawdata'] : 0;
+$td->Display_TestDataMain();
 
 switch($td->GetValue('fkTestData_Type')){
+	case 59:
+		//Fine LO Sweep
+		$finelosweep = new FineLOSweep();
+		$finelosweep->Initialize_FineLOSweep($td->keyId,$td->GetValue('keyFacility'));
+		$finelosweep->DisplayPlots();
+		unset($finelosweep);
+		break;
+	case 58:
+		//Noise Temperature
+		$nztemp = new NoiseTemperature();
+		$nztemp->Initialize_NoiseTemperature($td->keyId,$td->GetValue('keyFacility'));
+		$nztemp->DisplayPlots();
+		unset($nztemp);
+		break;
+	case 38:
+		//CCA Image Rejection
+		$ccair = new cca_image_rejection();
+		$ccair->Initialize_cca_image_rejection($td->keyId,$td->GetValue('keyFacility'));
+		$ccair->DisplayPlots();
+		unset($ccair);
+		break;
+
+	default:
+		$urlarray = explode(",",$td->GetValue('PlotURL'));
+		for ($i=0;$i<count($urlarray);$i++){
+			echo "<img src='" . $urlarray[$i] . "'><br>";
+		}
+		break;
+}
+
+switch($td->GetValue('fkTestData_Type')) {
     case 1:
-        $showrawdata = 1;
+        $showrawdata = true;
         break;
     case 2:
-        $showrawdata = 1;
+        $showrawdata = true;
         break;
     case 3:
-        $showrawdata = 1;
+        $showrawdata = true;
         break;
     case 24:
-        $showrawdata = 1;
+        $showrawdata = true;
         break;
     case 49:
-        $showrawdata = 1;
+        $showrawdata = true;
         break;
 }
 
-if ($showrawdata == 1){
+if ($showrawdata)
     $td->Display_RawTestData();
-}
+
 unset($td);
 
 ?>
@@ -433,4 +282,3 @@ unset($td);
 </div>
 </body>
 </html>
-
