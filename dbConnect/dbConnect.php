@@ -4,10 +4,8 @@ $mySQL57 = false;
 
 switch ($_SERVER['SERVER_NAME']) {
     case "fetms.osf.alma.cl":
-        $dbname     = 'fetms';
-        $dbserver   = 'localhost';
-        $dbusername = 'fetms';
-        $dbpassword = '!fetms';
+    	// database credentials are kept in the /conf/ directory, not in the webserver document root:
+    	require_once("/home/fetms.osf.alma.cl/conf/fetms-dbConnect.conf");
         break;
 
     case "webtest.cv.nrao.edu":
