@@ -116,44 +116,6 @@ if (!isset($_REQUEST['ifsub'])) {
     }
 }
 
-// This block handles only beam scan data:
-if (isset($_REQUEST['ssdid'])) {
-    $ssdid = $_REQUEST['ssdid'];
-
-
-    header("Content-type: application/x-msdownload");
-    $csv_filename = "Farfield_$ssdid.csv";
-    header("Content-Disposition: attachment; filename=$csv_filename");
-    header("Pragma: no-cache");
-    header("Expires: 0");
-
-    $sdet = new GenericTable();
-    $sdet->Initialize('ScanDetails',$ssdid,'keyId');
-
-    echo "!Farfield Beam Listing\r\n";
-    echo "!ScanSetDetails.keyId=" . $sdet->GetValue('fkScanSetDetails') . "\r\n";
-    echo "!ScanDetails.keyId=$ssdid\r\n";
-    echo "\r\n\r\n";
-
-
-
-    $q = "SHOW COLUMNS FROM BeamListings_farfield;";
-    $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)) {
-        echo $row[0] . ",";
-    }
-    echo "\r\n";
-
-    $q = "SELECT * FROM BeamListings_farfield WHERE fkScanDetails = $ssdid;";
-    $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)) {
-        for ($i=0;$i<count($row);$i++) {
-            echo "$row[$i],";
-        }
-        echo "\r\n";
-    }
-}
-
 // This block handles only IF spectrum data:
 if (isset($_REQUEST['ifsub'])) {
     $ifsub_id = $_REQUEST['ifsub'];
