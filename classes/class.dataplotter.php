@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.4";
+        $this->swversion = "1.2.5";
 
         /*
+         * 1.2.5:  Added Plot_WorkAmpTemperature
          * 1.2.4:  LO Lock test plots:  tot.pwr cols were reversed in DB schema, added RefTotalPower trace
          * 1.2.3:  Added LO frequency to workmanship amplitude plot.
          * 1.2.2:  Fixed Plot_WorkmanshipAmplitude not displaying X axis as minutes.
@@ -870,133 +871,29 @@ class DataPlotter extends GenericTable{
         return date(preg_replace('`(?<!\\\\)u`', $milliseconds, $format), $timestamp);
     }
 
-    public function Plot_Repeatability(){
+    public function Plot_WorkmanshipAmplitude($appendURL = false) {
         require(site_get_config_main());
-        $this->writedirectory = $main_write_directory  . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
         $this->writedirectory = $main_write_directory;
         if (!file_exists($this->writedirectory)){
             mkdir($this->writedirectory);
         }
-
-        $this->url_directory = $main_url_directory  . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
-        $this->url_directory = $main_url_directory;
-        if (!file_exists($this->url_directory)){
-            mkdir($this->url_directory);
-        }
+        
         $TestData_Id = $this->TestDataHeader->keyId;
-
-        //Initialize component object
-        //$this->Component = new GenericTable();
-        //$this->Component->Initialize('Front_Ends',$this->TestDataHeader->GetValue('fe_keyId'),'keyFrontEnds',$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-
-        //$this->TestDataHeader->Component
-
-        $datafile_count=0;
-
-        $dataarr[0]="tilt";
-        $dataarr[1]="amplitude";
-        $dataarr[2]="phase";
-        $dataarr[3]="pll_locked";
-
-
-
-            //SB 0, 1 or 2
-            for ($i=0;$i<=4;$i++){
-                $DataSeriesName = "dataarr[$i]";
-
-                $r = $this->db_pull->q(1, $TestData_Id, NULL, $dataarr[$i]);
-                if (@mysql_num_rows($r) > 1){
-                    $plottitle[$datafile_count] = "$dataarr[$i]";
-                    //$data_file[$datafile_count] = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/cca_datafiles/cca_as_data_".$i."_".$j.".txt";
-                    $data_file[$datafile_count] = $this->writedirectory . "rep_data_" . $dataarr[$i] . ".txt";
-                    echo "data file= $data_file[$datafile_count]<br>";
-                    //unlink($data_file[$datafile_count]);
-                    $fh = fopen($data_file[$datafile_count], 'w');
-                    $row=@mysql_fetch_array($r);
-                    $timeval = 0;
-                        while($row=@mysql_fetch_array($r)){
-                            $stringData = "$timeval\t$row[1]\r\n";
-                            fwrite($fh, $stringData);
-                            $timeval += 30;
-                        }
-                    fclose($fh);
-                    $datafile_count++;
-                }
-            }//end for i
-
-
-        //Write command file for gnuplot
-        $plot_command_file = $this->writedirectory . "rep_command_" . date("Ymd_G_i_s") . ".txt";
-        $imagedirectory = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
-
+        $band = $this->TestDataHeader->GetValue('Band');
+        
+        $filesDir = "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
+        $imagedirectory = $this->writedirectory . $filesDir;
+        $data_file = $imagedirectory . "wkm_amp_data.txt";
+        $plot_command_file = $imagedirectory . "wkm_amp_command_tdh$TestData_Id.txt";
+        $this->url_directory = $main_url_directory . $filesDir;
+        
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
-        $imagename = "Repeatability" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "Repeatability, FE SN" . $this->TestDataHeader->Component->GetValue('SN');
-
-        //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
-        $this->TestDataHeader->Update();
-
-        $imagepath = $imagedirectory . $imagename;
-        $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set output '$imagepath'\r\n");
-        fwrite($fh, "set title '$plot_title'\r\n");
-        fwrite($fh, "set grid\r\n");
-        fwrite($fh, "set key outside\r\n");
-        //fwrite($fh, "set ylabel 'Power dBm'\r\n");
-        fwrite($fh, "set xlabel 'Time'\r\n");
-        fwrite($fh, "set pointsize 2\r\n");
-
-        fwrite($fh, "set yrange[58:62]\r\n");
-        fwrite($fh, "set ylabel 'Tilt Angle (deg)'\r\n");
-        fwrite($fh, "set y2range[-70:0]\r\n");
-        fwrite($fh, "set y2tics\r\n");
-        fwrite($fh, "set y2label 'Amplitude (dBm)'\r\n");
-        //fwrite($fh, "set y3range[-181:181]\r\n");
-        //fwrite($fh, "set y4range[-1:2]\r\n");
-
-
-        $plot_string = "plot '$data_file[0]' using 1:2 title '$plottitle[0]' with lines";
-        $plot_string .= ", '$data_file[1]' using 1:2 title '$plottitle[$i]' with lines";
-
-        for ($i=1;$i<sizeof($data_file)-2;$i++){
-            //$plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
-        }
-        $plot_string .= "\r\n";
-        fwrite($fh, $plot_string);
-        fclose($fh);
-        //Make the plot
-
-        $CommandString = "$GNUPLOT $plot_command_file";
-        system($CommandString);
-    }
-
-    public function Plot_WorkmanshipAmplitude(){
-        require(site_get_config_main());
-        $this->writedirectory = $main_write_directory;
-        if (!file_exists($this->writedirectory)){
-            mkdir($this->writedirectory);
-        }
-
-        $this->url_directory = $main_url_directory  . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
-        $this->url_directory = $main_url_directory;
-        if (!file_exists($this->url_directory)){
-            mkdir($this->url_directory);
-        }
-        $TestData_Id = $this->TestDataHeader->keyId;
-
-        $datafile_count=0;
-        $band = $this->TestDataHeader->GetValue('Band');
-
+        
         if ($band != 9 && $band != 10) {
 
             $r = $this->db_pull->q(2, $TestData_Id, $this->fc);
-
-
             $tiltmin = @MYSQL_RESULT($r,0,0) - 10;
             $tiltmax = @MYSQL_RESULT($r,0,1) + 10;
 
@@ -1013,53 +910,53 @@ class DataPlotter extends GenericTable{
         }
 
         $r = $this->db_pull->q(4, $TestData_Id, $this->fc);
-        $plottitle = "Workmanship Amplitude";
-        $data_file = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/wkm_amp_data.txt";
-        if (@mysql_num_rows($r) > 1){
 
-            $fh = fopen($data_file, 'w');
+        if (!@mysql_num_rows($r))
+            return;
+        
+        $fh = fopen($data_file, 'w');
 
-            $row=@mysql_fetch_array($r);
-            $timeStart = 0;
-            $minutes = 0;
-            $once = true;
-            while($row=@mysql_fetch_array($r)){
-                $ts = $row[5];
-                $ts = DateTime::createFromFormat("Y-m-d H:i:s+", $ts);
+        $row=@mysql_fetch_array($r);
+        $timeStart = 0;
+        $minutes = 0;
+        $once = true;
+        while($row=@mysql_fetch_array($r)){
+            $ts = $row[5];
+            $ts = DateTime::createFromFormat("Y-m-d H:i:s+", $ts);
 
-                if ($once) {
-                    $timeStart = $ts;
+            if ($once) {
+                $timeStart = $ts;
 
-                    if ($this->TestDataHeader->GetValue('Band') >= 9) {
-                        $maxtemp = max($row[1],$row[3]);
-                    } else {
-                        $maxtemp = max($row[1],$row[2],$row[3],$row[4]);
-                    }
-                    $o1 = $row[1] - $maxtemp;
-                    $o2 = $row[2] - $maxtemp;
-                    $o3 = $row[3] - $maxtemp;
-                    $o4 = $row[4] - $maxtemp;
-                    $once = false;
+                if ($this->TestDataHeader->GetValue('Band') >= 9) {
+                    $maxtemp = max($row[1],$row[3]);
+                } else {
+                    $maxtemp = max($row[1],$row[2],$row[3],$row[4]);
                 }
-
-                if ($ts !== false) {
-                    $elapsed = $timeStart->diff($ts);
-                    $minutes = $elapsed->d * 1440 + $elapsed->h * 60 + $elapsed->i + $elapsed->s / 60;
-                }
-                $d1 = $row[1];
-                $d2 = $row[2];
-                $d3 = $row[3];
-                $d4 = $row[4];
-                $stringData = "$minutes\t$row[0]\t$d1\t$d2\t$d3\t$d4\r\n";
-                fwrite($fh, $stringData);
-                if ($ts === false) {
-                    $minutes += 1.0 / (60.0 * 4.0);
-                    // assume 1/4 second interval
-                }
+                $o1 = $row[1] - $maxtemp;
+                $o2 = $row[2] - $maxtemp;
+                $o3 = $row[3] - $maxtemp;
+                $o4 = $row[4] - $maxtemp;
+                $once = false;
             }
-            fclose($fh);
-            $datafile_count++;
+
+            if ($ts !== false) {
+                $elapsed = $timeStart->diff($ts);
+                $minutes = $elapsed->d * 1440 + $elapsed->h * 60 + $elapsed->i + $elapsed->s / 60;
+            }
+            $d1 = $row[1];
+            $d2 = $row[2];
+            $d3 = $row[3];
+            $d4 = $row[4];
+            $stringData = "$minutes\t$row[0]\t$d1\t$d2\t$d3\t$d4\r\n";
+            fwrite($fh, $stringData);
+            
+            if ($ts === false) {
+                // TODO:  this is for PHP < 5.3.9 which doesn't accept DateTime::createFromFormat with s+, above.
+                $minutes += 1.0 / (60.0 * 4.0);
+                // assume 1/4 second interval
+            }
         }
+        fclose($fh);
 
         //Lookup the WkAmp subheader ID:
         $subheader_id = $this->db_pull->q_other('wkamp_sh', NULL, $TestData_Id);
@@ -1069,20 +966,19 @@ class DataPlotter extends GenericTable{
         //Get the measurement LO frequency:
         $fLO = $wsub->GetValue('lo');
 
-        //Write command file for gnuplot
-        $plot_command_file = $this->writedirectory . "wkm_amp_command_tdh$TestData_Id.txt.txt";
-        $imagedirectory = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
-
-        if (!file_exists($imagedirectory)){
-            mkdir($imagedirectory);
-        }
         $imagename = "WorkmanshipAmplitude_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/$imagename";
+        $image_url = $this->url_directory . "$imagename";
         $plot_title = "Workmanship Amplitude, FE" . $this->TestDataHeader->Component->GetValue('SN')
                     . " Band " . $this->TestDataHeader->GetValue('Band')
                     . ", LO " . $fLO . " GHz";
 
         //Update plot url
+        if ($appendURL) {
+            $oldUrl = $this->TestDataHeader->GetValue('PlotURL');
+            if ($oldUrl)
+                $image_url = $oldUrl . "," . $image_url;
+        }
+                    
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
         $this->TestDataHeader->Update();
 
@@ -1094,7 +990,6 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
         fwrite($fh, "set key outside\r\n");
-        //fwrite($fh, "set ylabel 'Power dBm'\r\n");
         fwrite($fh, "set xlabel 'Time (minutes)'\r\n");
         fwrite($fh, "set pointsize 2\r\n");
 
@@ -1104,14 +999,9 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set yrange[$ampmin:$ampmax]\r\n");
         fwrite($fh, "set ytics\r\n");
         fwrite($fh, "set ylabel 'Amplitude (dBm)'\r\n");
-        //fwrite($fh, "set y3range[-181:181]\r\n");
-        //fwrite($fh, "set y4range[-1:2]\r\n");
         fwrite($fh, "set bmargin 6\r\n");
         fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
         fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
-
-        //fwrite($fh, "set linestyle 1 lt 1 lw 1\r\n");
-
 
         $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
         $plot_string .= ", '$data_file'  using 1:3 title 'Pol 0, USB Power' with lines axis x1y1";
@@ -1132,7 +1022,132 @@ class DataPlotter extends GenericTable{
         system($CommandString);
     }
 
+    public function Plot_WorkAmpTemperatures($appendURL = false) {
+        require(site_get_config_main());
+        $this->writedirectory = $main_write_directory;
+        if (!file_exists($this->writedirectory)){
+            mkdir($this->writedirectory);
+        }
+        
+        $TestData_Id = $this->TestDataHeader->keyId;
+        $band = $this->TestDataHeader->GetValue('Band');
+        
+        $filesDir = "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
+        $imagedirectory = $this->writedirectory . $filesDir;
+        $data_file = $imagedirectory . "wkm_temp_data.txt";
+        $plot_command_file = $imagedirectory . "wkm_temp_command_tdh$TestData_Id.txt";
+        $this->url_directory = $main_url_directory . $filesDir;
+        
+        if (!file_exists($imagedirectory)){
+            mkdir($imagedirectory);
+        }
+              
+        $r = $this->db_pull->q(2, $TestData_Id, $this->fc);
+    
+        $tiltmin = @MYSQL_RESULT($r,0,0) - 10;
+        $tiltmax = @MYSQL_RESULT($r,0,1) + 10;
+    
+        $r = $this->db_pull->q(8, $TestData_Id, $this->fc);
+        if (!@mysql_num_rows($r))
+            return;
+            
+        $fh = fopen($data_file, 'w');
 
+        $row=@mysql_fetch_array($r);
+        $timeStart = 0;
+        $minutes = 0;
+        $once = true;
+       
+        while($row=@mysql_fetch_array($r)) {
+            $ts = $row['TS'];
+            $ts = DateTime::createFromFormat("Y-m-d H:i:s+", $ts);
+
+            if ($once) {
+                $timeStart = $ts;
+                $once = false;
+            }    
+            if ($ts !== false) {
+                $elapsed = $timeStart->diff($ts);
+                $minutes = $elapsed->d * 1440 + $elapsed->h * 60 + $elapsed->i + $elapsed->s / 60;
+            }
+
+            $stringData = "$minutes\t$row[0]\t$row[1]\t$row[2]\t$row[3]\t$row[4]\t$row[5]\t$row[6]\t$row[7]\t$row[8]\r\n";
+            fwrite($fh, $stringData);
+            
+            if ($ts === false) {
+                // TODO:  this is for PHP < 5.3.9 which doesn't accept DateTime::createFromFormat with s+, above.
+                $minutes += 1.0 / (60.0 * 4.0);
+                // assume 1/4 second interval
+            }
+        }
+        fclose($fh);
+    
+        //Lookup the WkAmp subheader ID:
+        $subheader_id = $this->db_pull->q_other('wkamp_sh', NULL, $TestData_Id);
+        //Use it to finde the subheader record:
+        $wsub = new GenericTable();
+        $wsub->Initialize('TEST_Workmanship_Amplitude_SubHeader',$subheader_id,'keyTEST_Workmanship_Amplitude_SubHeader');
+        //Get the measurement LO frequency:
+        $fLO = $wsub->GetValue('lo');
+    
+        
+        $imagename = "WorkAmpTemperatures_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . "$imagename";
+        $plot_title = "Workmanship Temperatures, FE" . $this->TestDataHeader->Component->GetValue('SN')
+        . " Band " . $this->TestDataHeader->GetValue('Band')
+        . ", LO " . $fLO . " GHz";
+    
+        //Update plot url
+        if ($appendURL) {
+            $oldUrl = $this->TestDataHeader->GetValue('PlotURL');
+            if ($oldUrl)
+                $image_url = $oldUrl . "," . $image_url;
+        }
+        
+        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->Update();
+    
+        $imagepath = $imagedirectory . $imagename;
+    
+        $fh = fopen($plot_command_file, 'w');
+        fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set output '$imagepath'\r\n");
+        fwrite($fh, "set title '$plot_title'\r\n");
+        fwrite($fh, "set grid\r\n");
+        fwrite($fh, "set key outside\r\n");
+        fwrite($fh, "set xlabel 'Time (minutes)'\r\n");
+        fwrite($fh, "set pointsize 2\r\n");
+    
+        fwrite($fh, "set y2range[$tiltmin:$tiltmax]\r\n");
+        fwrite($fh, "set y2label 'Tilt Angle (deg)'\r\n");
+        fwrite($fh, "set y2tics\r\n");
+        fwrite($fh, "set yrange[2.5:5.5]\r\n");
+        fwrite($fh, "set ytics\r\n");
+        fwrite($fh, "set ylabel 'Temperature (K)'\r\n");
+        fwrite($fh, "set bmargin 6\r\n");
+        fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
+        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
+
+        $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
+        $plot_string .= ", '$data_file'  using 1:3 title 'CCA 4K stage' with lines axis x1y1";
+        $plot_string .= ", '$data_file'  using 1:4 title 'CCA pol0 mixer' with lines axis x1y1";
+        $plot_string .= ", '$data_file'  using 1:5 title 'CCA pol1 mixer' with lines axis x1y1";
+        $plot_string .= ", '$data_file'  using 1:6 title 'Cryo 4K stage' with lines axis x1y1";
+        $plot_string .= ", '$data_file'  using 1:7 title 'Cryo 4K link 1' with lines axis x1y1";
+        $plot_string .= ", '$data_file'  using 1:8 title 'Cryo 4K link 2' with lines axis x1y1";
+        $plot_string .= ", '$data_file'  using 1:9 title 'Cryo 4K far side 1' with lines axis x1y1";
+        $plot_string .= ", '$data_file'  using 1:10 title 'Cryo 4K far side 2' with lines axis x1y1";
+        
+        $plot_string .= "\r\n";
+        fwrite($fh, $plot_string);
+        fclose($fh);
+        //Make the plot
+    
+        $CommandString = "$GNUPLOT $plot_command_file";
+        system($CommandString);
+    }
+    
+    
     public function Plot_WorkmanshipPhase(){
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory  . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
@@ -1191,7 +1206,6 @@ class DataPlotter extends GenericTable{
         }
 
         $offset = $phasemid;
-        $plottitle = "Workmanship Phase";
         $data_file = $imagedirectory . "wkm_phase_data.txt";
 
         $fh = fopen($data_file, 'w');

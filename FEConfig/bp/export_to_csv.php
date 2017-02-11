@@ -4,97 +4,75 @@ require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
 
-$fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '';
+$keyScanSet = isset($_REQUEST['setid']) ? $_REQUEST['setid'] : false;
+$keyScanDet = isset($_REQUEST['detid']) ? $_REQUEST['detid'] : false;
+$which = isset($_REQUEST['which']) ? $_REQUEST['which'] : 'ff';
 
-if (isset($_REQUEST['keyheader'])){
-    $TestData_header_keyId = $_REQUEST['keyheader'];
-    $td = new TestData_header();
-    $td->Initialize_TestData_header($TestData_header_keyId,$fc);
-
-
+if ($keyScanDet) {
     header("Content-type: application/x-msdownload");
-    $csv_filename = str_replace(" ","_",$td->TestDataType . ".csv");
+    
+    if ($which == 'nf')
+        $csv_filename = "Nearfield_$keyScanDet.csv";
+    else
+        $csv_filename = "Farfield_$keyScanDet.csv";
+    
     header("Content-Disposition: attachment; filename=$csv_filename");
     header("Pragma: no-cache");
     header("Expires: 0");
 
-
-    switch($td->GetValue('fkTestData_Type')){
-
-        case 57: //LO Lock Test
-            $q1 = "select keyId from TEST_LOLockTest_SubHeader where fkHeader = $td->keyId;";
-            $r1 = @mysql_query($q1,$db);
-            $subh_id = @mysql_result($r1,0,0);
-            $qdata = "SELECT * FROM TEST_LOLockTest WHERE fkHeader = $subh_id;";
-            //echo $qdata;
-
-            break;
-
-        default:
-            $qdata = "SELECT * FROM $td->TestDataTableName WHERE fkHeader = $td->keyId;";
-
-            //echo $qcols;
-
-        break;
+    $scanDet = new GenericTable();
+    $scanDet->Initialize('ScanDetails', $keyScanDet, 'keyId');
+    
+    if ($which == 'nf')
+        echo "!Nearfield Beam Listing\r\n";
+    else
+        echo "!Farfield Beam Listing\r\n";
+        
+    echo "!ScanSetDetails.keyId=" . $scanDet->GetValue('fkScanSetDetails') . "\r\n";
+    echo "!ScanDetails.keyId=$keyScanDet\r\n";    
+    echo "!Pol=" . $scanDet->GetValue('pol') . ($scanDet->GetValue('copol') ? " copol" : " xpol") . "\r\n";
+    echo "!IFAtten=" . $scanDet->GetValue('ifatten') . "\r\n";
+    echo "!SourceRotAngle=" . $scanDet->GetValue('SourceRotationAngle') . "\r\n";
+    
+    if ($keyScanSet) {
+        $scanSet = new GenericTable();
+        $scanSet->Initialize('ScanSetDetails', $keyScanSet, 'keyId');
+        echo "!Elevation=" . $scanSet->GetValue('tilt') . "\r\n";
+        echo "!RF_GHz=" . $scanSet->GetValue('f') . "\r\n";
+        unset($scanSet);
     }
-
-    switch($td->Component->GetValue('fkFE_ComponentType')){
-        case 6:
-            //Cryostat
-            $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
-                  WHERE fkHeader = $td->keyId;";
-            $r = @mysql_query($q,$td->dbconnection);
-            $fkHeader = @mysql_result($r,0,0);
-            $qdata = "SELECT * FROM $td->TestDataTableName WHERE
-            fkSubHeader = $fkHeader AND fkFacility = ".$td->GetValue('keyFacility').";";
-            break;
-    }
-
-    //Output records to csv file
-    $qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
-
-    echo $qcols;
-    $rcols = @mysql_query ($qcols, $db);
-    while($rowcols = mysql_fetch_array($rcols)){
-        echo $rowcols[0] . ",";
-    }
-    echo "\r\n";
-
-    $rdata = @mysql_query ($qdata, $db);
-    while($rowdata = mysql_fetch_array($rdata)){
-        for ($i=0;$i<count($rowdata);$i++){
-            echo "$rowdata[$i],";
-        }
-        echo "\r\n";
-    }
-}
-
-
-if (isset($_REQUEST['ssdid'])){
-    $ssdid = $_REQUEST['ssdid'];
-
-    header("Content-type: application/x-msdownload");
-    $csv_filename = "Farfield_$ssdid.csv";
-    header("Content-Disposition: attachment; filename=$csv_filename");
-    header("Pragma: no-cache");
-    header("Expires: 0");
-
-    $sdet = new GenericTable();
-    $sdet->Initialize('ScanDetails',$ssdid,'keyId');
-
-    echo "!Farfield Beam Listing\r\n";
-    echo "!ScanSetDetails.keyId=" . $sdet->GetValue('fkScanSetDetails') . "\r\n";
-    echo "!ScanDetails.keyId=$ssdid\r\n";
+    
     echo "\r\n\r\n";
 
-    $q = "SHOW COLUMNS FROM BeamListings_farfield;";
+    if ($which == 'nf')
+        $q = "SHOW COLUMNS FROM BeamListings_nearfield;";
+    else
+        $q = "SHOW COLUMNS FROM BeamListings_farfield;";
+
     $r = @mysql_query ($q, $db);
+    $first = true;
     while($row = mysql_fetch_array($r)) {
-        echo $row[0] . ",";
+        $name = $row[0];
+        
+        if ($which == 'ff' && $name == 'x')
+            $name = 'az';
+        if ($which == 'ff' && $name == 'y')
+            $name = 'el';
+        
+        if ($first)
+            $first = false;
+        else
+            echo ", ";
+          
+        echo $name;
     }
     echo "\r\n";
 
-    $q = "SELECT * FROM BeamListings_farfield WHERE fkScanDetails = $ssdid;";
+    if ($which == 'nf')
+        $q = "SELECT * FROM BeamListings_nearfield WHERE fkScanDetails = $keyScanDet;";
+    else        
+        $q = "SELECT * FROM BeamListings_farfield WHERE fkScanDetails = $keyScanDet;";
+    
     $r = @mysql_query ($q, $db);
     while($row = mysql_fetch_array($r, MYSQL_NUM)) {
         $first = true;
@@ -107,7 +85,7 @@ if (isset($_REQUEST['ssdid'])){
         }
         echo "\r\n";
     }
+    unset($scanDet);
 }
 
-unset($td);
 ?>

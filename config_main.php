@@ -35,14 +35,21 @@ switch ($site_hostname){
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         break;
 
-    case "localhost":
     case "band1-fetms":
-        $FETMS_CCA_MODE = false;
+        $FETMS_CCA_MODE = true;
         $rootdir_url = "http://band1-fetms/ALMA-FETMS-www/";
        	$GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
        	$beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
        	break;
 
+ 	case "localhost":
+   	case "finch":
+   		$FETMS_CCA_MODE = false;
+   		$rootdir_url = "http://finch/ALMA-FETMS-www/";
+   		$GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
+   		$beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
+   		break;
+       	
     default:
         echo "<font size = '+3' color = '#ff0000'><h><b>
         This application is not configured for host $site_hostname. <br>
