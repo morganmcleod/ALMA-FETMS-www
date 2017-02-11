@@ -200,6 +200,10 @@ class DPdb{ //extends DBRetrieval{
 					AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM `FE_Config`
 					WHERE `keyFEConfig` = ".$TestDataHeader->GetValue('fkFE_Config').")
 					ORDER BY `TestData_header`.keyID DESC;";
+		} elseif ($occur==8) {		    	
+		    $q = "SELECT tilt, CartTemp0,CartTemp2,CartTemp5, CryoTemp0,CryoTemp1,CryoTemp2,CryoTemp3,CryoTemp4, TS
+		          FROM TEST_Workmanship_Amplitude
+		          WHERE fkHeader = $TestData_Id ORDER BY TS ASC;";
 		} else {
 			$q='';
 		}

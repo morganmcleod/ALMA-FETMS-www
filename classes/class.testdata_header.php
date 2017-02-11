@@ -426,13 +426,14 @@ class TestData_header extends GenericTable {
             break;
 
         case "29":
-            $plt->Plot_WorkmanshipAmplitude();
+            $plt->Plot_WorkmanshipAmplitude(false);
+            $plt->Plot_WorkAmpTemperatures(true);
             break;
         case "30":
             $plt->Plot_WorkmanshipPhase();
             break;
         case "31":
-            $plt->Plot_Repeatability();
+            //Plot_Repeatability(); obsolete
             break;
         case "33":
             $plt->Plot_CCA_PhaseDrift();

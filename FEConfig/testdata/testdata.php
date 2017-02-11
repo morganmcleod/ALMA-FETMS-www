@@ -248,7 +248,7 @@ switch($td->GetValue('fkTestData_Type')){
 	default:
 		$urlarray = explode(",",$td->GetValue('PlotURL'));
 		for ($i=0;$i<count($urlarray);$i++){
-			echo "<img src='" . $urlarray[$i] . "'><br>";
+			echo "<img src='" . $urlarray[$i] . "'><br><br>";
 		}
 		break;
 }
