@@ -38,11 +38,12 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.2.1";
+        $this->software_version_class_eff = "1.2.2";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
 
         /* Version history:
+         * 1.2.2  Export NF as well as FF plots.  FF axes labeled az, el.  Include Pol, RF, tilt, SrcRot 
          * 1.2.1  Get phase center corrections x_corr, y_corr from pol1 if necessary.
          *        Formatting in Phase Center Offset table.
          * 1.2.0  Switch to BeamEff 2.0.2
@@ -1125,11 +1126,11 @@ class eff {
         
         echo "<tr>
             <th>RF GHz</th>
-            <th>pol</th>
+            <th>Pol</th>
             <th>Elevation</th>
             <th>Date/Time</th>
             <th>File Name</th>
-            <th>Amp/Phase Drift</th>
+            <th>Amp, Phase Drift</th>
             <th colspan = 2>NF</th>
             <th colspan = 2>FF</th>
             </tr>";
@@ -1156,16 +1157,18 @@ class eff {
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ampdrift'),2) . " dB, "
                         . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('phasedrift'),2) . " deg</td>";
 
-            echo "<td><a href='export_to_csv.php?which=nf&sdid="
+            $keyScanSet = $this->scansets[$scanSetIdx] -> keyId;                  
+                        
+            echo "<td><a href='export_to_csv.php?which=nf&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_copol_pol0->keyId . "'>copol</a></td>";
                         
-            echo "<td><a href='export_to_csv.php?which=nf&sdid="
+            echo "<td><a href='export_to_csv.php?which=nf&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->keyId . "'>xpol</a></td>";
             
-            echo "<td><a href='export_to_csv.php?which=ff&sdid="
+            echo "<td><a href='export_to_csv.php?which=ff&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_copol_pol0->keyId . "'>copol</a></td>";
 
-            echo "<td><a href='export_to_csv.php?which=ff&sdid="
+            echo "<td><a href='export_to_csv.php?which=ff&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->keyId . "'>xpol</a></td></tr>";
 
             $count +=1;
@@ -1189,16 +1192,16 @@ class eff {
             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ampdrift'),2) . " dB, "
                         . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('phasedrift'),2) . " deg</td>";
 
-            echo "<td><a href='export_to_csv.php?which=nf&sdid="
+            echo "<td><a href='export_to_csv.php?which=nf&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_copol_pol1->keyId . "'>copol</a></td>";
                         
-            echo "<td><a href='export_to_csv.php?which=nf&sdid="
+            echo "<td><a href='export_to_csv.php?which=nf&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->keyId . "'>xpol</a></td>";
                         
-            echo "<td><a href='export_to_csv.php?which=ff&sdid="
+            echo "<td><a href='export_to_csv.php?which=ff&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_copol_pol1->keyId . "'>copol</a></td>";
 
-            echo "<td><a href='export_to_csv.php?which=ff&sdid="
+            echo "<td><a href='export_to_csv.php?which=ff&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->keyId . "'>xpol</a></td></tr>";
         }
         //Meas SW Ver

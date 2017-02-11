@@ -4,10 +4,11 @@ require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
 
-$keyScanDet = isset($_REQUEST['sdid']) ? $_REQUEST['sdid'] : false;
+$keyScanSet = isset($_REQUEST['setid']) ? $_REQUEST['setid'] : false;
+$keyScanDet = isset($_REQUEST['detid']) ? $_REQUEST['detid'] : false;
 $which = isset($_REQUEST['which']) ? $_REQUEST['which'] : 'ff';
 
-if ($keyScanDet){
+if ($keyScanDet) {
     header("Content-type: application/x-msdownload");
     
     if ($which == 'nf')
@@ -20,15 +21,27 @@ if ($keyScanDet){
     header("Expires: 0");
 
     $scanDet = new GenericTable();
-    $scanDet->Initialize('ScanDetails',$keyScanDet,'keyId');
-
+    $scanDet->Initialize('ScanDetails', $keyScanDet, 'keyId');
+    
     if ($which == 'nf')
         echo "!Nearfield Beam Listing\r\n";
     else
         echo "!Farfield Beam Listing\r\n";
         
     echo "!ScanSetDetails.keyId=" . $scanDet->GetValue('fkScanSetDetails') . "\r\n";
-    echo "!ScanDetails.keyId=$keyScanDet\r\n";
+    echo "!ScanDetails.keyId=$keyScanDet\r\n";    
+    echo "!Pol=" . $scanDet->GetValue('pol') . ($scanDet->GetValue('copol') ? " copol" : " xpol") . "\r\n";
+    echo "!IFAtten=" . $scanDet->GetValue('ifatten') . "\r\n";
+    echo "!SourceRotAngle=" . $scanDet->GetValue('SourceRotationAngle') . "\r\n";
+    
+    if ($keyScanSet) {
+        $scanSet = new GenericTable();
+        $scanSet->Initialize('ScanSetDetails', $keyScanSet, 'keyId');
+        echo "!Elevation=" . $scanSet->GetValue('tilt') . "\r\n";
+        echo "!RF_GHz=" . $scanSet->GetValue('f') . "\r\n";
+        unset($scanSet);
+    }
+    
     echo "\r\n\r\n";
 
     if ($which == 'nf')
