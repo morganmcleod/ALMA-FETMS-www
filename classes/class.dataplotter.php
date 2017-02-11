@@ -949,6 +949,12 @@ class DataPlotter extends GenericTable{
             $d4 = $row[4];
             $stringData = "$minutes\t$row[0]\t$d1\t$d2\t$d3\t$d4\r\n";
             fwrite($fh, $stringData);
+            
+            if ($ts === false) {
+                // TODO:  this is for PHP < 5.3.9 which doesn't accept DateTime::createFromFormat with s+, above.
+                $minutes += 1.0 / (60.0 * 4.0);
+                // assume 1/4 second interval
+            }
         }
         fclose($fh);
 
@@ -1067,6 +1073,12 @@ class DataPlotter extends GenericTable{
 
             $stringData = "$minutes\t$row[0]\t$row[1]\t$row[2]\t$row[3]\t$row[4]\t$row[5]\t$row[6]\t$row[7]\t$row[8]\r\n";
             fwrite($fh, $stringData);
+            
+            if ($ts === false) {
+                // TODO:  this is for PHP < 5.3.9 which doesn't accept DateTime::createFromFormat with s+, above.
+                $minutes += 1.0 / (60.0 * 4.0);
+                // assume 1/4 second interval
+            }
         }
         fclose($fh);
     
