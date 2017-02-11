@@ -19,12 +19,18 @@ switch ($_SERVER['SERVER_NAME']) {
         require_once("/home/safe.nrao.edu/conf/mtm-dbConnect.conf");
         break;
 
-	case "localhost":
 	case "band1-fetms":
 	    $mySQL57 = true;
 	    include("C:/wamp64/dbConnect_private.php");
 	    break;
 
+    case "localhost":
+    case "finch":
+        $mySQL57 = true;
+        include("C:/wamp64/dbConnect_OSF.php");
+//         include("C:/wamp64/dbConnect_private.php");
+        break;
+         
     default:
         die ("Unknown database credentials for server'" . $_SERVER['SERVER_NAME'] . "'");
 }
