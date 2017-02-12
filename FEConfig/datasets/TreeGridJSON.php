@@ -7,20 +7,30 @@ $action   = $_REQUEST['action'];
 $FEid     = $_REQUEST['FEid'];
 $Band     = $_REQUEST['band'];
 $DataType = $_REQUEST['datatype'];
+$compId   = $_REQUEST['comp'];
 
 //**************************************
 //  Read data to display in tree
 //**************************************
-if ($action == 'read'){
+if ($action == 'read') {
     $tdh = array();
 
-    //Get all TestData_header.keyId values for this Front End, Band and test datatype
-    $q = "SELECT DISTINCT(TestData_header.keyId), FE_Config.keyFEConfig
-        FROM TestData_header, FE_Config, Front_Ends
-        WHERE TestData_header.fkTestData_Type = $DataType
-        AND TestData_header.Band = $Band
-        AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
-        AND FE_Config.fkFront_Ends = $FEid";
+    if ($FEid) {
+        //Get all TestData_header.keyId values for this Front End, Band and test datatype
+        $q = "SELECT DISTINCT(TestData_header.keyId), FE_Config.keyFEConfig
+            FROM TestData_header, FE_Config, Front_Ends
+            WHERE TestData_header.fkTestData_Type = $DataType
+            AND TestData_header.Band = $Band
+            AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
+            AND FE_Config.fkFront_Ends = $FEid";
+    
+    } else if ($compId) {
+        //Get all TestData_header.keyId values for this component configuration and test datatype
+        $q = "SELECT DISTINCT(TestData_header.keyId), TestData_header.fkFE_Components
+            FROM TestData_header
+            WHERE TestData_header.fkTestData_Type = $DataType
+            AND TestData_header.fkFE_Components = $compId";
+    }
 
     $r = @mysql_query($q,$db);
     $count = 0;
@@ -49,15 +59,16 @@ if ($action == 'read'){
             $numrowsif = @mysql_num_rows($rif);
 
             while ($rowif = @mysql_fetch_Array($rif)){
+                $subId = $rowif['keyId'];
                 $ifsub = new GenericTable();
-                $ifsub->Initialize('IFSpectrum_SubHeader',$rowif['keyId'],'keyId');
+                $ifsub->Initialize('IFSpectrum_SubHeader', $subId, 'keyId');
                 $ifchannel = $ifsub->GetValue('IFChannel');
                 $text = $ifsub->GetValue('FreqLO') . " GHz (IF" . $ifsub->GetValue('IFChannel') . ")";
                 $checked = false;
                 if ($ifsub->GetValue('IsIncluded') == '1'){
                     $checked = true;
                 }
-                $sub_records[$num_children] = array('text'=>$text,'leaf'=>true,'checked'=>$checked, 'id'=>$ifsub->keyId);
+                $sub_records[$num_children] = array('text'=>$text, 'leaf'=>true, 'checked'=>$checked, 'id'=>$subId);
 
                 $num_children += 1;
                 unset($ifsub);
@@ -147,7 +158,7 @@ if ($action == 'read'){
         }
         $tdh[$count] = '';
         $tdh[$count]['text'] = 'TestData_header ' . $tdheader->keyId;
-        $tdh[$count]['feconfig'] = $row['keyFEConfig'];
+        $tdh[$count]['config'] = ($FEid) ? $row['keyFEConfig'] : $row['fkFE_Components'];
         $tdh[$count]['ts'] = $tdheader->GetValue('TS');
         $tdh[$count]['notes'] = @mysql_real_escape_string($tdheader->GetValue('Notes'));
         $tdh[$count]['cls'] = 'folder';
@@ -170,37 +181,32 @@ if ($action == 'read'){
 //**************************************
 // This code needs to be improved.  It sends db queries for each record!
 // Crazy inefficient and slow
-if ($action == 'update_children'){
+if ($action == 'update_children') {
     $array = json_decode(file_get_contents("php://input"), true);
 
     switch ($DataType){
         case 7: // ifspectrum
             for ($i=0;$i<count($array);$i++){
-                $FEid        = $array[$i]['FEid'];
                 $checked     = $array[$i]['checked'];
-                $datatype    = $array[$i]['datatype'];
+                $subid       = $array[$i]['subid'];
 
-                    $subid = $array[$i]['subid'];
+                //Update "IsIncluded" value in the table IFSpectrum_SubHeader
+                $ifsub = new GenericTable();
+                $ifsub->Initialize('IFSpectrum_SubHeader',$subid,'keyId');
 
-                    //Update "IsIncluded" value in the table IFSpectrum_SubHeader
-                    $ifsub = new GenericTable();
-                    $ifsub->Initialize('IFSpectrum_SubHeader',$subid,'keyId');
+                $ifsubLO = $ifsub->GetValue('FreqLO');
+                $fkHeader = $ifsub->GetValue('fkHeader');
 
-                    $ifsubLO = $ifsub->GetValue('FreqLO');
-                    $fkHeader = $ifsub->GetValue('fkHeader');
-
-                    //Now apply the checked value to the record where IFGain=0 and IFGain=15 for the same LO frequency
-                    $q0 = "UPDATE IFSpectrum_SubHeader SET IsIncluded = $checked WHERE FreqLO=$ifsubLO AND fkHeader = $fkHeader;";
-                    $r0 = @mysql_query($q0,$ifsub->dbconnection);
-                    unset($ifsub);
+                //Now apply the checked value to the record where IFGain=0 and IFGain=15 for the same LO frequency
+                $q0 = "UPDATE IFSpectrum_SubHeader SET IsIncluded = $checked WHERE FreqLO=$ifsubLO AND fkHeader = $fkHeader;";
+                $r0 = @mysql_query($q0,$ifsub->dbconnection);
+                unset($ifsub);
             }
             break;
 
         case 57: // LOlocktest
             for ($i=0;$i<count($array);$i++){
-                $FEid        = $array[$i]['FEid'];
                 $checked     = $array[$i]['checked'];
-                $datatype    = $array[$i]['datatype'];
 
                 $subid_array = explode("_",$array[$i]['subid']);
                 $subid = $subid_array[0];
@@ -212,9 +218,7 @@ if ($action == 'update_children'){
 
         case 58: // Noise Tempertaure
             for ($i=0;$i<count($array);$i++){
-                $FEid        = $array[$i]['FEid'];
                 $checked     = $array[$i]['checked'];
-                $datatype    = $array[$i]['datatype'];
 
                 $subid_array = explode("_",$array[$i]['subid']);
                 $subid = $subid_array[0];
@@ -241,74 +245,32 @@ if ($action == 'update'){
 
     $array = json_decode(file_get_contents("php://input"), true);
 
-
-    if ($array[0]['id'] == ''){
-        //Only one TestData_header record has been affected
+    $oneRec = isset($array['id']);
+    // True if only on TDH record.  False if more than one.
+    
+    if ($oneRec) {
         //Update TestData_header record
         $TestData_header = new GenericTable();
         $TestData_header->Initialize('TestData_header',$array['id'],'keyId');
         $TestData_header->SetValue('DataSetGroup',$array['groupnumber']);
         $TestData_header->SetValue('Notes',$array['notes']);
         $TestData_header->Update();
-
-
         unset($TestData_header);
-    }
-
-    $rows = count($array,0);
-    if ($rows > 0)
-        $cols = (count($array,1)/count($array,0))-1;
-    else
-        $cols = 0;
-    if ($array[0]['id'] != ''){
-
-    //2d array (i.e., more than one TestData_header record is being affected)
-        for ($i=0;$i<$rows;$i++){
+    
+    } else {
+        //2d array: more than one TDH record
+        $rows = count($array, 0);
+        for ($i=0; $i<$rows; $i++) {
             $TestData_header = new GenericTable();
-            $TestData_header->Initialize('TestData_header',$array[$i]['id'],'keyId');
-            $TestData_header->SetValue('DataSetGroup',$array[$i]['groupnumber']);
-            $TestData_header->SetValue('Notes',$array[$i]['notes']);
+            $TestData_header->Initialize('TestData_header', $array[$i]['id'], 'keyId');
+            $TestData_header->SetValue('DataSetGroup', $array[$i]['groupnumber']);
+            $TestData_header->SetValue('Notes', $array[$i]['notes']);
             $TestData_header->Update();
+            unset($TestData_header);
         }
     }
-
     // echo server call back
     echo "{'success':'1'}";
 }
 
-
-
-//**************************************
-//  Get combo box data
-//**************************************
-if ($action == 'combobox'){
-
-    // find all TDH records for any config for the given front end:
-    $q="SELECT DISTINCT TestData_header.keyId, TestData_header.DataSetGroup
-        FROM FE_Config LEFT JOIN TestData_header
-        ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
-        WHERE TestData_header.Band = $Band
-        AND TestData_header.fkTestData_Type= $DataType
-        AND FE_Config.fkFront_Ends = $FEid
-        ORDER BY TestData_header.DataSetGroup ASC";
-
-    $r = @mysql_query($q,$db);
-
-    $DataSetGroups = array();
-
-    $lastG = "";
-    while($row = @mysql_fetch_array($r)){
-        // this code counts how many times a given data set has occured
-        $tdh = $row['keyId'];
-        $g = $row['DataSetGroup'];
-        if ($g != $lastG) {
-            $lastG = $g;
-            $a = array('datasetgroup' => $g, 'TDHkeyId' => $tdh);
-            array_push($DataSetGroups, $a);
-        }
-    }
-    echo json_encode($DataSetGroups);
-}
-
 ?>
-

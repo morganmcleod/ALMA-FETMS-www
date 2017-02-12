@@ -5,14 +5,14 @@ Ext.require([
     'Ext.window.MessageBox'
 ]);
 
-function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
+function CreateTree(FEid, band, datatype, dtype_desc, link, TDHid, compId){
 
 	Ext.define('TDH', {
         extend: 'Ext.data.Model',
         fields: [
             {name: 'id',          type: 'string'},
             {name: 'groupnumber', type: 'string'},
-            {name: 'feconfig',    type: 'string'},
+            {name: 'config',      type: 'string'},
             {name: 'ts',          type: 'string'},
             {name: 'text',        type: 'string'},
             {name: 'notes',       type: 'textbox'}
@@ -30,9 +30,12 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
                 destroy: 'POST'
             },     
             api: {
-                 create: 'TreeGridJSON.php?action=create&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype, // Called when saving new records
-                   read: 'TreeGridJSON.php?action=read&FEid='   + FEid + '&band=' + band + '&datatype=' + datatype, // Called when reading existing records
-                 update: 'TreeGridJSON.php?action=update&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype  // Called when updating existing records
+                 create: 'TreeGridJSON.php?action=create&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype + '&comp=' + compId, 
+                     // Called when saving new records
+                   read: 'TreeGridJSON.php?action=read&FEid='   + FEid + '&band=' + band + '&datatype=' + datatype + '&comp=' + compId, 
+                     // Called when reading existing records
+                 update: 'TreeGridJSON.php?action=update&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype + '&comp=' + compId
+                     // Called when updating existing records
             }
     
         }
@@ -50,7 +53,7 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
         useArrows: true,
         frame: true,
         renderTo: 'tree-div',
-        width: 800,
+        width: 850,
         height: 550,
         
         columns: [
@@ -58,7 +61,7 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
                   xtype: 'treecolumn', //this is so we know which column will show the tree
                   text: 'Measurement Sets',
                   dataIndex: 'text',
-                  width: 200,
+                  width: 250,
                   sortable: true,
                   flex: 2,
                   sm:true
@@ -74,8 +77,8 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
                   width: 130,
                   sortable: true
               },{
-                  header: 'FE Config',
-                  dataIndex: 'feconfig',
+                  header: 'Config',
+                  dataIndex: 'config',
                   width: 60,
                   sortable: true
               },{
@@ -99,7 +102,7 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
         
         listeners: {
         	'load': function () {
-        		this.getView().node.cascadeBy(function(rec) {
+        	    this.getView().node.cascadeBy(function(rec) {
         			if (rec.isLeaf()) {
 	        			// cache the data in each child node so we can only send the ones which have changed on SAVE:
 	        			ODArray[ODSize]          = new Object;
@@ -137,10 +140,12 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
                    //This loop populates a JSON object.
 	       			if (rec.isLeaf()) {
 	            	   IsChecked = rec.get('checked');
+                       subid = rec.get('id'); 
 	            	   ODChecked = (ODArray[ODCount].checked == '1');
-	                   if (IsChecked != ODChecked) {
+	            	   // guard against IsChecked == null because we're getting an extra garbage record.
+	                   if (IsChecked != null && IsChecked != ODChecked) {
 		                   JSONObjectArray[outputSize]          = new Object;
-		                   JSONObjectArray[outputSize].subid    = rec.get('id');
+		                   JSONObjectArray[outputSize].subid    = subid;
 		                   JSONObjectArray[outputSize].FEid     = FEid;
 		                   JSONObjectArray[outputSize].datatype = datatype;
 		                   JSONObjectArray[outputSize].checked  = (IsChecked) ? '1' : '0';
@@ -159,12 +164,12 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
                        Ext.MessageBox.hide();
                    };
             	   
-            	   Ext.Ajax.request({
+                   Ext.Ajax.request({
 	                   //Send the JSON object
-	                   url: 'TreeGridJSON.php?action=update_children&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype, // Called when saving new records                   
+	                   url:  'TreeGridJSON.php?action=update_children&FEid=' + FEid + '&band=' + band + '&datatype=' + datatype + '&comp=' + compId,
+	                       // Called when saving new records
 	                   success: received,
 	                   jsonData:  JSON.stringify(JSONObjectArray)
-	                   //timeout: 60000
 	               });
                }
            
@@ -181,7 +186,7 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, idBack){
 	        icon:'../icons/door_out.png',
 	        scope: this,
             handler: function() {
-            	window.location = link + idBack;
+            	window.location = link + TDHid;
             }
         }
         ]
