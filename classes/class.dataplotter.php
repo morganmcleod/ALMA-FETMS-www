@@ -194,7 +194,7 @@ class DataPlotter extends GenericTable{
         }
         $imagename = "CCA_AmplitudeStability_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Amplitude Stability ($TS)";
+        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Amplitude Stability";
 
         //Update plot url
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
@@ -300,7 +300,7 @@ class DataPlotter extends GenericTable{
         $this->TestDataHeader->Update();
 
 
-        $plot_title = "WCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Phase Noise ($TS)";
+        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Phase Drift ($TS)";
         $imagepath = $imagedirectory . $imagename;
 
         //Write command file for gnuplot
@@ -422,7 +422,7 @@ class DataPlotter extends GenericTable{
 
         //Initialize component object
         $this->Component = new TestData_Component();
-        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'),$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'),$this->dbconnection);
 
         $datafile_count=0;
 
@@ -503,7 +503,7 @@ class DataPlotter extends GenericTable{
 
         //Initialize component object
         $this->Component = new TestData_Component();
-        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'),$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'), $this->dbconnection);
 
         $datafile_count=0;
 
@@ -584,7 +584,7 @@ class DataPlotter extends GenericTable{
 
         //Initialize component object
         $this->Component = new TestData_Component();
-        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'),$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'),$this->dbconnection);
 
         $datafile_count=0;
 
@@ -741,9 +741,6 @@ class DataPlotter extends GenericTable{
         $this->url_directory = $cca_url_directory;
         $TestData_Id = $this->TestDataHeader->keyId;
 
-        //Initialize component object
-        //$this->Component = new TestData_Component();
-        //$this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'),$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
         $TS = $this->TestDataHeader->GetValue('TS');
         if ($this->TestDataHeader->GetValue('fkFE_Components') > 0){
             $c = new FEComponent();

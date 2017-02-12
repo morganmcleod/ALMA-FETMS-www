@@ -451,6 +451,9 @@ class TestData_header extends GenericTable {
         case "41":
             $plt->Plot_CCA_IFSpectrum();
             break;
+        case "42":
+            // TODO: $plt->Plot_CCA_NoiseTemp is not implemented!
+            break;
         case "35":
             $plt->Plot_CCA_PolAccuracy();
             break;
@@ -465,7 +468,6 @@ class TestData_header extends GenericTable {
         case "57":
             $plt->Plot_LOLockTest();
             break;
-
 
         case "44":
             //AM Noise
