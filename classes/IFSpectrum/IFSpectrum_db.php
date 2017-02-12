@@ -30,6 +30,7 @@ require_once($site_dbConnect);
 class IFSpectrum_db {
     private $dbConnection;
     private $FEid;
+    private $CCAid;
     private $band;
     private $dataSetGroup;
     private $lastTS;
@@ -58,35 +59,48 @@ class IFSpectrum_db {
     * @param integer $FEid
     * @param integer $band
     * @param integer $dataSetGroup
+    * @param integer $CCAid
     */
-    public function createTemporaryTable($FEid, $band, $dataSetGroup) {
+    public function createTemporaryTable($FEid, $band, $dataSetGroup, $CCAid = 0) {
         $q = "DROP TEMPORARY TABLE IF EXISTS TEMP_IFSpectrum;";
         $this->run_query($q);
-
+        
+        $feConfig = 0;
+        
         $qcreate = "CREATE TEMPORARY TABLE TEMP_IFSpectrum (
             fkSubHeader INT,
-            fkFacility INT,
             Freq_Hz DOUBLE,
             Power_dBm DOUBLE,
             INDEX (fkSubHeader)) ";
-
-        $qcreate .= "SELECT IFSpectrum.fkSubHeader, IFSpectrum.fkFacility, IFSpectrum.Freq_Hz, IFSpectrum.Power_dBm
-            FROM FE_Config, TestData_header, IFSpectrum_SubHeader LEFT JOIN IFSpectrum
+        
+        $qcreate .= "SELECT IFSpectrum.fkSubHeader, IFSpectrum.Freq_Hz, IFSpectrum.Power_dBm
+            FROM TestData_header, IFSpectrum_SubHeader LEFT JOIN IFSpectrum
             ON IFSpectrum_SubHeader.keyId = IFSpectrum.fkSubHeader
             AND IFSpectrum_SubHeader.keyFacility = IFSpectrum.fkFacility
-            WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
-            AND TestData_header.keyFacility = FE_Config.keyFacility
-            AND TestData_header.keyId = IFSpectrum_SubHeader.fkHeader
+            WHERE TestData_header.keyId = IFSpectrum_SubHeader.fkHeader
             AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
-            AND FE_Config.fkFront_Ends = $FEid
-            AND TestData_header.Band = $band AND TestData_header.fkTestData_Type = 7
-            AND IFSpectrum_SubHeader.IsIncluded = 1 AND TestData_header.DataSetGroup = $dataSetGroup ;";
-
+            AND TestData_header.Band = $band 
+            AND TestData_header.fkTestData_Type = 7
+            AND IFSpectrum_SubHeader.IsIncluded = 1 
+            AND TestData_header.DataSetGroup = $dataSetGroup";
+        
+        if ($FEid) {
+            $qcreate .= " AND TestData_header.fkFE_Config in
+                (SELECT keyFEConfig from FE_Config WHERE fkFront_Ends = $FEid);";
+        
+        } else if ($CCAid) {
+            $qcreate .= " AND TestData_header.fkFE_Components = $CCAid;";
+                    
+        } else
+            return false;
+        
         if ($this->run_query($qcreate)) {
             $this->FEid = $FEid;
+            $this->CCAid = $CCAid;
             $this->band = $band;
             $this->dataSetGroup = $dataSetGroup;
         }
+        return true;
     }
 
     /**
@@ -116,16 +130,26 @@ class IFSpectrum_db {
 	 */
 	private function getHeaderInfo($ifChannel, $ifGain = 15) {
 	    $q = "SELECT IFSpectrum_SubHeader.FreqLO, IFSpectrum_SubHeader.keyId, TestData_header.keyId
-	    FROM IFSpectrum_SubHeader, TestData_header, FE_Config
+	    FROM IFSpectrum_SubHeader, TestData_header
 	    WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
-	    AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
 	    AND IFSpectrum_SubHeader.Band = $this->band
 	    AND IFSpectrum_SubHeader.IFChannel = $ifChannel
 	    AND IFSpectrum_SubHeader.IFGain = $ifGain
 	    AND IFSpectrum_SubHeader.IsIncluded = 1
-	    AND FE_Config.fkFront_Ends = $this->FEid
-	    AND TestData_header.DataSetGroup = $this->dataSetGroup
-	    ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";
+	    AND TestData_header.DataSetGroup = $this->dataSetGroup";
+	    
+	    if ($this->FEid) {
+	        $q .= " AND TestData_header.fkFE_Config in
+	            (SELECT keyFEConfig from FE_Config WHERE fkFront_Ends = $this->FEid)";
+	    
+	    } else if ($this->CCAid) {
+	        $q .= " AND TestData_header.fkFE_Components = $this->CCAid";
+	    
+	    } else {
+	        return false;
+	    }
+	    
+	    $q .= " ORDER BY IFSpectrum_SubHeader.FreqLO ASC;";
 
 	    $r = $this->run_query($q);
 
@@ -351,8 +375,13 @@ class IFSpectrum_db {
 	 *     [1] => array...
 	 * )
 	 */
-	public function getPowerVarFullBand($FEid, $band, $dataSetGroup) {
-	    $TDHkeys = $this->getTestDataHeaderKeys($FEid, $band, $dataSetGroup);
+	public function getPowerVarFullBand($FEid, $band, $dataSetGroup, $CCAid = 0) {
+	    if ($FEid)	    
+	        $TDHkeys = $this->getTestDataHeaderKeys($FEid, $band, $dataSetGroup);
+	    else if ($CCAid)
+	        $TDHkeys = $this->getTestDataHeaderKeysForComp($CCAid, $band, $dataSetGroup);
+	    else
+	        return false;
 
 	    $keysList = $this->makeKeysList($TDHkeys);
 
@@ -479,8 +508,13 @@ class IFSpectrum_db {
 	 *     [1] => array...
 	 * )
 	 */
-	public function getTotalAndInBandPower($FEid, $band, $dataSetGroup, $ifChannel) {
-	    $TDHkeys = $this->getTestDataHeaderKeys($FEid, $band, $dataSetGroup);
+	public function getTotalAndInBandPower($FEid, $band, $dataSetGroup, $ifChannel, $CCAid = 0) {
+	    if ($FEid)
+	        $TDHkeys = $this->getTestDataHeaderKeys($FEid, $band, $dataSetGroup);
+        else if ($CCAid)
+            $TDHkeys = $this->getTestDataHeaderKeysForComp($CCAid, $band, $dataSetGroup);
+        else
+            return false;
 
 	    $keysList = $this->makeKeysList($TDHkeys);
 

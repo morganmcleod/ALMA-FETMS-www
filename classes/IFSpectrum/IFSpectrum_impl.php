@@ -72,19 +72,20 @@ class IFSpectrum_impl extends TestData_header {
     private $swVersion;           //software version string for this class.
 
     public function __construct() {
-        $this->swVersion = "1.3.5";
-        // 1.3.5  MTM: Fixes for calling from CCA page. Make vars private.
-        // 1.3.4  MTM: Band 1 is SSB
-        // 1.3.3  MTM: Initializes FrontEnd object with INIT_CARTS for speed.
-        // 1.3.2  MTM: fixed IF spectrum plotting bugs: Wrong URLs table name;  Out-of-spec pVar mark not shown on 0th LO trace.
-        // 1.3.1  MTM: refactoring done.  B5 special powervar plot temporarily disabled.
-        // 1.3.0  MTM: still refactoring with new IFSpectrum_calc, _db, and _plot classes.
-        // 1.2.0  MTM: refactoring from Aaron's new plotter classes.
+        $this->swVersion = "1.3.6";
+        // 1.3.6  More fixes for calling from CCA page.     
+        // 1.3.5  Fixes for calling from CCA page. Make vars private.
+        // 1.3.4  Band 1 is SSB
+        // 1.3.3  Initializes FrontEnd object with INIT_CARTS for speed.
+        // 1.3.2  fixed IF spectrum plotting bugs: Wrong URLs table name;  Out-of-spec pVar mark not shown on 0th LO trace.
+        // 1.3.1  refactoring done.  B5 special powervar plot temporarily disabled.
+        // 1.3.0  still refactoring with new IFSpectrum_calc, _db, and _plot classes.
+        // 1.2.0  refactoring from Aaron's new plotter classes.
         // 1.1.0  ATB: moved database calls to dbCode/ifspectrumdb.php
-        // 1.0.24 MTM: fixed inconsistency in the two queries in Display_TotalPowerTable
-        // 1.0.23 MTM: fixes so we can run with E_NOTICE enabled
-        // 1.0.22 MTM: fix "set...screen" commands to gnuplot
-        // 1.0.21 MTM: fix font color for Total and In-band power table.
+        // 1.0.24 fixed inconsistency in the two queries in Display_TotalPowerTable
+        // 1.0.23 fixes so we can run with E_NOTICE enabled
+        // 1.0.22 fix "set...screen" commands to gnuplot
+        // 1.0.21 fix font color for Total and In-band power table.
         //        Fix using/displaying wrong noise floor profile for total and inband.
         require(site_get_config_main());
         $this->plotter = new IFSpectrum_plot();
@@ -132,7 +133,7 @@ class IFSpectrum_impl extends TestData_header {
         if ($this->FEid)
             $this->TDHkeys = $this->ifSpectrumDb -> getTestDataHeaderKeys($this->FEid, $this->band, $this->dataSetGroup);
         else
-            $this->TDHkeys = $this->ifSpectrumDb ->getTestDataHeaderKeysForComp($this->CCAid, $this->band, $this->dataSetGroup);
+            $this->TDHkeys = $this->ifSpectrumDb -> getTestDataHeaderKeysForComp($this->CCAid, $this->band, $this->dataSetGroup);
 
         $this->TS = $this->ifSpectrumDb -> getLastTS();
 
@@ -199,7 +200,8 @@ class IFSpectrum_impl extends TestData_header {
         $testmessage .= " Band " . $this->band;
 
         $url = '"' . $rootdir_url . 'FEConfig/ifspectrum/ifspectrumplots.php?fc='
-            . $this->facilityCode . '&fe=' . $this->FEid . '&b=' . $this->band . '&g=' . $this->dataSetGroup . '"';
+            . $this->facilityCode . '&fe=' . $this->FEid . '&b=' . $this->band 
+            . '&id=' . $this->TDHid . '"';
         $this->progressfile = CreateProgressFile($testmessage, '', $url);
         $this->progressfile_fullpath = $main_write_directory . $this->progressfile . ".txt";
     }
@@ -265,7 +267,7 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     public function Display_TotalPowerTable($ifChannel) {
-        $data = $this->ifSpectrumDb -> getTotalAndInBandPower($this->FEid, $this->band, $this->dataSetGroup, $ifChannel);
+        $data = $this->ifSpectrumDb -> getTotalAndInBandPower($this->FEid, $this->band, $this->dataSetGroup, $ifChannel, $this->CCAid);
         if ($data) {
             // TODO: add back in borders/shading.
             echo "<div style = 'width:600px'>";
@@ -341,7 +343,8 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     public function DisplayPowerVarFullBandTable() {
-        $data = $this->ifSpectrumDb -> getPowerVarFullBand($this->FEid, $this->band, $this->dataSetGroup);
+        $data = $this->ifSpectrumDb -> getPowerVarFullBand($this->FEid, $this->band, $this->dataSetGroup, $this->CCAid);
+            
         if ($data) {
             $noLSB = ($this->band == 1 || $this->band == 9 || $this->band == 10);
             $colSpan = ($noLSB ? 3 : 5);
@@ -401,7 +404,9 @@ class IFSpectrum_impl extends TestData_header {
 
     public function GeneratePlots() {
         $this->ReportProgress(1, 'Creating temporary table...');
-        $this->ifSpectrumDb->createTemporaryTable($this->FEid, $this->band, $this->dataSetGroup);
+        if (!$this->ifSpectrumDb->createTemporaryTable($this->FEid, $this->band, $this->dataSetGroup, $this->CCAid))
+            return;
+        
         $this->makeOutputDirectory(true);
 
         $this->ReportProgress(10, 'Plotting IF Spectrum...');
