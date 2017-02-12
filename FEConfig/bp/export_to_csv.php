@@ -9,7 +9,7 @@ $keyScanDet = isset($_REQUEST['detid']) ? $_REQUEST['detid'] : false;
 $which = isset($_REQUEST['which']) ? $_REQUEST['which'] : 'ff';
 
 if ($keyScanDet) {
-    header("Content-type: application/x-msdownload");
+    header("Content-type: text/csv");
     
     if ($which == 'nf')
         $csv_filename = "Nearfield_$keyScanDet.csv";

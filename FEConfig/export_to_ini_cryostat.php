@@ -26,7 +26,7 @@ if ($datatype == "tempsensors"){
     $title13 = $cryostat->tempsensors[13]->GetValue('location');
 
     $fname = "cryo.ini";
-    header("Content-type: application/x-msdownload");
+    header("Content-type: text/plain");
     header("Content-Disposition: attachment; filename=$fname");
     header("Pragma: no-cache");
     header("Expires: 0");

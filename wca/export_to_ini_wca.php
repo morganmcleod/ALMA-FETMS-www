@@ -14,7 +14,7 @@ $wca->Initialize_WCA($id, $fc, WCA::INIT_ALL);
 $band = $wca->GetValue('Band');
 $fname = ($type=='wca') ? "WCA$band.ini" : "FrontEndControlDLL.ini";
 
-header("Content-type: application/x-msdownload");
+header("Content-type: text/plain");
 header("Content-Disposition: attachment; filename=$fname");
 header("Pragma: no-cache");
 header("Expires: 0");

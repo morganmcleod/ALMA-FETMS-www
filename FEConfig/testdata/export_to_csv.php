@@ -28,7 +28,7 @@ if (!isset($_REQUEST['ifsub'])) {
         }
         $csv_filename .= ".csv";
 
-        header("Content-type: application/x-msdownload");
+        header("Content-type: text/csv");
         header("Content-Disposition: attachment; filename=$csv_filename");
         header("Pragma: no-cache");
         header("Expires: 0");
@@ -126,7 +126,7 @@ if (isset($_REQUEST['ifsub'])) {
     $ifsub->Initialize('IFSpectrum_SubHeader',$ifsub_id,'keyId',$fc,'keyFacility');
 
 
-    header("Content-type: application/x-msdownload");
+    header("Content-type: text/csv");
     $csv_filename = "IFSpectrum_$ifsub_id.csv";
     header("Content-Disposition: attachment; filename=$csv_filename");
     header("Pragma: no-cache");

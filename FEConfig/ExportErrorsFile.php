@@ -1,6 +1,6 @@
 <?php
 $fname = "Errors.txt";
-header("Content-type: application/x-msdownload");
+header("Content-type: text/plain");
 header("Content-Disposition: attachment; filename=$fname");
 header("Pragma: no-cache");
 header("Expires: 0");
