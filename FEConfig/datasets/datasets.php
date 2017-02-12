@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon">
     <title>Edit Data Sets</title>
 
     <script type="text/javascript" src="../../ext4/ext-all.js"></script>
