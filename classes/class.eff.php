@@ -1142,12 +1142,13 @@ class eff {
             if ($count % 2 == 0) {
                   $trclass = 'alt';
             }
+            $ts = strftime("%a",strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS'))) . " " . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS');
+            
             echo "<tr class='$trclass'>";
             echo "<td width = '30px'>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
             echo "<td width = '30px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
             echo "<td width = '80px'>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td width ='200px'>" . strftime("%a",strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS'))) . " "
-                                       . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS') . "</td>";
+            echo "<td width ='180px'>" . $ts . "</td>";
 
             $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('nsi_filename');
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive

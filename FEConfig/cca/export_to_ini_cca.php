@@ -4,7 +4,7 @@ require_once($site_classes . '/class.cca.php');
 require_once($site_classes . '/class.logger.php');
 
 $fname = "FrontEndControlDLL.ini";
-header("Content-type: application/x-msdownload");
+header("Content-type: text/plain");
 header("Content-Disposition: attachment; filename=$fname");
 header("Pragma: no-cache");
 header("Expires: 0");

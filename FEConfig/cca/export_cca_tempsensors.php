@@ -11,7 +11,7 @@ $sn   = ltrim($cca->GetValue('SN'),'0');
 $esn  = $cca->GetValue('ESN1');
 
 $fname = "cart$band.ini";
-header("Content-type: application/x-msdownload");
+header("Content-type: text/plain");
 header("Content-Disposition: attachment; filename=$fname");
 header("Pragma: no-cache");
 header("Expires: 0");
