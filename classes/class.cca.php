@@ -75,10 +75,11 @@ class CCA extends FEComponent {
 
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.11";
+        $this->swversion = "1.0.12";
 
         /*
-         * 1.0.11 MM Added INIT_Options to Initialize_CCA()
+         * 1.0.12 Fixed Upload_PolAccuracy to comply with CCA data spec
+         * 1.0.11 Added INIT_Options to Initialize_CCA()
          * 1.0.10 Added XML data file uplaod and fixed related bugs
          * 1.0.9  fixed bugs in CCA data upload
          * 1.0.8  fixes to allow operation with E_NOTICE enabled
@@ -1380,9 +1381,9 @@ public function Display_uploadform_SingleCSVfile() {
                 }
               if (is_numeric(substr($tempArray[0],0,1)) == true) {
                   $FreqLO      = $tempArray[4];
-                  $FreqCarrier = $tempArray[5];
-                  $Pol         = $tempArray[6];
-                  $AngleError  = $tempArray[7];
+                  $FreqCarrier = 0;
+                  $Pol         = $tempArray[5];
+                  $AngleError  = $tempArray[6];
                   $TS             = $tempArray[3];
                   $ds = $tempArray[1];
 
