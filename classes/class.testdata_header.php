@@ -38,7 +38,7 @@ class TestData_header extends GenericTable {
         $this->fc = $in_fc;
         parent::Initialize("TestData_header",$in_keyId,"keyId",$in_fc,'keyFacility');
         $this->TestDataHeader = $in_keyId;
-        
+
         $q = "SELECT Description, TestData_TableName FROM TestData_Types
               WHERE keyId = " . $this->GetValue('fkTestData_Type') . ";";
         $r = @mysql_query($q,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
@@ -137,37 +137,37 @@ class TestData_header extends GenericTable {
     }
 
     public function Display_TestDataMain() {
-    
+
     	switch ($this->GetValue('fkTestData_Type')) {
     		case 27:
     			$this->Display_DataForm();
     			echo "<br>";
     			$this->Display_PhaseStabilitySubHeader();
     			break;
-    
+
     		case 7:
     			//IF Spectrum
     			break;
-    
+
     		case 56:
     			//Pol Angles
     			$this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_PolAngles();
     			break;
-    
+
     		case 57:
     			//LO Lock Test
     			$this->Display_DataSetNotes();
     			echo "<br>";
     			break;
-    
+
     		case 58:
     			//Noise Temperature
     			$this->Display_DataSetNotes();
     			echo "<br>";
     			break;
-    
+
     		case 50:
     			$this->Display_DataForm();
     			echo "<br>";
@@ -233,13 +233,13 @@ class TestData_header extends GenericTable {
     			break;
     	}
     }
- 
-    
+
+
     public function Display_DataForm() {
         echo "<div style='width:300px'>";
         echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
         echo "<table id = 'table1'>";
-        echo "<tr><th>Test Data Notes</th></tr>";
+        echo "<tr><th>Notes</th></tr>";
         echo "<tr><td><textarea rows='6' cols='55' name = 'Notes'>"
         .stripcslashes($this->GetValue('Notes')).
         "</textarea>";
@@ -380,7 +380,7 @@ class TestData_header extends GenericTable {
 
         //echo "</div>";
     }
-    
+
     public function AutoDrawThis() {
     	// return true if this plot type should be automatically drawn on page load.
     	switch($this->GetValue('fkTestData_Type')) {
@@ -397,20 +397,20 @@ class TestData_header extends GenericTable {
     		case 13:
     		case 14:
     		case 15:
-    
+
     		case 57: 	// LO lock test
     		case 58: 	// Noise temperature
     		case 59:	// fine LO sweep
-    
+
     		case 44:	// WCA cartridge PAI plots
     		case 45:
     		case 46:
     		case 47:
     		case 48:
-    
+
     		case 42:	//CCA cartridge PAI plots
     			return false;
-    
+
     		default:
     			return true;
     	}

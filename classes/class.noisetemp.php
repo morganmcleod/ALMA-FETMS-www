@@ -86,18 +86,34 @@ class NoiseTemperature extends TestData_header{
     public function DisplayPlots() {
         $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
 
-        echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl1') . "'><br><br>";
+        $url = $this->NT_SubHeader->GetValue('ploturl1');
+        if ($url)
+            echo "<img src= '$url'><br><br>";
 
-        if ($hasSB2)
-            echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl2') . "'><br><br>";
+        if ($hasSB2) {
+            $url = $this->NT_SubHeader->GetValue('ploturl2');
+            if ($url)
+                echo "<img src= '$url'><br><br>";
+        }
 
-        echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl5') . "'><br><br>";
+        $url = $this->NT_SubHeader->GetValue('ploturl5');
+        if ($url)
+            echo "<img src= '$url'><br><br>";
 
-        if ($hasSB2)
-            echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl6') . "'><br><br>";
+        if ($hasSB2) {
+            $url = $this->NT_SubHeader->GetValue('ploturl6');
+            if ($url)
+                echo "<img src= '$url'><br><br>";
+        }
 
-        echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl3') . "'><br><br>";
-        echo "<img src= '" . $this->NT_SubHeader->GetValue('ploturl4') . "'><br><br>";
+        $url = $this->NT_SubHeader->GetValue('ploturl3');
+        if ($url)
+            echo "<img src= '$url'><br><br>";
+
+        $url = $this->NT_SubHeader->GetValue('ploturl4');
+        if ($url)
+            echo "<img src= '$url'><br><br>";
+
         if ($this->GetValue('Band') == 3) {
             Band3_NT_results($this->GetValue('keyId'));
             Band3_CCA_NT_results($this->GetValue('keyId'));

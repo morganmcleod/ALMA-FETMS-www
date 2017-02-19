@@ -48,7 +48,7 @@ switch ($tabtype) {
 
         echo "<div style='width:100px'>";
             echo "<table id = 'table1'>";
-                echo "<tr><th>Test Data Notes</th></tr>";
+                echo "<tr><th>Notes</th></tr>";
                 echo "<tr><td>";
                     echo "
                     <textarea rows='20' cols='85' name = 'Notes'>".stripslashes($tdh->GetValue('Notes'))."</textarea>";

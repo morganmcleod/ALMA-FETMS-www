@@ -4,9 +4,11 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
-function table_header ( $width , &$tdh ){
-    $table_ver = "1.1.1";
+function table_header ($width, &$tdh) {
+    $table_ver = "1.1.2";
     /*
+     * 1.1.2 Don't show query error for CCA NT table when no data is available.
+     *       "Include in PAS Report" -> "for PAI"
      * 1.1.1 Fix SIS buggy alignment of PAS monitor data with control data.
      * 1.1.0 Now pulls specifications from new class that pulls from files instead of database.
      * 1.0.6 MM fixed query fetching LNA config data for band 4.
@@ -31,13 +33,13 @@ function table_header ( $width , &$tdh ){
     echo "<div style= 'width:".$width."px'>
         <table id='table1'>
         <tr class = 'alt'><th colspan='100'>$test_name";
-        // cheesy for loop to put spaces in between table title and check box
+        //cheesy for loop to put spaces in between table title and check box
         for ($i = 1; $i <= pow($width/27.5,1.48)-(strlen($test_name)*1.75); $i++) {
             echo "&nbsp";
         }
     echo "<input type='hidden' name='checkbox[]' value='".$tdh->GetValue('keyId')."'>
-        <input type='checkbox' name='checkbox[]' value='".$tdh->GetValue('keyId')."' $value>
-        Include in PAS Report<br></th></tr>";
+          <input type='checkbox' name='checkbox[]' value='".$tdh->GetValue('keyId')."' $value>
+          for PAI</th></tr>";
 
     // second title block line
     echo "<tr class = 'alt'><th colspan='100'>".$tdh->GetValue('TS')."
@@ -57,7 +59,7 @@ function table_header ( $width , &$tdh ){
     }
 
     //forth title block line
-    echo "<tr class = 'alt'><th colspan='100'> Test Data Notes: ".$tdh->GetValue('Notes')."
+    echo "<tr class = 'alt'><th colspan='100'> Notes: ".$tdh->GetValue('Notes')."
         </th></tr>";
 }
 
@@ -1083,7 +1085,7 @@ function Band3_NT_results($td_keyID){
  * @param $td_keyID (float) - testdata header keyID
  *
 */
-function Band3_CCA_NT_results($td_keyID){
+function Band3_CCA_NT_results($td_keyID) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID,"40");
@@ -1098,10 +1100,9 @@ function Band3_CCA_NT_results($td_keyID){
     $new_spec = new Specifications();
     $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
     $specs = array();
-    for($i=1; $i<6; $i++){
+    for($i=1; $i<6; $i++) {
     	$specs[$spec['Bspec_bbTSSB' . (string)$i . 'f']] = $spec['Bspec_bbTSSB' . (string)$i . 's'];
     }
-
 
     //Query to get CCA Serial Number
     $q ="SELECT MAX(FE_Components.SN) FROM FE_Components, FE_ConfigLink, FE_Config
@@ -1112,20 +1113,22 @@ function Band3_CCA_NT_results($td_keyID){
          AND FE_Components.keyFacility =" . $tdh->GetValue('keyFacility') ."
          AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
          ORDER BY Band ASC";
+
     //Get CCA FE_Component keyid
     $q ="SELECT keyId FROM FE_Components
-            WHERE SN = ($q) AND fkFE_ComponentType = 20
-            AND band = " . $tdh->GetValue('Band') . "
-            AND keyFacility =" . $tdh->GetValue('keyFacility') ."
-            GROUP BY keyId DESC";
+         WHERE SN = ($q) AND fkFE_ComponentType = 20
+         AND band = " . $tdh->GetValue('Band') . "
+         AND keyFacility =" . $tdh->GetValue('keyFacility') ."
+         GROUP BY keyId DESC";
 
-        $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");;
-    while ($row = @mysql_fetch_array($r)){
-            $CCA_key[]=$row[0];
-        }
+    $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");;
+    while ($row = @mysql_fetch_array($r)) {
+        $CCA_key[]=$row[0];
+    }
 
     $cnt=0;
-    do {    // check all CCA configurations for Noise Temperature data
+    do {
+        // check all CCA configurations for Noise Temperature data
         //get CCA Test Data key
         $q = "SELECT keyID FROM TestData_header WHERE fkTestData_Type = 42
             AND fkDataStatus = 7 AND fkFE_Components = $CCA_key[$cnt]
@@ -1134,128 +1137,126 @@ function Band3_CCA_NT_results($td_keyID){
 
         $CCA_TD_key = @mysql_result($r,0,0);
         $cnt++;
-    } while ($CCA_TD_key === FALSE && $cnt < count($CCA_key));
 
+    } while ($CCA_TD_key === FALSE && $cnt < count($CCA_key));
 
     $cca_tdh = new TestData_header();
     $cca_tdh->Initialize_TestData_header($CCA_TD_key,"40");
 
-    // get and display table
-    $col_name = array("Pol","SB","FreqLO","CenterIF","Treceiver");
-    $col_strg = implode(",",$col_name);
-    $q = "SELECT $col_strg
-        FROM `CCA_TEST_NoiseTemperature`
-        WHERE fkHeader= $CCA_TD_key AND `CenterIF` != 0
-        ORDER BY `Pol` ASC, `SB` ASC, `FreqLO` ASC, `CenterIF` ASC";
+    if ($CCA_TD_key) {
+        // get and display table
+        $col_name = array("Pol","SB","FreqLO","CenterIF","Treceiver");
+        $col_strg = implode(",",$col_name);
+        $q = "SELECT $col_strg
+            FROM `CCA_TEST_NoiseTemperature`
+            WHERE fkHeader= $CCA_TD_key AND `CenterIF` != 0
+            ORDER BY `Pol` ASC, `SB` ASC, `FreqLO` ASC, `CenterIF` ASC";
 
-    $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");
 
-    // read sort and average Noise Temperature Data
-    $last_FREQ_LO = 0;
+        // read sort and average Noise Temperature Data
+        $last_FREQ_LO = 0;
 
-    $AVG_NT_FREQ_LO = array();
+        $AVG_NT_FREQ_LO = array();
 
-    while ($row = @mysql_fetch_array($r)){
-        if ($last_FREQ_LO != $row[2] && $last_FREQ_LO!= 0){
-            $index=array_search($last_FREQ_LO,$AVG_NT_FREQ_LO);
+        while ($row = @mysql_fetch_array($r)) {
+            if ($last_FREQ_LO != $row[2] && $last_FREQ_LO!= 0) {
+                $index=array_search($last_FREQ_LO,$AVG_NT_FREQ_LO);
 
-            if ($index === FALSE  || $index === NULL){
-                $AVG_NT_FREQ_LO[] = $last_FREQ_LO;
+                if ($index === FALSE  || $index === NULL) {
+                    $AVG_NT_FREQ_LO[] = $last_FREQ_LO;
+                }
+                // calculate NT averages for a polarizaion and SB per a given Freq_LO
+                // pol 0 SB1
+                if ($last_pol == 0 && $last_sb == 1) {
+                    $AVG_NT_Pol0_Sb1[] = array_sum($NT_Pol0_Sb1)/count($NT_Pol0_Sb1);
+                    unset($NT_Pol0_Sb1);
+
+                // pol 0 SB2
+                } else if ($last_pol == 0 && $last_sb == 2) {
+                    $AVG_NT_Pol0_Sb2[] = array_sum($NT_Pol0_Sb2)/count($NT_Pol0_Sb2);
+                    unset($NT_Pol0_Sb2);
+
+                // pol 1 SB1
+                } else if ($last_pol == 1 && $last_sb == 1) {
+                    $AVG_NT_Pol1_Sb1[] = array_sum($NT_Pol1_Sb1)/count($NT_Pol1_Sb1);
+                    unset($NT_Pol1_Sb1);
+
+                // pol 1 SB2
+                } else if ($last_pol == 1 && $last_sb == 2) {
+                    $AVG_NT_Pol1_Sb2[] = array_sum($NT_Pol1_Sb2)/count($NT_Pol1_Sb2);
+                    unset($NT_Pol1_Sb2);
+                }
             }
-            // calculate NT averages for a polarizaion and SB per a given Freq_LO
+
+            //save polarization and sidebands NT into an array
             // pol 0 SB1
-            if ($last_pol == 0 && $last_sb == 1){
-                $AVG_NT_Pol0_Sb1[] = array_sum($NT_Pol0_Sb1)/count($NT_Pol0_Sb1);
-                unset($NT_Pol0_Sb1);
+            if ($row[0] == 0 && $row[1] == 1) {
+                $NT_Pol0_Sb1[] = $row[4];
 
             // pol 0 SB2
-            } else if ($last_pol == 0 && $last_sb == 2){
-                $AVG_NT_Pol0_Sb2[] = array_sum($NT_Pol0_Sb2)/count($NT_Pol0_Sb2);
-                unset($NT_Pol0_Sb2);
+            } else if ($row[0] == 0 && $row[1] == 2) {
+                $NT_Pol0_Sb2[] = $row[4];
 
             // pol 1 SB1
-            } else if ($last_pol == 1 && $last_sb == 1){
-                $AVG_NT_Pol1_Sb1[] = array_sum($NT_Pol1_Sb1)/count($NT_Pol1_Sb1);
-                unset($NT_Pol1_Sb1);
+            } else if ($row[0] == 1 && $row[1] == 1) {
+                $NT_Pol1_Sb1[] = $row[4];
 
             // pol 1 SB2
-            } else if ($last_pol == 1 && $last_sb == 2){
-                $AVG_NT_Pol1_Sb2[] = array_sum($NT_Pol1_Sb2)/count($NT_Pol1_Sb2);
-                unset($NT_Pol1_Sb2);
+            } else if ($row[0] == 1 && $row[1] == 2) {
+                $NT_Pol1_Sb2[] = $row[4];
             }
+
+            $last_FREQ_LO = $row[2];
+            $last_pol = $row[0];
+            $last_sb = $row[1];
+            $last_NT = $row[4];
         }
 
-        //save polarization and sidebands NT into an array
-        // pol 0 SB1
-        if ($row[0] == 0 && $row[1] == 1){
-            $NT_Pol0_Sb1[] = $row[4];
+        // calculate last average point
+        $AVG_NT_Pol1_Sb2[] = array_sum($NT_Pol1_Sb2)/count($NT_Pol1_Sb2);
 
-        // pol 0 SB2
-        } else if ($row[0] == 0 && $row[1] == 2){
-            $NT_Pol0_Sb2[] = $row[4];
-
-        // pol 1 SB1
-        } else if ($row[0] == 1 && $row[1] == 1){
-            $NT_Pol1_Sb1[] = $row[4];
-
-        // pol 1 SB2
-        } else if ($row[0] == 1 && $row[1] == 2){
-            $NT_Pol1_Sb2[] = $row[4];
-        }
-
-
-    $last_FREQ_LO = $row[2];
-    $last_pol = $row[0];
-    $last_sb = $row[1];
-    $last_NT = $row[4];
-    }
-
-    // calculate last average point
-    $AVG_NT_Pol1_Sb2[] = array_sum($NT_Pol1_Sb2)/count($NT_Pol1_Sb2);
-
-    // get TFETMS Average Data
-    $q = "SELECT `AvgNT`, `FreqLO`
-        FROM `Noise_Temp_Band3_Results`
-        WHERE fkHeader= $td_keyID";
-    $r = @mysql_query($q,$tdh->dbconnection);
-	$TFETMS = array();
-    while ($row = @mysql_fetch_array($r)){
+        // get TFETMS Average Data
+        $q = "SELECT `AvgNT`, `FreqLO`
+            FROM `Noise_Temp_Band3_Results`
+            WHERE fkHeader= $td_keyID";
+        $r = @mysql_query($q,$tdh->dbconnection);
+    	$TFETMS = array();
+        while ($row = @mysql_fetch_array($r)) {
             $TFETMS[$row[1]]=$row[0];
-    }
+        }
 
-    table_header ( 800,$cca_tdh);
-    $col_name = array("FreqLO (Ghz)","Pol0USB (K)","Pol0LSB (K)","Pol1USB (K)","Pol1LSB (K)","AvgNT (K)","Spec (K)","T(FETMS)-\nT(HIA)-\n3Kmirrors (K)");
-    // display data column header row
-    foreach ($col_name  as $Col) {
-                echo "<th width = '300px'>$Col</th>";
-    }
+        table_header ( 800,$cca_tdh);
+        $col_name = array("FreqLO (Ghz)","Pol0USB (K)","Pol0LSB (K)","Pol1USB (K)","Pol1LSB (K)","AvgNT (K)","Spec (K)","T(FETMS)-\nT(HIA)-\n3Kmirrors (K)");
+        // display data column header row
+        foreach ($col_name  as $Col) {
+            echo "<th width = '300px'>$Col</th>";
+        }
 
-    // display data rows
-    $cnt = 0;
-    $i=0;
-    echo "<tr>";
-    foreach ($AVG_NT_FREQ_LO as $FREQ_LO){
-        //don't format frequency
-        echo "<td width = '400px'>$FREQ_LO</td>";
+        // display data rows
+        $cnt = 0;
+        $i=0;
+        echo "<tr>";
+        foreach ($AVG_NT_FREQ_LO as $FREQ_LO) {
+            //don't format frequency
+            echo "<td width = '400px'>$FREQ_LO</td>";
 
-        //only display 2 decimals on a float number
-        echo "<td width = '300px'>".mon_data ($AVG_NT_Pol0_Sb1[$cnt])."</td>";
-        echo "<td width = '300px'>".mon_data ($AVG_NT_Pol0_Sb2[$cnt])."</td>";
-        echo "<td width = '300px'>".mon_data ($AVG_NT_Pol1_Sb1[$cnt])."</td>";
-        echo "<td width = '300px'>".mon_data ($AVG_NT_Pol1_Sb2[$cnt])."</td>";
-        $AVG =     mon_data (($AVG_NT_Pol0_Sb1[$cnt]+$AVG_NT_Pol0_Sb2[$cnt]+$AVG_NT_Pol1_Sb1[$cnt]+$AVG_NT_Pol1_Sb2[$cnt])/4);
-        $temp_spec = $specs[$FREQ_LO] - 3;
-        $text=$new_spec->chkNumAgnstSpec( $AVG, "<", $temp_spec);
-        echo "<td width = '300px'>$text</td>";
-        echo "<td width = '400px'>less than $temp_spec</td>";
-        $result = mon_data ($TFETMS[$FREQ_LO] - $AVG - 3);
-        echo "<td width = '300px'>$result</td>";
-        echo "</tr>";
-        $cnt++;
+            //only display 2 decimals on a float number
+            echo "<td width = '300px'>".mon_data ($AVG_NT_Pol0_Sb1[$cnt])."</td>";
+            echo "<td width = '300px'>".mon_data ($AVG_NT_Pol0_Sb2[$cnt])."</td>";
+            echo "<td width = '300px'>".mon_data ($AVG_NT_Pol1_Sb1[$cnt])."</td>";
+            echo "<td width = '300px'>".mon_data ($AVG_NT_Pol1_Sb2[$cnt])."</td>";
+            $AVG =     mon_data (($AVG_NT_Pol0_Sb1[$cnt]+$AVG_NT_Pol0_Sb2[$cnt]+$AVG_NT_Pol1_Sb1[$cnt]+$AVG_NT_Pol1_Sb2[$cnt])/4);
+            $temp_spec = $specs[$FREQ_LO] - 3;
+            $text=$new_spec->chkNumAgnstSpec( $AVG, "<", $temp_spec);
+            echo "<td width = '300px'>$text</td>";
+            echo "<td width = '400px'>less than $temp_spec</td>";
+            $result = mon_data ($TFETMS[$FREQ_LO] - $AVG - 3);
+            echo "<td width = '300px'>$result</td>";
+            echo "</tr>";
+            $cnt++;
+        }
     }
 }
-
-
-
 
 ?>
