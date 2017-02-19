@@ -125,8 +125,9 @@ class NoiseTemperature extends TestData_header{
         $this->NT_Logger = new Logger("NT_Log.txt");
 
         // set Plot Software Version
-        $this->Plot_SWVer = "1.2.4";
+        $this->Plot_SWVer = "1.2.5";
         /*
+         * 1.2.5 Avoid div by 0 in function Trx_Uncorr
          * 1.2.4 Display averaged graphs for band 3 in addition to tables.
          * 1.2.3 Fixed bugs in band 9 & 10 plots.
          * 1.2.2 Added band 5 production changes to noise temp plots.
@@ -441,7 +442,10 @@ class NoiseTemperature extends TestData_header{
 
         function Trx_Uncorr($TAmb, $TColdEff, $Y) {
             // compute Tr, uncorrected (K)
-            return ($TAmb - $TColdEff * $Y) / ($Y - 1);
+            if (($Y - 1) != 0)
+                return ($TAmb - $TColdEff * $Y) / ($Y - 1);
+            else
+                return 999999;
         }
 
         function Tssb_Corr($TrUncorr, $IRdB) {
