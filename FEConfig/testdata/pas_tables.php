@@ -5,8 +5,9 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header ($width, &$tdh) {
-    $table_ver = "1.1.2";
+    $table_ver = "1.1.3";
     /*
+     * 1.1.3 Removed Notes from Band3_NT_results()
      * 1.1.2 Don't show query error for CCA NT table when no data is available.
      *       "Include in PAS Report" -> "for PAI"
      * 1.1.1 Fix SIS buggy alignment of PAS monitor data with control data.
@@ -57,10 +58,6 @@ function table_header ($width, &$tdh) {
             , Table SWVer: $table_ver, Meas SWVer: ".$tdh->GetValue('Meas_SWVer')."
             </th></tr>";
     }
-
-    //forth title block line
-    echo "<tr class = 'alt'><th colspan='100'> Notes: ".$tdh->GetValue('Notes')."
-        </th></tr>";
 }
 
 
