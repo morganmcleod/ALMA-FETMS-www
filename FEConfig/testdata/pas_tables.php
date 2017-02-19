@@ -181,7 +181,6 @@ function CPDS_results($td_keyID){
     echo "</tr>";
     foreach ($Col_name  as $Col) {
         echo "<th>".$Col."</th>";
-        $i++;
     }
     echo "</tr>";
 
