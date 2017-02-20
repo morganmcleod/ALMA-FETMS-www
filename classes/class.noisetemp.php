@@ -65,13 +65,32 @@ class NoiseTemperature extends TestData_header{
     private $datafile_diff_1_2;
 
     // Plot contents and formatting:
-    private $Plot_SWVer;            // software version
+    private $SWVersion;            // software version
     private $plot_label_1;          // labels which go at the bottom of each plot
     private $plot_label_2;
     private $y_lim;                 // y-axis upper limit for plots
 
     public function Initialize_NoiseTemperature($in_keyId, $in_fc) {
         parent::Initialize_TestData_header($in_keyId, $in_fc);
+
+        $this->SWVersion = "1.2.6";
+        /*
+         * 1.2.6 Display Optimization Notes
+         * 1.2.5 Avoid div by 0 in function Trx_Uncorr
+         * 1.2.4 Display averaged graphs for band 3 in addition to tables.
+         * 1.2.3 Fixed bugs in band 9 & 10 plots.
+         * 1.2.2 Added band 5 production changes to noise temp plots.
+         * 1.2.1 Uses only MAX(keyDataSet) when loading CCA NT and IR data.
+         * 1.2.0 Now pulls specifications from new class that pulls from files instead of database.
+         * 1.1.4  Modified caption for band 10 averaging plot 80% spec.
+         * 1.1.3  Fixed band 10 averaging calculation bug.
+         * 1.1.2  Fixed bugs introduced by refactoring (not loading IR data.)
+         * 1.1.1  Got band 10 special averaging plot metrics working
+         * 1.1.0  Refactored into top-level function and helpers.
+         * 1.0.18 cleaned up NT calc and averaging loop.  Added check for band 10 80% spec.
+         * 1.0.17  MTM: fix "set label...screen" commands to gnuplot
+         * 1.0.16  MTM: fix plot axis labels for Tssb and "corrected"
+         */
 
         $q = "SELECT keyId, keyFacility FROM Noise_Temp_SubHeader
               WHERE fkHeader = $in_keyId AND keyFacility = $in_fc
@@ -85,6 +104,8 @@ class NoiseTemperature extends TestData_header{
 
     public function DisplayPlots() {
         $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
+
+        $this->Display_OptimizationNotes();
 
         $url = $this->NT_SubHeader->GetValue('ploturl1');
         if ($url)
@@ -124,28 +145,10 @@ class NoiseTemperature extends TestData_header{
         // start a logger file for debugging
         $this->NT_Logger = new Logger("NT_Log.txt");
 
-        // set Plot Software Version
-        $this->Plot_SWVer = "1.2.5";
-        /*
-         * 1.2.5 Avoid div by 0 in function Trx_Uncorr
-         * 1.2.4 Display averaged graphs for band 3 in addition to tables.
-         * 1.2.3 Fixed bugs in band 9 & 10 plots.
-         * 1.2.2 Added band 5 production changes to noise temp plots.
-         * 1.2.1 Uses only MAX(keyDataSet) when loading CCA NT and IR data.
-         * 1.2.0 Now pulls specifications from new class that pulls from files instead of database.
-         * 1.1.4  Modified caption for band 10 averaging plot 80% spec.
-         * 1.1.3  Fixed band 10 averaging calculation bug.
-         * 1.1.2  Fixed bugs introduced by refactoring (not loading IR data.)
-         * 1.1.1  Got band 10 special averaging plot metrics working
-         * 1.1.0  Refactored into top-level function and helpers.
-         * 1.0.18 cleaned up NT calc and averaging loop.  Added check for band 10 80% spec.
-         * 1.0.17  MTM: fix "set label...screen" commands to gnuplot
-         * 1.0.16  MTM: fix plot axis labels for Tssb and "corrected"
-         */
-        $this->SetValue('Plot_SWVer', $this->Plot_SWVer);
+        $this->SetValue('Plot_SWVer', $this->SWVersion);
         $this->Update();
 
-        $this->NT_Logger->WriteLogFile("class NoiseTemperature version $this->Plot_SWVer");
+        $this->NT_Logger->WriteLogFile("class NoiseTemperature version $this->SWVersion");
 
         // get the main data files write directory from config_main:
         require(site_get_config_main());
@@ -194,6 +197,19 @@ class NoiseTemperature extends TestData_header{
         $this->DrawPlotTrVsRF();
 
         $this->NT_SubHeader->Update();  // save image locations to database
+    }
+
+    private function Display_OptimizationNotes() {
+        $optNotes = $this->NT_SubHeader->GetValue('OptNotes');
+        if (!$optNotes) {
+            echo "<br>";
+            return;
+        }
+        echo "<div style='width:300px'>";
+        echo "<table id = 'table2'>";
+        echo "<tr><th>Optimization Notes</th></tr>";
+        echo "<tr><td><textarea rows='10' cols='90'>" . stripcslashes($optNotes) . "</textarea>";
+        echo "</table></div><br>";
     }
 
     private function LoadCartridgeKeys() {
@@ -1136,7 +1152,7 @@ class NoiseTemperature extends TestData_header{
     private function MakePlotFooterLabels() {
         // if no DataSetGroup then use data from the test TestData_header
         if ($this->GetValue('DataSetGroup') == 0) {
-            $this->plot_label_1 = "set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $this->Plot_SWVer, Meas SWVer: " . $this->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
+            $this->plot_label_1 = "set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $this->SWVersion, Meas SWVer: " . $this->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
             $this->plot_label_2 = "set label '" . $this->GetValue('TS') . ", FE Configuration " . $this->GetValue('fkFE_Config') . ", TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
 
         // find the max timestamp and FE config number for the plot labels
@@ -1185,7 +1201,7 @@ class NoiseTemperature extends TestData_header{
                 $TS = "$maxTS";
                 $FE_Config = "$max_FE_Config";
             }
-            $this->plot_label_1 = "set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->Plot_SWVer, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
+            $this->plot_label_1 = "set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->SWVersion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
             $this->plot_label_2 = "set label 'Dataset: " . $this->GetValue('DataSetGroup') . ", TS: $TS, FE Configuration $FE_Config, TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
         }
     }

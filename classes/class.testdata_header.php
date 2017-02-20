@@ -73,38 +73,11 @@ class TestData_header extends GenericTable {
     }
 
     public function RequestValues_TDH() {
-//         if ($this->GetValue('fkTestData_Type') == 7) {
-//             //IF Spectrum, Get noisefloor key
-//             $qnf = "SELECT MIN(fkNoiseFloorHeader) FROM IFSpectrum_SubHeader
-//                     WHERE fkHeader = $this->keyId
-//                     AND keyFacility = ". $this->GetValue('keyFacility') ."
-//                     LIMIT 1;";
-//             $rnf = @mysql_query($qnf,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-//             $this->NoiseFloorHeader = @mysql_result($rnf,0);
-//         }
-
         if (isset($_REQUEST['fkDataStatus'])) {
             $this->SetValue('fkDataStatus', $_REQUEST['fkDataStatus']);
             $this->Update();
         }
 
-//         if (isset($_REQUEST['nfheader'])) {
-//             $this->NoiseFloorHeader = $_REQUEST['nfheader'];
-//             //Update noisefloor values with selected value
-//             $qifs = "SELECT keyId FROM IFSpectrum_SubHeader
-//                    WHERE fkHeader = $this->keyId
-//                    AND keyFacility = ".$this->GetValue('keyFacility').";";
-
-//             $rifs = @mysql_query($qifs,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-
-//             while ($rowifs = @mysql_fetch_array($rifs)) {
-//                 $ifsub = new GenericTable();
-//                 $ifsub->Initialize('IFSpectrum_SubHeader',$rowifs[0],'keyId',$this->GetValue('keyFacility'),'keyFacility');
-//                 $ifsub->SetValue('fkNoiseFloorHeader', $this->NoiseFloorHeader);
-//                 $ifsub->Update();
-//                 unset($ifsub);
-//             }
-//         }
         if (isset($_REQUEST['Notes'])) {
             $this->SetValue('Notes',$_REQUEST['Notes']);
             parent::Update();
@@ -165,7 +138,6 @@ class TestData_header extends GenericTable {
     		case 58:
     			//Noise Temperature
     			$this->Display_DataSetNotes();
-    			echo "<br>";
     			break;
 
     		case 50:
@@ -240,9 +212,7 @@ class TestData_header extends GenericTable {
         echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
         echo "<table id = 'table1'>";
         echo "<tr><th>Notes</th></tr>";
-        echo "<tr><td><textarea rows='6' cols='55' name = 'Notes'>"
-        .stripcslashes($this->GetValue('Notes')).
-        "</textarea>";
+        echo "<tr><td><textarea rows='6' cols='90' name = 'Notes'>" . stripcslashes($this->GetValue('Notes')) . "</textarea>";
         echo "<input type='hidden' name='fc' value='".$this->GetValue('keyFacility')."'>";
         echo "<input type='hidden' name='keyheader' value='$this->keyId'>";
         echo "<br><input type='submit' name = 'submitted' value='SAVE'></td></tr>";

@@ -5,8 +5,9 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header ($width, &$tdh) {
-    $table_ver = "1.1.3";
+    $table_ver = "1.1.4";
     /*
+     * 1.1.4 Fix display bugs when using 2 GHz (or other) steps in Band3_NT_results()
      * 1.1.3 Removed Notes from Band3_NT_results()
      * 1.1.2 Don't show query error for CCA NT table when no data is available.
      *       "Include in PAS Report" -> "for PAI"
@@ -1018,10 +1019,11 @@ function Band3_NT_results($td_keyID){
     $col_strg = implode(",",$col_name);
     $q = "SELECT $col_strg
         FROM `Noise_Temp_Band3_Results`
-        WHERE fkHeader= $td_keyID";
+        WHERE fkHeader= $td_keyID
+        ORDER BY FreqLO;";
     $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");
 
-    table_header ( 800,$tdh);
+    table_header(800, $tdh);
 
     // display data column header row
     for ($i = 0; $i < 7; $i++) {
@@ -1043,11 +1045,13 @@ function Band3_NT_results($td_keyID){
 
     // display data rows
     $cnt = 0;
-    while ($row = @mysql_fetch_array($r)){
+    $spec = $specs[92];
+
+    while ($row = @mysql_fetch_array($r)) {
         $i=0;
         echo "<tr>";
         for ($i = 0; $i < 7; $i++) {
-            switch ($i){
+            switch ($i) {
                 case 0;
                     //Frequency column
                     $freq = @mysql_result($r,$cnt,$i);
@@ -1055,13 +1059,15 @@ function Band3_NT_results($td_keyID){
                     break;
                 case 5;
                     //average NT column
-                    $num = mon_data (@mysql_result($r,$cnt,$i));
-                    $text=$new_spec->chkNumAgnstSpec( $num, "<", $specs[$freq]);
+                    if (isset($specs[$freq]))
+                        $spec = $specs[$freq];
+                    $num = mon_data(@mysql_result($r, $cnt, $i));
+                    $text = $new_spec->chkNumAgnstSpec($num, "<", $spec);
                     echo "<td width = '300px'>$text</td>";
                     break;
                 case 6;
                     //spec column
-                    echo "<td width = '300px'> less than $specs[$freq]</td>";
+                    echo "<td width = '300px'> less than $spec</td>";
                     break;
                 default;
                     //only display 2 decimals on a float number
@@ -1248,7 +1254,10 @@ function Band3_CCA_NT_results($td_keyID) {
             $text=$new_spec->chkNumAgnstSpec( $AVG, "<", $temp_spec);
             echo "<td width = '300px'>$text</td>";
             echo "<td width = '400px'>less than $temp_spec</td>";
-            $result = mon_data ($TFETMS[$FREQ_LO] - $AVG - 3);
+            if (isset($TFETMS[$FREQ_LO]))
+                $result = mon_data ($TFETMS[$FREQ_LO] - $AVG - 3);
+            else
+                $result = "";
             echo "<td width = '300px'>$result</td>";
             echo "</tr>";
             $cnt++;
