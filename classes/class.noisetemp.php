@@ -82,14 +82,14 @@ class NoiseTemperature extends TestData_header{
          * 1.2.2 Added band 5 production changes to noise temp plots.
          * 1.2.1 Uses only MAX(keyDataSet) when loading CCA NT and IR data.
          * 1.2.0 Now pulls specifications from new class that pulls from files instead of database.
-         * 1.1.4  Modified caption for band 10 averaging plot 80% spec.
-         * 1.1.3  Fixed band 10 averaging calculation bug.
-         * 1.1.2  Fixed bugs introduced by refactoring (not loading IR data.)
-         * 1.1.1  Got band 10 special averaging plot metrics working
-         * 1.1.0  Refactored into top-level function and helpers.
+         * 1.1.4 Modified caption for band 10 averaging plot 80% spec.
+         * 1.1.3 Fixed band 10 averaging calculation bug.
+         * 1.1.2 Fixed bugs introduced by refactoring (not loading IR data.)
+         * 1.1.1 Got band 10 special averaging plot metrics working
+         * 1.1.0 Refactored into top-level function and helpers.
          * 1.0.18 cleaned up NT calc and averaging loop.  Added check for band 10 80% spec.
-         * 1.0.17  MTM: fix "set label...screen" commands to gnuplot
-         * 1.0.16  MTM: fix plot axis labels for Tssb and "corrected"
+         * 1.0.17 MTM: fix "set label...screen" commands to gnuplot
+         * 1.0.16 MTM: fix plot axis labels for Tssb and "corrected"
          */
 
         $q = "SELECT keyId, keyFacility FROM Noise_Temp_SubHeader
@@ -208,7 +208,7 @@ class NoiseTemperature extends TestData_header{
         echo "<div style='width:300px'>";
         echo "<table id = 'table2'>";
         echo "<tr><th>Optimization Notes</th></tr>";
-        echo "<tr><td><textarea rows='10' cols='90'>" . stripcslashes($optNotes) . "</textarea>";
+        echo "<tr><td><textarea readonly rows='10' cols='90'>" . stripcslashes($optNotes) . "</textarea>";
         echo "</table></div><br>";
     }
 
