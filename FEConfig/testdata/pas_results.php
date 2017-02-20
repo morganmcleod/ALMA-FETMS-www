@@ -9,7 +9,7 @@
 <link type="text/css" href="../../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
 <script src="../../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
 <script src="../../ext/ext-all.js" type="text/javascript"></script>
-<script src="../dbGrid.js" type="text/javascript"></script>
+<script type="text/javascript" src="./PAICheckBox.js"></script>
 <script type="text/javascript" src="../spin.js"></script>
 
 <body style="background-color: #19475E">
@@ -68,8 +68,8 @@ echo "<title>$title </title></head>";
 
 <form action=".htmlentities($_SERVER['PHP_SELF'])." method='post'>
 <br>
-<input type='submit' name='formSubmit' value='Save Changes' />
-<br>
+<!-- <input type='submit' name='formSubmit' value='Save Changes' /> -->
+<!-- <br> -->
 
 <?php
 if (isset($_POST["formSubmit"])) {

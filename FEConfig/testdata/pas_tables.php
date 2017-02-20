@@ -5,8 +5,9 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header ($width, &$tdh) {
-    $table_ver = "1.1.4";
+    $table_ver = "1.1.5";
     /*
+     * 1.1.5 using PAIcheckBox to select TDHs for filtering.
      * 1.1.4 Fix display bugs when using 2 GHz (or other) steps in Band3_NT_results()
      * 1.1.3 Removed Notes from Band3_NT_results()
      * 1.1.2 Don't show query error for CCA NT table when no data is available.
@@ -24,24 +25,29 @@ function table_header ($width, &$tdh) {
     $r = @mysql_query($q,$tdh->dbconnection);
     $test_name = @mysql_result($r,0,0);
 
-    // decide if the box is checked
-    if ($tdh->GetValue('DataSetGroup') == 1){
-        $value = "checked";
-    } else {
-        $value = "unchecked";
-    }
-
     // First title block line with check box
-    echo "<div style= 'width:".$width."px'>
+    echo "<div style= 'width:" . $width . "px'>
         <table id='table1'>
         <tr class = 'alt'><th colspan='100'>$test_name";
-        //cheesy for loop to put spaces in between table title and check box
-        for ($i = 1; $i <= pow($width/27.5,1.48)-(strlen($test_name)*1.75); $i++) {
-            echo "&nbsp";
-        }
-    echo "<input type='hidden' name='checkbox[]' value='".$tdh->GetValue('keyId')."'>
-          <input type='checkbox' name='checkbox[]' value='".$tdh->GetValue('keyId')."' $value>
-          for PAI</th></tr>";
+
+    //cheesy for loop to put spaces in between table title and check box
+    for ($i = 1; $i <= pow($width/27.5,1.48)-(strlen($test_name)*1.75); $i++) {
+        echo "&nbsp";
+    }
+
+    // decide if the box is checked
+    $checked = "";
+    if ($tdh->GetValue('UseForPAI'))
+        $checked = "checked='checked'";
+
+    $keyId = $tdh->GetValue('keyId');
+    $cboxId = "PAI_" . $keyId;
+
+    // Call the PAIcheckBox JS function when the checkbox is clicked:
+    echo "<input type='checkbox' name='$cboxId' id='$cboxId' $checked
+        onchange=\"PAIcheckBox($keyId, document.getElementById('$cboxId').checked);\"> for PAI</input>";
+
+    echo "</th></tr>";
 
     // second title block line
     echo "<tr class = 'alt'><th colspan='100'>".$tdh->GetValue('TS')."
