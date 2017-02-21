@@ -1,23 +1,3 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
-
-<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
-<link rel="stylesheet" type="text/css" href="../tables.css">
-<link rel="stylesheet" type="text/css" href="../buttons.css">
-<link rel="Stylesheet" type="text/css" href="../headerbuttons.css">
-<link rel="Stylesheet" type="text/css" href="../../ext/resources/css/ext-all.css" media="screen"/>
-
-<script type="text/javascript" src="../../ext/adapter/ext/ext-base.js"></script>
-<script type="text/javascript" src="../../ext/ext-all.js"></script>
-<!-- <script type="text/javascript" src="../spin.js"></script> -->
-<script type="text/javascript" src="loadBP.js"></script>
-
-<title>Beam Patterns</title>
-</head>
-
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.eff.php');
@@ -85,12 +65,36 @@ if ($eff->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nf
     $bpstatus = 3;
 }
 
+$title = "FE-$fesn - Band $band - Beam Patterns";
+
+?>
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+
+<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
+<link rel="stylesheet" type="text/css" href="../tables.css">
+<link rel="stylesheet" type="text/css" href="../buttons.css">
+<link rel="Stylesheet" type="text/css" href="../headerbuttons.css">
+<link rel="Stylesheet" type="text/css" href="../../ext/resources/css/ext-all.css" media="screen"/>
+
+<script type="text/javascript" src="../../ext/adapter/ext/ext-base.js"></script>
+<script type="text/javascript" src="../../ext/ext-all.js"></script>
+<!-- <script type="text/javascript" src="../spin.js"></script> -->
+<script type="text/javascript" src="loadBP.js"></script>
+
+<?php
+echo "<title>" . $title . "</title></head>";
+echo "</head>";
+
 // start the HTML body.  Calls createBPTabs from loadBP.js to customize the button and create the data tabs:
 echo "<body id = 'body3' onload='createBPTabs($fc,$tdh_key,$band,$bpstatus)' BGCOLOR='#19475E'>";
 echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
 
 // show the standard header with the folllowing text plus Home, Front End NN, Bugs buttons:
-$title = "Band $band Beam Patterns";
 include "header_bp.php";
 
 // this section performs the analysis and draws the plots

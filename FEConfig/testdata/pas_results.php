@@ -12,25 +12,24 @@
 <script type="text/javascript" src="./PAICheckBox.js"></script>
 <script type="text/javascript" src="../spin.js"></script>
 
-<body style="background-color: #19475E">
-
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
 include('pas_tables.php');
 
 $band = $_REQUEST['band'];
-$FE_Config = $_REQUEST['FE_Config'];
+$feconfig = $_REQUEST['FE_Config'];
 $Data_Status = $_REQUEST['Data_Status'];
+$filterChecked = isset($_REQUEST["filterChecked"]) ? $_REQUEST["filterChecked"] : false;
 
 // get FE serial number
 $q = "SELECT `Front_Ends`.`SN`
 	FROM `Front_Ends` JOIN `FE_Config`
 	ON `FE_Config`.fkFront_Ends = `Front_Ends`.keyFrontEnds
-	WHERE `FE_Config`.keyFEConfig=$FE_Config";
+	WHERE `FE_Config`.keyFEConfig=$feconfig";
 
 $r = @mysql_query($q,$db);
-$fe_sn = @mysql_result($r,0,0);
+$fesn = @mysql_result($r,0,0);
 
 // get Data Status Description
 $q = "SELECT `Description` FROM `DataStatus` WHERE `keyId` = $Data_Status ";
@@ -38,130 +37,83 @@ $q = "SELECT `Description` FROM `DataStatus` WHERE `keyId` = $Data_Status ";
 $r = @mysql_query($q,$db);
 $Data_Status_Desc = @mysql_result($r,0,0);
 
-If ($band != 0){
-	$title = "Front End-$fe_sn - $Data_Status_Desc - Band $band ";
-} else {
- 	$title = "Front End-$fe_sn - $Data_Status_Desc - Other";
-}
-//$showrawurl = "testdata.php?showrawdata=1&keyheader=$td->keyId&fc=".$td->GetValue('keyFacility');
-//$drawurl = "testdata.php?drawplot=1&keyheader=$td->keyId&fc=".$td->GetValue('keyFacility');
-//$exportcsvurl = "export_to_csv.php?keyheader=$td->keyId&fc=".$td->GetValue('keyFacility');
-
-
-include('header_with_fe.php');
+If ($band)
+	$title = "FE-$fesn - Band $band - $Data_Status_Desc";
+else
+ 	$title = "FE-$fesn - $Data_Status_Desc";
 
 echo "<title>$title </title></head>";
+echo "<body style='background-color: #19475E'>";
+include('header_with_fe.php');
 
-?>
+echo "<div id='maincontent' style='height:6000px'>";
 
-<form enctype="multipart/form-data" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
-<div id="wrap" style="height:6000px">
+echo "<div style='width:700px; text-align:right'>";
 
-<div id="sidebar2" style="height:6000px">
-<table>
+$buttonText = $filterChecked ? "Show All" : "Show Selected";
+$buttonURL = $_SERVER['PHP_SELF'] . "?FE_Config=$feconfig&band=$band&Data_Status=$Data_Status";
 
-</table>
-</div>
+if (!$filterChecked)
+    $buttonURL .= "&filterChecked=1";
 
-<div id="maincontent" style="height:6000px">
-<div id = "wrap">
+echo "<a style='width:90px' href='$buttonURL' class='button blue2 biground'>
+        <span >$buttonText</span></a>";
 
-<form action=".htmlentities($_SERVER['PHP_SELF'])." method='post'>
-<br>
-<!-- <input type='submit' name='formSubmit' value='Save Changes' /> -->
-<!-- <br> -->
-
-<?php
-if (isset($_POST["formSubmit"])) {
-	$state = 0;
-	// For every check box there is a corresponding hidden control.
-	// Therefore, iterating through the posted values gives two entries
-	// per checked box (one for the box and one for hidden control, but
-	// only one entry per unchecked box (just for the hidden control).
-	// this loop identifies whether a box is checked and updates database
-	// accordingly
-    foreach($_POST['checkbox'] as $chkval){
-    	switch ($state){
-		// after checked box
-		case 0;
-			$state = 1;
-        	break;
-
-		// after unchecked box
-         case 1;
-			if ($prev_value == $chkval){
-				update_dataset($chkval,1);
-				$state = 0;
-			} else {
-				update_dataset($prev_value,0);
-				$state = 1;
-			}
-            break;
-		}
-		$prev_value = $chkval;
-	}
-	// update last uncheck box
-	if ($state == 1 ){
-		update_dataset($prev_value,0);
-	}
-}
-
+// style='width:130px'
+echo "</div>";
 
 //Display results tables
-If ($band != 0){
+if ($band) {
 
 	// LNA - Actual Readings
-	band_results_table($FE_Config,$band,$Data_Status, 1);
+	band_results_table($feconfig,$band,$Data_Status, 1, $filterChecked);
 
 	// SIS – Actual Readings
-	band_results_table($FE_Config,$band,$Data_Status, 3);
+	band_results_table($feconfig,$band,$Data_Status, 3, $filterChecked);
 
 	// Temperature Sensors – Actual Readings
-	band_results_table($FE_Config,$band,$Data_Status, 2);
+	band_results_table($feconfig,$band,$Data_Status, 2, $filterChecked);
 
 	// WCA AMC Monitors
-	band_results_table($FE_Config,$band,$Data_Status, 12);
+	band_results_table($feconfig,$band,$Data_Status, 12, $filterChecked);
 
 	// WCA PA Monitors
-	band_results_table($FE_Config,$band,$Data_Status, 13);
+	band_results_table($feconfig,$band,$Data_Status, 13, $filterChecked);
 
 	// WCA PLL Monitors
-	band_results_table($FE_Config,$band,$Data_Status, 14);
+	band_results_table($feconfig,$band,$Data_Status, 14, $filterChecked);
 
 	// Nominal IF power levels
-	band_results_table($FE_Config,$band,$Data_Status, 6);
+	band_results_table($feconfig,$band,$Data_Status, 6, $filterChecked);
 
 	// Y-factor
-	band_results_table($FE_Config,$band,$Data_Status, 15);
+	band_results_table($feconfig,$band,$Data_Status, 15, $filterChecked);
 
 	// I-V Curve
-	band_results_table($FE_Config,$band,$Data_Status, 39);
+	band_results_table($feconfig,$band,$Data_Status, 39, $filterChecked);
 
 } else {
 
 	// CPDS monitors
-	results_table($FE_Config,$Data_Status, 24);
+	results_table($feconfig,$Data_Status, 24, $filterChecked);
 
 	// FLOOG Total Power
-	results_table($FE_Config,$Data_Status, 5);
+	results_table($feconfig,$Data_Status, 5, $filterChecked);
 
 	// IF switch temperature sensors
-	results_table($FE_Config,$Data_Status, 10);
+	results_table($feconfig,$Data_Status, 10, $filterChecked);
 
 	// LO Photonic Receiver Monitor Data
-	results_table($FE_Config,$Data_Status, 8);
+	results_table($feconfig,$Data_Status, 8, $filterChecked);
 
 	// Photomixer Monitor Data
-	results_table($FE_Config,$Data_Status, 9);
+	results_table($feconfig,$Data_Status, 9, $filterChecked);
 
 	// Cryo-cooler Temperatures
-	results_table($FE_Config,$Data_Status, 4);
-
+	results_table($feconfig,$Data_Status, 4, $filterChecked);
 }
 
 ?>
-
-</form>
 </div>
 <?php
     include('../footer.php');

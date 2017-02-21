@@ -9,7 +9,7 @@
 <link type="text/css" href="../../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
 <script src="../../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
 <script src="../../ext/ext-all.js" type="text/javascript"></script>
-<!-- <script src="../dbGrid.js" type="text/javascript"></script> -->
+<script type="text/javascript" src="./PAICheckBox.js"></script>
 
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
@@ -27,15 +27,12 @@ $showrawdata = isset($_REQUEST['showrawdata']) ? $_REQUEST['showrawdata'] : fals
 
 if (!$keyHeader)
 	exit();		// nothing to do.
-	
+
 $td = new TestData_header();
 $td->Initialize_TestData_header($keyHeader, $fc);
 
 if (!$td->GetValue('PlotURL') && $td->AutoDrawThis())
 	$drawplot = true;
-
-echo "<title>" . $td->TestDataType . "</title></head>";
-echo "<body style='background-color: #19475E'>";
 
 if ($td->GetValue('fkTestData_Type') == 55) {
     $url = $rootdir_url . "FEConfig/bp/bp.php";
@@ -78,7 +75,19 @@ if ($td->Component->ComponentType == "Front End"){
                  . '</font></a>';
 }
 
-$title = $td->TestDataType;
+$title = "";
+if ($fesn)
+    $title = "FE-$fesn - ";
+
+$band = $td->GetValue('Band');
+if ($band)
+    $title .= "Band $band - ";
+
+$title .= $td->TestDataType;
+
+echo "<title>" . $title . "</title></head>";
+echo "<body style='background-color: #19475E'>";
+
 $showrawurl = "testdata.php?showrawdata=1&keyheader=$td->keyId&fc=".$td->GetValue('keyFacility');
 $drawurl = "testdata.php?drawplot=1&keyheader=$td->keyId&fc=".$td->GetValue('keyFacility');
 $exportcsvurl = "export_to_csv.php?keyheader=$td->keyId&fc=".$td->GetValue('keyFacility');

@@ -22,7 +22,7 @@ $bugsTo = "http://jira.alma.cl/browse/FETMS/";
             <td><a href=<?php echo "'$home'" ?> class="button gray biground"><span>Home</span>
             </a></td>
 <?php
-        if (!$FETMS_CCA_MODE && isset($feconfig) && $feconfig != '') {
+        if (!$FETMS_CCA_MODE && isset($feconfig) && $feconfig && isset($fesn) && $fesn) {
 ?>
             <td><a href=<?php echo "'$showConfig?key=$feconfig&fc=$fc'" ?> class="button gray biground">
             <span>Front End <?php echo $fesn; ?></span></a></td>
