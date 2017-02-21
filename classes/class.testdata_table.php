@@ -45,21 +45,21 @@ class TestDataTable {
         //"3"	"Cold PAI"        = data which is taken on the FETMS
         //"4"   "Health Check"    = warm and cold health check data taken on FETMS
         //"7"	"Cartridge PAI"   = data which is delivered with a CCA or WCA
-        
+
         $dataStatus = '()';
         if ($this->keyFrontEnd)
             $dataStatus = '(3)';
         else
             $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
-        
+
         $r = $this -> fetchData($dataStatus);
-        
+
         // config column label:
         $configLabel = ($this->keyFrontEnd) ? "FE Config" : "Config";
 
         // Config column is either keyFEConfig or component keyId
         $configKey = ($this->keyFrontEnd) ? "keyFEConfig" : "keyId";
-        
+
         echo "<div style= 'width:950px'>";
         echo "<table id='table1'>";
         echo "<tr class = 'alt'><th colspan='7'>TEST DATA</th></tr>";
@@ -71,11 +71,11 @@ class TestDataTable {
               <th>TS</th>
               <th width='10px'>for PAI</th>
               </tr>";
-            
+
         $record_list = array();
         $trclass = '';
         while ($row = @mysql_fetch_array($r)) {
-        
+
             $fc = $row['keyFacility'];
             $keyId = $row['tdhID'];
             $configId = $row[$configKey];
@@ -83,25 +83,25 @@ class TestDataTable {
             $dataSetGroup = $row['DataSetGroup'];
             $dataStatusDesc = $row['DStatus'];
             $testNotes = $row['Notes'];
-        
+
             // add the day of the week to the date:
             $testTS = DateTime::createFromFormat('Y-m-d H:i:s', $row['TS'])->format('D Y-m-d H:i:s');
-        
+
             // save newdata header record data set in a two dimentional array
             // first dimension is test data type, second is the dataset group
             $record_list[$dataDesc][] = $dataSetGroup;
             // count how many times each dataset group occurs
             $dataset_cnt = array_count_values($record_list[$dataDesc]);
-        
+
             // display row if there is only one entry for the dataset or the dataset is 0
             if ($dataSetGroup == 0 || $dataset_cnt[$dataSetGroup] <= 1) {
-        
+
                 $trclass = ($trclass=="" ? 'class="alt"' : "");
                 echo "<tr $trclass><td width = '10px' align = 'center'>$configId</td>";
                 echo "<td width = '70px'>$dataStatusDesc</td>";
-        
+
                 $testpage = 'testdata/testdata.php';
-        
+
                 switch($row['fkTestData_Type']) {
                     case 55:
                         //Beam patterns
@@ -112,15 +112,15 @@ class TestDataTable {
                     case 7:
                         //IFSpectrum
                         $testpage = 'ifspectrum/ifspectrumplots.php';
-        
+
                         $url  = $testpage . "?fc=$fc";
                         $url .= "&fe=" . $this->keyFrontEnd . "&b=" . $row['Band'];
                         $url .= "&id=$keyId";
-        
+
                         $Description = "$dataDesc Group $dataSetGroup";
                         echo "<td width='180px'><a href='$url' target = 'blank'>$Description</a></td>";
                         break;
-        
+
                     case 57:
                     case 58:
                         //LO Lock Test or noise temp
@@ -128,34 +128,34 @@ class TestDataTable {
                         $Description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : $dataDesc;
                         echo "<td width='180px'><a href='$testpage?keyheader=$keyId$g&fc=$fc' target = 'blank'>$Description</a></td>";
                         break;
-        
+
                     default:
                         echo "<td width='180px'><a href='$testpage?keyheader=$keyId&fc=$fc' target = 'blank'>$dataDesc</a></td>";
                         break;
                 }
-        
+
                 echo "<td width = '150px'>$testNotes</td>";
                 echo "<td width = '120px'>$testTS</td>";
-        
+
                 // In the "for PAI" column show a checkbox corresponding to the value of UseForPAI:
                 echo "<td width = '10px'>";
-                if ($row[11])
+
+                $checked = "";
+                if ($row['UseForPAI'])
                     $checked = "checked='checked'";
-                    else
-                        $checked = "";
-                        $cboxId = "PAI_" . $row[0];
-                        // Call the PAIcheckBox JS function when the checkbox is clicked:
-                        echo "<input type='checkbox'
-                        name='$cboxId'
-                        id='$cboxId'
-                        $checked
-                        onchange=\"PAIcheckBox($row[0], document.getElementById('$cboxId').checked);\" />";
-                        echo "</td></tr>";
+
+                $keyId = $row['tdhID'];
+                $cboxId = "PAI_" . $keyId;
+
+                // Call the PAIcheckBox JS function when the checkbox is clicked:
+                echo "<input type='checkbox' name='$cboxId' id='$cboxId' $checked
+                    onchange=\"PAIcheckBox($keyId, document.getElementById('$cboxId').checked, 'testdata/');\" />";
+                echo "</td></tr>";
             }
         }
         echo "</table></div>";
     }
-    
+
     private function fetchData($dataStatus) {
         // Left-hand (LH) table for join is either FE_Config or FE_Components
         $lhTable = ($this->keyFrontEnd) ? "FE_Config" : "FE_Components";
@@ -198,7 +198,7 @@ class TestDataTable {
                  AND DataStatus.keyId = TDH.fkDataStatus";
 
         $q .= " ORDER BY ";
-        
+
         // If viewing a component, we want to see heath checks at the top and configurations in reverse order...
         if ($this->compSN)
             $q .= "TDH.fkDataStatus DESC, LH.keyId DESC, ";

@@ -1,5 +1,4 @@
 <?php
-
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require(site_get_config_main());
 require_once($site_classes . '/IFSpectrum/IFSpectrum_impl.php');
@@ -45,7 +44,6 @@ if ($drawPlots) {
 
     $ifspec -> DeleteProgressFile();
     exit();
-
 }
 
 ?>
@@ -68,18 +66,19 @@ if ($drawPlots) {
 
 <link rel="stylesheet" type="text/css" href="../headerbuttons.css">
 
-<title>IF Spectrum</title>
-</head>
-
 <?php
-    require_once($site_FEConfig . '/jsFunctions.php');
+require_once($site_FEConfig . '/jsFunctions.php');
 
-    $title = "IF Spectrum Band $band DataSet $dataSetGroup";
-    include "header_ifspectrum.php";
+$title = "Band $band - IF Spectrum - DataSet $dataSetGroup ";
 
-    echo "<body id = 'body3' onload='createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band);' BGCOLOR='#19475E'>";
+echo "<title>$title</title>";
+echo "</head>";
 
-    echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
+echo "<body id = 'body3' onload='createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band);' BGCOLOR='#19475E'>";
+
+include "header_ifspectrum.php";
+
+echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
 ?>
 
 <div id="content_inside_main2">

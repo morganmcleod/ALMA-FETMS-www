@@ -1,6 +1,6 @@
 <?php
 
-require_once(dirname(__FILE__) . '/../SiteConfig.php');
+require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . "/class.logger.php");
 require_once($site_dbConnect);
 require_once($site_config_main);
@@ -10,7 +10,7 @@ $keyTDH = $_REQUEST['key'];
 $checked  = $_REQUEST['checked'];
 
 if ($action == 'checkbox') {
-    $logger = new Logger('updateTestDataUseForPAI.txt','a');
+//     $logger = new Logger('updateTestDataUseForPAI.txt','a');
 
     $q = "UPDATE TestData_header set UseForPAI=";
     if ($checked == 'true')
@@ -21,7 +21,7 @@ if ($action == 'checkbox') {
     $q .= " WHERE keyFacility=$fc AND keyId=$keyTDH;";
     $r = @mysql_query($q, $db);
 
-    $logger -> WriteLogFile("action=checkbox, key=$keyTDH, checked=$checked, result=$r");
+//     $logger -> WriteLogFile("action=checkbox, key=$keyTDH, checked=$checked, result=$r");
 }
 
 ?>

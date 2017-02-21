@@ -1,4 +1,4 @@
-function PAIcheckBox(id, checked) {
+function PAIcheckBox(id, checked, pathToReqURL = "") {
     var txt = new String("");
     if (checked)
         txt = "checked";
@@ -13,7 +13,7 @@ function PAIcheckBox(id, checked) {
 
     Ext.Ajax.request({
         // Send the JSON object
-        url : 'updateTestDataUseForPAI.php?action=checkbox&key=' + id
+        url : pathToReqURL + 'updateTestDataUseForPAI.php?action=checkbox&key=' + id
                 + '&checked=' + checked,
         success : received,
         failure : failed
