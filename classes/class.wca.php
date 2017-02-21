@@ -37,8 +37,9 @@ class WCA extends FEComponent {
     var $ErrorArray; // Array of errors
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.1.1";
+        $this->swversion = "1.1.2";
         /*
+         * 1.1.2 Display "Date Added" instead of "In Front End"
          * 1.1.1 Moved ini format code into this->GetIniFileContent().
          * 1.1.0 Reformatted all HTML to be not so terrible.  export_to_ini for FEMC 2.8.x
          * 1.0.8 Units -> mW on Max Safe Power tables, Output power plotting fixes and improvements.
@@ -184,12 +185,10 @@ class WCA extends FEComponent {
         echo "<br><br>";
 
         echo "<input type='hidden' name='" . $this->keyId_name . "' value='$this->keyId'>";
-        if ($this->fc == '') {
+        if ($this->fc == '')
             echo "<input type='hidden' name='fc' value='$fc'>";
-        }
-        if ($this->fc != '') {
+        else
             echo "<input type='hidden' name='fc' value='$this->fc'>";
-        }
 
         echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>";
         echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'><br>";
@@ -318,17 +317,11 @@ class WCA extends FEComponent {
         echo "<div style = 'width: 300px;margin-top:20px'>";
         echo "<table id = 'table1'>";
 
+        $ts = $this->GetValue('TS');
+
         echo "<tr>";
-        echo "<th>In Front End SN</th>";
-        echo "<td><b>";
-
-        if ($this->FESN === FALSE)
-            echo "-none-";
-        else {
-            echo "<a href='../FEConfig/ShowFEConfig.php?key=" . $this->ConfigId . "&fc=" . $this->fc . "'>" . $this->FESN . "</a>";
-        }
-        echo "</b></td></tr>";
-
+        echo "<th>Date Added</th>";
+        echo "<td><font size='-1'>$ts</font></td></tr>";
         echo "<tr>";
         echo "<th>Band</th>";
         echo "<td><input type='text' name='Band' size='2' maxlength='200' value = '" . $this->GetValue('Band') . "'></td>";
