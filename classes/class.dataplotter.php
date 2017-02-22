@@ -775,6 +775,8 @@ class DataPlotter extends GenericTable{
         $l->WriteLogFile($qlo);
         $rlo = @mysql_query($qlo,$this->dbconnection);
 
+        $image_url = "";
+
         while($rowlo = @mysql_fetch_array($rlo)){
             $CurrentLO = $rowlo[0];
             for ($pol=0;$pol<=1;$pol++){
@@ -793,11 +795,9 @@ class DataPlotter extends GenericTable{
 
                     if (@mysql_num_rows($r) > 1){
                         $plottitle = "$DataSeriesName";
-                        //$data_file[$datafile_count] = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/cca_datafiles/cca_as_data_".$i."_".$j.".txt";
-                        $data_file = $imagedirectory . "cca_ivc_data_".$pol . "_" . $sb . "_" . $i . $this->udate("Ymd_G_i_s_u") . ".txt";
+                        $data_file = $imagedirectory . "cca_ivc_data_".$pol . "_" . $sb . "_" . $this->udate("Ymd_G_i_s_u") . ".txt";
 
                         $l->WriteLogFile("data file= $data_file");
-                        //unlink($data_file[$datafile_count]);
                         $fh = fopen($data_file, 'w');
                         $row=@mysql_fetch_array($r);
                         while($row=@mysql_fetch_array($r)){
@@ -811,13 +811,11 @@ class DataPlotter extends GenericTable{
                         $plot_command_file = $imagedirectory . "cca_ivc_command.txt";
                         $l->WriteLogFile("plot_command_file= $plot_command_file");
 
-                        $imagename = "CCA_IVCurve_SN$sn_" . $this->udate("Ymd_G_i_s_u") . ".png";
-                        if ($image_url != ''){
+                        $imagename = "CCA_IVCurve_SN$sn" . "_" . $this->udate("Ymd_G_i_s_u") . ".png";
+                        if ($image_url)
                             $image_url .= "," . $this->url_directory . $band . "_" . $sn . "/$imagename";
-                        }
-                        if ($image_url == ''){
+                        else
                             $image_url = $this->url_directory . $band . "_" . $sn . "/$imagename";
-                        }
 
                         $plot_title = "IV Curve, $CurrentLO GHz, CCA$band-$this->CCASN";
                         $plot_label_1 =" set label 'TestData_header.keyId: ".$this->TestDataHeader->keyId.", Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
@@ -874,20 +872,20 @@ class DataPlotter extends GenericTable{
         if (!file_exists($this->writedirectory)){
             mkdir($this->writedirectory);
         }
-        
+
         $TestData_Id = $this->TestDataHeader->keyId;
         $band = $this->TestDataHeader->GetValue('Band');
-        
+
         $filesDir = "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
         $imagedirectory = $this->writedirectory . $filesDir;
         $data_file = $imagedirectory . "wkm_amp_data.txt";
         $plot_command_file = $imagedirectory . "wkm_amp_command_tdh$TestData_Id.txt";
         $this->url_directory = $main_url_directory . $filesDir;
-        
+
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
-        
+
         if ($band != 9 && $band != 10) {
 
             $r = $this->db_pull->q(2, $TestData_Id, $this->fc);
@@ -910,7 +908,7 @@ class DataPlotter extends GenericTable{
 
         if (!@mysql_num_rows($r))
             return;
-        
+
         $fh = fopen($data_file, 'w');
 
         $row=@mysql_fetch_array($r);
@@ -946,7 +944,7 @@ class DataPlotter extends GenericTable{
             $d4 = $row[4];
             $stringData = "$minutes\t$row[0]\t$d1\t$d2\t$d3\t$d4\r\n";
             fwrite($fh, $stringData);
-            
+
             if ($ts === false) {
                 // TODO:  this is for PHP < 5.3.9 which doesn't accept DateTime::createFromFormat with s+, above.
                 $minutes += 1.0 / (60.0 * 4.0);
@@ -975,7 +973,7 @@ class DataPlotter extends GenericTable{
             if ($oldUrl)
                 $image_url = $oldUrl . "," . $image_url;
         }
-                    
+
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
         $this->TestDataHeader->Update();
 
@@ -1025,36 +1023,36 @@ class DataPlotter extends GenericTable{
         if (!file_exists($this->writedirectory)){
             mkdir($this->writedirectory);
         }
-        
+
         $TestData_Id = $this->TestDataHeader->keyId;
         $band = $this->TestDataHeader->GetValue('Band');
-        
+
         $filesDir = "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
         $imagedirectory = $this->writedirectory . $filesDir;
         $data_file = $imagedirectory . "wkm_temp_data.txt";
         $plot_command_file = $imagedirectory . "wkm_temp_command_tdh$TestData_Id.txt";
         $this->url_directory = $main_url_directory . $filesDir;
-        
+
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
-              
+
         $r = $this->db_pull->q(2, $TestData_Id, $this->fc);
-    
+
         $tiltmin = @MYSQL_RESULT($r,0,0) - 10;
         $tiltmax = @MYSQL_RESULT($r,0,1) + 10;
-    
+
         $r = $this->db_pull->q(8, $TestData_Id, $this->fc);
         if (!@mysql_num_rows($r))
             return;
-            
+
         $fh = fopen($data_file, 'w');
 
         $row=@mysql_fetch_array($r);
         $timeStart = 0;
         $minutes = 0;
         $once = true;
-       
+
         while($row=@mysql_fetch_array($r)) {
             $ts = $row['TS'];
             $ts = DateTime::createFromFormat("Y-m-d H:i:s+", $ts);
@@ -1062,7 +1060,7 @@ class DataPlotter extends GenericTable{
             if ($once) {
                 $timeStart = $ts;
                 $once = false;
-            }    
+            }
             if ($ts !== false) {
                 $elapsed = $timeStart->diff($ts);
                 $minutes = $elapsed->d * 1440 + $elapsed->h * 60 + $elapsed->i + $elapsed->s / 60;
@@ -1070,7 +1068,7 @@ class DataPlotter extends GenericTable{
 
             $stringData = "$minutes\t$row[0]\t$row[1]\t$row[2]\t$row[3]\t$row[4]\t$row[5]\t$row[6]\t$row[7]\t$row[8]\r\n";
             fwrite($fh, $stringData);
-            
+
             if ($ts === false) {
                 // TODO:  this is for PHP < 5.3.9 which doesn't accept DateTime::createFromFormat with s+, above.
                 $minutes += 1.0 / (60.0 * 4.0);
@@ -1078,7 +1076,7 @@ class DataPlotter extends GenericTable{
             }
         }
         fclose($fh);
-    
+
         //Lookup the WkAmp subheader ID:
         $subheader_id = $this->db_pull->q_other('wkamp_sh', NULL, $TestData_Id);
         //Use it to finde the subheader record:
@@ -1086,26 +1084,26 @@ class DataPlotter extends GenericTable{
         $wsub->Initialize('TEST_Workmanship_Amplitude_SubHeader',$subheader_id,'keyTEST_Workmanship_Amplitude_SubHeader');
         //Get the measurement LO frequency:
         $fLO = $wsub->GetValue('lo');
-    
-        
+
+
         $imagename = "WorkAmpTemperatures_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . "$imagename";
         $plot_title = "Workmanship Temperatures, FE" . $this->TestDataHeader->Component->GetValue('SN')
         . " Band " . $this->TestDataHeader->GetValue('Band')
         . ", LO " . $fLO . " GHz";
-    
+
         //Update plot url
         if ($appendURL) {
             $oldUrl = $this->TestDataHeader->GetValue('PlotURL');
             if ($oldUrl)
                 $image_url = $oldUrl . "," . $image_url;
         }
-        
+
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
         $this->TestDataHeader->Update();
-    
+
         $imagepath = $imagedirectory . $imagename;
-    
+
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
@@ -1114,7 +1112,7 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set key outside\r\n");
         fwrite($fh, "set xlabel 'Time (minutes)'\r\n");
         fwrite($fh, "set pointsize 2\r\n");
-    
+
         fwrite($fh, "set y2range[$tiltmin:$tiltmax]\r\n");
         fwrite($fh, "set y2label 'Tilt Angle (deg)'\r\n");
         fwrite($fh, "set y2tics\r\n");
@@ -1134,17 +1132,17 @@ class DataPlotter extends GenericTable{
         $plot_string .= ", '$data_file'  using 1:8 title 'Cryo 4K link 2' with lines axis x1y1";
         $plot_string .= ", '$data_file'  using 1:9 title 'Cryo 4K far side 1' with lines axis x1y1";
         $plot_string .= ", '$data_file'  using 1:10 title 'Cryo 4K far side 2' with lines axis x1y1";
-        
+
         $plot_string .= "\r\n";
         fwrite($fh, $plot_string);
         fclose($fh);
         //Make the plot
-    
+
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    
-    
+
+
     public function Plot_WorkmanshipPhase(){
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory  . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
