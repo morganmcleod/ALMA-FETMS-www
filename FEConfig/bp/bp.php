@@ -65,7 +65,11 @@ if ($eff->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nf
     $bpstatus = 3;
 }
 
-$title = "FE-$fesn - Band $band - Beam Patterns";
+$title = "";
+if ($fesn && !$FETMS_CCA_MODE)
+    $title = "FE-$fesn - ";
+
+$title .= "Band $band - Beam Patterns";
 
 ?>
 

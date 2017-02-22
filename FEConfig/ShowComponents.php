@@ -30,11 +30,7 @@
 <script type="text/javascript" src="loadComponents.js"></script>
 <script type="text/javascript" src="testdata/PAICheckBox.js"></script>
 
-<title>Show Component</title>
-</head>
-
 <?php
-
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once(site_get_config_main());
 require_once($site_classes . '/class.cca.php');
@@ -80,6 +76,10 @@ if ($comp_type == 20) {
     $CompDescription = 'Cryostat';
     $title = $CompDescription . " " . $compsn;
 }
+
+
+echo "<title>$title</title>";
+echo "</head>";
 
 include "header.php";
 

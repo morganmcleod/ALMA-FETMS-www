@@ -76,7 +76,7 @@ if ($td->Component->ComponentType == "Front End"){
 }
 
 $title = "";
-if ($fesn)
+if ($fesn && !$FETMS_CCA_MODE)
     $title = "FE-$fesn - ";
 
 $band = $td->GetValue('Band');

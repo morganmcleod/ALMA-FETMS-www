@@ -37,10 +37,14 @@ $q = "SELECT `Description` FROM `DataStatus` WHERE `keyId` = $Data_Status ";
 $r = @mysql_query($q,$db);
 $Data_Status_Desc = @mysql_result($r,0,0);
 
-If ($band)
-	$title = "FE-$fesn - Band $band - $Data_Status_Desc";
-else
- 	$title = "FE-$fesn - $Data_Status_Desc";
+$title = "";
+if ($fesn && !$FETMS_CCA_MODE)
+    $title = "FE-$fesn - ";
+
+if ($band)
+    $title .= "Band $band - ";
+
+$title .= "$Data_Status_Desc";
 
 echo "<title>$title </title></head>";
 echo "<body style='background-color: #19475E'>";
