@@ -69,7 +69,7 @@ class TestDataTable {
               <th>Description</th>
               <th>Notes</th>
               <th>TS</th>
-              <th width='10px'>for PAI</th>
+              <th width='10px'>Select</th>
               </tr>";
 
         $record_list = array();
