@@ -42,10 +42,11 @@ require_once('HelperFunctions.php');
 require_once('jsFunctions.php');
 
 $fc = $_REQUEST['fc'];
-
 $comp_key=$_GET['conf'];
+
 $component = new FEComponent();
 $component->Initialize_FEComponent($comp_key, $fc);
+
 $band=$component->GetValue('Band');
 $comp_type=$component->GetValue('fkFE_ComponentType');
 $feconfig = $component->FEConfig;
@@ -60,23 +61,22 @@ if ($component -> IsDocument)
 else
     $CompDescription = 'Component';
 
-$title = "FE-$fesn Component";
+$title = "";
+if ($fesn && !$FETMS_CCA_MODE)
+    $title = "FE-$fesn - ";
 
-if ($comp_type == 20) {
+if ($comp_type == '20') {
     $CompDescription = 'CCA';
-    if ($FETMS_CCA_MODE)
-        $title = $CompDescription . $band . "-" . $compsn;
+    $title .= $CompDescription . $band . "-" . $compsn;
 
-} elseif ($comp_type == 11) {
+} elseif ($comp_type == '11') {
     $CompDescription = 'WCA';
-    if ($FETMS_CCA_MODE)
-        $title = $CompDescription . $band . "-" . $compsn;
+    $title .= $CompDescription . $band . "-" . $compsn;
 
 } elseif ($comp_type == 6) {
     $CompDescription = 'Cryostat';
-    $title = $CompDescription . " " . $compsn;
+    $title .= $CompDescription . " " . $compsn;
 }
-
 
 echo "<title>$title</title>";
 echo "</head>";
