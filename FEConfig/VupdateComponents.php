@@ -21,7 +21,7 @@ function checkComp(comptype)
 </head>
 <body>
 
-<?
+<?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.fecomponent.php');
 require_once('jsFunctions.php');

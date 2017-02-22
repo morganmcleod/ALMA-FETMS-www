@@ -4,7 +4,6 @@ require_once($site_classes . '/class.frontend.php');
 require_once($site_FEConfig . '/HelperFunctions.php');
 require_once($site_dbConnect);
 require('dbGetQueries.php');
-require('jsFunctions.php');
 
 $keyFE=$_GET['key'];
 $fc = $_REQUEST['fc'];
@@ -13,7 +12,6 @@ $fe->Initialize_FrontEnd_FromConfig($keyFE, $fc, FrontEnd::INIT_CONFIGS);
 $fesn = $fe->GetValue('SN');
 
 ?>
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -36,6 +34,8 @@ $fesn = $fe->GetValue('SN');
 <link rel="stylesheet" type="text/css" href="headerbuttons.css">
 
 <?php
+require('jsFunctions.php');
+
 $title="Front End " . $fe->GetValue('SN');
 echo "<title>$title</title>";
 echo "</head>";

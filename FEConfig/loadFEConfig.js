@@ -59,25 +59,6 @@ function createtabs(keyfe, fesn, fc, fe_id) {
                                 + '&fc=' + fc;
                     }
                 },
-                // {
-                // xtype : 'tbbutton',
-                // text : 'PAS Data Delivery',
-                // icon : 'icons/application_go.png',
-                // style : 'margin: 1px;',
-                // handler : function() {
-                // getWarmPASConfig(fesn);
-                // }
-                // },
-                // {
-                // xtype : 'tbbutton',
-                // text : 'CIDL Report',
-                // icon : 'icons/report.png',
-                // style : 'margin: 1px;',
-                // handler : function() {
-                // window.location = 'cidl/cidlRevEdit.php?feconfig='
-                // + keyfe + '&fc=' + fc;
-                // }
-                // },
                 {
                     xtype : 'tbbutton',
                     text : 'FrontEnd Config',
