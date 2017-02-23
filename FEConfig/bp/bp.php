@@ -95,7 +95,7 @@ echo "<title>" . $title . "</title></head>";
 echo "</head>";
 
 // start the HTML body.  Calls createBPTabs from loadBP.js to customize the button and create the data tabs:
-echo "<body id = 'body3' onload='createBPTabs($fc,$tdh_key,$band,$bpstatus)' BGCOLOR='#19475E'>";
+echo "<body id = 'body2' onload='createBPTabs($fc,$tdh_key,$band,$bpstatus)' BGCOLOR='#19475E'>";
 echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
 
 // show the standard header with the folllowing text plus Home, Front End NN, Bugs buttons:

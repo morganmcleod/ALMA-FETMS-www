@@ -105,7 +105,7 @@ if (isset($_REQUEST['submit_datafile_cryostat'])){
 
 ?>
 
-<body id = 'body3' onload="createCompTabs(<?php echo "$band,$comp_type,$comp_key,$fc,'$CompDescription'"; ?>); creategridConfigHistoryComp(<?php echo "$comp_key,$fc"?>);" BGCOLOR="#19475E">
+<body id = 'body2' onload="createCompTabs(<?php echo "$band,$comp_type,$comp_key,$fc,'$CompDescription'"; ?>); creategridConfigHistoryComp(<?php echo "$comp_key,$fc"?>);" BGCOLOR="#19475E">
 <div id="wrap">
 <?php
     //Display a warning if the current page is not for the latest configuration

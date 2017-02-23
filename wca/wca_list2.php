@@ -33,10 +33,10 @@ echo '
     $option_band .= "<option value='%'>All Bands</option>";
     echo $option_band;
     echo "</select>";
-    echo '<div id="nocontenttoponly">
-<div id="db-grid">
-</div>
-</div></form></div>';
+    echo '<div>
+        <div id="db-grid">
+        </div>
+        </div></form></div>';
 
 ?>
 <div class='footer'>
