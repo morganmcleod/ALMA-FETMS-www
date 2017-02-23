@@ -37,7 +37,7 @@ $feconfig = $cca->FEConfig;
 $fesn = $cca->FESN;
 $band = $cca->GetValue('Band');
 
-echo "<body id = 'body3' onload='createCompTabs(" . $band . ", 20, " . $comp_key . ")' BGCOLOR='#19475E'>";
+echo "<body id = 'body2' onload='createCompTabs(" . $band . ", 20, " . $comp_key . ")' BGCOLOR='#19475E'>";
 
 include "header.php";
 

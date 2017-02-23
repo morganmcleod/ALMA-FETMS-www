@@ -74,7 +74,7 @@ $title = "Band $band - IF Spectrum - DataSet $dataSetGroup ";
 echo "<title>$title</title>";
 echo "</head>";
 
-echo "<body id = 'body3' onload='createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band);' BGCOLOR='#19475E'>";
+echo "<body id = 'body2' onload='createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band);' BGCOLOR='#19475E'>";
 
 include "header_ifspectrum.php";
 
