@@ -626,7 +626,6 @@ margin:10px 20px 0px 20px;
 }
 #table1 td, #table1 th 
 {
-font-size:1.0;
 background-color:#ffffff;
 border:1px solid #000000;
 padding:3px 7px 2px 7px;
@@ -635,7 +634,6 @@ padding:3px 7px 2px 7px;
 #table1 th 
 {
 font-weight:bold;
-font-size:1.0;
 text-align:left;
 padding-top:5px;
 padding-bottom:4px;
@@ -646,7 +644,6 @@ color:#000000;
 #table1 tr.alt th 
 {
 
-font-size:1.0;
 text-align:left;
 font-weight:bold;
 padding-top:5px;
@@ -692,7 +689,6 @@ text-align:left;
 
 #table1 tr.alt2 th 
 {
-font-size:1.0;
 text-align:right;
 padding-top:5px;
 padding-bottom:4px;
