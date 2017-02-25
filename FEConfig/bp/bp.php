@@ -44,10 +44,22 @@ $feconfig = $fe->feconfig->keyId;
 $fesn = $fe->GetValue('SN');
 $band = $tdh->GetValue('Band');
 
-// Display the 'Get Efficiencies' button variously based on the ReadyToProcess attribute of the beam efficiency analysis class:
-$geteffurl = "bp.php?drawplot=1&keyheader=".$tdh->keyId."&keyconfig=" . $tdh->GetValue('fkFE_Config') . "&band=$band&fc=$fc";
+?>
 
-$buttonclass = 'button blue2 biground';
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+
+<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
+<link rel="stylesheet" type="text/css" href="../tables.css">
+<link rel="stylesheet" type="text/css" href="../buttons.css">
+<link rel="Stylesheet" type="text/css" href="../headerbuttons.css">
+<link rel="Stylesheet" type="text/css" href="../../ext/resources/css/ext-all.css" media="screen"/>
+
+
+<?php
 
 if ($eff->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nfamp') != '') {
     //All three scans are complete, and have already been processed.
@@ -65,32 +77,20 @@ if ($eff->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nf
     $bpstatus = 3;
 }
 
+?>
+
+<script type="text/javascript" src="../../ext/adapter/ext/ext-base.js"></script>
+<script type="text/javascript" src="../../ext/ext-all.js"></script>
+<script type="text/javascript" src="loadBP.js"></script>
+
+<?php
+
 $title = "";
 if ($fesn && !$FETMS_CCA_MODE)
     $title = "FE-$fesn - ";
 
 $title .= "Band $band - Beam Patterns";
 
-?>
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
-
-<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
-<link rel="stylesheet" type="text/css" href="../tables.css">
-<link rel="stylesheet" type="text/css" href="../buttons.css">
-<link rel="Stylesheet" type="text/css" href="../headerbuttons.css">
-<link rel="Stylesheet" type="text/css" href="../../ext/resources/css/ext-all.css" media="screen"/>
-
-<script type="text/javascript" src="../../ext/adapter/ext/ext-base.js"></script>
-<script type="text/javascript" src="../../ext/ext-all.js"></script>
-<!-- <script type="text/javascript" src="../spin.js"></script> -->
-<script type="text/javascript" src="loadBP.js"></script>
-
-<?php
 echo "<title>" . $title . "</title></head>";
 echo "</head>";
 
