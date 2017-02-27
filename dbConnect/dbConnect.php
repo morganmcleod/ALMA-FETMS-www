@@ -26,6 +26,7 @@ switch ($_SERVER['SERVER_NAME']) {
 
     case "localhost":
     case "finch":
+//         include("C:/wamp64/dbConnect_band1.php");
 //         include("C:/wamp64/dbConnect_OSF.php");
         include("C:/wamp64/dbConnect_private.php");
         $mySQL57 = true;
