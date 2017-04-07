@@ -111,21 +111,17 @@ class NoiseTemperature extends TestData_header{
         if ($url)
             echo "<img src= '$url'><br><br>";
 
-        if ($hasSB2) {
-            $url = $this->NT_SubHeader->GetValue('ploturl2');
-            if ($url)
-                echo "<img src= '$url'><br><br>";
-        }
+        $url = $this->NT_SubHeader->GetValue('ploturl2');
+        if ($url)
+            echo "<img src= '$url'><br><br>";
 
         $url = $this->NT_SubHeader->GetValue('ploturl5');
         if ($url)
             echo "<img src= '$url'><br><br>";
 
-        if ($hasSB2) {
-            $url = $this->NT_SubHeader->GetValue('ploturl6');
-            if ($url)
-                echo "<img src= '$url'><br><br>";
-        }
+        $url = $this->NT_SubHeader->GetValue('ploturl6');
+        if ($url)
+            echo "<img src= '$url'><br><br>";
 
         $url = $this->NT_SubHeader->GetValue('ploturl3');
         if ($url)
