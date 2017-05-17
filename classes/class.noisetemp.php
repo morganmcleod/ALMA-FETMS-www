@@ -73,8 +73,9 @@ class NoiseTemperature extends TestData_header{
     public function Initialize_NoiseTemperature($in_keyId, $in_fc) {
         parent::Initialize_TestData_header($in_keyId, $in_fc);
 
-        $this->SWVersion = "1.2.6";
+        $this->SWVersion = "1.2.7";
         /*
+         * 1.2.7 Fix bug in B9 B10 plot display
          * 1.2.6 Display Optimization Notes
          * 1.2.5 Avoid div by 0 in function Trx_Uncorr
          * 1.2.4 Display averaged graphs for band 3 in addition to tables.
