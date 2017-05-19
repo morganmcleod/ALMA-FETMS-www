@@ -72,8 +72,9 @@ class IFSpectrum_impl extends TestData_header {
     private $swVersion;           //software version string for this class.
 
     public function __construct() {
-        $this->swVersion = "1.3.6";
-        // 1.3.6  More fixes for calling from CCA page.     
+        $this->swVersion = "1.3.7";
+        // 1.3.7  Added RF limits for power variation plots and calculations
+        // 1.3.6  More fixes for calling from CCA page.
         // 1.3.5  Fixes for calling from CCA page. Make vars private.
         // 1.3.4  Band 1 is SSB
         // 1.3.3  Initializes FrontEnd object with INIT_CARTS for speed.
@@ -161,6 +162,11 @@ class IFSpectrum_impl extends TestData_header {
         $this->fWindow_Low = $this->specs['fWindow_Low'] * pow(10,9);
         $this->fWindow_High = $this->specs['fWindow_high'] * pow(10,9);
 
+        // load in-band RF limits:
+        $rfMin = $this->specs['rfMin'];
+        $rfMax = $this->specs['rfMax'];
+        $this->ifCalc->setRFLimits($rfMin, $rfMax);
+
         // load FrontEnd info:
         if ($this->FEid) {
             $this->FrontEnd = new FrontEnd();
@@ -200,7 +206,7 @@ class IFSpectrum_impl extends TestData_header {
         $testmessage .= " Band " . $this->band;
 
         $url = '"' . $rootdir_url . 'FEConfig/ifspectrum/ifspectrumplots.php?fc='
-            . $this->facilityCode . '&fe=' . $this->FEid . '&b=' . $this->band 
+            . $this->facilityCode . '&fe=' . $this->FEid . '&b=' . $this->band
             . '&id=' . $this->TDHid . '"';
         $this->progressfile = CreateProgressFile($testmessage, '', $url);
         $this->progressfile_fullpath = $main_write_directory . $this->progressfile . ".txt";
@@ -344,15 +350,21 @@ class IFSpectrum_impl extends TestData_header {
 
     public function DisplayPowerVarFullBandTable() {
         $data = $this->ifSpectrumDb -> getPowerVarFullBand($this->FEid, $this->band, $this->dataSetGroup, $this->CCAid);
-            
+
         if ($data) {
             $noLSB = ($this->band == 1 || $this->band == 9 || $this->band == 10);
             $colSpan = ($noLSB ? 3 : 5);
 
+            $rfMin = $this->specs['rfMin'];
+            $rfMax = $this->specs['rfMax'];
+            $plotTitle = "Band $this->band Power Variation Full Band";
+            if ($rfMin > IFSpectrum_calc::RFMIN_DEFAULT || $rfMax < IFSpectrum_calc::RFMAX_DEFAULT)
+                $plotTitle .= ", Limited to RF in $rfMin-$rfMax GHz";
+
             // TODO: add back in borders/shading.
             echo "<div style='width:400px' border='1'>";
             echo "<table id = 'table7' border='1'>";
-            echo "<tr class='alt'><th colspan = '$colSpan'>Band $this->band Power Variation Full Band</th></tr>";
+            echo "<tr class='alt'><th colspan = '$colSpan'>$plotTitle</th></tr>";
             echo "<tr class='alt3'><td style='border-right:solid 1px #000000;'><b>LO (GHz)</td>";
             echo "<td><b>IF0</b></td>";
             echo "<td><b>IF1</b></td>";
@@ -406,7 +418,7 @@ class IFSpectrum_impl extends TestData_header {
         $this->ReportProgress(1, 'Creating temporary table...');
         if (!$this->ifSpectrumDb->createTemporaryTable($this->FEid, $this->band, $this->dataSetGroup, $this->CCAid))
             return;
-        
+
         $this->makeOutputDirectory(true);
 
         $this->ReportProgress(10, 'Plotting IF Spectrum...');
@@ -513,9 +525,9 @@ class IFSpectrum_impl extends TestData_header {
             // Set the plot title and generate the plot:
             $plotTitle = "Spurious Noise";
             if ($fesn)
-                $plotTitle .= " FE-$fesn, ";
+                $plotTitle .= " FE-$fesn,";
 
-            $plotTitle .= "CCA$this->band-$this->CCASN, IF$ifChannel";
+            $plotTitle .= " CCA$this->band-$this->CCASN, IF$ifChannel";
             $this->plotter -> generateSpuriousPlot($expanded, $this->imagename, $plotTitle, $this->TDHdataLabels);
 
             // Free memory:
@@ -586,7 +598,8 @@ class IFSpectrum_impl extends TestData_header {
                 $fWindowLow = $this->specs['fWindow_special_Low'];
             // TODO:  Get special band 6 plots working again.
 
-            $pvarData = $this->ifCalc -> getPowerVarWindow($fWindowLow, $fWindowHigh, $fWindow, $spec);
+            $sb = ($ifChannel < 2) ? IFSpectrum_calc::USB : IFSpectrum_calc::LSB;
+            $pvarData = $this->ifCalc -> getPowerVarWindow($fWindowLow, $fWindowHigh, $fWindow, $spec, $sb);
 
             // Cache max power variation:
             $maxVar = $this->ifCalc -> getMaxVarWindow();
@@ -611,9 +624,14 @@ class IFSpectrum_impl extends TestData_header {
             // Set the plot title:
             $plotTitle = "Power Variation $winText Window";
             if ($fesn)
-                $plotTitle .= " FE-$fesn, ";
+                $plotTitle .= " FE-$fesn,";
 
-            $plotTitle .= "CCA$this->band-$this->CCASN, IF$ifChannel";
+            $plotTitle .= " CCA$this->band-$this->CCASN, IF$ifChannel";
+
+            $rfMin = $this->specs['rfMin'];
+            $rfMax = $this->specs['rfMax'];
+            if ($rfMin > IFSpectrum_calc::RFMIN_DEFAULT || $rfMax < IFSpectrum_calc::RFMAX_DEFAULT)
+                $plotTitle .= ", Limited to RF in $rfMin-$rfMax GHz";
 
             // Append a "Max Power Variation" line to the labels:
             $labels = $this->TDHdataLabels;
@@ -662,7 +680,8 @@ class IFSpectrum_impl extends TestData_header {
 
             // Calculate power variation:
             $this->ifCalc -> setData($data);
-            $pvarData = $this->ifCalc -> getPowerVarFullBand($this->specs['fWindow_Low'], $this->specs['fWindow_high']);
+            $sb = ($ifChannel < 2) ? IFSpectrum_calc::USB : IFSpectrum_calc::LSB;
+            $pvarData = $this->ifCalc -> getPowerVarFullBand($this->specs['fWindow_Low'], $this->specs['fWindow_high'], $sb);
 
             // Store back to database:
             $this->ifSpectrumDb -> storePowerVarFullBand($ifChannel, $pvarData);
