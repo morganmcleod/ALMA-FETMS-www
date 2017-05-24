@@ -34,12 +34,15 @@ class GnuplotWrapper {
     protected $gnuplot;         // Gnuplot command on this system.
     protected $swVersion;       // Software verision of this class
 
+    const BAD_GROUPBY = -999;
+
     /**
      * Constructor
      */
     public function __construct() {
-        $this->swVersion = '1.2';
+        $this->swVersion = '1.3';
         /*
+         * 1.3: Deleted dead code, rewrote createTempFiles() and createSpecsFile()
          * 1.2: Added labelLocations logic
          * Version 1.1 Modifications and refactoring Morgan McLeod
          * Version 1.0 (07/30/2014) author Aaron Beaudoin
@@ -190,151 +193,79 @@ class GnuplotWrapper {
     }
 
     /**
-     * Recursivly finds the order of data.
-     * @param string $xvar- data column name desired to find order
-     * @param string $index- index of row to check, initially 0.
-     * @return string- either 'desc' if values are in descending order, or 'asc' if in ascending order.
-     */
-    public function findOrder($xvar, $index = 0) {
-        if ($this->data[$index][$xvar] > $this->data[$index + 1][$xvar]) {
-            return 'desc';
-        } elseif ($this->data[$index][$xvar] < $this->data[$index + 1][$xvar]) {
-            return 'asc';
-        } else {
-            return $this->findOrder($xvar, $index + 1);
-        }
-    }
-
-    /**
-     * Removes data rows that don't fit within predescribed IF limits.
-     * @param string $IFLabel- column name for IF value in data structure
-     */
-    public function checkIFLim($IFLabel) {
-        $new_data = array();
-        foreach ($this->data as $row) {
-            if ($this->specs['loIFLim'] <= $row[$IFLabel] && $row[$IFLabel] <= $this->specs['hiIFLim']) {
-                $new_data[] = $row;
-            }
-        }
-        $this->data = $new_data;
-    }
-
-    /**
-     * Averages y values together based on same x values.
-     * @param array $x- independent variable.
-     * @param array $y- dependent variable, values which will be averaged.
-     * @return 2d array- First array are same x values, second array are averaged y values.
-     */
-    public function averageData($x, $y) {
-        $new_x = array();
-        $averages = array();
-        $temp_x = array($x[0]);
-        $temp_y = array($y[0]);
-        for ($j=1; $j<count($x); $j++) {
-            if ($x[$j] == $x[$j-1]) {
-                $temp_x[] = $x[$j];
-                $temp_y[] = $y[$j];
-            } else {
-                $averages[] = array_sum($temp_y) / count($temp_y);
-                $new_x[] = array_sum($temp_x) / count($temp_x);
-                $temp_x = array($x[$j]);
-                $temp_y = array($y[$j]);
-            }
-        }
-        $averages[] = array_sum($temp_y) / count($temp_y);
-        $new_x[] = array_sum($temp_x) / count($temp_x);
-        return array($new_x, $averages);
-    }
-
-    /**
      * Writes data to temp_data#.txt files to be used in plotting script generation.
-     * @param array $xvar- independent variable
-     * @param array $yvar- dependent variable
-     * @param string $sortBy- key for independent variable
-     * @param int $count- index for naming output text files
-     * @param boolean $average- True if average values desired. Defaults to FALSE.
+     *  Assumes taht the data is already sorted by $groupBy and $xVar.
+     * @param string $groupBy: one file will be created for each unique value of this variable
+     * @param string $xVar: independent variable name
+     * @param string $yVar: dependent variable name
+     * @param float $offset: offset each group from the previous by this much
      */
-    public function createTempFile($xvar, $yvar, $count, $average = FALSE) {
+    public function createTempFiles($groupBy, $xVar, $yVar, $offset = 0.0) {
         require(site_get_config_main());
-        $x = array();
-        $y = array();
 
-        $order = $this->findOrder($xvar);
+        $lastGrouping = self::BAD_GROUPBY;
+        $currOffset = 0.0;
 
+        // open the first file:
+        $fileIndex = 0;
+        $temp_data_file = "$this->outputDir/temp_data$fileIndex.txt";
+        $f = fopen($temp_data_file, 'w');
+
+        // loop for all rows:
         foreach ($this->data as $row) {
-            if (isset($row[$yvar])) {
-                $x[] = $row[$xvar];
-                $y[] = $row[$yvar];
-            }
-        }
+            // only consider rows where our variables are defined:
+            if (isset($row[$groupBy]) && isset($row[$xVar]) && isset($row[$yVar])) {
 
-        if($average) {
-            $new_data = $this->averageData($x, $y);
-            $x = $new_data[0];
-            $y = $new_data[1];
-        }
+                // if a new group is seen:
+                if ($row[$groupBy] != $lastGrouping) {
 
-        $temp_data_file = "$this->outputDir/temp_data$count.txt";
-        $f = fopen ($temp_data_file, 'w');
-        fwrite($f, $x[0] . "\t" . $y[0] . "\n");
-        for ($j=1; $j<count($x); $j++) {
-            if ($order == 'asc' && ($x[$j] < $x[$j-1])) {
-                fwrite($f, "\n");
-            }
-            if ($order == 'desc' && ($x[$j] > $x[$j-1])) {
-                fwrite($f, "\n");
-            }
-            if ($y[$j] > -250) {
-                fwrite($f, $x[$j] . "\t" . $y[$j] . "\n");
+                    // and the previous one is not the start token:
+                    if ($lastGrouping != self::BAD_GROUPBY) {
+                        // increase the total offset amount:
+                        $currOffset += $offset;
+
+                        // close the current file:
+                        fclose($f);
+
+                        // open the next file:
+                        $fileIndex++;
+                        $temp_data_file = "$this->outputDir/temp_data$fileIndex.txt";
+                        $f = fopen($temp_data_file, 'w');
+                    }
+                    // Make this the current group:
+                    $lastGrouping = $row[$groupBy];
+                }
+                // write the current record:
+                fwrite($f, $row[$xVar] . "\t" . ($row[$yVar] + $currOffset) . "\n");
             }
         }
+        // close the last file:
         fclose($f);
     }
 
     /**
      * Creates temp file for spec data to be plotted.
      * @param string $xvar- Independent variable
-     * @param array $specs- names of spec lines desired in plot.
-     * @param array $lineAtt- Attributes for each spec line.
+     * @param float $spec- where to draw the spec line
      */
-    public function createSpecsFile($xvar, $specs, $lineAtt, $checkIF = TRUE) {
+    public function createSpecsFile($xvar, $spec) {
         require(site_get_config_main());
 
         $x = array();
 
-        $order = $this->findOrder($xvar);
-
-        if ($checkIF) {
-            $this->checkIFLim('CenterIF');
-        }
         foreach ($this->data as $row) {
             $x[] = $row[$xvar];
         }
 
-        $spec_string = "";
-        foreach ($specs as $s) {
-            $spec_string .= "\t" . $this->specs[$s];
-        }
-        $spec_string .= "\n";
-
-        $spec_files = "$this->outputDir/specData.txt";
-        $fspec = fopen($spec_files, 'w');
-        fwrite($fspec, $x[0] . $spec_string);
-        for ($j=1; $j<count($x); $j++) {
-            if($order == 'asc' && ($x[$j] < $x[$j-1])) {
-                fwrite($fspec, "\n");
-            } elseif ($order == 'desc' && ($x[j] > $x[$j-1])) {
-                fwrite($fspec, "\n");
-            } else {
-                fwrite($fspec, $x[$j] . $spec_string);
-            }
+        $spec_file = "$this->outputDir/specData.txt";
+        $fspec = fopen($spec_file, 'w');
+        for ($j=0; $j<count($x); $j++) {
+            fwrite($fspec, $x[$j] . "\t" . $spec . "\n");
         }
         fclose($fspec);
-        $temp = "";
-        for ($j=0; $j<count($specs); $j++) {
-            $temp .= ",'" . $this->outputDir . "/specData.txt' using 1:" . (string)($j + 2) . " with ";
-            $temp .= $lineAtt[$j];
-        }
+
+        $temp = ",'" . $this->outputDir . "/specData.txt' using 1:2 with lines lt -1 lw 5 title 'Spec'";
+
         $this->plotAttribs['specAtt'] = $temp;
     }
 
@@ -521,7 +452,7 @@ class GnuplotWrapper {
     /**
      * Assign plot lines to be used in plotting script
      * @param array $lineAtt- Strings indicating parameters for each line to be plotted.
-     * @param int $count- number of lines to be plotted, number of files created by createTempFile()
+     * @param int $count- number of lines to be plotted, number of files created by createTempFiles()
      */
     public function plotData($lineAtt, $count) {
         $temp = "plot ";

@@ -22,17 +22,35 @@
  *
  */
 
-class IFSpectrum_calc {
-    private $data;                // same structure as for setData()
-    private $noiseFloorData;
-    private $cablePad;            // dB of pad in cable to compensate for.
-    private $maxVarWindow;        // maximum variation seen in any call to getPowerVarWindow();
-    private $badVarLOs;           // array of LO freqs where power var crossed spec line.
-    private $badVarThisRange;     // True= most recently processed power var range crossed spec line.
-    private $rfMin;               // Frequency limits of the RF band.
-    private $rfMax;
+require_once(dirname(__FILE__) . '/../../SiteConfig.php');
+require_once($site_classes . '/class.logger.php');
 
-//     private $logger1;
+// define('DEBUG_IFSPECTRUM_CALC', true);
+
+class IFSpectrum_calc {
+    private $data;                  // same structure as for setData()
+    private $noiseFloorData;
+    private $cablePad;              // dB of pad in cable to compensate for.
+    private $maxVarWindow;          // maximum variation seen in any call to getPowerVarWindow();
+    private $badVarLOs;             // array of LO freqs where power var crossed spec line.
+    private $badVarThisRange;       // True= most recently processed power var range crossed spec line.
+
+    private $rfMin;                 // Frequency limits of the RF band.
+    private $rfMax;                 //
+
+    private $logger1;               // Logger for debug output
+
+    private $minMaxData;            // Min and max power, etc. per LO:
+                                    // array(
+                                    //     'LO_GHz'   => float,
+                                    //     'pMin_dBm' => float,
+                                    //     'pMax_dBm' => float,
+                                    //     'last_dBm' => float    // rightmost point in trace, for Y2 axis labels.
+                                    // )
+
+    private $pMin_dBm_overall;      // Min and max power overall.
+    private $pMax_dBm_overall;      //
+
 
     const BAD_LO = -999;          // GHz  Invalid value for LO
     const HUGE_POWER = 999;       // dBm  Invalid big value for power
@@ -58,6 +76,9 @@ class IFSpectrum_calc {
         $this->noiseFloorData = array();
         $rfMin = self::RFMIN_DEFAULT;
         $rfMax = self::RFMAX_DEFAULT;
+
+        if (defined('DEBUG_IFSPECTRUM_CALC'))
+            $this->logger1 = new Logger("IFSpectrum_calc.txt");
     }
 
     /**
@@ -199,11 +220,147 @@ class IFSpectrum_calc {
     }
 
     /**
+     * Accumulates min, max, and highest-IF power levels seen per LO.
+     *
+     * @return none.   Updates internal arrays and accumulators.
+     */
+    public function getTotalPowerSpans() {
+        // helper function to append a record to the output:
+        $appendResult = function(&$output, &$pMin_overall, &$pMax_overall, $LO, $mindBm, $maxdBm, $lastdBm) {
+            $output[] = array(
+                    'LO_GHz' => $LO,
+                    'pMin_dBm' => $mindBm,
+                    'pMax_dBm' => $maxdBm,
+                    'last_dBm' => $lastdBm
+            );
+            // and accumulate overall min/max:
+            if ($mindBm < $pMin_overall)
+                $pMin_overall = $mindBm;
+            if ($maxdBm > $pMax_overall)
+                $pMax_overall = $maxdBm;
+        };
+
+        // reset the min/max and trace offset accumulators:
+        $this->minMaxData = array();
+        $this->pMin_dBm_overall = self::HUGE_POWER;
+        $this->pMax_dBm_overall = self::TINY_POWER;
+
+        if (empty($this->data))
+            return $output;
+
+        // to accumulate min/max powers seen per LO:
+        $mindBm = self::HUGE_POWER;
+        $maxdBm = self::TINY_POWER;
+        $lastdBm = self::TINY_POWER;
+        $lastLO = self::BAD_LO;
+
+        // Loop for all rows:
+        foreach ($this->data as $row) {
+            $LO = $row['LO_GHz'];
+            $IF = $row['Freq_GHz'];
+            $PW = $row['Power_dBm'];
+
+            // if this is the first row, initialize lastLO:
+            if ($lastLO == self::BAD_LO)
+                $lastLO = $LO;
+
+            // if same as last LO or first row:
+            if ($LO == $lastLO) {
+                // Save the highest-IF power level in this trace:
+                $lastdBm = $PW;
+
+                // Accumulate min and max power seen for this LO:
+                if ($IF >= self::LOW_IF_CUTOFF) {
+                    if ($PW < $mindBm)
+                        $mindBm = $PW;
+                    if ($PW > $maxdBm)
+                        $maxdBm = $PW;
+                }
+
+            // if new LO seen:
+            } else {
+                // output a row for previous LO:
+                $appendResult($this->minMaxData, $this->pMin_dBm_overall, $this->pMax_dBm_overall, $lastLO, $mindBm, $maxdBm, $lastdBm);
+                // and reset the min/max accumulators:
+                $mindBm = self::HUGE_POWER;
+                $maxdBm = self::TINY_POWER;
+                // make it the new current LO:
+                $lastLO = $LO;
+            }
+        }
+        // output the final row:
+        $appendResult($this->minMaxData, $this->pMin_dBm_overall, $this->pMax_dBm_overall, $lastLO, $mindBm, $maxdBm, $lastdBm);
+        return $this->minMaxData;
+    }
+
+    public function getTotalPowerSpan_overall() {
+        return $this->pMax_dBm_overall - $this->pMin_dBm_overall;
+    }
+
+    /**
+     * If RF band edges were specified via setRFLimits() above,
+     *  Return an array of coordinates for the marks:
+     *
+     *  @return array(
+     *      [0] => array(
+     *          'LO_GHz' => float,    // An LO frequency
+     *          'Freq_GHz' => float   // The IF at the band edge
+     *      )
+     *      ...
+     *  )
+     *
+     */
+    public function getRFBandEdgeMarks($sb = self::USB) {
+        $output = array();
+
+        $LOs = $this->getLOs();
+        if (!$LOs) {
+            // no LOs found:
+            return $output;
+        }
+
+        if ($this->rfMin == self::RFMIN_DEFAULT && $this->rfMax == self::RFMAX_DEFAULT) {
+            // no RF band edges defined:
+            return $output;
+        }
+
+        $outputRec = array(
+            'LO_GHz' => self::BAD_LO,
+            'Freq_GHz' => 0.0
+        );
+
+        foreach ($LOs as $LO) {
+            $ifLim = false;
+
+            // if USB and rfMax is defined:
+            if ($sb == self::USB && $this->rfMax != self::RFMAX_DEFAULT) {
+                // Compute IF limit of rfMax:
+                $ifLim = $this->rfMax - $LO;
+
+            // if LSB and rfMin is defined:
+            } else if ($sb == self::LSB && $this->rfMin != self::RFMIN_DEFAULT) {
+                // Compute IF limit of rfMin:
+                $ifLim = $LO - $this->rfMin;
+            }
+
+            // append to output if a IF at the RF band edge was found:
+            if ($ifLim) {
+                $outputRec['LO_GHz'] = $LO;
+                $outputRec['Freq_GHz'] = $ifLim;
+                $output[] = $outputRec;
+            }
+        }
+        return $output;
+    }
+
+    /**
      * Compute the in-band power variation vs. IF center frequency for all LOs.
      *
      * @param float $fMin Lower in-band IF in GHz
      * @param float $fMax Upper in-band IF in GHz
      * @param float $fWindow Moving window size for the power varation calculation, Hz.
+     * @param $sb: self::USB or self::LSB
+     *
      * @return array(
      *     [0] => array(
      *         'LO_GHz' => float,    // An LO frequency
@@ -254,7 +411,8 @@ class IFSpectrum_calc {
      * @param integer $maxIndex Upper bound of range
      * @param float $fMin Lower in-band IF in GHz
      * @param float $fMax Upper in-band IF in GHz
-     * @param float $fWindow Window size in Hz
+     * @param float $fWindow Window size in GHz
+     * @param $sb: self::USB or self::LSB
      *
      * @return array(
      *     [0] => array(
@@ -266,7 +424,8 @@ class IFSpectrum_calc {
      */
     private function getPowerVarWindowForRange($minIndex, $maxIndex, $fMin = 4.0, $fMax = 8.0, $fWindow = 2.0, $spec = 0.0, $sb = self::USB) {
 
-//     	$this->logger1->WriteLogFile("getPowerVarWindowForRange($minIndex, $maxIndex, $fMin, $fMax, $fWindow, $spec)");
+        if (defined('DEBUG_IFSPECTRUM_CALC'))
+            $this->logger1->WriteLogFile("getPowerVarWindowForRange($minIndex, $maxIndex, $fMin, $fMax, $fWindow, $spec, $sb)");
 
     	$output = array();
 
@@ -286,7 +445,8 @@ class IFSpectrum_calc {
         $fLower = $fMin + ($fWindow / 2);
         $fUpper = $fMax - ($fWindow / 2);
 
-//         $this->logger1->WriteLogFile("fLower=$fLower fUpper=$fUpper");
+        if (defined('DEBUG_IFSPECTRUM_CALC'))
+            $this->logger1->WriteLogFile("fLower=$fLower fUpper=$fUpper");
 
         // find the index of the lower center frequency:
         $iLower = $this->findWindowEdge($minIndex, $maxIndex, $fLower, false);
@@ -302,7 +462,8 @@ class IFSpectrum_calc {
         if ($fLower == $fUpper && $iUpper < $iLower)
             $iLower = $iLower;
 
-//         $this->logger1->WriteLogFile("iLower=$iLower iUpper=$iUpper");
+        if (defined('DEBUG_IFSPECTRUM_CALC'))
+            $this->logger1->WriteLogFile("iLower=$iLower iUpper=$iUpper");
 
         // find the index of the lower window edge:
         $iLowerWindow = $this->findWindowEdge($minIndex, $iLower, $fMin, false);
@@ -310,16 +471,21 @@ class IFSpectrum_calc {
         // assuming the frequency data is evenly spaced, find the window span in index counts:
         $iSpan = $iLower - $iLowerWindow;
 
-//         $this->logger1->WriteLogFile("iLowerWindow=$iLowerWindow iSpan=$iSpan");
+        if (defined('DEBUG_IFSPECTRUM_CALC'))
+            $this->logger1->WriteLogFile("iLowerWindow=$iLowerWindow iSpan=$iSpan");
 
-//         $first = true;
-
+        // Use sb to set the sign when we add the IF to the LO below:
         $sb = ($sb == self::LSB) ? -1.0 : 1.0;
+
+        $first = true;
 
         // loop the window center from the lower to upper index:
         for ($iCenter = $iLower; $iCenter <= $iUpper; $iCenter++) {
             $fCenter = $this->data[$iCenter]['Freq_GHz'];
             $LO = $this->data[$iCenter]['LO_GHz'];
+
+            // compute window edge for comparing to rfMin or rfMax:
+            $windowEdge = $LO + ($sb * ($fCenter + ($fWindow / 2)));
 
             $mindBm = self::HUGE_POWER;
             $maxdBm = self::TINY_POWER;
@@ -328,17 +494,17 @@ class IFSpectrum_calc {
             $iWinMin = $iCenter - $iSpan;
             $iWinMax = $iCenter + $iSpan;
 
-//             if ($first) {
-//             	$this->logger1->WriteLogFile("fCenter=$fCenter iWinMin=$iWinMin iWinMax=$iWinMax");
-//             	$first = false;
-//             }
+            if ($first && defined('DEBUG_IFSPECTRUM_CALC')) {
+            	$this->logger1->WriteLogFile("LO=$LO fCenter=$fCenter iWinMin=$iWinMin iWinMax=$iWinMax windowEdge=$windowEdge");
+            	$first = false;
+            }
 
             for ($index = $iWinMin; $index <= $iWinMax; $index++) {
                 $row = $this->data[$index];
                 $IF = $row['Freq_GHz'];
-                $RF = $LO + ($IF * $sb);
+
                 // Limit to specified RF range, if any:
-                if ($RF >= $this->rfMin && $RF <= $this->rfMax) {
+                if ($windowEdge >= $this->rfMin && $windowEdge <= $this->rfMax) {
                     //  find min and max power in the window:
                     $valid = true;
                     $PW = $row['Power_dBm'];
@@ -349,18 +515,20 @@ class IFSpectrum_calc {
                 }
             }
             // calculate pVar:
-            $pVar = ($valid) ? ($maxdBm - $mindBm) : 0.0;
-            // append output record:
-            $output[] = array(
-                    'Freq_GHz' => $fCenter,
-                    'pVar_dB' => $pVar
-            );
-            // accumulate $maxVarWindow:
-            if ($pVar > $this->maxVarWindow)
-                $this->maxVarWindow = $pVar;
-            // accumulate $badVarThisRange:
-            if ($spec > 0 && $pVar > $spec)
-                $this->badVarThisRange = true;
+            if ($valid) {
+                $pVar = $maxdBm - $mindBm;
+                // append output record:
+                $output[] = array(
+                        'Freq_GHz' => $fCenter,
+                        'pVar_dB' => $pVar
+                );
+                // accumulate $maxVarWindow:
+                if ($pVar > $this->maxVarWindow)
+                    $this->maxVarWindow = $pVar;
+                // accumulate $badVarThisRange:
+                if ($spec > 0 && $pVar > $spec)
+                    $this->badVarThisRange = true;
+            }
         }
         return $output;
     }
@@ -452,6 +620,8 @@ class IFSpectrum_calc {
                 if ($lastLO != self::BAD_LO) {
                     // output the previous LO record:
                     $appendResult($output, $lastLO, $mindBm, $maxdBm);
+                    if (defined('DEBUG_IFSPECTRUM_CALC'))
+                        $this->logger1->WriteLogFile("getPowerVarFullBand: $lastLO, $mindBm, $maxdBm");
                 }
                 // reset the output record to accumulate for the next LO:
                 $lastLO = $LO;
@@ -474,6 +644,8 @@ class IFSpectrum_calc {
         }
         // output data for the last LO:
         $appendResult($output, $lastLO, $mindBm, $maxdBm);
+        if (defined('DEBUG_IFSPECTRUM_CALC'))
+            $this->logger1->WriteLogFile("getPowerVarFullBand: $lastLO, $mindBm, $maxdBm");
         return $output;
     }
 
