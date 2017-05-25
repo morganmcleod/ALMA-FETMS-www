@@ -1,5 +1,4 @@
 <?php
-
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.cca.php');
 require_once($site_classes . '/class.cryostat.php');
@@ -14,110 +13,76 @@ $selected_key=(isset($_POST['config'])) ? $_POST['config'] : '';
 $tabtype=(isset($_POST['tabtype'])) ? $_POST['tabtype'] : '';
 
 $fecomponent = new FEComponent();
-$fecomponent->Initialize_FEComponent($selected_key,$fc, -1);
+$fecomponent->Initialize_FEComponent($selected_key, $fc, -1);
 
-$getQuery=new dbGetQueries;
-$getCompConfig_query=$getQuery->getSelectedCompConfig($selected_key);
-
-if($tabtype == "testdata")
-{
+if ($tabtype == "testdata") {
     $fecomponent->DisplayTable_TestData();
-}
-if($tabtype == "updateconfig")
-{
+
+} else if ($tabtype == "updateconfig") {
     $fecomponent->Display_ALLUpdateConfigForm_CCA();
-}
-if($tabtype == 1)
-{
-    while($getFEComp=mysql_fetch_array($getCompConfig_query))
-    {
-        $comp_id=$getFEComp['keyId'];
-        $ts=$getFEComp['TS'];
-        $sn=$getFEComp['SN'];
-        if ($sn == ''){
-            $sn = "NA";
-        }
-        $band=$getFEComp['Band'];
-        $descr=$getFEComp['Descr'];
-        $esn1=$getFEComp['ESN1'];
-        $esn2=$getFEComp['ESN2'];
-        $docs=isset($getFEComp['Docs']) ? $getFEComp['Docs'] : "";
 
-        if($docs== "")
-        {
-            $disabled= "disabled";
-        }
-        else
-        {
-            $disabled= "";
-        }
-
-        echo "<div>";
-
+} else if ($tabtype == 1) {
+    // General configuration tab
+    $getQuery=new dbGetQueries;
+    $getCompConfig_query=$getQuery->getSelectedCompConfig($selected_key);
+    while ($getFEComp=mysql_fetch_array($getCompConfig_query)) {
         $fecomponent->DisplayTable_ComponentInformation();
         $fecomponent->Display_Table_PreviousConfigurations();
     }
-}
 
-if($tabtype != 1)
-{
-    if($comp_type == 20)
-    {
-    //CCA
-        $cca = new CCA();
-        $cca->Initialize_CCA($selected_key,$fc);
-        switch($tabtype){
-            case 2:
-                $cca->Display_MixerParams();
-                break;
+} else if ($comp_type == 20) {
+    // CCA tab:
+    $cca = new CCA();
+    $cca->Initialize_CCA($selected_key,$fc);
+    switch($tabtype){
+        case 2:
+            $cca->Display_MixerParams();
+            break;
 
-            case 3:
-                $cca->Display_PreampParams();
-                break;
+        case 3:
+            $cca->Display_PreampParams();
+            break;
 
-            case 4:
-                $cca->Display_TempSensors();
-                break;
-        }
-        unset($cca);
+        case 4:
+            $cca->Display_TempSensors();
+            break;
     }
-    if($comp_type == 6)
-    {
-    //Cryostat
-        $cryo = new Cryostat();
-        $cryo->Initialize_Cryostat($selected_key,$fc);
-        switch($tabtype){
-            case 2:
-                $cryo->DisplayTempSenors();
+    unset($cca);
 
-                break;
-            case 5:
-                $cryo->Display_uploadform_Notempsensors();
-                break;
-        }
-        unset($cryo);
+} else if ($comp_type == 6) {
+    // Cryostat tab:
+    $cryo = new Cryostat();
+    $cryo->Initialize_Cryostat($selected_key,$fc);
+    switch($tabtype){
+        case 2:
+            $cryo->DisplayTempSenors();
+
+            break;
+        case 5:
+            $cryo->Display_uploadform_Notempsensors();
+            break;
     }
+    unset($cryo);
 
-    if($comp_type == 11)
-    {
-        $wca = new WCA();
-        $wca->Initialize_WCA($selected_key, $fc, WCA::INIT_ALL);
-        switch($tabtype){
-            case 2:
-                $wca->DisplayMainDataNonEdit();
-                break;
+} else if ($comp_type == 11) {
+    // WCA tab:
+    $wca = new WCA();
+    $wca->Initialize_WCA($selected_key, $fc, WCA::INIT_ALL);
+    switch($tabtype){
+        case 2:
+            $wca->DisplayMainDataNonEdit();
+            break;
 
-            case 3:
-                $wca->Compute_MaxSafePowerLevels(TRUE);
-                $wca->Display_MaxSafePowerLevels();
-                break;
+        case 3:
+            $wca->Compute_MaxSafePowerLevels(TRUE);
+            $wca->Display_MaxSafePowerLevels();
+            break;
 
-            case 4:
-                $wca->Display_LOParams();
-                break;
-        }
-        unset($wca);
+        case 4:
+            $wca->Display_LOParams();
+            break;
     }
+    unset($wca);
 }
 
 ?>

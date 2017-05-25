@@ -9,24 +9,23 @@ require_once($site_classes . '/zip/pclzip.lib.php');
 require_once($site_dbConnect);
 
 class CCA extends FEComponent {
-    var $_CCAs;
-    var $ZipDirectory;
-    var $UnzippedFiles;
-    var $file_COLDCARTS;
-    var $file_MIXERPARAMS;
-    var $file_PREAMPPARAMS;
-    var $file_TEMPSENSORS;
-    var $file_AMPLITUDESTABILITY;
-    var $file_PHASE_DRIFT;
-    var $file_GAIN_COMPRESSION;
-    var $file_IFSPECTRUM;
-    var $file_IVCURVE;
-    var $file_INBANDPOWER;
-    var $file_POLACCURACY;
-    var $file_POWERVARIATION;
-    var $file_SIDEBANDRATIO;
-    var $file_TOTALPOWER;
-    var $file_NOISETEMPERATURE;
+    private $ZipDirectory;
+    private $UnzippedFiles;
+    private $file_COLDCARTS;
+    private $file_MIXERPARAMS;
+    private $file_PREAMPPARAMS;
+    private $file_TEMPSENSORS;
+    private $file_AMPLITUDESTABILITY;
+    private $file_PHASE_DRIFT;
+    private $file_GAIN_COMPRESSION;
+    private $file_IFSPECTRUM;
+    private $file_IVCURVE;
+    private $file_INBANDPOWER;
+    private $file_POLACCURACY;
+    private $file_POWERVARIATION;
+    private $file_SIDEBANDRATIO;
+    private $file_TOTALPOWER;
+    private $file_NOISETEMPERATURE;
 
     var $fkMixer01;
     var $fkMixer02;
@@ -75,9 +74,10 @@ class CCA extends FEComponent {
 
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.12";
+        $this->swversion = "1.0.13";
 
         /*
+         * 1.0.13 Move export_to_ini_cca code into class; delete dead code; make things private!
          * 1.0.12 Fixed Upload_PolAccuracy to comply with CCA data spec
          * 1.0.11 Added INIT_Options to Initialize_CCA()
          * 1.0.10 Added XML data file uplaod and fixed related bugs
@@ -178,7 +178,7 @@ class CCA extends FEComponent {
         }
     }
 
-    public function NewRecord_CCA($in_fc) {
+    private function NewRecord_CCA($in_fc) {
         parent::NewRecord('FE_Components','keyId',$in_fc,'keyFacility');
         parent::SetValue('fkFE_ComponentType',20);
         parent::Update();
@@ -195,137 +195,174 @@ class CCA extends FEComponent {
         (fkFEComponents, fkLocationNames,fkStatusType)
         VALUES($this->keyId,'40','7');";
         $r_status = @mysql_query($q_status, $this->dbconnection);
-
-        //Temporaray for debugging
-        //$this->keyId = 406;
-        //$this->SetValue('fkFE_ComponentType',20);
     }
 
+    // return a string formatted as the FrontEndControlDLL.ini section for this CCA:
+    public function getFrontEndControlDLL_ini() {
+        $band = $this->GetValue('Band');
+        $sn   = ltrim($this->GetValue('SN'), '0');
+        $esn  = $this->GetValue('ESN1');
 
-    public function DisplayData_CCA() {
-        require(site_get_config_main());
+        $output = "";
 
-        echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
-            echo "<div style ='width:100%;height:50%'>";
-            //echo "<div align='right' style ='width:50%;height:30%'>";
-                echo "<input type='hidden' name='" . $this->keyId_name . "' value='$this->keyId'>";
-                if ($this->fc != "") {
-                    echo "<input type='hidden' name='fc' value='$this->fc'>";
+        $output .= "[~ColdCart$band-$sn]\r\n";
+        $description = "Band $band SN$sn";
+        $output .= "Description=$description\r\n";
+        $output .= "Band=$band\r\n";
+        $output .= "SN=$sn\r\n";
+        $output .= "ESN=$esn\r\n";
+
+        $mstring = "";
+
+        switch ($band) {
+            case 3:
+                $output .= "MagnetParams=0\r\n";
+                break;
+            case 4:
+                $output .= "MagnetParams=0\r\n";
+                break;
+            case 6:
+                $output .= "MagnetParams=1\r\n";
+                $mstring = "MagnetParam01=" . number_format($this->MixerParams[0]->lo,3) . ",";
+                $mstring .= number_format($this->MixerParams[0]->imag01,2) . ",";
+                $mstring .= "0.00,";
+                $mstring .= number_format($this->MixerParams[0]->imag11,2) . ",";
+                $mstring .= "0.00\r\n";
+                break;
+            default:
+                //Get number of magnet params
+                $im01 = 'x';
+                $im02 = 'x';
+                $im11 = 'x';
+                $im12 = 'x';
+                $numMags = 0;
+                for ($ic = 0; $ic < count($this->MixerParams); $ic++) {
+                    if (($this->MixerParams[$ic]->imag01 != $im01)
+                            || ($this->MixerParams[$ic]->imag02 != $im02)
+                            || ($this->MixerParams[$ic]->imag11 != $im11)
+                            || ($this->MixerParams[$ic]->imag12 != $im12))
+                    {
+                        $im01 = $this->MixerParams[$ic]->imag01;
+                        $im02 = $this->MixerParams[$ic]->imag02;
+                        $im11 = $this->MixerParams[$ic]->imag11;
+                        $im12 = $this->MixerParams[$ic]->imag12;
+                        $numMags += 2;
+                    }
                 }
-                if ($this->fc == "") {
-                    echo "<input type='hidden' name='fc' value='$fc'>";
+
+                $output .= "MagnetParams=$numMags\r\n";
+                $im01 = 'x';
+                $im02 = 'x';
+                $im11 = 'x';
+                $im12 = 'x';
+                $magcount = 1;
+                $mstring = '';
+                for ($ic = 0; $ic < count($this->MixerParams); $ic++) {
+                    $imLO = $this->MixerParams[$ic]->lo;
+                    $magcountStr = "MagnetParam0" . $magcount;
+                    if ($magcount > 9) {
+                        $magcountStr = "MagnetParam" . $magcount;
+                    }
+
+                    //Check to see if this set of Imag values is unique
+                    if (($this->MixerParams[$ic]->imag01 != $im01)
+                            || ($this->MixerParams[$ic]->imag02 != $im02)
+                            || ($this->MixerParams[$ic]->imag11 != $im11)
+                            || ($this->MixerParams[$ic]->imag12 != $im12))
+                    {
+                        if ($ic > 0) {
+                            $mstring .= "$magcountStr=" . number_format($this->MixerParams[$ic - 1]->lo,3) . ",";
+                            $mstring .= number_format($im01,2) . ",";
+                            $mstring .= number_format($im02,2) . ",";
+                            $mstring .= number_format($im11,2) . ",";
+                            $mstring .= number_format($im12,2) . "\r\n";
+                            $magcount += 1;
+                            $magcountStr = "MagnetParam0" . $magcount;
+                            if ($magcount > 9) {
+                                $magcountStr = "MagnetParam" . $magcount;
+                            }
+                        }
+                        $im01 = $this->MixerParams[$ic]->imag01;
+                        $im02 = $this->MixerParams[$ic]->imag02;
+                        $im11 = $this->MixerParams[$ic]->imag11;
+                        $im12 = $this->MixerParams[$ic]->imag12;
+
+                        $mstring .= "$magcountStr=" . number_format($this->MixerParams[$ic]->lo,3) . ",";
+                        $mstring .= number_format($this->MixerParams[$ic]->imag01,2) . ",";
+                        $mstring .= number_format($this->MixerParams[$ic]->imag02,2) . ",";
+                        $mstring .= number_format($this->MixerParams[$ic]->imag11,2) . ",";
+                        $mstring .= number_format($this->MixerParams[$ic]->imag12,2) . "\r\n";
+                        $magcount += 1;
+                    }
+                    //Put the last string in
+                    if ($ic >= count($this->MixerParams) - 1) {
+                        $mstring .= "$magcountStr=" . number_format($this->MixerParams[$ic]->lo,3) . ",";
+                        $mstring .= number_format($this->MixerParams[$ic]->imag01,2) . ",";
+                        $mstring .= number_format($this->MixerParams[$ic]->imag02,2) . ",";
+                        $mstring .= number_format($this->MixerParams[$ic]->imag11,2) . ",";
+                        $mstring .= number_format($this->MixerParams[$ic]->imag12,2) . "\r\n";
+                    }
                 }
-                echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>";
-                echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'><br>";
-                echo "<br><font size='+2'><b>CCA Information</b></font><br>";
-
-                $this->DisplayMainData();
-
-                echo "<br><br>
-                <font size = '+2'>
-                <a href='../testdata/testdata.php?keycomponent=$this->keyId&fc=". $this->fc. "'>
-                Click here for Test Data</a></font><br>";
-
-
-
-
-                //echo '<br><br><font color = "#ff0000"><b>
-                //      Caution:  </b></font>The <b>ESN</b> is recorded as CRC-SerNum-FamilyCode (MSB to LSB).<br>
-                //      The FEMC reports it FamilyCode first. An ESN recorded as "A1 B2 C3 D4 E5 F6 A7 B8"<br>
-                //      in this database will be reported as "B8 A7 F6 E5 D4 C3 B2 A1" using the FEMC.';
-            echo "</div>";
-        echo "</form>";
-        echo "<br>";
-
-
-        if ($this->keyId != '') {
-            echo '<a href="#TempSensors">Temperature Sensors<br></a>';
-            echo '<a href="#MixerParams">Mixer Parameters<br></a>';
-            echo '<a href="#PreampParams">Preamp Parameters<br></a>';
-            //echo '<a href="#AmplitudeStability">AmplitudeStability<br></a>';
-            //echo '<a href="#PhaseDrift">PhaseDrift<br></a>';
-
-            echo '<a name="TempSensors"></a>';
-            $this->Display_TempSensors();
-            echo '<a name="MixerParams"></a>';
-            $this->Display_MixerParams();
-            echo '<a name="PreampParams"></a>';
-            $this->Display_PreampParams();
-
-            if ($this->CCA_urls->GetValue('url_amplitudestability') != "") {
-                //echo '<a name="AmplitudeStability"></a>';
-                //echo "<h2>Amplitude Stability</h2><br>";
-                //echo "<img src= '". $this->CCA_urls->GetValue('url_amplitudestability') . "'>";
-            }
-            if ($this->CCA_urls->GetValue('url_phasedrift') != "") {
-                //echo '<a name="PhaseDrift"></a>';
-                //echo "<h2>PhaseDrift</h2><br>";
-                //echo "<img src= '". $this->CCA_urls->GetValue('url_phasedrift') . "'>";
-            }
-
         }
 
-        echo "<tr><td>";
-        $this->Display_uploadform();
-        echo "</td></tr>";
-        echo "</table>";
+        $output .= $mstring;
 
-    }
 
-    public function DisplayMainData() {
-        echo "<div style = 'width: 370px'><br><br>";
-            echo "<table id = 'table1'>";
-                echo "<tr>";
-                    echo "<th>Band</th>";
-                    echo "<td><input type='text' name='Band' size='2' maxlength='200' value = '".$this->GetValue('Band')."'></td>";
-                echo "</tr>";
-                echo "<tr>";
-                    echo "<th>SN</th>";
-                    echo "<td><input type='text' name='SN' size='2' maxlength='200' value = '".$this->GetValue('SN')."'></td>";
-                echo "</tr>";
-                echo "<tr>";
-                    echo "<th>ESN1</th>";
-                    echo "<td><input type='text' name='ESN1' size='20' maxlength='200' value = '".$this->GetValue('ESN1')."'></td>";
-                echo "</tr>";
-                echo "<tr>";
-                    echo "<th>ESN2</th>";
-                    echo "<td><input type='text' name='ESN2' size='20' maxlength='200' value = '".$this->GetValue('ESN2')."'></td>";
-                echo "</tr>";
-                echo "<tr>";
-                    echo "<th>Status</th>";
-                    echo "<td>";
-                    $this->Display_StatusSelector();
-                    echo "</td>";
-                echo "</tr>";
-                echo "<tr>";
-                    echo "<th>Location</th>";
-                    echo "<td>";
-                    $this->Display_LocationSelector();
-                    echo "</td>";
-                echo "</tr>";
+        $output .= "MixerParams=" . (count($this->MixerParams)) . "\r\n";
 
-                echo "<th>Notes</th>";
-                    echo "<td>";
-                    echo '<textarea name = "Notes" rows="10" cols="50" >';
-                    echo $this->sln->GetValue('Notes');
-                    echo "</textarea>";
+        for ($i = 0; $i  < (count($this->MixerParams)); $i++) {
+            if ($i < 9) {
+                $mstring = "MixerParam0" . ($i+1) ."=";
+            }
+            if ($i >= 9) {
+                $mstring = "MixerParam" . ($i+1) ."=";
+            }
+            $mstring .= number_format($this->MixerParams[$i]->lo,3) . ",";
+            $mstring .= number_format($this->MixerParams[$i]->vj01,3) . ",";
+            $mstring .= number_format($this->MixerParams[$i]->vj02,3) . ",";
+            $mstring .= number_format($this->MixerParams[$i]->vj11,3) . ",";
+            $mstring .= number_format($this->MixerParams[$i]->vj12,3) . ",";
+            $mstring .= number_format($this->MixerParams[$i]->ij01,2) . ",";
+            $mstring .= number_format($this->MixerParams[$i]->ij02,2) . ",";
+            $mstring .= number_format($this->MixerParams[$i]->ij11,2) . ",";
+            $mstring .= number_format($this->MixerParams[$i]->ij12,2) . "\r\n";
+            $output .= $mstring;
+        }
 
-                echo "<tr>";
-                    echo "<th>Updated By</th>";
-                    echo "<td><input type='text' name='Updated_By' size='4' maxlength='200' value = '".$this->sln->GetValue('Updated_By')."'></td>";
-                echo "</tr>";
-                echo "<tr>";
-                    echo "</td>";
-                echo "</tr>";
-                unset($sln);
+        $numpa=4;
+        if ($this->GetValue('Band') == 9) {
+            $numpa = 2;
+        }
+        $ij_precision = 2;
+        if ($this->GetValue('Band') == 3) {
+            $ij_precision = 3;
+        }
 
-                echo "<tr>";
-                    echo "<th></th>";
-                    echo "<td>";
-                    echo "<b><a href='export_to_ini_cca.php?keyId=$this->keyId&cca=1'>Click for INI file</b></a>";
-                    echo "</td>";
-                echo "</tr>";
-        echo "</table></div>";
+        $output .= "PreampParams=" . (count($this->PreampParams)) . "\r\n";
+
+        for ($i = 0; $i  < (count($this->PreampParams)); $i++) {
+            if ($i < 9) {
+                $mstring = "PreampParam0" . ($i+1) ."=";
+            }
+            if ($i >= 9) {
+                $mstring = "PreampParam" . ($i+1) ."=";
+            }
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('FreqLO'),3) . ",";
+            $mstring .= $this->PreampParams[$i]->GetValue('Pol') . ",";
+            $mstring .= $this->PreampParams[$i]->GetValue('SB') . ",";
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('VD1'),2) . ",";
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('VD2'),2) . ",";
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('VD3'),2) . ",";
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('ID1'),$ij_precision) . ",";
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('ID2'),$ij_precision) . ",";
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('ID3'),$ij_precision) . ",";
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('VG1'),2) . ",";
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('VG2'),2) . ",";
+            $mstring .= number_format($this->PreampParams[$i]->GetValue('VG3'),2) . "\r\n";
+            $output .= $mstring;
+        }
+        $output .= "\r\n";
+        return $output;
     }
 
     public function Display_TempSensors() {

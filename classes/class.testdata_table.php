@@ -33,32 +33,28 @@ class TestDataTable {
         $this->compSN = $compSN;
     }
 
+    public function getConfigKey() {
+        return ($this->keyFrontEnd) ? "keyFEConfig" : "keyId";
+    }
+
+    public function getConfigKeyLabel() {
+        return ($this->keyFrontEnd) ? "FE Config" : "Config";
+    }
+
     public function DisplayAllMatching() {
         /*
          * 2017-01-18 MM combined methods from classes FEComponent and FrontEnd
          * 2015-04-28 jee for pattern data, added test number and day of week to date
          */
 
-        // Filter on data status depending on whether this is FE data or component data, and FETMS_CCA_MODE:
-        //"1"   "Cold PAS"
-        //"2"   "Warm PAS"
-        //"3"	"Cold PAI"        = data which is taken on the FETMS
-        //"4"   "Health Check"    = warm and cold health check data taken on FETMS
-        //"7"	"Cartridge PAI"   = data which is delivered with a CCA or WCA
-
-        $dataStatus = '()';
-        if ($this->keyFrontEnd)
-            $dataStatus = '(3)';
-        else
-            $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
-
-        $r = $this -> fetchData($dataStatus);
+        // Fetch TDH records matching the FE_Config or FE_Component for this band:
+        $r = $this -> fetchTestDataHeaders();
 
         // config column label:
-        $configLabel = ($this->keyFrontEnd) ? "FE Config" : "Config";
+        $configLabel = $this->getConfigKeyLabel();
 
         // Config column is either keyFEConfig or component keyId
-        $configKey = ($this->keyFrontEnd) ? "keyFEConfig" : "keyId";
+        $configKey = $this->getConfigKey();
 
         echo "<div style= 'width:950px'>";
         echo "<table id='table1'>";
@@ -156,7 +152,24 @@ class TestDataTable {
         echo "</table></div>";
     }
 
-    private function fetchData($dataStatus) {
+    public function fetchTestDataHeaders($selectedOnly = false) {
+        // Filter on data status depending on whether this is FE data or component data, and FETMS_CCA_MODE:
+        //"1"   "Cold PAS"
+        //"2"   "Warm PAS"
+        //"3"	"Cold PAI"        = data which is taken on the FETMS
+        //"4"   "Health Check"    = warm and cold health check data taken on FETMS
+        //"7"	"Cartridge PAI"   = data which is delivered with a CCA or WCA
+
+        $dataStatus = '()';
+        if ($this->keyFrontEnd)
+            $dataStatus = '(3)';
+            else
+        $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
+
+        return $this -> fetchData($dataStatus, $selectedOnly);
+    }
+
+    private function fetchData($dataStatus, $selectedOnly) {
         // Left-hand (LH) table for join is either FE_Config or FE_Components
         $lhTable = ($this->keyFrontEnd) ? "FE_Config" : "FE_Components";
 
@@ -172,7 +185,7 @@ class TestDataTable {
         // Filter for component SN
         $likeCompSN = ($this->compSN) ? $this->compSN : '%';
 
-        // Select TDH records matching the FE_Config or FE_Component, filtered for this band, excluding certain data...
+        // Select TDH records matching the FE_Config or FE_Component for this band...
         $q = "SELECT TDH.keyId as tdhID, TestData_Types.Description,
              TDH.fkTestData_Type, LH.$lhKeyId,
              TDH.Band, TDH.Notes, TDH.fkDataStatus,
@@ -181,6 +194,10 @@ class TestDataTable {
              FROM $lhTable as LH, TestData_header as TDH, TestData_Types, DataStatus
              WHERE TDH.Band like '$likeBand'
              AND TDH.fkDataStatus IN $dataStatus";
+
+        // Filtered for UseForPAI, aka 'selected'.
+        if ($selectedOnly)
+            $q .= " AND TDH.UseForPAI <> 0";
 
         // Either matching keyFrontEnd or a particular Component serial number...
         if ($this->keyFrontEnd)
