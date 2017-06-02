@@ -75,7 +75,8 @@ class IFSpectrum_impl extends TestData_header {
     const EXPANDED_SPACING = 2.5; // dB  spacing between traces in expanded plot
 
     public function __construct() {
-        $this->swVersion = "1.4.0";
+        $this->swVersion = "1.4.1";
+        // 1.4.1  Show "Traces are separated by 10 dB." on IF spectrum plots.
         // 1.4.0  Significant refactoring
         // 1.3.7  Added RF limits for power variation plots and calculations
         // 1.3.6  More fixes for calling from CCA page.
