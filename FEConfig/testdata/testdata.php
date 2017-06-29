@@ -129,26 +129,29 @@ switch ($td->GetValue('fkTestData_Type')) {
         //LO Lock test or noise temperature
         $drawurl = "testdata.php?keyheader=$td->keyId&drawplot=1&fc=". $td->GetValue('keyFacility');
         $datasetsurl = "testdata.php?keyheader=$td->keyId&sd=1&fc=". $td->GetValue('keyFacility');
-        $gridurl = "../datasets/datasets.php?fc=". $td->GetValue('keyFacility') . "&id=" . $td->keyId;
-        $gridurl .= "&fe=". $td->FrontEnd->keyId . "&b=". $td->GetValue('Band') . "&d=".$td->GetValue('fkTestData_Type');
         echo "
             <tr><td>
                 <a style='width:90px' href='$showrawurl' class='button blue2 biground'>
                 <span style='width:130px'>Show Raw Data</span></a>
-            </tr></td>
-
+            </td></tr>
             <tr><td>
                 <a style='width:90px' href='$drawurl' class='button blue2 biground'>
                 <span style='width:130px'>Generate Plots And Data</span></a>
-            </tr></td>
+            </td></tr>
             <tr><td>
                 <a style='width:90px' href='$exportcsvurl' class='button blue2 biground'>
                 <span style='width:130px'>Export CSV</span></a>
-            </tr></td>
-            <tr><td>
-                <a style='width:90px' href='$gridurl' class='button blue2 biground'>
-                <span style='width:130px'>Edit Data Sets</span></a>
-            </tr></td>";
+            </td></tr>";
+
+        if (isset($td->FrontEnd)) {
+            $gridurl = "../datasets/datasets.php?fc=". $td->GetValue('keyFacility') . "&id=" . $td->keyId;
+            $gridurl .= "&fe=". $td->FrontEnd->keyId . "&b=". $td->GetValue('Band') . "&d=".$td->GetValue('fkTestData_Type');
+            echo "
+                <tr><td>
+                    <a style='width:90px' href='$gridurl' class='button blue2 biground'>
+                    <span style='width:130px'>Edit Data Sets</span></a>
+                </td></tr>";
+        }
         break;
 
     case '28':
