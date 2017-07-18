@@ -273,6 +273,8 @@ class TestData_header extends GenericTable {
         $qgetdata = "SELECT * FROM $this->TestDataTableName WHERE
         fkHeader = $fkHeader AND fkFacility = ".$this->GetValue('keyFacility').";";
 
+        $preCols = "";
+
         switch($this->Component->GetValue('fkFE_ComponentType')) {
             case 6:
                 //Cryostat
@@ -313,15 +315,15 @@ class TestData_header extends GenericTable {
                 fkSub_Header = $subid AND keyFacility = ".$this->GetValue('keyFacility').";";
                 $this->TestDataTableName = 'Noise_Temp';
                 break;
+
             case 59:
                 //fine LO Sweep
-                $q = "SELECT keyId FROM TEST_FineLOSweep_SubHeader
-                      WHERE fkHeader = $this->keyId
-                      AND keyFacility = " . $this->GetValue('keyFacility');
-                $r = @mysql_query($q,$this->dbconnection);
-                $subid = @mysql_result($r,0,0);
-                $qgetdata = "SELECT * FROM TEST_FineLOSweep WHERE
-                fkSubHeader = $subid AND fkFacility = ".$this->GetValue('keyFacility').";";
+                $qgetdata = "SELECT HT.Pol, DT.*
+                    FROM TEST_FineLOSweep AS DT, TEST_FineLOSweep_SubHeader AS HT
+                    WHERE HT.fkHeader = $this->keyId
+                    AND DT.fkSubHeader = HT.keyId;";
+
+                $preCols = "Pol";
                 $this->TestDataTableName = 'TEST_FineLOSweep';
                 break;
         }
@@ -330,6 +332,11 @@ class TestData_header extends GenericTable {
         $r = @mysql_query($q,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
 
         echo        "<table id = 'table1'>";
+
+        if ($preCols) {
+            echo "
+                <th>$preCols</th>";
+        }
 
         while ($row = @mysql_fetch_array($r)) {
             echo "
