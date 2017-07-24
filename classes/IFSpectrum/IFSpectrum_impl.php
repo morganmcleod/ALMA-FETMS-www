@@ -75,7 +75,8 @@ class IFSpectrum_impl extends TestData_header {
     const EXPANDED_SPACING = 2.5; // dB  spacing between traces in expanded plot
 
     public function __construct() {
-        $this->swVersion = "1.4.2";
+        $this->swVersion = "1.4.3";
+        // 1.4.3  Fix case where rfMin and rfMax not available in specs.
         // 1.4.2  Show "Traces are drawn with an artificial 10 dB spacing." on IF spectrum plots.
         // 1.4.1  Show "Traces are separated by 10 dB." on IF spectrum plots.
         // 1.4.0  Significant refactoring
@@ -169,8 +170,8 @@ class IFSpectrum_impl extends TestData_header {
         $this->fWindow_High = $this->specs['fWindow_high'] * pow(10,9);
 
         // load in-band RF limits:
-        $rfMin = $this->specs['rfMin'];
-        $rfMax = $this->specs['rfMax'];
+        $rfMin = isset($this->specs['rfMin']) ? $this->specs['rfMin'] : IFSpectrum_calc::RFMIN_DEFAULT;
+        $rfMax = isset($this->specs['rfMax']) ? $this->specs['rfMax'] : IFSpectrum_calc::RFMAX_DEFAULT;
         $this->ifCalc->setRFLimits($rfMin, $rfMax);
 
         // load FrontEnd info:
@@ -361,8 +362,8 @@ class IFSpectrum_impl extends TestData_header {
             $noLSB = ($this->band == 1 || $this->band == 9 || $this->band == 10);
             $colSpan = ($noLSB ? 3 : 5);
 
-            $rfMin = $this->specs['rfMin'];
-            $rfMax = $this->specs['rfMax'];
+            $rfMin = isset($this->specs['rfMin']) ? $this->specs['rfMin'] : IFSpectrum_calc::RFMIN_DEFAULT;
+            $rfMax = isset($this->specs['rfMax']) ? $this->specs['rfMax'] : IFSpectrum_calc::RFMAX_DEFAULT;
             $plotTitle = "Band $this->band Power Variation Full Band";
             if ($rfMin > IFSpectrum_calc::RFMIN_DEFAULT || $rfMax < IFSpectrum_calc::RFMAX_DEFAULT)
                 $plotTitle .= ", Limited to RF in $rfMin-$rfMax GHz";
@@ -494,8 +495,8 @@ class IFSpectrum_impl extends TestData_header {
     public function Plot_IFSpectrum_Data($expanded, $progressStart, $progressIncrement) {
         // Create plots for spurious noise
         $iflim = $this->specs['maxch'];
-        $rfMin = $this->specs['rfMin'];
-        $rfMax = $this->specs['rfMax'];
+        $rfMin = isset($this->specs['rfMin']) ? $this->specs['rfMin'] : IFSpectrum_calc::RFMIN_DEFAULT;
+        $rfMax = isset($this->specs['rfMax']) ? $this->specs['rfMax'] : IFSpectrum_calc::RFMAX_DEFAULT;
 
         $fesn = ($this->FrontEnd) ? $this->FrontEnd->GetValue('SN') : '';
         $typeURL = ($expanded) ? 'spurious_url2d2' : 'spurious_url2d';
@@ -646,8 +647,8 @@ class IFSpectrum_impl extends TestData_header {
 
             $plotTitle .= " CCA$this->band-$this->CCASN, IF$ifChannel";
 
-            $rfMin = $this->specs['rfMin'];
-            $rfMax = $this->specs['rfMax'];
+            $rfMin = isset($this->specs['rfMin']) ? $this->specs['rfMin'] : IFSpectrum_calc::RFMIN_DEFAULT;
+            $rfMax = isset($this->specs['rfMax']) ? $this->specs['rfMax'] : IFSpectrum_calc::RFMAX_DEFAULT;
             if ($rfMin > IFSpectrum_calc::RFMIN_DEFAULT || $rfMax < IFSpectrum_calc::RFMAX_DEFAULT)
                 $plotTitle .= ", Limited to RF in $rfMin-$rfMax GHz";
 
