@@ -94,7 +94,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $ylabel = FALSE;
         if (!$expanded) {
             $ytics = FALSE;
-            $ylabel = 'Power (dB)';
+            $ylabel = 'Power (dB)  Traces are drawn with an artificial 10 dB spacing.';
         }
         $this->plotYTics(array('ytics' => $ytics, 'y2tics' => $y2tics));
         $this->plotLabels(array('x' => 'IF (GHz)', 'y' => $ylabel)); // Set x and y axis labels

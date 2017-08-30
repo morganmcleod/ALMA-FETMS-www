@@ -38,11 +38,12 @@ class eff {
     var $new_spec;
 
     public function __construct() {
-        $this->software_version_class_eff = "1.2.3";
+        $this->software_version_class_eff = "1.2.4";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
 
         /* Version history:
+         * 1.2.4  Remove dubious secondary defocus calculation.
          * 1.2.3  Display defocus effs as percent
          * 1.2.2  Export NF as well as FF plots.  FF axes labeled az, el.  Include Pol, RF, tilt, SrcRot
          * 1.2.1  Get phase center corrections x_corr, y_corr from pol1 if necessary.
@@ -572,9 +573,9 @@ class eff {
                 $beameff-> SetValue("eta_pol_spill", $ini_array[$section]['eta_pol_spill']);
                 $beameff-> SetValue("defocus_efficiency", $ini_array[$section]['defocus_efficiency']);
                 $beameff-> SetValue("total_aperture_eff", $ini_array[$section]['total_aperture_eff']);
-                $beameff-> SetValue("shift_from_focus_mm", $ini_array[$section]['shift_from_focus_mm']);
-                $beameff-> SetValue("subreflector_shift_mm", $ini_array[$section]['subreflector_shift_mm']);
-                $beameff-> SetValue("defocus_efficiency_due_to_moving_the_subreflector", $ini_array[$section]['defocus_efficiency_due_to_moving_the_subreflector']);
+//                 $beameff-> SetValue("shift_from_focus_mm", $ini_array[$section]['shift_from_focus_mm']);
+//                 $beameff-> SetValue("subreflector_shift_mm", $ini_array[$section]['subreflector_shift_mm']);
+//                 $beameff-> SetValue("defocus_efficiency_due_to_moving_the_subreflector", $ini_array[$section]['defocus_efficiency_due_to_moving_the_subreflector']);
                 $beameff-> SetValue("squint", $ini_array[$section]['squint']);
                 $beameff-> SetValue("squint_arcseconds", $ini_array[$section]['squint_arcseconds']);
                 $beameff-> SetValue("max_dbdifference", $ini_array[$section]['max_dbdifference']);
@@ -898,17 +899,14 @@ class eff {
     }
 
     function Display_DefocusEff() {
-         echo "<div style = 'width:700px'><table id = 'table1' border='1'>";
+         echo "<div style = 'width:300px'><table id = 'table1' border='1'>";
 
-         echo "<tr class='alt'><th colspan = 8>Focus Efficiency Band $this->band</th></tr>";
+         echo "<tr class='alt'><th colspan = 4>Defocus Efficiency Band $this->band</th></tr>";
          echo "<tr>
              <th>RF GHz</th>
              <th>pol</th>
              <th>Elevation</th>
-             <th>Shift from Focus (mm)</th>
-             <th>Eff. after subreflector shift</th>
-             <th>Subreflector Shift (mm)</th>
-             <th>Eff. if subreflector not shifted</th>
+             <th>Defocus Eff</th>
              </tr>";
 
          for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
@@ -916,19 +914,19 @@ class eff {
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('shift_from_focus_mm'), 2) . "</td>";
+//             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('shift_from_focus_mm'), 2) . "</td>";
             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('defocus_efficiency'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('subreflector_shift_mm'), 2) . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('defocus_efficiency_due_to_moving_the_subreflector'), 2) . "</td>";
+//             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('subreflector_shift_mm'), 2) . "</td>";
+//             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('defocus_efficiency_due_to_moving_the_subreflector'), 2) . "</td>";
 
             echo "<tr>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('shift_from_focus_mm'), 2) . "</td>";
+//             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('shift_from_focus_mm'), 2) . "</td>";
             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('defocus_efficiency'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('subreflector_shift_mm'), 2) . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('defocus_efficiency_due_to_moving_the_subreflector'), 2) . "</td>";
+//             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('subreflector_shift_mm'), 2) . "</td>";
+//             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('defocus_efficiency_due_to_moving_the_subreflector'), 2) . "</td>";
         }
         //Meas SW Ver
         echo "<tr><td colspan='7'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";

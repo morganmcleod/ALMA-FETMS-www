@@ -73,8 +73,9 @@ class NoiseTemperature extends TestData_header{
     public function Initialize_NoiseTemperature($in_keyId, $in_fc) {
         parent::Initialize_TestData_header($in_keyId, $in_fc);
 
-        $this->SWVersion = "1.2.7";
+        $this->SWVersion = "1.2.8";
         /*
+         * 1.2.8 Fix no err if FE not defined.
          * 1.2.7 Fix bug in B9 B10 plot display
          * 1.2.6 Display Optimization Notes
          * 1.2.5 Avoid div by 0 in function Trx_Uncorr
@@ -1215,7 +1216,11 @@ class NoiseTemperature extends TestData_header{
             $plot_title .= "Tssb corrected";
         else
             $plot_title .= "T_rec uncorrected";
-        $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN') . ", CCA" . $this->GetValue('Band') . "-$this->CCA_SN WCA" . $this->GetValue('Band') . "-$this->WCA_SN";
+
+        if (isset($this->FrontEnd))
+            $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN');
+
+        $plot_title .= ", CCA" . $this->GetValue('Band') . "-$this->CCA_SN WCA" . $this->GetValue('Band') . "-$this->WCA_SN";
         $this->y_lim = 1.3 * $this->NT_allRF_spec;  // upper limit to y axis
 
         // Create GNU plot command file for Tssb vs IF plot command
@@ -1274,7 +1279,11 @@ class NoiseTemperature extends TestData_header{
             $plot_title .= "Tssb corrected";
         else
             $plot_title .= "T_Rec uncorrected";
-        $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN') . ", CCA" . $this->GetValue('Band') . "-$this->CCA_SN WCA" . $this->GetValue('Band') . "-$this->WCA_SN";
+
+        if (isset($this->FrontEnd))
+            $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN');
+
+        $plot_title .= ", CCA" . $this->GetValue('Band') . "-$this->CCA_SN WCA" . $this->GetValue('Band') . "-$this->WCA_SN";
 
         // Create GNU plot command file averaging plot command
         $commandfile = $this->plotDir . "Avg_Tssb_vs_LO_plotcommands.txt";
@@ -1374,9 +1383,12 @@ class NoiseTemperature extends TestData_header{
 
         // start loop for TSSB vs RF freq plots
         for ($cnt = 0; $cnt < 4; $cnt++) {
-            $plot_title = "Receiver Noise Temperature, $this->lowerIFLimit-$this->upperIFLimit GHz IF, FE SN" . $this->FrontEnd->GetValue('SN').
-            ", CCA" . $this->GetValue('Band').
-            "-$this->CCA_SN WCA" . $this->GetValue('Band'). "-$this->WCA_SN,";
+            $plot_title = "Receiver Noise Temperature, $this->lowerIFLimit-$this->upperIFLimit GHz IF";
+
+            if (isset($this->FrontEnd))
+                $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN');
+
+            $plot_title .= ", CCA" . $this->GetValue('Band') . "-$this->CCA_SN WCA" . $this->GetValue('Band'). "-$this->WCA_SN,";
             $imagename = "Tssb_vs_RF_Freq_NoiseTemp Plot$cnt " . date('Y_m_d_H_i_s') . ".png";
             $imagepath = $this->plotDir . $imagename;
             $this->NT_Logger->WriteLogFile("image path: $imagepath");

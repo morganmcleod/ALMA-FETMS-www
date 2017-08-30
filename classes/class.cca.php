@@ -74,10 +74,11 @@ class CCA extends FEComponent {
 
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.13";
+        $this->swversion = "1.0.14";
 
         /*
-         * 1.0.13 Move export_to_ini_cca code into class; delete dead code; make things private!
+         * 1.0.14 Move export_to_ini_cca code into class; delete dead code; make things private!
+         * 1.0.13 Fixed UploadPreampParams to filter for temps < 20K, ignore MIXERPARAMS if not provided.
          * 1.0.12 Fixed Upload_PolAccuracy to comply with CCA data spec
          * 1.0.11 Added INIT_Options to Initialize_CCA()
          * 1.0.10 Added XML data file uplaod and fixed related bugs
@@ -155,7 +156,7 @@ class CCA extends FEComponent {
             //Initialize preamp params.
             $q = "SELECT FreqLO, keyId FROM CCA_PreampParams
                   WHERE fkComponent = $this->keyId
-                  AND Temperature < 10
+                  AND Temperature < 20
                   ORDER BY Pol ASC, SB ASC, FreqLO ASC;";
             //echo "preamps: " . $q . "<br>";
             $r = @mysql_query($q,$this->dbconnection);
@@ -1085,6 +1086,9 @@ public function Display_uploadform_SingleCSVfile() {
         $qdelete = "DELETE FROM CCA_TempSensorConfig WHERE fkComponent = $this->keyId;";
         $rdelete = @mysql_query($qdelete,$this->dbconnection);
 
+        if (!isset($this->file_TEMPSENSORS))
+            return;
+
         $filecontents = file($this->file_TEMPSENSORS);
         for($i=0; $i<sizeof($filecontents); $i++) {
                 $line_data = trim($filecontents[$i]);
@@ -1114,6 +1118,9 @@ public function Display_uploadform_SingleCSVfile() {
     public function UploadMixerParams() {
         $qdelete = "DELETE FROM CCA_MixerParams WHERE fkComponent = $this->keyId;";
         $rdelete = @mysql_query($qdelete,$this->dbconnection);
+
+        if (!isset($this->file_MIXERPARAMS))
+            return;
 
         $filecontents = file($this->file_MIXERPARAMS);
         for($i=0; $i<sizeof($filecontents); $i++) {
@@ -1172,21 +1179,23 @@ public function Display_uploadform_SingleCSVfile() {
                     AND fkFacility = " . $this->GetValue('keyFacility').";";
         $rdelete = @mysql_query($qdelete,$this->dbconnection);
 
+        if (!isset($this->file_PREAMPPARAMS))
+            return;
+
         $filecontents = file($this->file_PREAMPPARAMS);
 
-
         for($i=0; $i<sizeof($filecontents); $i++) {
-
-                $line_data = trim($filecontents[$i]);
-                $tempArray   = explode(",", $line_data);
-                if (count($tempArray) < 2) {
-                    $tempArray   = explode("\t", $line_data);
-                }
-                  if (is_numeric(substr($tempArray[0],0,1)) == true) {
-                      //Don't import if temp> 10k
-                      if ($tempArray[3] < 10) {
+            $line_data = trim($filecontents[$i]);
+            $tempArray   = explode(",", $line_data);
+            if (count($tempArray) < 2) {
+                $tempArray   = explode("\t", $line_data);
+            }
+            if (is_numeric(substr($tempArray[0],0,1)) == true) {
+                //Don't import if temp> 20k
+                if ($tempArray[3] < 20) {
                     $fkPreamps    = $tempArray[2];
                     $ImportPA = 0;
+
                     switch ($fkPreamps) {
                         case $this->fkPreamp01:
                             $ImportPA = 1;
@@ -1199,11 +1208,11 @@ public function Display_uploadform_SingleCSVfile() {
                     }
 
                     if ($ImportPA == 1) {
-                          $PreampParam = new GenericTable();
-                          $PreampParam->dbconnection = $this->dbconnection;
+                        $PreampParam = new GenericTable();
+                        $PreampParam->dbconnection = $this->dbconnection;
                         $PreampParam->keyId_name = "keyId";
                         $PreampParam->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
-                          $PreampParam->SetValue('fkComponent',$this->keyId);
+                        $PreampParam->SetValue('fkComponent',$this->keyId);
                         $PreampParam->SetValue('Temperature', $tempArray[3]);
                         $PreampParam->SetValue('FreqLO'     , $tempArray[4]);
                         $PreampParam->SetValue('VD1'        , $tempArray[6]);
@@ -1216,7 +1225,7 @@ public function Display_uploadform_SingleCSVfile() {
                         $PreampParam->SetValue('VG2'        , $tempArray[13]);
                         $PreampParam->SetValue('VG3'        , $tempArray[14]);
 
-                          switch ($fkPreamps) {
+                        switch ($fkPreamps) {
                             case $this->fkPreamp01:
                                 $PreampParam->SetValue('Pol',0);
                                 $PreampParam->SetValue('SB',1);
@@ -1239,10 +1248,10 @@ public function Display_uploadform_SingleCSVfile() {
                                 break;
                         }
                         unset($PreampParam);
-                    }//end if ImportPA == 1
-                      }// end if temp < 10k
-                  }//end i
-            }
+                    } //end if ImportPA == 1
+                } // end if temp < 20k
+            }//end i
+        }
     }
 
     public function Upload_AmplitudeStability() {

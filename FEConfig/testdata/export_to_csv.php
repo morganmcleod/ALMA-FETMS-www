@@ -27,6 +27,7 @@ if (!isset($_REQUEST['ifsub'])) {
             $csv_filename .= "_LO$LO";
         }
         $csv_filename .= ".csv";
+        $preCols = "";
 
         header("Content-type: text/csv");
         header("Content-Disposition: attachment; filename=$csv_filename");
@@ -67,13 +68,12 @@ if (!isset($_REQUEST['ifsub'])) {
 
             case 59:
                 //fine LO Sweep
-                $q = "SELECT keyId FROM TEST_FineLOSweep_SubHeader
-                      WHERE fkHeader = $td->keyId
-                      AND keyFacility = " . $td->GetValue('keyFacility');
-                $r = @mysql_query($q,$td->dbconnection);
-                $subid = @mysql_result($r,0,0);
-                $qdata = "SELECT * FROM TEST_FineLOSweep WHERE
-                fkSubHeader = $subid AND fkFacility = ".$td->GetValue('keyFacility').";";
+                $qdata = "SELECT HT.Pol, DT.*
+                        FROM TEST_FineLOSweep AS DT, TEST_FineLOSweep_SubHeader AS HT
+                        WHERE HT.fkHeader = $td->keyId
+                        AND DT.fkSubHeader = HT.keyId;";
+
+                $preCols = "Pol,";
                 $td->TestDataTableName = 'TEST_FineLOSweep';
                 break;
 
@@ -95,6 +95,8 @@ if (!isset($_REQUEST['ifsub'])) {
         }
 
         //Output records to csv file
+        echo $preCols;
+
         $qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
 
         $rcols = @mysql_query ($qcols, $db);
