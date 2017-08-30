@@ -52,20 +52,15 @@ fclose($handle);
 $td = new TestDataTable($cca->GetValue('Band'));
 $td->setComponent($cca->GetValue('fkFE_ComponentType'), $cca->GetValue('SN'));
 $r = $td->fetchTestDataHeaders(true);
+$output = $td->groupHeaders($r);
 
-while ($row = @mysql_fetch_array($r)) {
-    $fc = $row['keyFacility'];
-    $keyId = $row['tdhID'];
-    $configId = $row[$td->getConfigKey()];
-    $dataDesc = $row['Description'];
-    $dataSetGroup = $row['DataSetGroup'];
-    $dataStatusDesc = $row['DStatus'];
-    $testNotes = $row['Notes'];
+var_dump($output);
+// $outfile = $outPath . "TestDataHeaders.csv";
+// $handle = fopen($outFile, "w");
 
-    // add the day of the week to the date:
-    $testTS = DateTime::createFromFormat('Y-m-d H:i:s', $row['TS'])->format('D Y-m-d H:i:s');
+// foreach ($output as $row) {
 
-    echo "$keyId, $configId, $dataDesc, $dataSetGroup, $dataStatusDesc, $testNotes, $testTS<br>";
-}
+//     echo "$keyId, $configId, $dataDesc, $dataSetGroup, $dataStatusDesc, $testNotes, $testTS<br>";
+// }
 
 ?>

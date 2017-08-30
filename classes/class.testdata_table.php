@@ -49,6 +49,7 @@ class TestDataTable {
 
         // Fetch TDH records matching the FE_Config or FE_Component for this band:
         $r = $this -> fetchTestDataHeaders();
+        $headers = $this -> groupHeaders($r);
 
         // config column label:
         $configLabel = $this->getConfigKeyLabel();
@@ -67,6 +68,40 @@ class TestDataTable {
               <th>TS</th>
               <th width='10px'>Select</th>
               </tr>";
+
+        $trclass = '';
+        foreach ($headers as $row) {
+            $configId = $row['configId'];
+            $dataStatusDesc = $row['dataStatusDesc'];
+            $link = $row['link'];
+            $description = $row['description'];
+            $notes = $row['notes'];
+            $testTS = $row['TS'];
+
+            $trclass = ($trclass=="" ? 'class="alt"' : "");
+            echo "<tr $trclass><td width = '10px' align = 'center'>$configId</td>";
+            echo "<td width = '70px'>$dataStatusDesc</td>";
+            echo "<td width='180px'><a href='$link' target = 'blank'>$description</a></td>";
+            echo "<td width = '150px'>$notes</td>";
+            echo "<td width = '120px'>$testTS</td>";
+
+            // In the "for PAI" column show a checkbox corresponding to the value of UseForPAI:
+            echo "<td width = '10px'>";
+
+            $checked = "";
+            if ($row['selected'])
+                $checked = "checked='checked'";
+
+            $keyId = $row['tdhId'];
+            $cboxId = "PAI_" . $keyId;
+
+            // Call the PAIcheckBox JS function when the checkbox is clicked:
+            echo "<input type='checkbox' name='$cboxId' id='$cboxId' $checked
+            onchange=\"PAIcheckBox($keyId, document.getElementById('$cboxId').checked, 'testdata/');\" />";
+            echo "</td></tr>";
+        }
+
+if (isset($NOPE)) {
 
         $record_list = array();
         $trclass = '';
@@ -149,7 +184,85 @@ class TestDataTable {
                 echo "</td></tr>";
             }
         }
+}
+
         echo "</table></div>";
+    }
+
+    public function groupHeaders($resultSet) {
+        // Reformat the results from fetchTestDataHeaders() into a 2d array of strings for output or display.
+        // Reduces identical dataSetGroups down to a single row and creates a link to testdata.php or equiv.
+
+        // Config column is either keyFEConfig or component keyId
+        $configKey = $this->getConfigKey();
+
+        $outputArray = array();
+
+        $groupDetectArray = array();
+
+        while ($row = @mysql_fetch_array($resultSet)) {
+
+            $fc = $row['keyFacility'];
+            $keyId = $row['tdhID'];
+            $configId = $row[$configKey];
+            $dataDesc = $row['Description'];
+            $dataSetGroup = $row['DataSetGroup'];
+
+            // add the day of the week to the date:
+            $testTS = DateTime::createFromFormat('Y-m-d H:i:s', $row['TS'])->format('D Y-m-d H:i:s');
+
+            // save newdata header record data set in a two dimentional array
+            // first dimension is test data type, second is the dataset group
+            $groupDetectArray[$dataDesc][] = $dataSetGroup;
+            // count how many times each dataset group occurs
+            $dataset_cnt = array_count_values($groupDetectArray[$dataDesc]);
+
+            // output a row if there is only one entry for the dataset or the dataset is 0
+            if ($dataSetGroup == 0 || $dataset_cnt[$dataSetGroup] <= 1) {
+
+                switch ($row['fkTestData_Type']) {
+                    case 55:
+                        //Beam patterns
+                        $link = "bp/bp.php?keyheader=$keyId&fc=$fc";
+                        $description = "$dataDesc $keyId";
+                        break;
+                    case 7:
+                        //IFSpectrum
+                        $link = "ifspectrum/ifspectrumplots.php?fc=$fc"
+                                  . "&fe=" . $this->keyFrontEnd . "&b=" . $row['Band']
+                                  . "&id=$keyId";
+                        $description = "$dataDesc Group $dataSetGroup";
+                        break;
+
+                    case 57:
+                    case 58:
+                        //LO Lock Test or noise temp
+                        $g = ($dataSetGroup) ? "&g=$dataSetGroup" : "";
+                        $link = "testdata/testdata.php?keyheader=$keyId$g&fc=$fc";
+                        $description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : $dataDesc;
+                        break;
+
+                    default:
+                        $link = "testdata/testdata.php?keyheader=$keyId&fc=$fc";
+                        $description = $dataDesc;
+                        break;
+                }
+
+                $outputRow = array(
+                    "configId" => $configId,
+                    "tdhId" => $keyId,
+                    "dataStatusDesc" => $row['DStatus'],
+                    "description" => $description,
+                    "link" => $link,
+                    "notes" => $row['Notes'],
+                    "TS" => $testTS,
+                    "selected" => $row['UseForPAI']
+                );
+
+                $outputArray []= $outputRow;
+            }
+        }
+        return $outputArray;
     }
 
     public function fetchTestDataHeaders($selectedOnly = false) {
