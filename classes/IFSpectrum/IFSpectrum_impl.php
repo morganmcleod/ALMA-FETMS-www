@@ -76,7 +76,7 @@ class IFSpectrum_impl extends TestData_header {
 
     public function __construct() {
         $this->swVersion = "1.4.3";
-        // 1.4.3  Fix case where rfMin and rfMax not available in specs.
+        // 1.4.3  Fix cases where rfMin and rfMax not available in specs.
         // 1.4.2  Show "Traces are drawn with an artificial 10 dB spacing." on IF spectrum plots.
         // 1.4.1  Show "Traces are separated by 10 dB." on IF spectrum plots.
         // 1.4.0  Significant refactoring
