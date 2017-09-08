@@ -36,9 +36,17 @@ class BeamEffDB { //extends DBRetrieval {
 	public function qdelete($keyScanDetails, $fc=NULL) {
 		$q = "DELETE FROM BeamEfficiencies WHERE fkScanDetails = $keyScanDetails";
 		if(!is_null($fc)) {
-			$q .= "AND fkFacility = $fc;";
+			$q .= " AND fkFacility = $fc;";
 		}
 		return $this->run_query($q);
+	}
+
+	public function qTDH($in_TDHId, $fc=NULL) {
+	    $q = "SELECT keyId FROM ScanSetDetails WHERE fkHeader = " . $in_TDHId;
+	        if(!is_null($fc)) {
+	            $q .= " AND fkFacility = $fc;";
+	    }
+	    return $this->run_query($q);
 	}
 
 	/**

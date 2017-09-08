@@ -2,6 +2,9 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_config_main);
 require_once($site_classes . '/class.cca.php');
+require_once($site_classes . '/class.testdata_table.php');
+require_once($site_classes . '/IFSpectrum/IFSpectrum_impl.php');
+require_once($site_classes . '/class.eff.php');
 
 function deleteDir($dirPath) {
     if (!is_dir($dirPath)) {
@@ -54,13 +57,61 @@ $td->setComponent($cca->GetValue('fkFE_ComponentType'), $cca->GetValue('SN'));
 $r = $td->fetchTestDataHeaders(true);
 $output = $td->groupHeaders($r);
 
-var_dump($output);
-// $outfile = $outPath . "TestDataHeaders.csv";
-// $handle = fopen($outFile, "w");
+$outFile = $outPath . "TestDataHeaders.csv";
+$handle = fopen($outFile, "w");
+fwrite($handle, "configId, tdhId, dataStatusDesc, group, description, link, TS\n");
 
-// foreach ($output as $row) {
+foreach ($output as $row) {
+    fwrite($handle, $row['configId']);
+    fwrite($handle, ", ");
+    fwrite($handle, $row['tdhId']);
+    fwrite($handle, ", ");
+    fwrite($handle, $row['dataStatusDesc']);
+    fwrite($handle, ", ");
+    fwrite($handle, $row['testDataType']);
+    fwrite($handle, ", ");
+    fwrite($handle, $row['description']);
+    fwrite($handle, ", ");
+    fwrite($handle, $row['group']);
+    fwrite($handle, ", ");
+    fwrite($handle, $row['link']);
+    fwrite($handle, ", ");
+    fwrite($handle, $row['TS']);
+    fwrite($handle, "\n");
 
-//     echo "$keyId, $configId, $dataDesc, $dataSetGroup, $dataStatusDesc, $testNotes, $testTS<br>";
-// }
+    switch($row['testDataType']) {
+        case 7:     //IF Spectrum
+            // Make a new IF Spectrum object
+            $ifspec = new IFSpectrum_impl();
+            $ifspec->Initialize_IFSpectrum(0, $cca->GetValue('Band'), $row['group'], $row['tdhId']);
+            $ifspec->Export($outPath);
+            unset($ifspec);
+            break;
+
+        case 55:    // Beam Patterns
+            $eff = new eff();
+            $eff->Initialize_eff_TDH($row['tdhId']);
+            $eff->Export($outPath);
+            unset($eff);
+            break;
+
+        case 56:    //Pol Angles
+            break;
+
+        case 57:    //LO Lock Test
+            break;
+
+        case 58:    //Noise Temperature
+            break;
+
+        case 59:    //Fine LO Sweep
+            break;
+
+        default:
+            break;
+    }
+}
+fclose($handle);
+// var_dump($output);
 
 ?>

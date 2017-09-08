@@ -1519,5 +1519,41 @@ class NoiseTemperature extends TestData_header{
             }
         }
     }
+
+    public function Export($outputDir) {
+        $destFile = $outputDir . "NoiseTemp_B" . $this->band . ".ini";
+        $handle = fopen($destFile, "w");
+        fwrite($handle, "[NoiseTemp]\n");
+        fwrite($handle, "band=" . $this->GetValue('Band') . "\n");
+        fwrite($handle, "FEid=" . $this->fe_keyId . "\n");
+        fwrite($handle, "CCAid=" . $this->GetValue('fkFE_Components') . "\n");
+        fwrite($handle, "TDHid=" . $this->TestDataHeader . "\n");
+
+        $url = $this->NT_SubHeader->GetValue('ploturl1');
+        if ($url)
+            fwrite($handle, "NTIF0=$url\n");
+
+        $url = $this->NT_SubHeader->GetValue('ploturl2');
+        if ($url)
+            fwrite($handle, "NTIF1=$url\n");
+
+        $url = $this->NT_SubHeader->GetValue('ploturl5');
+        if ($url)
+            fwrite($handle, "NTIF2=$url\n");
+
+        $url = $this->NT_SubHeader->GetValue('ploturl6');
+        if ($url)
+            fwrite($handle, "NTIF3=$url\n");
+
+        $url = $this->NT_SubHeader->GetValue('ploturl3');
+        if ($url)
+            fwrite($handle, "NTEnsemble=$url\n");
+
+        $url = $this->NT_SubHeader->GetValue('ploturl4');
+        if ($url)
+            fwrite($handle, "NTAverage=$url\n");
+
+        fclose($handle);
+    }
 }
 ?>

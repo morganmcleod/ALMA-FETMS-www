@@ -1,7 +1,6 @@
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
-require_once($site_dbConnect);
 require_once(site_get_config_main());
 
 class TestDataTable {
@@ -43,6 +42,7 @@ class TestDataTable {
 
     public function DisplayAllMatching() {
         /*
+         * 2017-08-30 MM separated grouping, link, and text generation into helper groupHeaders()
          * 2017-01-18 MM combined methods from classes FEComponent and FrontEnd
          * 2015-04-28 jee for pattern data, added test number and day of week to date
          */
@@ -57,11 +57,11 @@ class TestDataTable {
         // Config column is either keyFEConfig or component keyId
         $configKey = $this->getConfigKey();
 
-        echo "<div style= 'width:950px'>";
+        echo "<div style= 'width:900px'>";
         echo "<table id='table1'>";
         echo "<tr class = 'alt'><th colspan='7'>TEST DATA</th></tr>";
         echo "<tr>
-              <th width='10px'>$configLabel</th>
+              <th width='10px' align='center'>$configLabel</th>
               <th>Data Status</th>
               <th>Description</th>
               <th>Notes</th>
@@ -79,14 +79,14 @@ class TestDataTable {
             $testTS = $row['TS'];
 
             $trclass = ($trclass=="" ? 'class="alt"' : "");
-            echo "<tr $trclass><td width = '10px' align = 'center'>$configId</td>";
-            echo "<td width = '70px'>$dataStatusDesc</td>";
-            echo "<td width='180px'><a href='$link' target = 'blank'>$description</a></td>";
-            echo "<td width = '150px'>$notes</td>";
-            echo "<td width = '120px'>$testTS</td>";
+            echo "<tr $trclass><td width='10px' align='center'>$configId</td>";
+            echo "<td width='10px' align='center'>$dataStatusDesc</td>";
+            echo "<td width='70px'><a href='$link' target = 'blank'>$description</a></td>";
+            echo "<td width='200px'>$notes</td>";
+            echo "<td width='70px'>$testTS</td>";
 
             // In the "for PAI" column show a checkbox corresponding to the value of UseForPAI:
-            echo "<td width = '10px'>";
+            echo "<td width='10px'>";
 
             $checked = "";
             if ($row['selected'])
@@ -97,95 +97,9 @@ class TestDataTable {
 
             // Call the PAIcheckBox JS function when the checkbox is clicked:
             echo "<input type='checkbox' name='$cboxId' id='$cboxId' $checked
-            onchange=\"PAIcheckBox($keyId, document.getElementById('$cboxId').checked, 'testdata/');\" />";
+                onchange=\"PAIcheckBox($keyId, document.getElementById('$cboxId').checked, 'testdata/');\" />";
             echo "</td></tr>";
         }
-
-if (isset($NOPE)) {
-
-        $record_list = array();
-        $trclass = '';
-        while ($row = @mysql_fetch_array($r)) {
-
-            $fc = $row['keyFacility'];
-            $keyId = $row['tdhID'];
-            $configId = $row[$configKey];
-            $dataDesc = $row['Description'];
-            $dataSetGroup = $row['DataSetGroup'];
-            $dataStatusDesc = $row['DStatus'];
-            $testNotes = $row['Notes'];
-
-            // add the day of the week to the date:
-            $testTS = DateTime::createFromFormat('Y-m-d H:i:s', $row['TS'])->format('D Y-m-d H:i:s');
-
-            // save newdata header record data set in a two dimentional array
-            // first dimension is test data type, second is the dataset group
-            $record_list[$dataDesc][] = $dataSetGroup;
-            // count how many times each dataset group occurs
-            $dataset_cnt = array_count_values($record_list[$dataDesc]);
-
-            // display row if there is only one entry for the dataset or the dataset is 0
-            if ($dataSetGroup == 0 || $dataset_cnt[$dataSetGroup] <= 1) {
-
-                $trclass = ($trclass=="" ? 'class="alt"' : "");
-                echo "<tr $trclass><td width = '10px' align = 'center'>$configId</td>";
-                echo "<td width = '70px'>$dataStatusDesc</td>";
-
-                $testpage = 'testdata/testdata.php';
-
-                switch($row['fkTestData_Type']) {
-                    case 55:
-                        //Beam patterns
-                        $testpage = 'bp/bp.php';
-                        // hyperlink with test URL and key ID
-                        echo "<td width='180px'><a href='$testpage?keyheader=$keyId&fc=$fc' target = 'blank'>$dataDesc $keyId</a></td>";
-                        break;
-                    case 7:
-                        //IFSpectrum
-                        $testpage = 'ifspectrum/ifspectrumplots.php';
-
-                        $url  = $testpage . "?fc=$fc";
-                        $url .= "&fe=" . $this->keyFrontEnd . "&b=" . $row['Band'];
-                        $url .= "&id=$keyId";
-
-                        $Description = "$dataDesc Group $dataSetGroup";
-                        echo "<td width='180px'><a href='$url' target = 'blank'>$Description</a></td>";
-                        break;
-
-                    case 57:
-                    case 58:
-                        //LO Lock Test or noise temp
-                        $g = ($dataSetGroup) ? "&g=$dataSetGroup" : "";
-                        $Description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : $dataDesc;
-                        echo "<td width='180px'><a href='$testpage?keyheader=$keyId$g&fc=$fc' target = 'blank'>$Description</a></td>";
-                        break;
-
-                    default:
-                        echo "<td width='180px'><a href='$testpage?keyheader=$keyId&fc=$fc' target = 'blank'>$dataDesc</a></td>";
-                        break;
-                }
-
-                echo "<td width = '150px'>$testNotes</td>";
-                echo "<td width = '120px'>$testTS</td>";
-
-                // In the "for PAI" column show a checkbox corresponding to the value of UseForPAI:
-                echo "<td width = '10px'>";
-
-                $checked = "";
-                if ($row['UseForPAI'])
-                    $checked = "checked='checked'";
-
-                $keyId = $row['tdhID'];
-                $cboxId = "PAI_" . $keyId;
-
-                // Call the PAIcheckBox JS function when the checkbox is clicked:
-                echo "<input type='checkbox' name='$cboxId' id='$cboxId' $checked
-                    onchange=\"PAIcheckBox($keyId, document.getElementById('$cboxId').checked, 'testdata/');\" />";
-                echo "</td></tr>";
-            }
-        }
-}
-
         echo "</table></div>";
     }
 
@@ -252,7 +166,9 @@ if (isset($NOPE)) {
                     "configId" => $configId,
                     "tdhId" => $keyId,
                     "dataStatusDesc" => $row['DStatus'],
+                    "testDataType" => $row['fkTestData_Type'],
                     "description" => $description,
+                    "group" => $dataSetGroup,
                     "link" => $link,
                     "notes" => $row['Notes'],
                     "TS" => $testTS,

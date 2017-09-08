@@ -24,7 +24,8 @@ class TestData_header extends GenericTable {
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
-        $this->swversion = "1.0.13";
+        $this->swversion = "1.1.0";
+        // 1.1.0 added Export()
         // 1.0.13 merged CCA_IFSpec
         // 1.0.12 remove $NoiseFloorHeader and cleanup testdata.php
         // 1.0.11 delete dead code.
@@ -113,6 +114,7 @@ class TestData_header extends GenericTable {
 
     	switch ($this->GetValue('fkTestData_Type')) {
     		case 27:
+    		    //Phase Stability
     			$this->Display_DataForm();
     			echo "<br>";
     			$this->Display_PhaseStabilitySubHeader();
@@ -141,31 +143,37 @@ class TestData_header extends GenericTable {
     			break;
 
     		case 50:
+    		    //Cryostat First Rate of Rise
     			$this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(1);
     			break;
     		case 52:
-    			$this->Display_DataForm();
+    		    //Cryostat First Cooldown
+    		    $this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(3);
     			break;
     		case 53:
-    			$this->Display_DataForm();
+    		    //Cryostat First Warmup
+    		    $this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(2);
     			break;
     		case 54:
-    			$this->Display_DataForm();
+    		    //Cryostat Final Rate of Rise
+    		    $this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(4);
     			break;
     		case 25:
+    		    //Cryostat Rate of Rise After adding Vacuum Equipment
     			$this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(5);
     			break;
     		case 45:
+    		    //WCA Amplitude Stability
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -173,6 +181,7 @@ class TestData_header extends GenericTable {
     			$wca->Display_AmplitudeStability();
     			break;
     		case 44:
+    		    //WCA AM Noise
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -180,6 +189,7 @@ class TestData_header extends GenericTable {
     			$wca->Display_AMNoise();
     			break;
     		case 46:
+    		    //WCA Output Power
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -187,6 +197,7 @@ class TestData_header extends GenericTable {
     			$wca->Display_OutputPower();
     			break;
     		case 47:
+    		    //WCA Phase Jitter
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -194,6 +205,7 @@ class TestData_header extends GenericTable {
     			$wca->Display_PhaseNoise();
     			break;
     		case 48:
+    		    //WCA Phase Noise
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -391,6 +403,69 @@ class TestData_header extends GenericTable {
     		default:
     			return true;
     	}
+    }
+
+    public function Export($outputDir) {
+        switch ($this->GetValue('fkTestData_Type')) {
+            case 1:     //CCA LNA healthcheck
+            case 2:     //CCA TempSensors healthcheck
+            case 3:     //CCA SIS healthcheck
+            case 4:     //Cryostat temperatures
+            case 5:     //FLOOG Distributor healthcheck
+            case 6:     //IF total power healthcheck
+            case 8:     //LPR healthcheck
+            case 9:     //Photomixer healthcheck
+            case 10:    //IF Switch temperatures
+            case 12:    //WCA AMC healthcheck
+            case 13:    //WCA PA healthcheck
+            case 14:    //WCA Misc healthcheck
+            case 15:    //Y-factor healthcheck
+            case 24:    //CPDS healthcheck
+                break;
+
+            case 25:    //Cryostat ROR with vacuum equipment
+            case 50:    //Cryostat first ROR
+            case 51:    //Cryostat ROR after adding CCA
+            case 52:    //Cryostat first cooldown
+            case 53:    //Cryostat first warmup
+            case 55:    //Cryostat final ROR
+                break;
+
+            case 7:     //IF Spectrum
+                break;
+
+            case 27:    //Phase Stability
+                break;
+
+            case 29:    //Amplitude Workmanship
+                break;
+
+            case 30:    //Phase Workmanship
+            case 31:    //Repeatability
+            case 32:    //Amplitude Stability
+                break;
+
+            // 33-43 CCA PAI data
+            // 44-49 WCA PAI data
+
+            case 55:    // Beam Patterns
+                break;
+
+            case 56:    //Pol Angles
+                break;
+
+            case 57:    //LO Lock Test
+                break;
+
+            case 58:    //Noise Temperature
+                break;
+
+            case 59:    //Fine LO Sweep
+                break;
+
+            default:
+                break;
+        }
     }
 
     public function DrawPlot() {
