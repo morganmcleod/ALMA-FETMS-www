@@ -26,8 +26,6 @@ $fc = $_REQUEST['fc'];
 $TestData_header_keyId = $_REQUEST['keyheader'];
 $td = new TestData_header();
 $td->Initialize_TestData_header($TestData_header_keyId, $fc);
-$td->TestDataHeader = $TestData_header_keyId;
-
 
 $cryostat = new Cryostat;
 $cryostat->Initialize_Cryostat($td->Component->keyId, $fc);

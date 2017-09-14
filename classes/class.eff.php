@@ -11,38 +11,36 @@ require_once($site_dBcode . '/beameffdb.php');
 //
 
 class eff {
-    var $fe_id;             //keyId of the Front End
-    var $scansets;          //Array of scan set detail objects
-    var $dbconnection;      //database connection from dbConnect.php
-    var $basedir;           //base directory for all efficiency files
-    var $newbasedir;        //working directory for output files
-    var $listingsdir;       //directory for temporary nf and ff listings
-    var $eff_inputfile;     //full absolute path of input text file for efficiency program.
-    var $outputdirectory;   //Output directory for efficiency plots
-    var $eff_outputfile;
-    var $beameff_exe;
-    var $NumberOfScanSets;
-    var $url_dir;
-    var $band;
-    var $ReadyToProcess;
-    var $Processed;         //0 = Has not been processed. 1 = Has been processed.
-    var $pointingOption;    // 'nominal', 'actual', or '7meter'
-    var $root_datadir;
-    var $root_urldir;
-    var $software_version_class_eff;
-    var $software_version_analysis;
-    var $pointingOption_analysis;
-    var $ssid;
-    var $fc;                //facility key
-    var $GNUPLOT_path;
-    var $new_spec;
+    var $scansets;              //Array of scan set detail objects
+    var $ReadyToProcess;        //True if the scan sets here are ready to be post-processed
+
+    private $fe_id;             //keyId of the Front End
+    private $scanSetId;         //ScanSetDetails keyId
+    private $scanSetFc;         //Facility code for ScanSetDetails and all other tables
+    private $basedir;           //base directory for all efficiency files
+    private $newbasedir;        //working directory for output files
+    private $listingsdir;       //directory for temporary nf and ff listings
+    private $eff_inputfile;     //full absolute path of input text file for efficiency program.
+    private $outputdirectory;   //Output directory for efficiency plots
+    private $eff_outputfile;    //Output file from calling BeamEff calculator
+    private $beameff_exe;       //BeamEff calculator executable from config_main.php
+    private $url_dir;           //Root of web URL for output files from config_main.php
+    private $NumberOfScanSets;
+    private $effBand;           //Cartridge band number for these results
+    private $pointingOption;    //'nominal', 'actual', or '7meter'
+    private $software_version_class_eff;    //version text for display
+    private $software_version_analysis;     //version text for display
+    private $pointingOption_analysis;       //pointingOption text for display
+    private $GNUPLOT_path;      //Path to Gnuplot from config_main.php
+    private $specsProvider;     //class Specifications
 
     public function __construct() {
-        $this->software_version_class_eff = "1.2.4";
+        $this->software_version_class_eff = "1.3.0";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
 
         /* Version history:
+         * 1.3.0  Add Export(), made most vars private and deleted unused vars.
          * 1.2.4  Remove dubious secondary defocus calculation.
          * 1.2.3  Display defocus effs as percent
          * 1.2.2  Export NF as well as FF plots.  FF axes labeled az, el.  Include Pol, RF, tilt, SrcRot
@@ -86,35 +84,37 @@ class eff {
 
         require(site_get_config_main());
 
-        $this->new_spec = new Specifications();
-        $this->dbconnection = site_getDbConnection();
-        $this->db_pull = new BeamEffDB($this->dbconnection);
+        $this->specsProvider = new Specifications();
+        $this->db_pull = new BeamEffDB(site_getDbConnection());
         $this->basedir = $main_write_directory;
-        $this->root_datadir = $rootdir_data;
-        $this->root_urldir = $rootdir_url;
         $this->url_dir = $main_url_directory;
         $this->ReadyToProcess = 0;
         $this->beameff_exe = $beameff_64;
-        $this->Processed = 0;
         $this->GNUPLOT_path = $GNUPLOT;
     }
 
-    public function Initialize_eff_SingleScanSet($in_keyId, $in_fc) {
-        $this->ssid = $in_keyId;
-        $this->fc = $in_fc;
+    public function Initialize_eff_TDH($in_TDHId) {
+        $in_fc = 40;
+        $r = $this->db_pull->qTDH($in_TDHId, $in_fc);
+        $ssid = @mysql_result($r,0,0);
+        $this->Initialize_eff_SingleScanSet($ssid, $in_fc);
+    }
 
-        $rss = $this->db_pull->qss(2, NULL, $in_keyId, NULL, $this->fc, NULL);
-        $this->band = @mysql_result($rss,0,1);
+    public function Initialize_eff_SingleScanSet($in_keyId, $in_fc) {
+        $this->scanSetId = $in_keyId;
+        $this->scanSetFc = $in_fc;
+
+        $rss = $this->db_pull->qss(2, NULL, $in_keyId, NULL, $this->scanSetFc, NULL);
+        $this->effBand = @mysql_result($rss,0,1);
         $this->fe_id = @mysql_result($rss,0,2);
 
         $this->scansets[0] = new ScanSetDetails();
-        $this->scansets[0]->Initialize_ScanSetDetails($in_keyId, $this->fc);
+        $this->scansets[0]->Initialize_ScanSetDetails($in_keyId, $this->scanSetFc);
         $this->scansets[0]->RequestValues_ScanSetDetails();
 
         if ($this->scansets[0]->keyId_180_scan > 0)
             $this->ReadyToProcess = 1;
 
-        $this->Processed = $this->db_pull->qeff($this->scansets);
         $this->NumberOfScanSets = 1;
     }
 
@@ -128,7 +128,7 @@ class eff {
         system($CommandString);
         // Upload the efficiency results to the database:
         $this->UploadEfficiencyFile($this->eff_outputfile);
-        $this->Initialize_eff_SingleScanSet($this->ssid, $this->fc);
+        $this->Initialize_eff_SingleScanSet($this->scanSetId, $this->scanSetFc);
     }
 
     private function SoftwareVersionString() {
@@ -229,7 +229,7 @@ class eff {
     private function GetScanSideband($scanSetIdx) {
         $scanSetId = $this->scansets[$scanSetIdx]->GetValue('keyId');
 
-        $rss = $this->db_pull->qss(4, NULL, NULL, NULL, $this->fc, $scanSetId);
+        $rss = $this->db_pull->qss(4, NULL, NULL, NULL, $this->scanSetFc, $scanSetId);
         $rowss = @mysql_fetch_array($rss);
         return $rowss[0];
     }
@@ -514,8 +514,8 @@ class eff {
 
                 // Create and initialize a new efficies record:
                 $beameff = new GenericTable;
-                $beameff->Initialize("BeamEfficiencies","","keyBeamEfficiencies",$this->fc,'fkFacility');
-                $beameff->NewRecord("BeamEfficiencies","keyBeamEfficiencies",$this->fc,'fkFacility');
+                $beameff->Initialize("BeamEfficiencies","","keyBeamEfficiencies",$this->scanSetFc,'fkFacility');
+                $beameff->NewRecord("BeamEfficiencies","keyBeamEfficiencies",$this->scanSetFc,'fkFacility');
 
                 // Store overall/settings values:
                 $beameff-> SetValue("fkScanDetails", $keyScanDetails);
@@ -654,7 +654,7 @@ class eff {
 
         echo "<div style = 'width:200px'><table id = 'table1'>";
 
-        echo "<tr class='alt'><th colspan = 5>Pointing Angles Band $this->band <i><br>(Eff. calculations using: $nomAZ, $nomEL)</i></th></tr>";
+        echo "<tr class='alt'><th colspan = 5>Pointing Angles Band $this->effBand <i><br>(Eff. calculations using: $nomAZ, $nomEL)</i></th></tr>";
         echo "<tr>
         <th>RF GHz</th>
         <th>pol</th>
@@ -695,7 +695,7 @@ class eff {
     function Display_ApertureEff() {
         echo "<div style = 'width:300px'><table id = 'table1' border='1'>";
 
-        echo "<tr class='alt'><th colspan = 4>Aperture Efficiency Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 4>Aperture Efficiency Band $this->effBand</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>pol</th>
@@ -735,7 +735,7 @@ class eff {
 
     function Display_TaperEff() {
         echo "<div style = 'width:300px'><table id = 'table1' border='1' border='1'>";
-        echo "<tr class='alt'><th colspan = 4>Amplitude Taper Efficiency Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 4>Amplitude Taper Efficiency Band $this->effBand</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>pol</th>
@@ -764,7 +764,7 @@ class eff {
 
     function Display_PhaseEff() {
         echo "<div style = 'width:300px'><table id = 'table1' border='1' border='1'>";
-        echo "<tr class='alt'><th colspan = 4>Phase Efficiency Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 4>Phase Efficiency Band $this->effBand</th></tr>";
         echo "<tr>
         <th>RF GHz</th>
         <th>pol</th>
@@ -792,7 +792,7 @@ class eff {
 
     function Display_SpilloverEff() {
         echo "<div style = 'width:300px'><table id = 'table1' border='1'>";
-        echo "<tr class='alt'><th colspan = 4>Spillover Efficiency Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 4>Spillover Efficiency Band $this->effBand</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>pol</th>
@@ -835,7 +835,7 @@ class eff {
     function Display_PolEff() {
         echo "<div style = 'width:600px'><table id = 'table1' border='1'>";
 
-        echo "<tr class='alt'><th colspan = 7>Polarization Efficiency Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 7>Polarization Efficiency Band $this->effBand</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>pol</th>
@@ -850,7 +850,7 @@ class eff {
             $rf = floatval($this->scansets[$scanSetIdx]->GetValue('f'));
             $p0spec = $p1spec = 0.0;
 
-            $spec = $this->new_spec->getSpecs('beameff', $this->band);
+            $spec = $this->specsProvider->getSpecs('beameff', $this->effBand);
 
             if (count($spec['rf_cond']) > 1) {
                 $p0spec = $p1spec = $spec['pspec'];
@@ -901,7 +901,7 @@ class eff {
     function Display_DefocusEff() {
          echo "<div style = 'width:300px'><table id = 'table1' border='1'>";
 
-         echo "<tr class='alt'><th colspan = 4>Defocus Efficiency Band $this->band</th></tr>";
+         echo "<tr class='alt'><th colspan = 4>Defocus Efficiency Band $this->effBand</th></tr>";
          echo "<tr>
              <th>RF GHz</th>
              <th>pol</th>
@@ -935,7 +935,7 @@ class eff {
 
     function Display_PointingAngleDiff() {
         echo "<div style = 'width:200px'><table id = 'table1' border='1'>";
-        echo "<tr class='alt'><th colspan = 4>Pointing Difference between <br>Pol 0, Pol 1 Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 4>Pointing Difference between <br>Pol 0, Pol 1 Band $this->effBand</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>Elevation</th>
@@ -967,7 +967,7 @@ class eff {
         }
 
         echo "<div style = 'width:400px'><table id = 'table1' border='1'>";
-        echo "<tr class='alt'><th colspan = 4>Beam Squint Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 4>Beam Squint Band $this->effBand</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>Elevation</th>
@@ -1002,7 +1002,7 @@ class eff {
 
     function Display_PhaseCenterOffset() {
         echo "<div style = 'width:500px'><table id = 'table1' border='1'>";
-        echo "<tr class='alt'><th colspan = 6>Phase Center Offset Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 6>Phase Center Offset Band $this->effBand</th></tr>";
         echo "<tr><th colspan='6'>Uncorrected phase centers (mm): </th></tr>";
         echo "<tr>
             <th>RF GHz</th>
@@ -1072,7 +1072,7 @@ class eff {
     function Display_AmpFit() {
         echo "<div style='width:800px'>";
         echo "<table id = 'table1' border='1'>";
-        echo "<tr class='alt'><th colspan = 10>Amp Fit Parameters Band $this->band</th></tr>";
+        echo "<tr class='alt'><th colspan = 10>Amp Fit Parameters Band $this->effBand</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>pol</th>
@@ -1119,7 +1119,7 @@ class eff {
         echo "<table id = 'table1' border='1'>";
 
         echo "<tr class = 'alt'>
-            <th colspan = 6>Scan Information Band $this->band (" . $this->scansets[0]->GetValue('TS') . ")</th>
+            <th colspan = 6>Scan Information Band $this->effBand (" . $this->scansets[0]->GetValue('TS') . ")</th>
             <th colspan = 4>Export CSV</th>
             </tr>";
 
@@ -1213,7 +1213,7 @@ class eff {
         echo "<div style='width:950px'>";
         echo "<table id = 'table1' border='1'>";
 
-        echo "<tr class = 'alt'><th colspan = 6>Scan Setup Parameters Band $this->band</th></tr>";
+        echo "<tr class = 'alt'><th colspan = 6>Scan Setup Parameters Band $this->effBand</th></tr>";
         echo "<tr>
             <th>RF GHz</th>
             <th>pol</th>
@@ -1405,6 +1405,21 @@ class eff {
                 echo "</table>";
             }
         }
+    }
+
+    public function Export($outputDir) {
+        for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
+            $keyScanSet = $this->scansets[$scanSetIdx] -> keyId;
+            $tdh = $this->scansets[$scanSetIdx]->tdh->keyId;
+            $destFile = $outputDir . "BeamEff_B" . $this->effBand . "_H" . $tdh . ".ini";
+            $sourceFile = $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eff_output_file');
+            if (file_exists($sourceFile)) {
+                copy($sourceFile, $destFile);
+                echo "Exported '$destFile'.<br>";
+            } else
+                echo "No BeamEff output file found for header $tdh.<br>";
+        }
+        return $destFile;
     }
 }
 ?>

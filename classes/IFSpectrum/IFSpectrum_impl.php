@@ -742,5 +742,46 @@ class IFSpectrum_impl extends TestData_header {
         }
     }
 
+    public function Export($outputDir) {
+        $destFile = $outputDir . "IFSpectrum_B" . $this->band . "_G" . $this->dataSetGroup . ".ini";
+        $handle = fopen($destFile, "w");
+        fwrite($handle, "[export]\n");
+        fwrite($handle, "band=" . $this->band . "\n");
+        fwrite($handle, "group=" . $this->dataSetGroup . "\n");
+        fwrite($handle, "FEid=" . $this->FEid . "\n");
+        fwrite($handle, "CCAid=" . $this->CCAid . "\n");
+        fwrite($handle, "TDHid=" . $this->TDHid . "\n");
+
+        $URLs = $this->getPlotURLs();
+
+        if (isset($URLs[0])) {
+            fwrite($handle, "spurious_IF0=" . $URLs[0] -> GetValue('spurious_url2d'). "\n");
+            fwrite($handle, "spurious2_IF0=" . $URLs[0] -> GetValue('spurious_url2d2'). "\n");
+            fwrite($handle, "powervar_2GHz_IF0=" . $URLs[0] -> GetValue('powervar_2GHz_url'). "\n");
+            fwrite($handle, "powervar_31MHz_IF0=" . $URLs[0] -> GetValue('powervar_31MHz_url'). "\n");
+        }
+        if (isset($URLs[1])) {
+            fwrite($handle, "spurious_IF1=" . $URLs[1] -> GetValue('spurious_url2d'). "\n");
+            fwrite($handle, "spurious2_IF1=" . $URLs[1] -> GetValue('spurious_url2d2'). "\n");
+            fwrite($handle, "powervar_2GHz_IF1=" . $URLs[1] -> GetValue('powervar_2GHz_url'). "\n");
+            fwrite($handle, "powervar_31MHz_IF1=" . $URLs[1] -> GetValue('powervar_31MHz_url'). "\n");
+        }
+        if (isset($URLs[2])) {
+            fwrite($handle, "spurious_IF2=" . $URLs[2] -> GetValue('spurious_url2d'). "\n");
+            fwrite($handle, "spurious2_IF2=" . $URLs[2] -> GetValue('spurious_url2d2'). "\n");
+            fwrite($handle, "powervar_2GHz_IF2=" . $URLs[2] -> GetValue('powervar_2GHz_url'). "\n");
+            fwrite($handle, "powervar_31MHz_IF2=" . $URLs[2] -> GetValue('powervar_31MHz_url'). "\n");
+        }
+        if (isset($URLs[3])) {
+            fwrite($handle, "spurious_IF3=" . $URLs[3] -> GetValue('spurious_url2d'). "\n");
+            fwrite($handle, "spurious2_IF3=" . $URLs[3] -> GetValue('spurious_url2d2'). "\n");
+            fwrite($handle, "powervar_2GHz_IF3=" . $URLs[3] -> GetValue('powervar_2GHz_url'). "\n");
+            fwrite($handle, "powervar_31MHz_IF3=" . $URLs[3] -> GetValue('powervar_31MHz_url'). "\n");
+        }
+        fclose($handle);
+        echo "Exported '$destFile'.<br>";
+        return $destFile;
+    }
+
 } // end class
 ?>

@@ -1,7 +1,6 @@
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
-require_once($site_dbConnect);
 require_once(site_get_config_main());
 
 class TestDataTable {
@@ -33,12 +32,156 @@ class TestDataTable {
         $this->compSN = $compSN;
     }
 
+    public function getConfigKey() {
+        return ($this->keyFrontEnd) ? "keyFEConfig" : "keyId";
+    }
+
+    public function getConfigKeyLabel() {
+        return ($this->keyFrontEnd) ? "FE Config" : "Config";
+    }
+
     public function DisplayAllMatching() {
         /*
+         * 2017-08-30 MM separated grouping, link, and text generation into helper groupHeaders()
          * 2017-01-18 MM combined methods from classes FEComponent and FrontEnd
          * 2015-04-28 jee for pattern data, added test number and day of week to date
          */
 
+        // Fetch TDH records matching the FE_Config or FE_Component for this band:
+        $r = $this -> fetchTestDataHeaders();
+        $headers = $this -> groupHeaders($r);
+
+        // config column label:
+        $configLabel = $this->getConfigKeyLabel();
+
+        // Config column is either keyFEConfig or component keyId
+        $configKey = $this->getConfigKey();
+
+        echo "<div style= 'width:900px'>";
+        echo "<table id='table1'>";
+        echo "<tr class = 'alt'><th colspan='7'>TEST DATA</th></tr>";
+        echo "<tr>
+              <th width='10px' align='center'>$configLabel</th>
+              <th>Data Status</th>
+              <th>Description</th>
+              <th>Notes</th>
+              <th>TS</th>
+              <th width='10px'>Select</th>
+              </tr>";
+
+        $trclass = '';
+        foreach ($headers as $row) {
+            $configId = $row['configId'];
+            $dataStatusDesc = $row['dataStatusDesc'];
+            $link = $row['link'];
+            $description = $row['description'];
+            $notes = $row['notes'];
+            $testTS = $row['TS'];
+
+            $trclass = ($trclass=="" ? 'class="alt"' : "");
+            echo "<tr $trclass><td width='10px' align='center'>$configId</td>";
+            echo "<td width='10px' align='center'>$dataStatusDesc</td>";
+            echo "<td width='70px'><a href='$link' target = 'blank'>$description</a></td>";
+            echo "<td width='200px'>$notes</td>";
+            echo "<td width='70px'>$testTS</td>";
+
+            // In the "for PAI" column show a checkbox corresponding to the value of UseForPAI:
+            echo "<td width='10px'>";
+
+            $checked = "";
+            if ($row['selected'])
+                $checked = "checked='checked'";
+
+            $keyId = $row['tdhId'];
+            $cboxId = "PAI_" . $keyId;
+
+            // Call the PAIcheckBox JS function when the checkbox is clicked:
+            echo "<input type='checkbox' name='$cboxId' id='$cboxId' $checked
+                onchange=\"PAIcheckBox($keyId, document.getElementById('$cboxId').checked, 'testdata/');\" />";
+            echo "</td></tr>";
+        }
+        echo "</table></div>";
+    }
+
+    public function groupHeaders($resultSet) {
+        // Reformat the results from fetchTestDataHeaders() into a 2d array of strings for output or display.
+        // Reduces identical dataSetGroups down to a single row and creates a link to testdata.php or equiv.
+
+        // Config column is either keyFEConfig or component keyId
+        $configKey = $this->getConfigKey();
+
+        $outputArray = array();
+
+        $groupDetectArray = array();
+
+        while ($row = @mysql_fetch_array($resultSet)) {
+
+            $fc = $row['keyFacility'];
+            $keyId = $row['tdhID'];
+            $configId = $row[$configKey];
+            $dataDesc = $row['Description'];
+            $dataSetGroup = $row['DataSetGroup'];
+
+            // add the day of the week to the date:
+            $testTS = DateTime::createFromFormat('Y-m-d H:i:s', $row['TS'])->format('D Y-m-d H:i:s');
+
+            // save newdata header record data set in a two dimentional array
+            // first dimension is test data type, second is the dataset group
+            $groupDetectArray[$dataDesc][] = $dataSetGroup;
+            // count how many times each dataset group occurs
+            $dataset_cnt = array_count_values($groupDetectArray[$dataDesc]);
+
+            // output a row if there is only one entry for the dataset or the dataset is 0
+            if ($dataSetGroup == 0 || $dataset_cnt[$dataSetGroup] <= 1) {
+
+                switch ($row['fkTestData_Type']) {
+                    case 55:
+                        //Beam patterns
+                        $link = "bp/bp.php?keyheader=$keyId&fc=$fc";
+                        $description = "$dataDesc $keyId";
+                        break;
+                    case 7:
+                        //IFSpectrum
+                        $link = "ifspectrum/ifspectrumplots.php?fc=$fc"
+                                  . "&fe=" . $this->keyFrontEnd . "&b=" . $row['Band']
+                                  . "&id=$keyId";
+                        $description = "$dataDesc Group $dataSetGroup";
+                        break;
+
+                    case 57:
+                    case 58:
+                        //LO Lock Test or noise temp
+                        $g = ($dataSetGroup) ? "&g=$dataSetGroup" : "";
+                        $link = "testdata/testdata.php?keyheader=$keyId$g&fc=$fc";
+                        $description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : $dataDesc;
+                        break;
+
+                    default:
+                        $link = "testdata/testdata.php?keyheader=$keyId&fc=$fc";
+                        $description = $dataDesc;
+                        break;
+                }
+
+                $outputRow = array(
+                    "configId" => $configId,
+                    "tdhId" => $keyId,
+                    "dataStatusDesc" => $row['DStatus'],
+                    "testDataType" => $row['fkTestData_Type'],
+                    "description" => $description,
+                    "group" => $dataSetGroup,
+                    "link" => $link,
+                    "notes" => $row['Notes'],
+                    "TS" => $testTS,
+                    "selected" => $row['UseForPAI']
+                );
+
+                $outputArray []= $outputRow;
+            }
+        }
+        return $outputArray;
+    }
+
+    public function fetchTestDataHeaders($selectedOnly = false) {
         // Filter on data status depending on whether this is FE data or component data, and FETMS_CCA_MODE:
         //"1"   "Cold PAS"
         //"2"   "Warm PAS"
@@ -49,114 +192,13 @@ class TestDataTable {
         $dataStatus = '()';
         if ($this->keyFrontEnd)
             $dataStatus = '(3)';
-        else
-            $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
+            else
+        $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
 
-        $r = $this -> fetchData($dataStatus);
-
-        // config column label:
-        $configLabel = ($this->keyFrontEnd) ? "FE Config" : "Config";
-
-        // Config column is either keyFEConfig or component keyId
-        $configKey = ($this->keyFrontEnd) ? "keyFEConfig" : "keyId";
-
-        echo "<div style= 'width:950px'>";
-        echo "<table id='table1'>";
-        echo "<tr class = 'alt'><th colspan='7'>TEST DATA</th></tr>";
-        echo "<tr>
-              <th width='10px'>$configLabel</th>
-              <th>Data Status</th>
-              <th>Description</th>
-              <th>Notes</th>
-              <th>TS</th>
-              <th width='10px'>Select</th>
-              </tr>";
-
-        $record_list = array();
-        $trclass = '';
-        while ($row = @mysql_fetch_array($r)) {
-
-            $fc = $row['keyFacility'];
-            $keyId = $row['tdhID'];
-            $configId = $row[$configKey];
-            $dataDesc = $row['Description'];
-            $dataSetGroup = $row['DataSetGroup'];
-            $dataStatusDesc = $row['DStatus'];
-            $testNotes = $row['Notes'];
-
-            // add the day of the week to the date:
-            $testTS = DateTime::createFromFormat('Y-m-d H:i:s', $row['TS'])->format('D Y-m-d H:i:s');
-
-            // save newdata header record data set in a two dimentional array
-            // first dimension is test data type, second is the dataset group
-            $record_list[$dataDesc][] = $dataSetGroup;
-            // count how many times each dataset group occurs
-            $dataset_cnt = array_count_values($record_list[$dataDesc]);
-
-            // display row if there is only one entry for the dataset or the dataset is 0
-            if ($dataSetGroup == 0 || $dataset_cnt[$dataSetGroup] <= 1) {
-
-                $trclass = ($trclass=="" ? 'class="alt"' : "");
-                echo "<tr $trclass><td width = '10px' align = 'center'>$configId</td>";
-                echo "<td width = '70px'>$dataStatusDesc</td>";
-
-                $testpage = 'testdata/testdata.php';
-
-                switch($row['fkTestData_Type']) {
-                    case 55:
-                        //Beam patterns
-                        $testpage = 'bp/bp.php';
-                        // hyperlink with test URL and key ID
-                        echo "<td width='180px'><a href='$testpage?keyheader=$keyId&fc=$fc' target = 'blank'>$dataDesc $keyId</a></td>";
-                        break;
-                    case 7:
-                        //IFSpectrum
-                        $testpage = 'ifspectrum/ifspectrumplots.php';
-
-                        $url  = $testpage . "?fc=$fc";
-                        $url .= "&fe=" . $this->keyFrontEnd . "&b=" . $row['Band'];
-                        $url .= "&id=$keyId";
-
-                        $Description = "$dataDesc Group $dataSetGroup";
-                        echo "<td width='180px'><a href='$url' target = 'blank'>$Description</a></td>";
-                        break;
-
-                    case 57:
-                    case 58:
-                        //LO Lock Test or noise temp
-                        $g = ($dataSetGroup) ? "&g=$dataSetGroup" : "";
-                        $Description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : $dataDesc;
-                        echo "<td width='180px'><a href='$testpage?keyheader=$keyId$g&fc=$fc' target = 'blank'>$Description</a></td>";
-                        break;
-
-                    default:
-                        echo "<td width='180px'><a href='$testpage?keyheader=$keyId&fc=$fc' target = 'blank'>$dataDesc</a></td>";
-                        break;
-                }
-
-                echo "<td width = '150px'>$testNotes</td>";
-                echo "<td width = '120px'>$testTS</td>";
-
-                // In the "for PAI" column show a checkbox corresponding to the value of UseForPAI:
-                echo "<td width = '10px'>";
-
-                $checked = "";
-                if ($row['UseForPAI'])
-                    $checked = "checked='checked'";
-
-                $keyId = $row['tdhID'];
-                $cboxId = "PAI_" . $keyId;
-
-                // Call the PAIcheckBox JS function when the checkbox is clicked:
-                echo "<input type='checkbox' name='$cboxId' id='$cboxId' $checked
-                    onchange=\"PAIcheckBox($keyId, document.getElementById('$cboxId').checked, 'testdata/');\" />";
-                echo "</td></tr>";
-            }
-        }
-        echo "</table></div>";
+        return $this -> fetchData($dataStatus, $selectedOnly);
     }
 
-    private function fetchData($dataStatus) {
+    private function fetchData($dataStatus, $selectedOnly) {
         // Left-hand (LH) table for join is either FE_Config or FE_Components
         $lhTable = ($this->keyFrontEnd) ? "FE_Config" : "FE_Components";
 
@@ -172,7 +214,7 @@ class TestDataTable {
         // Filter for component SN
         $likeCompSN = ($this->compSN) ? $this->compSN : '%';
 
-        // Select TDH records matching the FE_Config or FE_Component, filtered for this band, excluding certain data...
+        // Select TDH records matching the FE_Config or FE_Component for this band...
         $q = "SELECT TDH.keyId as tdhID, TestData_Types.Description,
              TDH.fkTestData_Type, LH.$lhKeyId,
              TDH.Band, TDH.Notes, TDH.fkDataStatus,
@@ -181,6 +223,10 @@ class TestDataTable {
              FROM $lhTable as LH, TestData_header as TDH, TestData_Types, DataStatus
              WHERE TDH.Band like '$likeBand'
              AND TDH.fkDataStatus IN $dataStatus";
+
+        // Filtered for UseForPAI, aka 'selected'.
+        if ($selectedOnly)
+            $q .= " AND TDH.UseForPAI <> 0";
 
         // Either matching keyFrontEnd or a particular Component serial number...
         if ($this->keyFrontEnd)

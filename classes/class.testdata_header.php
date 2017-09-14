@@ -18,13 +18,14 @@ class TestData_header extends GenericTable {
     var $Component;
     var $fe_keyId;
 //     var $NoiseFloorHeader;   //TODO: Removed this for 1.0.12.  Doesn't belong in this class!
-    var $TestDataHeader;        //TODO: Being set after Initialize by calling code!
+    var $TestDataHeader;
     var $swversion;
     var $fc; //facility
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
-        $this->swversion = "1.0.13";
+        $this->swversion = "1.1.0";
+        // 1.1.0 added Export()
         // 1.0.13 merged CCA_IFSpec
         // 1.0.12 remove $NoiseFloorHeader and cleanup testdata.php
         // 1.0.11 delete dead code.
@@ -113,6 +114,7 @@ class TestData_header extends GenericTable {
 
     	switch ($this->GetValue('fkTestData_Type')) {
     		case 27:
+    		    //Phase Stability
     			$this->Display_DataForm();
     			echo "<br>";
     			$this->Display_PhaseStabilitySubHeader();
@@ -141,31 +143,37 @@ class TestData_header extends GenericTable {
     			break;
 
     		case 50:
+    		    //Cryostat First Rate of Rise
     			$this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(1);
     			break;
     		case 52:
-    			$this->Display_DataForm();
+    		    //Cryostat First Cooldown
+    		    $this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(3);
     			break;
     		case 53:
-    			$this->Display_DataForm();
+    		    //Cryostat First Warmup
+    		    $this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(2);
     			break;
     		case 54:
-    			$this->Display_DataForm();
+    		    //Cryostat Final Rate of Rise
+    		    $this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(4);
     			break;
     		case 25:
+    		    //Cryostat Rate of Rise After adding Vacuum Equipment
     			$this->Display_DataForm();
     			echo "<br>";
     			$this->Display_Data_Cryostat(5);
     			break;
     		case 45:
+    		    //WCA Amplitude Stability
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -173,6 +181,7 @@ class TestData_header extends GenericTable {
     			$wca->Display_AmplitudeStability();
     			break;
     		case 44:
+    		    //WCA AM Noise
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -180,6 +189,7 @@ class TestData_header extends GenericTable {
     			$wca->Display_AMNoise();
     			break;
     		case 46:
+    		    //WCA Output Power
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -187,6 +197,7 @@ class TestData_header extends GenericTable {
     			$wca->Display_OutputPower();
     			break;
     		case 47:
+    		    //WCA Phase Jitter
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -194,6 +205,7 @@ class TestData_header extends GenericTable {
     			$wca->Display_PhaseNoise();
     			break;
     		case 48:
+    		    //WCA Phase Noise
     			$this->Display_DataForm();
     			echo "<br>";
     			$wca = new WCA();
@@ -393,8 +405,64 @@ class TestData_header extends GenericTable {
     	}
     }
 
-    public function DrawPlot() {
+    public function Export($outputDir) {
+        $plotsOnly = false;
 
+        switch ($this->GetValue('fkTestData_Type')) {
+            case 56:    //Pol Angles
+                $destFile = $outputDir . "PolAngles_B" . $this->GetValue('Band') . "_H" . $this->TestDataHeader . ".ini";
+                $handle = fopen($destFile, "w");
+                fwrite($handle, "[export]\n");
+                fwrite($handle, "band=" . $this->GetValue('Band') . "\n");
+                fwrite($handle, "FEid=" . $this->fe_keyId . "\n");
+                fwrite($handle, "CCAid=" . $this->GetValue('fkFE_Components') . "\n");
+                fwrite($handle, "TDHid=" . $this->TestDataHeader . "\n");
+                $result = $this->Calc_PolAngles();
+                $index = 0;
+                foreach ($result as $row) {
+                    $index++;
+                    fwrite($handle, "a$index" . "pol=" . $row['pol'] . "\n");
+                    fwrite($handle, "a$index" . "nominal=" . $row['nominal'] . "\n");
+                    fwrite($handle, "a$index" . "actual=" . $row['actual'] . "\n");
+                    fwrite($handle, "a$index" . "diff=" . $row['diff'] . "\n");
+                }
+                fclose($handle);
+                echo "Exported '$destFile'.<br>";
+                break;
+
+            case 29:    //Amplitude Workmanship
+                $destFile = $outputDir . "AmpWkm_B" . $this->GetValue('Band') . "_H" . $this->TestDataHeader . ".ini";
+                $plotsOnly = true;
+                break;
+
+            case 57:    //LO Lock Test
+                $destFile = $outputDir . "LOLock_B" . $this->GetValue('Band') . "_H" . $this->TestDataHeader . ".ini";
+                $plotsOnly = true;
+                break;
+
+            default:
+                $destFile = "";
+                break;
+        }
+        if ($plotsOnly) {
+            $handle = fopen($destFile, "w");
+            fwrite($handle, "[export]\n");
+            fwrite($handle, "band=" . $this->GetValue('Band') . "\n");
+            fwrite($handle, "FEid=" . $this->fe_keyId . "\n");
+            fwrite($handle, "WCAid=" . $this->GetValue('fkFE_Components') . "\n");
+            fwrite($handle, "TDHid=" . $this->TestDataHeader . "\n");
+            $urlarray = explode(",",$this->GetValue('PlotURL'));
+            for ($i=0; $i<count($urlarray); $i++) {
+                if ($urlarray[$i])
+                    fwrite($handle, "plot" . $i+1 . "=" . $urlarray[$i] . "\n");
+            }
+            fclose($handle);
+            echo "Exported '$destFile'.<br>";
+        }
+        return $destFile;
+    }
+
+    public function DrawPlot() {
         $plt = new DataPlotter();
         $plt->Initialize_DataPlotter($this->keyId,$this->dbconnection,$this->GetValue('keyFacility'));
 
@@ -517,9 +585,7 @@ class TestData_header extends GenericTable {
             case 49:
                 $wca->Plot_PhaseNoise();
                 break;
-
         }
-
         unset($wca);
     }
 
@@ -528,192 +594,161 @@ class TestData_header extends GenericTable {
         $sh->Initialize('TEST_PhaseStability_SubHeader',$this->keyId,'fkHeader',$this->GetValue('keyFacility'),'fkFacility');
     }
 
-    public function Display_Data_PolAngles() {
+    private function Calc_PolAngles() {
         $pa = new GenericTable();
-        $pa->Initialize("SourceRotationAngles",$this->GetValue('Band'),"band");
+        $pa->Initialize("SourceRotationAngles", $this->GetValue('Band'), "band");
 
         $nom_0_m90 = $pa->GetValue('pol0_copol') - 90;
         $nom_0_p90 = $pa->GetValue('pol0_copol') + 90;
         $nom_1_m90 = $pa->GetValue('pol1_copol') - 90;
         $nom_1_p90 = $pa->GetValue('pol1_copol') + 90;
 
-        $pol0_min1 = 999;
-        $pol0_min2 = 999;
-        $pol1_min1 = 999;
-        $pol1_min2 = 999;
-        $min0_1_found = 0;
-        $min0_2_found = 0;
-        $min1_1_found = 0;
-        $min1_2_found = 0;
-        $angle_min0_1 = 0;
-        $angle_min0_2 = 0;
-        $angle_min1_1 = 0;
-        $angle_min1_2 = 0;
-
         //Pol 0, first minimum
         $qpa = "SELECT MIN(amp_pol0)
                 FROM TEST_PolAngles
                 WHERE fkFacility = ".$this->GetValue('keyFacility')."
-                AND
-                fkHeader = $this->keyId
-                and angle < ($nom_0_m90 + 10)
-                and angle > ($nom_0_m90 - 10);";
-        $rpa = @mysql_query($qpa,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+                        AND
+                        fkHeader = $this->keyId
+                        and angle < ($nom_0_m90 + 10)
+                        and angle > ($nom_0_m90 - 10);";
+        $rpa = @mysql_query($qpa,$this->dbconnection);
 
         $pol0_min1 = @mysql_result($rpa,0);
 
         $qpa = "SELECT angle
-                FROM TEST_PolAngles
-                WHERE fkHeader = $this->keyId
-                and fkFacility = ".$this->GetValue('keyFacility')."
+        FROM TEST_PolAngles
+        WHERE fkHeader = $this->keyId
+        and fkFacility = ".$this->GetValue('keyFacility')."
                 and ROUND(amp_pol0,5) = " . round($pol0_min1, 5) . "
-                and angle < ($nom_0_m90 + 10)
-                and angle > ($nom_0_m90 - 10);";
-        $rpa = @mysql_query($qpa,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+                        and angle < ($nom_0_m90 + 10)
+                        and angle > ($nom_0_m90 - 10);";
+        $rpa = @mysql_query($qpa,$this->dbconnection);
 
         $angle_min0_1 = @mysql_result($rpa,0);
 
         //Pol 0, 2nd minimum
         $qpa = "SELECT MIN(amp_pol0)
-                FROM TEST_PolAngles
-                WHERE fkHeader = $this->keyId
-                AND fkFacility = ".$this->GetValue('keyFacility')."
-                and angle < ($nom_0_p90 + 10)
-                and angle > ($nom_0_p90 - 10);";
-        $rpa = @mysql_query($qpa,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+        FROM TEST_PolAngles
+        WHERE fkHeader = $this->keyId
+        AND fkFacility = ".$this->GetValue('keyFacility')."
+        and angle < ($nom_0_p90 + 10)
+        and angle > ($nom_0_p90 - 10);";
+        $rpa = @mysql_query($qpa,$this->dbconnection);
 
         $pol0_min2 = @mysql_result($rpa,0);
 
         $qpa = "SELECT angle
-                FROM TEST_PolAngles
-                WHERE fkHeader = $this->keyId
-                AND fkFacility = ".$this->GetValue('keyFacility')."
+        FROM TEST_PolAngles
+        WHERE fkHeader = $this->keyId
+        AND fkFacility = ".$this->GetValue('keyFacility')."
                 and ROUND(amp_pol0,5) = " . round($pol0_min2, 5) . "
-                and angle < ($nom_0_p90 + 10)
-                and angle > ($nom_0_p90 - 10);";
-        $rpa = @mysql_query($qpa,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+                        and angle < ($nom_0_p90 + 10)
+                        and angle > ($nom_0_p90 - 10);";
+        $rpa = @mysql_query($qpa,$this->dbconnection);
 
         $angle_min0_2 = @mysql_result($rpa,0);
 
 
         //Pol 1, first minimum
         $qpa = "SELECT MIN(amp_pol1)
-                FROM TEST_PolAngles
-                WHERE fkHeader = $this->keyId
-                AND fkFacility = ".$this->GetValue('keyFacility')."
-                and angle < ($nom_1_m90 + 10)
-                and angle > ($nom_1_m90 - 10);";
-        $rpa = @mysql_query($qpa,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+        FROM TEST_PolAngles
+        WHERE fkHeader = $this->keyId
+        AND fkFacility = ".$this->GetValue('keyFacility')."
+        and angle < ($nom_1_m90 + 10)
+        and angle > ($nom_1_m90 - 10);";
+        $rpa = @mysql_query($qpa,$this->dbconnection);
 
         $pol1_min1 = @mysql_result($rpa,0);
 
         $qpa = "SELECT angle
-                FROM TEST_PolAngles
-                WHERE fkHeader = $this->keyId
-                AND fkFacility = ".$this->GetValue('keyFacility')."
+        FROM TEST_PolAngles
+        WHERE fkHeader = $this->keyId
+        AND fkFacility = ".$this->GetValue('keyFacility')."
                 and ROUND(amp_pol1,5) = " . round($pol1_min1, 5) . "
-                and angle < ($nom_1_m90 + 10)
-                and angle > ($nom_1_m90 - 10);";
-        $rpa = @mysql_query($qpa,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+                        and angle < ($nom_1_m90 + 10)
+                        and angle > ($nom_1_m90 - 10);";
+        $rpa = @mysql_query($qpa,$this->dbconnection);
 
         $angle_min1_1 = @mysql_result($rpa,0);
 
         //Pol 1, 2nd minimum
         $qpa = "SELECT MIN(amp_pol1)
-                FROM TEST_PolAngles
-                WHERE fkHeader = $this->keyId
-                AND fkFacility = ".$this->GetValue('keyFacility')."
-                and angle < ($nom_1_p90 + 10)
-                and angle > ($nom_1_p90 - 10);";
-        $rpa = @mysql_query($qpa,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+        FROM TEST_PolAngles
+        WHERE fkHeader = $this->keyId
+        AND fkFacility = ".$this->GetValue('keyFacility')."
+        and angle < ($nom_1_p90 + 10)
+        and angle > ($nom_1_p90 - 10);";
+        $rpa = @mysql_query($qpa,$this->dbconnection);
 
         $pol1_min2 = @mysql_result($rpa,0);
 
         $qpa = "SELECT angle
-                FROM TEST_PolAngles
-                WHERE fkHeader = $this->keyId
-                AND fkFacility = ".$this->GetValue('keyFacility')."
+        FROM TEST_PolAngles
+        WHERE fkHeader = $this->keyId
+        AND fkFacility = ".$this->GetValue('keyFacility')."
                 and ROUND(amp_pol1,5) = " . round($pol1_min2, 5) . "
-                and angle < ($nom_1_p90 + 10)
-                and angle > ($nom_1_p90 - 10);";
-        $rpa = @mysql_query($qpa,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+                        and angle < ($nom_1_p90 + 10)
+                        and angle > ($nom_1_p90 - 10);";
+        $rpa = @mysql_query($qpa,$this->dbconnection);
 
         $angle_min1_2 = @mysql_result($rpa,0);
 
+        function makeRow($pol, $actual, $nom) {
+            if ($actual && abs($nom) < 181) {
+                return array(
+                    'pol' => $pol,
+                    'nominal' => $nom,
+                    'actual' => $actual,
+                    'diff' => round($actual - $nom, 2)
+                );
+            } else
+                return false;
+        }
+
+        $output = array();
+        $row = makeRow(0, $angle_min0_1, $nom_0_m90);
+        if ($row)
+            $output []= $row;
+        $row = makeRow(1, $angle_min1_1, $nom_1_m90);
+        if ($row)
+            $output []= $row;
+        $row = makeRow(0, $angle_min0_2, $nom_0_p90);
+        if ($row)
+            $output []= $row;
+        $row = makeRow(1, $angle_min1_2, $nom_1_p90);
+        if ($row)
+            $output []= $row;
+
+        return $output;
+    }
+
+    public function Display_Data_PolAngles() {
+        $result = $this->Calc_PolAngles();
+
         echo "<div style = 'width:500px'><table id = 'table1'>";
 
-        echo "<th colspan = 5>Band " . $this->GetValue('Band') . " Pol Angles At Minima</th>";
+        echo "<th colspan='4'>Band " . $this->GetValue('Band') . " Pol Angles At Minima</th>";
         echo "<tr><th>Pol</th>";
         echo "<th>Nominal Angle</th>";
         echo "<th>Actual Angle</th>";
         echo "<th>Actual - Nominal</th>";
         echo "</tr>";
 
-        if (abs($nom_0_m90) < 181) {
-            $diff = round($angle_min0_1 - $nom_0_m90,2);
-            if($angle_min0_1 != '') {
-            echo "<tr><td><b>0</td><td><b>$nom_0_m90</b></td>";
-            echo "<td><b>$angle_min0_1</b></td>";
+        if (!$result)
+            echo "<tr><td colspan='4'><b>No amplitude minima found within 10 degrees of nominal.</b></td></tr>";
+        else {
+            foreach ($result as $row) {
+                $diff = $row['diff'];
+                $hlon = (abs($diff) > 2) ? "<font color='#ff0000'>" : "";
+                $hloff = (abs($diff) > 2) ? "</font>" : "";
 
-            if (abs($diff) > 2) {
-                echo "<td bgcolor = '#ffccff'><b><font color='#ff0000'>$diff<font></b></td>";
-            }
-            else{
-                echo "<td><b>$diff</b></td>";
-            }
-            echo "</tr>";
+                echo "<tr><td><b>" . $row['pol'] . "</b></td>";
+                echo "<td><b>" . $row['nominal'] . "</b></td>";
+                echo "<td><b>" . $row['actual'] . "</b></td>";
+                echo "<td><b>$hlon$diff$hloff</b></td></tr>";
             }
         }
-
-        if (abs($nom_1_m90) < 181) {
-            $diff1 = round($angle_min1_1 - $nom_1_m90,2);
-            if ($angle_min1_1 != '') {
-                echo "<tr><td><b>1</td><td><b>$nom_1_m90</b></td>";
-                echo "<td><b>$angle_min1_1</b></td>";
-
-                if (abs($diff1 - $diff) > 2) {
-                    echo "<td bgcolor = '#ffccff'><b><font color='#ff0000'>$diff1<font></b></td>";
-                }
-                else{
-                    echo "<td><b>$diff1</b></td>";
-                }
-                echo "</tr>";
-            }
-        }
-
-        if (abs($nom_0_p90) < 181) {
-            $diff0 = round($angle_min0_2 - $nom_0_p90 ,2);
-            if ($angle_min0_2 != '') {
-            echo "<tr><td><b>0</td><td><b>$nom_0_p90</b></td>";
-            echo "<td><b>$angle_min0_2</b></td>";
-
-            if (abs($diff0) > 2) {
-                echo "<td bgcolor = '#ffccff'><b><font color='#ff0000'>$diff0<font></b></td>";
-            }
-            else{
-                echo "<td><b>$diff0</b></td>";
-            }
-            echo "</tr>";
-            }
-        }
-        if (abs($nom_1_p90) < 181) {
-            $diff1 = round($angle_min1_2 - $nom_1_p90,2);
-            if ($angle_min1_2 != '') {
-                echo "<tr><td><b>1</td><td><b>$nom_1_p90</b></td>";
-                echo "<td><b>$angle_min1_2</b></td>";
-
-                if (abs($diff1 - $diff0) > 2) {
-                    echo "<td bgcolor = '#ffccff'><b><font color='#ff0000'>$diff1<font></b></td>";
-                }
-                else{
-                    echo "<td><b>$diff1</b></td>";
-                }
-                echo "</tr>";
-            }
-        }
-
         echo "</table></div><br>";
-
     }
 }
 ?>

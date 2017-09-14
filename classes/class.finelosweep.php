@@ -6,7 +6,7 @@ require_once($site_classes . '/class.logger.php');
 require_once($site_classes . '/class.spec_functions.php');
 
 class FineLOSweep extends TestData_header {
-    var $FLOSweepSubHeader; // array for subheader objects from TEST_FineLOSweep_SubHeader (class.generictable.php)
+    private $FLOSweepSubHeader; // array for subheader objects from TEST_FineLOSweep_SubHeader (class.generictable.php)
 
     public function Initialize_FineLOSweep($in_keyId, $in_fc){
         parent::Initialize_TestData_header($in_keyId, $in_fc);
@@ -29,9 +29,10 @@ class FineLOSweep extends TestData_header {
 
     public function DrawPlot(){
     // set Plot Software Version
-        $Plot_SWVer = "1.1.0";
+        $Plot_SWVer = "1.2.0";
     /*
-     * 	1.1.0 Now pulls specifications from new class that pulls from files instead of database.
+     *  1.2.0:  Added Export()
+     * 	1.1.0:  Now pulls specifications from new class that pulls from files instead of database.
      *  1.0.8:  MTM scale Y-axis maximum to the SIS current data rather than fixed 100 uA.
      *  1.0.7:  MTM fixed "set...screen" commands to gnuplot
      *  1.0.6:  MTM updated plotting to show measured TS rather than TS from the TestDataHeader
@@ -197,10 +198,27 @@ class FineLOSweep extends TestData_header {
     }
 
     public function DisplayPlots(){
-        $plot_cnt=count($this->FLOSweepSubHeader);// find out how many plots
+        $plot_cnt = count($this->FLOSweepSubHeader);// find out how many plots
         for ($cnt = 0; $cnt < $plot_cnt; $cnt++){
             echo "<img src= '" . $this->FLOSweepSubHeader[$cnt]->GetValue('ploturl1') . "'><br><br>";
         }
+    }
+
+    public function Export($outputDir) {
+        $destFile = $outputDir . "FineLO_B" . $this->GetValue('Band') . "_H" . $this->TestDataHeader . ".ini";
+        $handle = fopen($destFile, "w");
+        fwrite($handle, "[export]\n");
+        fwrite($handle, "band=" . $this->GetValue('Band') . "\n");
+        fwrite($handle, "FEid=" . $this->fe_keyId . "\n");
+        fwrite($handle, "CCAid=" . $this->GetValue('fkFE_Components') . "\n");
+        fwrite($handle, "TDHid=" . $this->TestDataHeader . "\n");
+        $plot_cnt = count($this->FLOSweepSubHeader);// find out how many plots
+        for ($i = 0; $i < $plot_cnt; $i++) {
+            fwrite($handle, "plot" . $i+1 . "=" . $this->FLOSweepSubHeader[$i]->GetValue('ploturl1') . "\n");
+        }
+        fclose($handle);
+        echo "Exported '$destFile'.<br>";
+        return $destFile;
     }
 }
 ?>

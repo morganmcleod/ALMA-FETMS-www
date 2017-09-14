@@ -154,8 +154,16 @@ function createCompTabs(band, comptype, compKey, fc, CompDescription) {
 								handler : function() {
 									CCAFileBrowse(compKey, fc);
 								}
-							}
-
+							}, {
+                                xtype : 'tbbutton',
+                                text : 'Export Selected',
+                                style : 'margin: 1px;',
+                                icon : 'icons/application_get.png',
+                                handler : function() {
+                                    window.location = 'cca/export_selected.php?keyId='
+                                            + compKey + '&fc=' + fc;
+                                }
+                            }
 					]
 				});
 	}
