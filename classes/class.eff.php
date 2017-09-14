@@ -1410,11 +1410,16 @@ class eff {
     public function Export($outputDir) {
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $keyScanSet = $this->scansets[$scanSetIdx] -> keyId;
-            $destFile = $outputDir . "Scan_B" . $this->effBand . "_SS" . $keyScanSet . ".ini";
+            $tdh = $this->scansets[$scanSetIdx]->tdh->keyId;
+            $destFile = $outputDir . "BeamEff_B" . $this->effBand . "_H" . $tdh . ".ini";
             $sourceFile = $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eff_output_file');
-            if (file_exists($sourceFile))
-                copy($destFile, $sourceFile);
+            if (file_exists($sourceFile)) {
+                copy($sourceFile, $destFile);
+                echo "Exported '$destFile'.<br>";
+            } else
+                echo "No BeamEff output file found for header $tdh.<br>";
         }
+        return $destFile;
     }
 }
 ?>

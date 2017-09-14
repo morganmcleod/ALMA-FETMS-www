@@ -745,7 +745,7 @@ class IFSpectrum_impl extends TestData_header {
     public function Export($outputDir) {
         $destFile = $outputDir . "IFSpectrum_B" . $this->band . "_G" . $this->dataSetGroup . ".ini";
         $handle = fopen($destFile, "w");
-        fwrite($handle, "[IFSpectrum]\n");
+        fwrite($handle, "[export]\n");
         fwrite($handle, "band=" . $this->band . "\n");
         fwrite($handle, "group=" . $this->dataSetGroup . "\n");
         fwrite($handle, "FEid=" . $this->FEid . "\n");
@@ -779,6 +779,8 @@ class IFSpectrum_impl extends TestData_header {
             fwrite($handle, "powervar_31MHz_IF3=" . $URLs[3] -> GetValue('powervar_31MHz_url'). "\n");
         }
         fclose($handle);
+        echo "Exported '$destFile'.<br>";
+        return $destFile;
     }
 
 } // end class

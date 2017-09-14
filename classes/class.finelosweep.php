@@ -31,7 +31,7 @@ class FineLOSweep extends TestData_header {
     // set Plot Software Version
         $Plot_SWVer = "1.2.0";
     /*
-     *  1.2.0:
+     *  1.2.0:  Added Export()
      * 	1.1.0:  Now pulls specifications from new class that pulls from files instead of database.
      *  1.0.8:  MTM scale Y-axis maximum to the SIS current data rather than fixed 100 uA.
      *  1.0.7:  MTM fixed "set...screen" commands to gnuplot
@@ -205,17 +205,20 @@ class FineLOSweep extends TestData_header {
     }
 
     public function Export($outputDir) {
+        $destFile = $outputDir . "FineLO_B" . $this->GetValue('Band') . "_H" . $this->TestDataHeader . ".ini";
+        $handle = fopen($destFile, "w");
+        fwrite($handle, "[export]\n");
+        fwrite($handle, "band=" . $this->GetValue('Band') . "\n");
+        fwrite($handle, "FEid=" . $this->fe_keyId . "\n");
+        fwrite($handle, "CCAid=" . $this->GetValue('fkFE_Components') . "\n");
+        fwrite($handle, "TDHid=" . $this->TestDataHeader . "\n");
         $plot_cnt = count($this->FLOSweepSubHeader);// find out how many plots
-        for ($cnt = 0; $cnt < $plot_cnt; $cnt++){
-            $sourceFile = $this->FLOSweepSubHeader[$cnt]->GetValue('ploturl1');
-            if (!$sourceFile)
-                echo "No Fine LO Sweep plot for " . $this->FLOSweepSubHeader[$cnt]->keyId . "\n";
-            else {
-                $destFile = $outputDir . baseName($sourceFile);
-                if (!copy($sourceFile, $destFile))
-                    echo "Failed to copy $sourceFile to $outputDir\n";
-            }
+        for ($i = 0; $i < $plot_cnt; $i++) {
+            fwrite($handle, "plot" . $i+1 . "=" . $this->FLOSweepSubHeader[$i]->GetValue('ploturl1') . "\n");
         }
+        fclose($handle);
+        echo "Exported '$destFile'.<br>";
+        return $destFile;
     }
 }
 ?>

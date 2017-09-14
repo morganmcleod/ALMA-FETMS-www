@@ -6,7 +6,7 @@ require_once($site_classes . '/class.logger.php');
 require_once($site_classes . '/class.spec_functions.php');
 require_once($site_FEConfig. '/testdata/pas_tables.php');
 
-class NoiseTemperature extends TestData_header{
+class NoiseTemperature extends TestData_header {
     private $NT_SubHeader;          // array for subheader objects from Noise_Temp_SubHeader (class.generictable.php)
     private $NT_Logger;             // debug logger object
     private $CCA_SN;                // cold cartridge serial number
@@ -73,8 +73,9 @@ class NoiseTemperature extends TestData_header{
     public function Initialize_NoiseTemperature($in_keyId, $in_fc) {
         parent::Initialize_TestData_header($in_keyId, $in_fc);
 
-        $this->SWVersion = "1.2.8";
+        $this->SWVersion = "1.3.0";
         /*
+         * 1.3.0 Added Export()
          * 1.2.8 Fix no err if FE not defined.
          * 1.2.7 Fix bug in B9 B10 plot display
          * 1.2.6 Display Optimization Notes
@@ -1521,9 +1522,9 @@ class NoiseTemperature extends TestData_header{
     }
 
     public function Export($outputDir) {
-        $destFile = $outputDir . "NoiseTemp_B" . $this->band . ".ini";
+        $destFile = $outputDir . "NoiseTemp_B" . $this->GetValue('Band') . "_H" . $this->TestDataHeader . ".ini";
         $handle = fopen($destFile, "w");
-        fwrite($handle, "[NoiseTemp]\n");
+        fwrite($handle, "[export]\n");
         fwrite($handle, "band=" . $this->GetValue('Band') . "\n");
         fwrite($handle, "FEid=" . $this->fe_keyId . "\n");
         fwrite($handle, "CCAid=" . $this->GetValue('fkFE_Components') . "\n");
@@ -1554,6 +1555,8 @@ class NoiseTemperature extends TestData_header{
             fwrite($handle, "NTAverage=$url\n");
 
         fclose($handle);
+        echo "Exported '$destFile'.<br>";
+        return $destFile;
     }
 }
 ?>
