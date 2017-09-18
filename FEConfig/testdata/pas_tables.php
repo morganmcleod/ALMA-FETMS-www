@@ -525,6 +525,24 @@ function SIS_results($td_keyID, $filterChecked) {
  *
  * @param $td_keyID (float) - testdata header keyID
  *
+ * Requires the following database changes:
+ *
+
+INSERT INTO `TestData_Types` (`keyId`, `TestData_TableName`, `Description`) VALUES (60, 'CCA_TEST_SISResistance', 'CCA SIS Warm Resistance');
+
+CREATE TABLE `CCA_TEST_SISResistance` (
+	`keyId` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+	`fkHeader` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`TS` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`Pol` TINYINT(3) UNSIGNED NULL DEFAULT NULL,
+	`SB` TINYINT(3) UNSIGNED NULL DEFAULT NULL,
+	`ROhms` DOUBLE NULL DEFAULT NULL,
+	PRIMARY KEY (`keyId`),
+	INDEX `Index 1` (`fkHeader`)
+)
+COLLATE='latin1_swedish_ci'
+ENGINE=MyISAM;
+ *
  */
 function SIS_Resistance_results($td_keyID, $filterChecked) {
     $tdh = new TestData_header();
