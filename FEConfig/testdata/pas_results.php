@@ -75,6 +75,9 @@ if ($band) {
 	// SIS – Actual Readings
 	band_results_table($feconfig,$band,$Data_Status, 3, $filterChecked);
 
+	// SIS – Resistance
+	band_results_table($feconfig,$band,$Data_Status, 60, $filterChecked);
+
 	// Temperature Sensors – Actual Readings
 	band_results_table($feconfig,$band,$Data_Status, 2, $filterChecked);
 

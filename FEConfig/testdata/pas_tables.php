@@ -5,8 +5,9 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBox = "Select") {
-    $table_ver = "1.1.5";
+    $table_ver = "1.2.0";
     /*
+     * 1.2.0 added CCA SIS Warm Resistance table.
      * 1.1.5 using PAIcheckBox to select TDHs for filtering.
      * 1.1.4 Fix display bugs when using 2 GHz (or other) steps in Band3_NT_results()
      * 1.1.3 Removed Notes from Band3_NT_results()
@@ -96,6 +97,9 @@ function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $fi
                 break;
             case 3:
                 SIS_results($row[0], $filterChecked);
+                break;
+            case 60:
+                SIS_Resistance_results($row[0], $filterChecked);
                 break;
             case 6:
                 IF_Power_results($row[0], $filterChecked);
@@ -449,7 +453,7 @@ function SIS_results($td_keyID, $filterChecked) {
             <th>Bias Voltage (mV)</th>
             <th>Bias Current (uA)</th>
             <th>Magnet Voltage (V)</th>
-            <th>Magnet Current (mA)</th>";
+            <th>Magnet Current (mA)</th></tr>";
 
         if (!count($output)) {
             echo "<tr><td colspan='8'>NO DATA</td></tr>";
@@ -514,6 +518,37 @@ function SIS_results($td_keyID, $filterChecked) {
         echo "</table></div>";
     }
 }
+
+// SIS Warm Resistance
+/**
+ * echos a HTML table that contains warm SIS resistence
+ *
+ * @param $td_keyID (float) - testdata header keyID
+ *
+ */
+function SIS_Resistance_results($td_keyID, $filterChecked) {
+    $tdh = new TestData_header();
+    $tdh->Initialize_TestData_header($td_keyID,"40");
+
+    if (table_header(475, $tdh, 2, $filterChecked)) {
+
+        $new_spec = new Specifications();
+
+        $q = "SELECT `Pol`,`SB`,`ROhms`
+        FROM `CCA_TEST_SISResistance`
+        WHERE `fkHeader` = $td_keyID ORDER BY `Pol`ASC, `SB` ASC";
+        $r = @mysql_query($q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+
+        echo "<tr><th>Device</th><th colspan='2'>Resistance (Ohms)</th></tr>";
+
+        while ($row = @mysql_fetch_array($r)) {
+            $key = 'Pol' . $row[0] . " SIS" . $row[1];
+            echo "<tr><td>$key</td><td>" . $row[2] . "</td></tr>";
+        }
+        echo "</table></div>";
+    }
+}
+
 
 // Temperature Sensors – Actual Readings
 /**
