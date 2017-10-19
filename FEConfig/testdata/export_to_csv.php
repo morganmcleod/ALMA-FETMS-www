@@ -61,8 +61,8 @@ if (!isset($_REQUEST['ifsub'])) {
                       AND keyFacility = " . $td->GetValue('keyFacility');
                 $r = @mysql_query($q,$db);
                 $subid = @mysql_result($r,0,0);
-                $qdata = "SELECT * FROM Noise_Temp WHERE
-                fkSub_Header = $subid AND keyFacility = ".$td->GetValue('keyFacility').";";
+                $qdata = "SELECT * FROM Noise_Temp WHERE fkSub_Header = $subid AND keyFacility = "
+                        . $td->GetValue('keyFacility') . " ORDER BY FreqLO, CenterIF;";
                 $td->TestDataTableName = 'Noise_Temp';
                 break;
 

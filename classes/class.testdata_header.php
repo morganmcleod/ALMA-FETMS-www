@@ -323,8 +323,8 @@ class TestData_header extends GenericTable {
                       AND keyFacility = " . $this->GetValue('keyFacility');
                 $r = @mysql_query($q,$this->dbconnection);
                 $subid = @mysql_result($r,0,0);
-                $qgetdata = "SELECT * FROM Noise_Temp WHERE
-                fkSub_Header = $subid AND keyFacility = ".$this->GetValue('keyFacility').";";
+                $qgetdata = "SELECT * FROM Noise_Temp WHERE fkSub_Header = $subid AND keyFacility = "
+                        . $this->GetValue('keyFacility') . " ORDER BY FreqLO, CenterIF;";
                 $this->TestDataTableName = 'Noise_Temp';
                 break;
 
