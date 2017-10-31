@@ -123,7 +123,7 @@ function createCompTabs(band, comptype, compKey, fc, CompDescription) {
 								style : 'margin: 1px;',
 								icon : 'icons/cog.png',
 								handler : function() {
-									window.location = 'EditCCAConfig.php?conf='
+									window.location = 'cca/EditCCAConfig.php?conf='
 											+ compKey + '&fc=' + fc;
 								}
 							},

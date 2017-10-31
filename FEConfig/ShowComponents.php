@@ -56,10 +56,7 @@ $compsn = $component->GetValue('SN');
 if ($band < 1)
     $band = 0;
 
-if ($component -> IsDocument)
-    $CompDescription = 'Document';
-else
-    $CompDescription = 'Component';
+$CompDescription = 'Component';
 
 $title = "";
 if ($fesn && !$FETMS_CCA_MODE)

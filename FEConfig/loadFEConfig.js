@@ -39,16 +39,6 @@ function createtabs(keyfe, fesn, fc, fe_id) {
                                 + fc;
                     }
                 },
-                // {
-                // xtype: 'tbbutton',
-                // text: 'Add Document',
-                // icon: 'icons/add.png',
-                // style: 'margin: 1px;',
-                // handler: function() {
-                // window.location = 'AddDocument.php?conf=' + keyfe + '&fc=' +
-                // fc;
-                // }
-                // },
                 {
                     xtype : 'tbbutton',
                     text : 'Edit Front End',

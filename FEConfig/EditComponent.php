@@ -129,9 +129,7 @@ if (isset($_REQUEST['Updated_By'])){
         $changed = 1;
     }
 
-
-    if ($IsWCA == 1){
-
+    if ($IsWCA) {
         $wca = new WCA();
         $wca->Initialize_WCA($c->keyId,$c->GetValue('keyFacility'), WCA::INIT_ALL);
         //Create records in WCAs if one doesn't exist.
@@ -169,9 +167,6 @@ if (isset($_REQUEST['Updated_By'])){
             $Notes .= ' VG1,';
             $changed = 1;
         }
-
-
-
     }
 
     if (substr($Notes, -1, 1) == "," ){
@@ -180,23 +175,19 @@ if (isset($_REQUEST['Updated_By'])){
     $Notes .= ".";
 
     if ($changed == 1){
-    $c->Update();
-    $dbops = new DBOperations();
-    $dbops->UpdateStatusLocationAndNotes_Component($fc, '', '',$Notes,$c->keyId, $_REQUEST['Updated_By'],'');
-    echo "<meta http-equiv='Refresh' content='0.1;url=ShowComponents.php?conf=$c->keyId&fc=$fc'>";
+        $c->Update();
+        $dbops = new DBOperations();
+        $dbops->UpdateStatusLocationAndNotes_Component($fc, '', '',$Notes,$c->keyId, $_REQUEST['Updated_By'],'');
+        echo "<meta http-equiv='Refresh' content='0.1;url=ShowComponents.php?conf=$c->keyId&fc=$fc'>";
     }
     if ($changed == 0){
         echo "<script type='text/javascript'>alert('Nothing was changed in this record.');</script>";
     }
 }
 
-
-echo "
-
-<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>
-    <div id='sidebar2' >
-    </div>
-<div id='maincontent'>
+echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>
+    <div id='sidebar2'></div>
+    <div id='maincontent'>
         <input type='hidden' name='fc' id='facility' value='$fc'>
         <input type='hidden' name='id' id='facility' value='$c->keyId'>
         <div style='width:500px'>
@@ -207,207 +198,121 @@ echo "
                     </th>
                 </tr>";
 
-                if ($c->IsDocument != 1){
-                    echo "
-                    <tr>
-                        <th>
-                            Serial Number
-                        </th>
-                        <td>
-                            <input type='text' size='20' name='SN' value = '".$c->GetValue('SN')."'>
-                        </td>
-                    </tr>";
-                }
-
-                echo "
+echo "          <tr>
                     <th>
-                        Component Type
+                        Serial Number
                     </th>
-                    <td>";
-
-
-
-                        //If not a document
-                        if ($c->IsDocument != 1){
-                            echo $c->ComponentType->GetValue('Description');
-                        }
-
-
-                        if ($c->IsDocument == 1){
-                            //If it is a document
-                            $DocTypes = array(217,218,219,220,222);
-                            $ctype = $c->ComponentType->keyId;
-                            echo "<select name='ctype'>";
-
-
-                            for ($i_ctype=0;$i_ctype<count($DocTypes);$i_ctype++){
-                                $ComponentType = new GenericTable();
-                                $ComponentType->Initialize('ComponentTypes', $DocTypes[$i_ctype],'keyId');
-
-                                if( $DocTypes[$i_ctype] == $c->ComponentType->keyId){
-                                    echo "<option selected = 'selected' value='$DocTypes[$i_ctype]'>" . $ComponentType->GetValue('Description') . "</option>";
-                                }
-                                else{
-                                    echo "<option value='$DocTypes[$i_ctype]'>" . $ComponentType->GetValue('Description') . "</option>";
-                                }
-                                unset($ComponentType);
-                            }
-                            echo "</select>";
-                        }
-
-
-
-echo "
+                    <td>
+                        <input type='text' size='20' name='SN' value = '".$c->GetValue('SN')."'>
                     </td>
                 </tr>";
 
-                if ($c->IsDocument != 1){
-                    echo
-                    "<tr>
-                        <th>
-                            ESN1
-                        </th>
-                        <td>
-                            <input type='text' size='20' name='ESN1' value = '".$c->GetValue('ESN1')."'>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>
-                            ESN2
-                        </th>
-                        <td>
-                            <input type='text' size='20' name='ESN2' value='".$c->GetValue('ESN2')."'>
-                        </td>
-                    </tr>
+echo "          <th>
+                    Component Type
+                </th>
+            <td>";
 
-                    <tr>
-                        <th>
-                            Quantity
-                        </th>
-                        <td>
-        ";
+echo $c->ComponentType->GetValue('Description');
 
-                            if (isset($c->FE_ConfigLink) && $c->FE_ConfigLink->keyId != ''){
-                                echo "<input type='text' size='3' name='Quantity' value='" . $c->FE_ConfigLink->GetValue('Quantity') . "'>";
-                            }
-                            else {
-                                echo 'Must be in front end to edit quantity';
-                            }
+echo "      </td></tr>";
 
-                             echo "
-                        </td>
-                    </tr>
+echo "      <tr>
+                <th>
+                    ESN1
+                </th>
+                <td>
+                    <input type='text' size='20' name='ESN1' value = '".$c->GetValue('ESN1')."'>
+                </td>
+            </tr>
+            <tr>
+                <th>
+                    ESN2
+                </th>
+                <td>
+                    <input type='text' size='20' name='ESN2' value='".$c->GetValue('ESN2')."'>
+                </td>
+            </tr>
+            <tr>
+                <th>
+                    Quantity
+                </th>
+                <td>";
 
+if (isset($c->FE_ConfigLink) && $c->FE_ConfigLink->keyId != ''){
+    echo "<input type='text' size='3' name='Quantity' value='" . $c->FE_ConfigLink->GetValue('Quantity') . "'>";
+}
+else {
+    echo 'Must be in front end to edit quantity';
+}
 
-                    ";
-                }
+echo "          </td></tr>";
 
-                if ($c->IsDocument != 1){
-                    echo "
-                    <tr class='alt3'>
-                        <th align = 'right'>
-                            Link1 (CIDL):
-                        </th>
-                        <td align>
+echo "          <tr class='alt3'>
+                    <th align = 'right'>
+                        Link1 (CIDL):
+                    </th>
+                    <td align>
                         <textarea rows='3' cols='40' name='Link2' id='Link2'>".$c->GetValue('Link2')."</textarea>
-                        </td>
-                    </tr>
+                    </td>
+                </tr>
 
-                    <tr class='alt3'>
-                        <th align = 'right'>
-                            Link2 (SICL):
-                        </th>
-                        <td align>
-                        <textarea rows='3' cols='40' name='Link1' id='Link1'>".$c->GetValue('Link1')."</textarea>
-                        </td>
-                    </tr>";
-                }
-
-                if ($c->IsDocument == 1){
-                    echo "
-                    <tr class='alt3'>
-                        <th align = 'right'>
-                            Link:
-                        </th>
-                        <td align>
-                        <textarea rows='3' cols='40' name='Link2' id='Link2'>".$c->GetValue('Link2')."</textarea>
-                        </td>
-                    </tr>";
-                }
-
-
-                echo"
                 <tr class='alt3'>
+                    <th align = 'right'>
+                        Link2 (SICL):
+                    </th>
+                    <td align>
+                        <textarea rows='3' cols='40' name='Link1' id='Link1'>".$c->GetValue('Link1')."</textarea>
+                    </td>
+                </tr>";
+
+echo "          <tr class='alt3'>
                     <th align = 'right'>
                         Description:
                     </th>
                     <td align>
-                    <textarea rows='3' cols='40' name='Description' id='Description'>".$c->GetValue('Description')."</textarea>
+                        <textarea rows='3' cols='40' name='Description' id='Description'>".$c->GetValue('Description')."</textarea>
                     </td>
                 </tr>";
 
+if ($IsWCA == 1) {
+    $wca = new WCA();
+    $wca->Initialize_WCA($c->keyId, $c->GetValue('keyFacility'), WCA::INIT_ALL);
+    echo "      <tr>
+                    <th>
+                        YIG LOW (GHz)
+                    </th>
+                    <td>
+                        <input type='text' size='6' name='FloYIG' value=".$wca->_WCAs->GetValue('FloYIG').">
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        YIG HIGH (GHz)
+                    </th>
+                    <td>
+                        <input type='text' size='6' name='FhiYIG' value=".$wca->_WCAs->GetValue('FhiYIG').">
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        VG0
+                    </th>
+                    <td>
+                        <input type='text' size='6' name='VG0' value=".$wca->_WCAs->GetValue('VG0').">
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        VG1
+                    </th>
+                    <td>
+                        <input type='text' size='6' name='VG1' value=".$wca->_WCAs->GetValue('VG1').">
+                    </td>
+                </tr>";
+}
 
 
-                if ($c->IsDocument == 1){
-                    echo "
-                    <tr class='alt3'>
-                        <th align = 'right'>
-                            Document Title:
-                        </th>
-                        <td align>
-                        <textarea rows='3' cols='40' name='DocumentTitle' id='DocumentTitle'>".$c->GetValue('DocumentTitle')."</textarea>
-                        </td>
-                    </tr>
-        ";
-                }
-                if ($IsWCA == 1){
-                    $wca = new WCA();
-                    $wca->Initialize_WCA($c->keyId, $c->GetValue('keyFacility'), WCA::INIT_ALL);
-
-                    echo
-
-                    "
-                    <tr>
-                        <th>
-                            YIG LOW (GHz)
-                        </th>
-                        <td>
-                            <input type='text' size='6' name='FloYIG' value=".$wca->_WCAs->GetValue('FloYIG').">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>
-                            YIG HIGH (GHz)
-                        </th>
-                        <td>
-                            <input type='text' size='6' name='FhiYIG' value=".$wca->_WCAs->GetValue('FhiYIG').">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>
-                            VG0
-                        </th>
-                        <td>
-                            <input type='text' size='6' name='VG0' value=".$wca->_WCAs->GetValue('VG0').">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>
-                            VG1
-                        </th>
-                        <td>
-                            <input type='text' size='6' name='VG1' value=".$wca->_WCAs->GetValue('VG1').">
-                        </td>
-                    </tr>
-
-
-
-                ";
-                }
-
-
-                    echo"
-                    <tr><th>Updated By</th>
+echo "          <tr><th>Updated By</th>
                     <td>
                     <select name='Updated_By' id='Updated_By'>
                         <option value=''></option>";
@@ -415,35 +320,23 @@ echo "
                               ORDER BY Initials ASC;";
                         $r = @mysql_query($q,$db);
                         while($row = @mysql_fetch_Array($r)){
-                                echo "<option value='$row[0]'>$row[0]</option>";
+                            echo "<option value='$row[0]'>$row[0]</option>";
                         }
-                        echo "
-                    </select>
-                </td>
-                </tr>";
+                        echo "</select></td></tr>";
 
+echo "      </table>";
 
-        echo "
-            </table>
-
-            <div style='padding-left:20px;padding-top:20px'>
+echo "      <div style='padding-left:20px;padding-top:20px'>
                 <input type='submit' name='submit' class='button blue2 biground' value = 'Submit' style='width:120px'>
                 <a style='width:90px' href='ShowComponents.php?conf=$c->keyId&fc=".$c->GetValue('keyFacility') . "' class='button blue2 biground'>
                 <span style='width:130px'>Cancel</span></a>
             </div>
-
-
         </div>
     </div>
 </div>
-
 </form>";
 
-
-
-
 include "footer.php";
-
 
 ?>
 </div>
