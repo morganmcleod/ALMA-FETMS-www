@@ -74,9 +74,10 @@ class CCA extends FEComponent {
 
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.14";
+        $this->swversion = "1.0.15";
 
         /*
+         * 1.0.15 Fix display/edit operating params for band 1.  Code formatting.
          * 1.0.14 Move export_to_ini_cca code into class; delete dead code; make things private!
          * 1.0.13 Fixed UploadPreampParams to filter for temps < 20K, ignore MIXERPARAMS if not provided.
          * 1.0.12 Fixed Upload_PolAccuracy to comply with CCA data spec
@@ -177,6 +178,18 @@ class CCA extends FEComponent {
             //$this->CCA_urls->dbconnection = $this->dbconnection;
             $this->CCA_urls->Initialize("CCA_urls",$this->keyId,"fkFE_Component");
         }
+    }
+
+    private function hasSB2() {
+        switch ($this->GetValue('Band')) {
+            case 1:
+            case 9:
+            case 10:
+                return false;
+            default:
+                break;
+        }
+        return true;
     }
 
     private function NewRecord_CCA($in_fc) {
@@ -412,7 +425,8 @@ class CCA extends FEComponent {
     }
 
     public function Display_MixerParams() {
-        $maxSb = $this->GetValue('Band') < 9 ? 2 : 1;
+        $maxSb = ($this->hasSB2()) ? 2 : 1;
+        $found = 0;
 
         for ($pol = 0; $pol <= 1; $pol++) {
             for ($sb = 1; $sb <= $maxSb; $sb++) {
@@ -426,11 +440,9 @@ class CCA extends FEComponent {
                 $r = @mysql_query($q,$this->dbconnection);
                 $ts = @mysql_result($r,0,5);
                 $r = @mysql_query($q,$this->dbconnection);
-                if (@mysql_num_rows($r) > 0 ) {
-                echo "
-                    <div style= 'width: 500px;'>
-                    <table id = 'table1' border = '1'>";
-
+                if (@mysql_num_rows($r) > 0) {
+                    $found++;
+                    echo "<div style= 'width: 500px;'><table id = 'table1' border = '1'>";
                     echo "
                         <tr class='alt'><th colspan = '5'>
                             Mixer Pol $pol SB $sb <i>($ts, CCA ". $this->GetValue('Band')."-".$this->GetValue('SN').")</i>
@@ -438,35 +450,41 @@ class CCA extends FEComponent {
                             </th>
                         </tr>
                         <tr>
-                        <th>LO (GHz)</th>
-                        <th>VJ</th>
-                        <th>IJ</th>
-                        <th>IMAG</th>
-                      </tr>";
-                $count= 0;
-                while($row = @mysql_fetch_array($r)) {
-                    if ($count % 2 == 0) {
-                        echo "<tr>";
+                            <th>LO (GHz)</th>
+                            <th>VJ</th>
+                            <th>IJ</th>
+                            <th>IMAG</th>
+                        </tr>";
+                    $count= 0;
+                    while($row = @mysql_fetch_array($r)) {
+                        if ($count % 2 == 0) {
+                            echo "<tr>";
+                        }
+                        else{
+                            echo "<tr class = 'alt'>";
+                        }
+                        echo "
+                            <td>$row[1]</td>
+                            <td>$row[2]</td>
+                            <td>$row[3]</td>
+                            <td>$row[4]</td>
+                        </tr>";
+                        $count+=1;
                     }
-                    else{
-                        echo "<tr class = 'alt'>";
-                    }
-                    echo "
-
-                        <td>$row[1]</td>
-                        <td>$row[2]</td>
-                        <td>$row[3]</td>
-                        <td>$row[4]</td>
-                    </tr>";
-                    $count+=1;
-                    }
-                echo "</table></div><br>";
-                }//end check for numrows
-            }//end for sb
-        }//end for pol
+                    echo "</table></div><br>";
+                }
+            }
+        }
+        if (!$found) {
+            echo "<div style= 'width: 500px;'><table id = 'table1' border = '1'>";
+            echo "<tr class='alt'><th>No Mixer Params</th></tr>";
+            echo "</table></div><br>";
+        }
     }
 
     public function Display_PreampParams() {
+        $maxSb = ($this->hasSB2()) ? 2 : 1;
+        $found = 0;
 
         // get the band number:
         $band = $this->GetValue('Band');
@@ -490,8 +508,8 @@ class CCA extends FEComponent {
                 $pol = $paramRow -> GetValue('Pol');
                 $sb = $paramRow -> GetValue('SB');
 
-                // don't display SB2 tables for bands 9 and 10:
-                if ($sb == 1 || $band < 9) {
+                // don't display SB2 tables for bands 1, 9, 10:
+                if ($sb <= $maxSb) {
 
                     // show table header if we're on a new pol or sb:
                     if ($pol != $lastPol || $sb != $lastSb) {
@@ -538,14 +556,17 @@ class CCA extends FEComponent {
                     <td>" . $paramRow -> GetValue('VG2')."</td>
                     <td>" . $paramRow -> GetValue('VG3')."</td>
                     </tr>";
-
+                    $found++;
                 }
             }
         }
+        if (!$found) {
+            $tableOpen = true;
+            echo "<div style= 'width: 500px'><table id = 'table1' border = '1'>";
+            echo "<tr class='alt'><th>No Preamp Params</th></tr>";
+        }
         if ($tableOpen)
             echo "</table></div><br>";
-
-        echo "<br>";
     }
 
     public function Display_uploadform_Zip() {
@@ -568,59 +589,57 @@ class CCA extends FEComponent {
         echo '&nbsp &nbsp &nbsp<input type="submit" class = "submit" name= "submitted_zip" value="Submit" />';
          echo "<input type='hidden' name='fc' value='$fc' />";
           echo "<input type='hidden' name='keyFacility' value='$fc' /></form></td></tr>";
-         echo"
+    }
 
-    ";
-}
+    public function Display_uploadform_AnyFile($keyId, $fc) {
+        echo "<div style='width:850px'>";
+        echo "<table id = 'table8'>";
+        echo "<tr class='alt'><th colspan = '2'>Upload a file.</th></tr>";
+        echo '
+            <tr class="alt" ><td colspan="2">
+            <!-- The data encoding type, enctype, MUST be specified as below -->
+        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
+            <!-- MAX_FILE_SIZE must precede the file input field -->
+            <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
+            <!-- Name of input element determines name in $_FILES array -->
+            <input name="ccafile" type="file" size = "100" />
 
-public function Display_uploadform_AnyFile($keyId, $fc) {
-    echo "<div style='width:850px'>";
-    echo "<table id = 'table8'>";
-    echo "<tr class='alt'><th colspan = '2'>Upload a file.</th></tr>";
-    echo '
-        <tr class="alt" ><td colspan="2">
+
+            ';
+        echo '&nbsp &nbsp &nbsp<input type="submit" class = "submit" name= "submitted_ccafile" value="Submit" />';
+        echo "<input type='hidden' name='fc' value='$fc' />";
+        echo "<input type='hidden' name='conf' value='$keyId' />";
+        echo "<input type='hidden' name='keyFacility' value='$fc' /></form></td></tr>";
+
+
+        echo "<tr class = 'alt2'><td colspan = '2'>
+        <br><u>Types of files that may be uploaded</u>
+        <br><br>
+        1. ZIP- Zipped package of configuration and test data.<br><br>
+        2. CSV or TXT- Single file of test data.<br><br>
+        3. FrontEndControlDLL.ini file.
+        </td></tr>";
+        echo "</table></div>";
+    }
+
+    public function Display_uploadform_SingleCSVfile() {
+        require(site_get_config_main());
+
+                echo '<tr class="alt"><td colspan="2">
         <!-- The data encoding type, enctype, MUST be specified as below -->
-    <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
-        <!-- MAX_FILE_SIZE must precede the file input field -->
-        <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
-        <!-- Name of input element determines name in $_FILES array -->
-        <input name="ccafile" type="file" size = "100" />
+        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
+            <!-- MAX_FILE_SIZE must precede the file input field -->
+            <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
+            <!-- Name of input element determines name in $_FILES array -->
+            <input name="single_file" type="file" size = "100" />';
+            echo '&nbsp &nbsp &nbsp &nbsp<input type="submit" class = "submit" name= "submitted_singlefile" value="Submit" /></td></tr>';
+             echo "<input type='hidden' name='fc' value='$fc' />";
+              echo "<input type='hidden' name='keyFacility' value='$fc' />";
+             echo"
 
+        </form>";
+    }
 
-        ';
-    echo '&nbsp &nbsp &nbsp<input type="submit" class = "submit" name= "submitted_ccafile" value="Submit" />';
-    echo "<input type='hidden' name='fc' value='$fc' />";
-    echo "<input type='hidden' name='conf' value='$keyId' />";
-    echo "<input type='hidden' name='keyFacility' value='$fc' /></form></td></tr>";
-
-
-    echo "<tr class = 'alt2'><td colspan = '2'>
-    <br><u>Types of files that may be uploaded</u>
-    <br><br>
-    1. ZIP- Zipped package of configuration and test data.<br><br>
-    2. CSV or TXT- Single file of test data.<br><br>
-    3. FrontEndControlDLL.ini file.
-    </td></tr>";
-    echo "</table></div>";
-}
-
-public function Display_uploadform_SingleCSVfile() {
-    require(site_get_config_main());
-
-            echo '<tr class="alt"><td colspan="2">
-    <!-- The data encoding type, enctype, MUST be specified as below -->
-    <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
-        <!-- MAX_FILE_SIZE must precede the file input field -->
-        <!-- <input type="hidden" name="MAX_FILE_SIZE" value="32000000000" /> -->
-        <!-- Name of input element determines name in $_FILES array -->
-        <input name="single_file" type="file" size = "100" />';
-        echo '&nbsp &nbsp &nbsp &nbsp<input type="submit" class = "submit" name= "submitted_singlefile" value="Submit" /></td></tr>';
-         echo "<input type='hidden' name='fc' value='$fc' />";
-          echo "<input type='hidden' name='keyFacility' value='$fc' />";
-         echo"
-
-    </form>";
-}
     public function Display_uploadform() {
         require(site_get_config_main());
 
@@ -753,8 +772,6 @@ public function Display_uploadform_SingleCSVfile() {
             $this->file_NOISETEMPERATURE = $this->SubmittedFileTmp;
             $this->Upload_NoiseTemperature();
         }
-
-
     }
 
     public function DeleteRecord_CCA() {
@@ -1798,7 +1815,7 @@ public function Display_uploadform_SingleCSVfile() {
         echo "</select>";
     }
 
-        public function Display_UpdatedBySelector() {
+    public function Display_UpdatedBySelector() {
         $qt = "SELECT keyStatusType, Status
                FROM StatusTypes
                ORDER BY keyStatusType ASC;";
@@ -2246,8 +2263,6 @@ public function Display_uploadform_SingleCSVfile() {
         }
     }
 
-
-
     public function Display_MixerParams_Edit() {
         for ($pol=0;$pol<=1;$pol++) {
             for ($sb=1;$sb<=2;$sb++) {
@@ -2302,14 +2317,11 @@ public function Display_uploadform_SingleCSVfile() {
     }
 
     public function Display_PreampParams_Edit() {
-        $sbmax = 2;
-        if ($this->GetValue('Band') == 9) {
-            $sbmax = 1;
-        }
+        $maxSb = ($this->hasSB2()) ? 2 : 1;
         $pcount = 0;
         if (isset($this->PreampParams[0])) {
             for ($pol=0;$pol<=1;$pol++) {
-                for ($sb=1;$sb<=$sbmax;$sb++) {
+                for ($sb=1;$sb<=$maxSb;$sb++) {
                 echo "
                         <div style= 'width: 500px'>
                         <table id = 'table6' border = '1'>";
