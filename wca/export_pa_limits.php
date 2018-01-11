@@ -39,8 +39,10 @@ function makeOutputDirectory($band, $deleteContents = false) {
     return $outDir;
 }
 
-$q = "select Band, SN, max(keyId) from FE_Components
-where fkFE_ComponentType = 11 and Band >= 7 and Band <= 9
+$q = "select Band, SN, max(FE_Components.keyId) from FE_Components, WCAs
+where WCAs.fkFE_Component = FE_Components.keyId
+and WCAs.TS >= '2017-02-21'
+and fkFE_ComponentType = 11 and Band >= 7 and Band <= 9
 group by Band, SN;";
 
 $r = @mysql_query($q, site_getDbConnection());

@@ -37,8 +37,9 @@ class WCA extends FEComponent {
     var $ErrorArray; // Array of errors
     function __construct() {
         $this->fkDataStatus = '7';
-        $this->swversion = "1.1.2";
+        $this->swversion = "1.1.3";
         /*
+         * 1.1.3 Deleted 2nd Max Safe Power table.  Added WCA SN and TS to Max Safe table.
          * 1.1.2 Display "Date Added" instead of "In Front End"
          * 1.1.1 Moved ini format code into this->GetIniFileContent().
          * 1.1.0 Reformatted all HTML to be not so terrible.  export_to_ini for FEMC 2.8.x
@@ -792,16 +793,20 @@ class WCA extends FEComponent {
     }
     public function Display_MaxSafePowerLevels() {
         $powerLimit = $this->maxSafePowerForBand($this->GetValue('Band'));
+        $band = $this->GetValue('Band');
+        $sn = $this->GetValue('SN');
+        $ts = $this->GetValue('TS');
 
         echo '
         <div style= "width:400px">
           <table id = "table1" align="left" cellspacing="1" cellpadding="1" width="60%">
             <tr class="alt">
-              <th align = "center" colspan = "6"><font size="+1">
-                <b>MAX SAFE OPERATING PARAMETERS<br>(from output power data) ';
+              <th align = "center" colspan = "6"><font size="+1">';
+
+        echo "WCA $band-$sn &nbsp;&nbsp;&nbsp; $ts<br><b>MAX SAFE OPERATING PARAMETERS";
 
         if ($powerLimit > 0)
-            echo 'limit=' . $powerLimit . ' mW';
+            echo '<br>limit=' . $powerLimit . ' mW';
 
         echo '<b></th></tr>';
         echo '
@@ -826,39 +831,6 @@ class WCA extends FEComponent {
                 echo "<td>" . $row ['Pwr0'] . "</td>";
                 echo "<td>" . $row ['Pwr1'] . "</td></tr>";
             }
-        }
-        echo "</table></div>";
-
-        // --------------------------------------------------------------------------------
-        echo "<div style='width:400px'>&nbsp;<br></div>";
-
-        echo '
-        <div style= "width:400px">
-        <table id = "table1" align="left" cellspacing="1" cellpadding="1" width="60%" >
-          <tr class="alt">
-            <th align = "center" colspan = "5"><font size="+1" >
-              <b>MAX SAFE OPERATING PARAMETERS<br>(original values from LO group)</b>
-            </th>
-          </tr>
-          <tr>
-            <th><b>FreqLO (GHz)</b></th>
-            <th><b>Digital Setting VD0</b></th>
-            <th><b>Digital Setting VD1</b></th>
-            <th><b>Drain Voltage VD0</b></th>
-            <th><b>Drain Voltage VD1</b></th>
-          </tr>';
-
-        $rMSP = $this->db_pull->q_other('MSP', $this->keyId, $this->fc);
-        $bg_color = FALSE;
-        while ($rowMSP = @mysql_fetch_array($rMSP)) {
-            $bg_color = ($bg_color == "#ffffff" ? '#dddddd' : "#ffffff");
-            echo "<tr bgcolor='$bg_color'>
-                    <td>" . $rowMSP ['FreqLO'] . "</td>
-                    <td>" . $rowMSP ['VD0_setting'] . "</td>
-                    <td>" . $rowMSP ['VD1_setting'] . "</td>
-                    <td>" . $rowMSP ['VD0'] . "</td>
-                    <td>" . $rowMSP ['VD1'] . "</td>
-                  </tr>";
         }
         echo "</table></div>";
     }
