@@ -15,7 +15,7 @@ if (isset($_REQUEST['band_sn'])){
     $Band = $band_sn[0];
     $SN = $band_sn[1];
 
-    $q="SELECT keyFacility, keyId FROM FE_Components
+    $q="SELECT keyFacility, MAX(keyId) FROM FE_Components
     WHERE band=$Band AND SN = $SN
     AND fkFE_ComponentType = 11;";
     $r = @mysql_query($q,$db);
