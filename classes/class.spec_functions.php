@@ -287,7 +287,7 @@
 				$stdev = sqrt($sum_squares/$win_size);
 				// if % difference between current point and previous point is great than spec...
 				if ($stdev > $stdev_spec ) {
-					$writestring = "$x[$index]\t$input\t$hi_range\t$lo_range\t$stdev\r\n";
+					$writestring = "$x[$index]\t$input\t$stdev\r\n";
 					fwrite($file,$writestring);
 					$pt_cnt++; // increment number of points in file
 				}

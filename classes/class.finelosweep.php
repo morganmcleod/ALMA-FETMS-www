@@ -29,8 +29,9 @@ class FineLOSweep extends TestData_header {
 
     public function DrawPlot(){
     // set Plot Software Version
-        $Plot_SWVer = "1.2.0";
+        $Plot_SWVer = "1.2.1";
     /*
+     *  1.2.1:  Fixed bug displaying specs in legend.
      *  1.2.0:  Added Export()
      * 	1.1.0:  Now pulls specifications from new class that pulls from files instead of database.
      *  1.0.8:  MTM scale Y-axis maximum to the SIS current data rather than fixed 100 uA.
@@ -143,7 +144,6 @@ class FineLOSweep extends TestData_header {
 
         //get specs
         $new_spec = new Specifications();
-        //$specs = get_specs ( 59, $this->GetValue('Band') );
         $specs = $new_spec->getSpecs('FLOSweep', $this->GetValue('Band'));
 
         // find outliers
@@ -180,7 +180,7 @@ class FineLOSweep extends TestData_header {
         fwrite($fh, "'$datafile' using 1:3 with lines lt 2 title 'IJ2 uA',");
         fwrite($fh, "'$datafile' using 1:4 with lines lt 3 axes x1y2 title 'PA drain control (set)',");
         fwrite($fh, "'$datafile' using 1:5 with lines lt 4 axes x1y2 title 'PA drain V',");
-        fwrite($fh, "'$spec1_datafile' using 1:2 with points lt -1 pt 3 axes x1y2 title '"."$specs[8]pt window, $specs[9] stdev"."'\r\n");
+        fwrite($fh, "'$spec1_datafile' using 1:2 with points lt -1 pt 3 axes x1y2 title '" . $specs['FLOSpts_win'] . " pt window, " . $specs['FLOSstdev'] . " stdev"."'\r\n");
         fclose($fh);
 
         //Call gnuplot
