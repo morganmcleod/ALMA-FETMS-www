@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.5";
+        $this->swversion = "1.2.6";
 
         /*
+         * 1.2.6:  Plot WorkAmp when Band=0 (all bands off)
          * 1.2.5:  Added Plot_WorkAmpTemperature
          * 1.2.4:  LO Lock test plots:  tot.pwr cols were reversed in DB schema, added RefTotalPower trace
          * 1.2.3:  Added LO frequency to workmanship amplitude plot.
@@ -875,6 +876,13 @@ class DataPlotter extends GenericTable{
 
         $TestData_Id = $this->TestDataHeader->keyId;
         $band = $this->TestDataHeader->GetValue('Band');
+
+        if (!$band) {
+            // Set the main plot URL to dummy value if band is 0:
+            $this->TestDataHeader->SetValue('PlotURL', "0");
+            $this->TestDataHeader->Update();
+            return;
+        }
 
         $filesDir = "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
         $imagedirectory = $this->writedirectory . $filesDir;
