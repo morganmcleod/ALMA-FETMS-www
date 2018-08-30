@@ -878,8 +878,8 @@ class DataPlotter extends GenericTable{
         $band = $this->TestDataHeader->GetValue('Band');
 
         if (!$band) {
-            // Set the main plot URL to dummy value if band is 0:
-            $this->TestDataHeader->SetValue('PlotURL', "0");
+            // Set the main plot URL to empty if band is 0:
+            $this->TestDataHeader->SetValue('PlotURL', "");
             $this->TestDataHeader->Update();
             return;
         }
