@@ -878,9 +878,11 @@ class DataPlotter extends GenericTable{
         $band = $this->TestDataHeader->GetValue('Band');
 
         if (!$band) {
-            // Set the main plot URL to empty if band is 0:
-            $this->TestDataHeader->SetValue('PlotURL', "");
-            $this->TestDataHeader->Update();
+            // If band is 0, don't plot IF powers:
+            if (!$appendURL) {
+                $this->TestDataHeader->SetValue('PlotURL', "");
+                $this->TestDataHeader->Update();
+            }
             return;
         }
 
@@ -1096,9 +1098,11 @@ class DataPlotter extends GenericTable{
 
         $imagename = "WorkAmpTemperatures_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . "$imagename";
-        $plot_title = "Workmanship Temperatures, FE" . $this->TestDataHeader->Component->GetValue('SN')
-        . " Band " . $this->TestDataHeader->GetValue('Band')
-        . ", LO " . $fLO . " GHz";
+        $plot_title = "Workmanship Temperatures, FE" . $this->TestDataHeader->Component->GetValue('SN');
+        if ($band)
+            $plot_title .= " Band $band, LO $fLO GHz";
+        else
+            $plot_title .= ", All bands powered off";
 
         //Update plot url
         if ($appendURL) {
