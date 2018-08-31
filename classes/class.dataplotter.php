@@ -1136,9 +1136,11 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
 
         $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
-        $plot_string .= ", '$data_file'  using 1:3 title 'CCA 4K stage' with lines axis x1y1";
-        $plot_string .= ", '$data_file'  using 1:4 title 'CCA pol0 mixer' with lines axis x1y1";
-        $plot_string .= ", '$data_file'  using 1:5 title 'CCA pol1 mixer' with lines axis x1y1";
+        if ($band > 0) {
+            $plot_string .= ", '$data_file'  using 1:3 title 'CCA 4K stage' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:4 title 'CCA pol0 mixer' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:5 title 'CCA pol1 mixer' with lines axis x1y1";
+        }
         $plot_string .= ", '$data_file'  using 1:6 title 'Cryo 4K stage' with lines axis x1y1";
         $plot_string .= ", '$data_file'  using 1:7 title 'Cryo 4K link 1' with lines axis x1y1";
         $plot_string .= ", '$data_file'  using 1:8 title 'Cryo 4K link 2' with lines axis x1y1";
