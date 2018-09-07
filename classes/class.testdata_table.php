@@ -42,6 +42,7 @@ class TestDataTable {
 
     public function DisplayAllMatching() {
         /*
+         * 2018-09-07 MM Can now fetch test data for band "0" for display on the Components tab.
          * 2017-08-30 MM separated grouping, link, and text generation into helper groupHeaders()
          * 2017-01-18 MM combined methods from classes FEComponent and FrontEnd
          * 2015-04-28 jee for pattern data, added test number and day of week to date
@@ -208,8 +209,8 @@ class TestDataTable {
         // Right hand field for join is either TDH.fkFE_Config or TDH.fkFE_Components
         $rhKeyId = ($this->keyFrontEnd) ? "fkFE_Config" : "fkFE_Components";
 
-        // Filter for band
-        $likeBand = ($this->band) ? $this->band : '%';
+        // Filter for band, including band "0" for Components tab:
+        $likeBand = $this->band;
 
         // Filter for component SN
         $likeCompSN = ($this->compSN) ? $this->compSN : '%';

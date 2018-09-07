@@ -52,13 +52,11 @@ if($band == 100) {
     // Display HC and PAS reference data matching band:
     $fe->DisplayTable_PAITestData_Summary($band);
 
-    // For real bands show PAI data:
-    if ($band >= 1 && $band <= 10) {
-        $td = new TestDataTable($band);
-        $td->setFrontEnd($fe->keyId);
-        $td->DisplayAllMatching();
-        unset($td);
-    }
+    // For all bands, including band "0" show PAI data:
+    $td = new TestDataTable($band);
+    $td->setFrontEnd($fe->keyId);
+    $td->DisplayAllMatching();
+    unset($td);
 }
 
 ?>
