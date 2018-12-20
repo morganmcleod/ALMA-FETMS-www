@@ -15,7 +15,6 @@ class FEComponent extends GenericTable {
     var $FEfc;             //Facility code of front end
     var $FE_ConfigLink;    //Object representing record in FE_ConfigLink table
     var $MaxConfig;        //Max keyId value in FE_Components with the same SN and Band (if band is not NA)
-    var $IsDocument;       //If 1, this is a document
     var $JSONstring;       //JSON string with basic information about the component
 
     public function GetJSONstring(){
@@ -26,7 +25,6 @@ class FEComponent extends GenericTable {
     }
 
     public function Initialize_FEComponent($in_keyId, $in_fc){
-        $this->IsDocument = 0;
         $this->keyId = $in_keyId;
         parent::Initialize('FE_Components',$this->keyId,'keyId',$in_fc,'keyFacility');
 
@@ -36,25 +34,6 @@ class FEComponent extends GenericTable {
         $this->ComponentType = new GenericTable();
         $CompType = @mysql_result($r,0,0);
         $this->ComponentType->Initialize('ComponentTypes', $CompType,'keyId');
-
-        $this->IsDocument = 0;
-        switch($CompType){
-            case(217):
-                $this->IsDocument = 1;
-                break;
-            case(218):
-                $this->IsDocument = 1;
-                break;
-            case(219):
-                $this->IsDocument = 1;
-                break;
-            case(220):
-                $this->IsDocument = 1;
-                break;
-            case(222):
-                $this->IsDocument = 1;
-                break;
-        }
 
         //Find which Front End this component is in (if any)
         $q = "select Front_Ends.SN, FE_Config.keyFEConfig,Front_Ends.keyFrontEnds, Front_Ends.keyFacility,
@@ -110,93 +89,60 @@ class FEComponent extends GenericTable {
             $tableheader .= " SN " . $this->GetValue('SN');
         }
 
-        echo "
-        <div style='width:350px'>
+        echo "<div style='width:350px'>
                 <table id = 'table5'>
-                    <tr class='alt'><th colspan = '2'><font size='+2'>" . $this->ComponentType->GetValue('Description') . "<font></th></tr>";
-
+                   <tr class='alt'><th colspan = '2'><font size='+2'>" . $this->ComponentType->GetValue('Description') . "<font></th></tr>";
         echo "</tr>";
 
-                    if ($this->GetValue('Band') > 0){
-                    echo "<tr><th>Band</th><td>".$this->GetValue('Band')."</td></tr>";
-                    }
-                    if ($this->GetValue('SN') != ''){
-                    echo "
-                    <tr><th width = '10px' align = 'right'>SN</th>
-                        <td width='20px'>".$this->GetValue('SN')."
-                        </td>
-                    </tr>";
-                    }
-                    echo "
-                    <tr><th width = '10px' align = 'right'>In Front End</th>
-                    <td width='20px'>".$this->FESN."</td></tr>
-                    <tr><th>TS</th><td>".$this->GetValue('TS')."</td>
-                    </tr>";
+        if ($this->GetValue('Band') > 0){
+            echo "<tr><th>Band</th><td>".$this->GetValue('Band')."</td></tr>";
+        }
+        if ($this->GetValue('SN') != ''){
+            echo "<tr><th width = '10px' align = 'right'>SN</th>
+                <td width='20px'>".$this->GetValue('SN')."
+                </td>
+            </tr>";
+        }
+        echo "<tr><th width = '10px' align = 'right'>In Front End</th>
+            <td width='20px'>".$this->FESN."</td></tr>
+            <tr><th>TS</th><td>".$this->GetValue('TS')."</td>
+            </tr>";
 
-                    if ($this->IsDocument != 1){
-                    echo "<tr><th>Config#</th><td>".$this->keyId."</td></tr>";
-                        echo "<tr><th>ESN1</th><td>".$this->GetValue('ESN1')."</td></tr>";
-                        echo "<tr><th>ESN2</th><td>".$this->GetValue('ESN2')."</td></tr>";
+        echo "<tr><th>Config#</th><td>".$this->keyId."</td></tr>";
+        echo "<tr><th>ESN1</th><td>".$this->GetValue('ESN1')."</td></tr>";
+        echo "<tr><th>ESN2</th><td>".$this->GetValue('ESN2')."</td></tr>";
 
-                    }
+        $link1 = $this->GetValue('Link1');
+        $link2 = $this->GetValue('Link2');
 
-                    if ($this->IsDocument != 1){
-                        $link2 = $this->GetValue('Link2');
-                        $Link2string = "";
-                        if (strlen($link2) > 5){
-                            $Link2string = "Link";
-                        }
-                            echo"
-                            <tr><th>Link1 (CIDL)</th><td><a href='".FixHyperlink($link2)."' target = 'blank'>$Link2string</td></tr>";
+        $Link1string = "";
+        if (strlen($link1) > 5) {
+            $Link1string = "Link1";
+        }
+        echo "<tr><th>Link1 (CIDL)</th><td><a href='".FixHyperlink($link1)."' target = 'blank'>$Link1string</td></tr>";
 
-                        $link1 = $this->GetValue('Link1');
-                        $Link1string = "";
-                        if (strlen($link1) > 5){
-                            $Link1string = "Link";
-                        }
-                            echo"
-                            <tr><th>Link2 (SICL)</th><td><a href='".FixHyperlink($link1)."' target = 'blank'>$Link1string</td></tr>";
-                    }
+        $Link2string = "";
+        if (strlen($link2) > 5) {
+            $Link2string = "Link2";
+        }
+        echo "<tr><th>Link2 (SICL)</th><td><a href='".FixHyperlink($link2)."' target = 'blank'>$Link2string</td></tr>";
 
-                    if ($this->IsDocument == 1){
-                        $link2 = $this->GetValue('Link2');
-                        $Link2string = "";
-                        if (strlen($link2) > 5){
-                            $Link2string = "Link";
-                        }
-                            echo"
-                            <tr><th>Link</th><td><a href='".FixHyperlink($link2)."' target = 'blank'>$Link2string</td></tr>";
+        echo "<tr><th>Description</th><td>".$this->GetValue('Description')."</td></tr>";
 
-                    }
+        $Qty = 1;
+        if (isset($this->FE_ConfigLink) && $this->FE_ConfigLink->keyId > 0){
+            $Qty = $this->FE_ConfigLink->GetValue('Quantity');
+        }
+        echo "<tr><th>Quantity</th><td>$Qty</td></tr>";
 
-
-
-
-
-
-                    echo"<tr><th>Description</th><td>".$this->GetValue('Description')."</td></tr>";
-
-                    if ($this->IsDocument != 1){
-                        $Qty = 1;
-                        if (isset($this->FE_ConfigLink) && $this->FE_ConfigLink->keyId > 0){
-                            $Qty = $this->FE_ConfigLink->GetValue('Quantity');
-                        }
-                        echo"<tr><th>Quantity</th><td>$Qty</td></tr>";
-                    }
-
-                    if ($this->GetValue('DocumentTitle') != ''){
-                        echo "<tr><th>Title</th><td>".$this->GetValue('DocumentTitle')."</td></tr>";
-                    }
-                    if ($this->GetValue('Production_Status') != ''){
-                        echo "<tr><th>Status</th><td>".$this->GetValue('Production_Status')."</td></tr>";
-                    }
-                    echo"
-                </table>";
-
-
-
-                    echo "</div>
-                </div>";
+        if ($this->GetValue('DocumentTitle') != ''){
+            echo "<tr><th>Title</th><td>".$this->GetValue('DocumentTitle')."</td></tr>";
+        }
+        if ($this->GetValue('Production_Status') != ''){
+            echo "<tr><th>Status</th><td>".$this->GetValue('Production_Status')."</td></tr>";
+        }
+        echo "</table>";
+        echo "</div></div>";
     }
 
     public function DisplayTable_TestData() {
@@ -233,7 +179,7 @@ class FEComponent extends GenericTable {
               echo "</td></tr>";
 
 
-              echo"
+              echo "
         </form>";
 
     }

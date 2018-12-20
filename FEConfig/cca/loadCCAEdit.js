@@ -10,7 +10,7 @@ function createCompTabs(band,comptype,compKey){
 	        defaults:{ autoScroll:true},
 	        items:[
 		           {contentEl: 'parent1', title: 'CCA Configuration', 
-		        	autoLoad:{url: 'getComponentData.php',params:{band : band,type: comptype,config: compKey, tabtype:'1'}}},
+		        	autoLoad:{url: '../getComponentData.php',params:{band : band,type: comptype,config: compKey, tabtype:'1'}}},
 		        	{title:'Edit Mixer Params',
 	                    autoLoad: {url: 'getCCAEditData.php',params:{band : band,type: comptype,config: compKey, tabtype:'2'}}},
 	                    {title:'Edit Preamp Params',
