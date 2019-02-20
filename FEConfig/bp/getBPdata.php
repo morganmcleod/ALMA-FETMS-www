@@ -39,6 +39,9 @@ switch ($tabtype) {
         //Scan Info tab
         $posturl = "bp.php?keyheader=$tdh->keyId&fc=" . $tdh->GetValue('keyFacility');
 
+        //Get FETMS description:
+        $fetms = trim($tdh->GetValue('FETMS_Description'));
+
         //If not MISE, we will wrap the test data notes in a <form>.
         //TODO:  apparently this means you can't save notes in MSIE!
         $browserNotMSIE = (strpos(strtolower($_SERVER['HTTP_USER_AGENT']),'msie') === FALSE);
@@ -48,10 +51,11 @@ switch ($tabtype) {
 
         echo "<div style='width:100px'>";
             echo "<table id = 'table1'>";
+                if ($fetms)
+                    echo "<tr><th>Where measured: $fetms</th></tr>";
                 echo "<tr><th>Notes</th></tr>";
                 echo "<tr><td>";
-                    echo "
-                    <textarea rows='20' cols='85' name = 'Notes'>".stripslashes($tdh->GetValue('Notes'))."</textarea>";
+                    echo "<textarea rows='20' cols='85' name = 'Notes'>".stripslashes($tdh->GetValue('Notes'))."</textarea>";
                     echo "<input type='hidden' name='fc' value='".$tdh->GetValue('keyFacility')."'>";
                     echo "<input type='hidden' name='keyheader' value='$tdh->keyId'>";
                     echo "<br><input type='submit' name='submitted' value='SAVE'>";

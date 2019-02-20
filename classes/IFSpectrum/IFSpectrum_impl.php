@@ -75,7 +75,8 @@ class IFSpectrum_impl extends TestData_header {
     const EXPANDED_SPACING = 2.5; // dB  spacing between traces in expanded plot
 
     public function __construct() {
-        $this->swVersion = "1.4.3";
+        $this->swVersion = "1.4.4";
+        // 1.4.4  Display 'Where measured' in info table.
         // 1.4.3  Fix cases where rfMin and rfMax not available in specs.
         // 1.4.2  Show "Traces are drawn with an artificial 10 dB spacing." on IF spectrum plots.
         // 1.4.1  Show "Traces are separated by 10 dB." on IF spectrum plots.
@@ -258,8 +259,8 @@ class IFSpectrum_impl extends TestData_header {
         //Display information for all TestData_header records
         echo "<br><br><div style='height:900px;width:900px'>";
         echo "<table id = 'table1' border = '1'>";
-        echo "<tr class = 'alt'><th colspan='3'>IF Spectrum data sets for TestData_header.dataSetGroup $this->dataSetGroup</th></tr>";
-        echo "<tr><th>Key</th><th>Timestamp</th><th>Notes</th></tr>";
+        echo "<tr class = 'alt'><th colspan='4'>IF Spectrum data sets for TestData_header.dataSetGroup $this->dataSetGroup</th></tr>";
+        echo "<tr><th>Key</th><th>Timestamp</th><th>Where measured</th><th>Notes</th></tr>";
 
         for ($i = 0; $i < count($this->TDHkeys); $i++) {
             if ($i % 2 == 0) {
@@ -273,6 +274,7 @@ class IFSpectrum_impl extends TestData_header {
             echo "<tr class = $trclass>";
             echo "<td>" . $t->keyId . "</td>";
             echo "<td>" . $t->GetValue('TS') . "</td>";
+            echo "<td>" . $t->GetValue('FETMS_Description') . "</td>";
             echo "<td style='text-align:left !important;'>" . $t->GetValue('Notes') . "</td>";
             echo "</tr>";
         }

@@ -24,7 +24,8 @@ class TestData_header extends GenericTable {
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
-        $this->swversion = "1.1.0";
+        $this->swversion = "1.1.1";
+        // 1.1.1 display 'Where measured' above Notes
         // 1.1.0 added Export()
         // 1.0.13 merged CCA_IFSpec
         // 1.0.12 remove $NoiseFloorHeader and cleanup testdata.php
@@ -220,9 +221,14 @@ class TestData_header extends GenericTable {
 
 
     public function Display_DataForm() {
+        //Get FETMS description:
+        $fetms = trim($this->GetValue('FETMS_Description'));
+
         echo "<div style='width:300px'>";
         echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
         echo "<table id = 'table1'>";
+        if ($fetms)
+            echo "<tr><th>Where measured: $fetms</th></tr>";
         echo "<tr><th>Notes</th></tr>";
         echo "<tr><td><textarea rows='6' cols='90' name = 'Notes'>" . stripcslashes($this->GetValue('Notes')) . "</textarea>";
         echo "<input type='hidden' name='fc' value='".$this->GetValue('keyFacility')."'>";
