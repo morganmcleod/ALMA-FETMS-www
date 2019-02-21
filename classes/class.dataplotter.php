@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.6";
+        $this->swversion = "1.2.7";
 
         /*
+         * 1.2.7:  Include FETMS_Description in plot footers.
          * 1.2.6:  Plot WorkAmp when Band=0 (all bands off)
          * 1.2.5:  Added Plot_WorkAmpTemperature
          * 1.2.4:  LO Lock test plots:  tot.pwr cols were reversed in DB schema, added RefTotalPower trace
@@ -127,9 +128,6 @@ class DataPlotter extends GenericTable{
             $rfe = @mysql_query($qfe,$this->dbconnection)  or die('Failed on query in dataplotter.php line ' . __LINE__);
             $this->measdate = @mysql_result($rfe,0,2);
         }
-
-
-
     }
 
     public function Plot_CCA_AmplitudeStability(){
@@ -819,7 +817,7 @@ class DataPlotter extends GenericTable{
                             $image_url = $this->url_directory . $band . "_" . $sn . "/$imagename";
 
                         $plot_title = "IV Curve, $CurrentLO GHz, CCA$band-$this->CCASN";
-                        $plot_label_1 =" set label 'TestData_header.keyId: ".$this->TestDataHeader->keyId.", Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+                        $plot_label_1 =" set label 'TDH: ".$this->TestDataHeader->keyId.", Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
                         $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
 
                         $imagepath = $imagedirectory . $imagename;
@@ -1005,8 +1003,9 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set ytics\r\n");
         fwrite($fh, "set ylabel 'Amplitude (dBm)'\r\n");
         fwrite($fh, "set bmargin 6\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
-        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
+        fwrite($fh, "set label 'TDH: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
+        $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
+        fwrite($fh, "set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n");
 
         $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
         $plot_string .= ", '$data_file'  using 1:3 title 'Pol 0, USB Power' with lines axis x1y1";
@@ -1132,8 +1131,9 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set ytics\r\n");
         fwrite($fh, "set ylabel 'Temperature (K)'\r\n");
         fwrite($fh, "set bmargin 6\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
-        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
+        fwrite($fh, "set label 'TDH: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
+        $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
+        fwrite($fh, "set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n");
 
         $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
         if ($band > 0) {
@@ -1269,11 +1269,9 @@ class DataPlotter extends GenericTable{
         //fwrite($fh, "set y3range[-181:181]\r\n");
         //fwrite($fh, "set y4range[-1:2]\r\n");
         fwrite($fh, "set bmargin 6\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " . $this->TestDataHeader->keyId . ", Dataplotter Ver. $this->swversion' at screen 0.01, 0.01\r\n");
-        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
-
-        //fwrite($fh, "set linestyle 1 lt 1 lw 1\r\n");
-
+        fwrite($fh, "set label 'TDH: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
+        $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
+        fwrite($fh, "set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n");
 
         $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
         $plot_string .= ", '$data_file'  using 1:3 title 'Phase' with lines axis x1y1";
@@ -1361,8 +1359,9 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set xlabel 'Source Rotation Angle (deg)'\r\n");
         fwrite($fh, "set ylabel 'Amplitude (dB)'\r\n");
         fwrite($fh, "set bmargin 6\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: $td_header, Dataplotter Ver. $this->swversion' at screen 0.01, 0.01\r\n");
-        fwrite($fh, "set label 'Tested $this->measdate, FE Configuration $this->FEcfg' at screen 0.01, 0.04\r\n");
+        fwrite($fh, "set label 'TDH: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
+        $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
+        fwrite($fh, "set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n");
         fwrite($fh, "set key right outside\r\n");
         fwrite($fh, "set grid xtics ytics\r\n");
         fwrite($fh, "plot '$data_file' using 1:2 title 'Pol 0 Amplitude' with lines ");
@@ -1512,8 +1511,9 @@ class DataPlotter extends GenericTable{
 
         // set up plot labels
         if ($this->TestDataHeader->GetValue('DataSetGroup') == 0) {
-            $plot_label_1 ="set label 'TestData_header.keyId: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
-            $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
+            $plot_label_1 ="set label 'TDH: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+            $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
+            $plot_label_2 ="set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n";
 
         } else {
             $r = $this->db_pull->q(7, NULL, NULL, NULL, NULL, $this->TestDataHeader);
@@ -1553,7 +1553,7 @@ class DataPlotter extends GenericTable{
                 $FE_Config = "($max_FE_Config)";
             }
 
-            $plot_label_1 ="set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
+            $plot_label_1 ="set label 'TDH: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
             $plot_label_2 ="set label 'Dataset: ".$this->TestDataHeader->GetValue('DataSetGroup').", TS: $TS";
             if ($showFEConfig)
                 $plot_label_2 .=", FE Configuration: $FE_Config";

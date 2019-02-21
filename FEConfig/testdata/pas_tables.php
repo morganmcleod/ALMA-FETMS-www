@@ -5,8 +5,9 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBox = "Select") {
-    $table_ver = "1.2.0";
+    $table_ver = "1.2.1";
     /*
+     * 1.2.1 Include FETMS_Description in table headers.
      * 1.2.0 added CCA SIS Warm Resistance table.
      * 1.1.5 using PAIcheckBox to select TDHs for filtering.
      * 1.1.4 Fix display bugs when using 2 GHz (or other) steps in Band3_NT_results()
@@ -53,7 +54,8 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
         echo "</th></tr>";
 
         // second title block line
-        echo "<tr class = 'alt'><th colspan='100'>".$tdh->GetValue('TS')
+        $fetms = $tdh->GetFetmsDescription(" at: ");
+        echo "<tr class = 'alt'><th colspan='100'>Measured".$fetms." ".$tdh->GetValue('TS')
             .", TestData_header.key_ID: <a href='$testpage?keyheader=".$tdh->GetValue('keyId')."&fc=40' target = 'blank'>".$tdh->GetValue('keyId')."</a>
             </th></tr>";
 

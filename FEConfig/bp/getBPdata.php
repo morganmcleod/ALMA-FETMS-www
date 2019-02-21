@@ -33,14 +33,14 @@ $eff->Initialize_eff_SingleScanSet($ssid,$fc);
 
 echo "<div style='background-color:#6C7070;width:1000px;'>";
 
+//Get FETMS description:
+$fetms = $tdh->GetFetmsDescription("Measured at: ");
+
 //Take an action based on which tab was selected.
 switch ($tabtype) {
     case 1:
         //Scan Info tab
         $posturl = "bp.php?keyheader=$tdh->keyId&fc=" . $tdh->GetValue('keyFacility');
-
-        //Get FETMS description:
-        $fetms = trim($tdh->GetValue('FETMS_Description'));
 
         //If not MISE, we will wrap the test data notes in a <form>.
         //TODO:  apparently this means you can't save notes in MSIE!
@@ -52,7 +52,7 @@ switch ($tabtype) {
         echo "<div style='width:100px'>";
             echo "<table id = 'table1'>";
                 if ($fetms)
-                    echo "<tr><th>Where measured: $fetms</th></tr>";
+                    echo "<tr><th>$fetms</th></tr>";
                 echo "<tr><th>Notes</th></tr>";
                 echo "<tr><td>";
                     echo "<textarea rows='20' cols='85' name = 'Notes'>".stripslashes($tdh->GetValue('Notes'))."</textarea>";
@@ -72,6 +72,12 @@ switch ($tabtype) {
 
     case 2:
         //Data Tables tab
+        if ($fetms) {
+            echo "<div style='width:300px'>";
+            echo "<table id = 'table1'>";
+            echo "<tr><th>$fetms</th></tr>";
+            echo "</table></div>";
+        }
         $eff->Display_ApertureEff();
         $eff->Display_TaperEff();
 		$eff->Display_PhaseEff();
@@ -85,6 +91,12 @@ switch ($tabtype) {
 
     case 3:
         //Pointing Angles tab
+        if ($fetms) {
+            echo "<div style='width:300px'>";
+            echo "<table id = 'table1'>";
+            echo "<tr><th>$fetms</th></tr>";
+            echo "</table></div>";
+        }
         echo $eff->Display_PointingAngles();
         echo $eff->Display_PointingAngleDiff();
         echo "<br><br>";

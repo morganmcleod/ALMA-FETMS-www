@@ -73,8 +73,9 @@ class NoiseTemperature extends TestData_header {
     public function Initialize_NoiseTemperature($in_keyId, $in_fc) {
         parent::Initialize_TestData_header($in_keyId, $in_fc);
 
-        $this->SWVersion = "1.3.0";
+        $this->SWVersion = "1.3.1";
         /*
+         * 1.3.1 Include FETMS_Description in plot footers.
          * 1.3.0 Added Export()
          * 1.2.8 Fix no err if FE not defined.
          * 1.2.7 Fix bug in B9 B10 plot display
@@ -1151,8 +1152,9 @@ class NoiseTemperature extends TestData_header {
     private function MakePlotFooterLabels() {
         // if no DataSetGroup then use data from the test TestData_header
         if ($this->GetValue('DataSetGroup') == 0) {
-            $this->plot_label_1 = "set label 'TestData_header.keyId: $this->keyId, Plot SWVer: $this->SWVersion, Meas SWVer: " . $this->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
-            $this->plot_label_2 = "set label '" . $this->GetValue('TS') . ", FE Configuration " . $this->GetValue('fkFE_Config') . ", TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
+            $fetms = $this->GetFetmsDescription(" at: ");
+            $this->plot_label_1 = "set label 'TDH: $this->keyId, Plot SWVer: $this->SWVersion, Meas SWVer: " . $this->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
+            $this->plot_label_2 = "set label 'Measured" . $fetms . " " . $this->GetValue('TS') . ", FE Configuration " . $this->GetValue('fkFE_Config') . ", TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
 
         // find the max timestamp and FE config number for the plot labels
         } else {
