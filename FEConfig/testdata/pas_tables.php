@@ -5,8 +5,9 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBox = "Select") {
-    $table_ver = "1.2.1";
+    $table_ver = "1.2.2";
     /*
+     * 1.2.2 Fix coloring of Y-factor results.
      * 1.2.1 Include FETMS_Description in table headers.
      * 1.2.0 added CCA SIS Warm Resistance table.
      * 1.1.5 using PAIcheckBox to select TDHs for filtering.
@@ -1016,12 +1017,14 @@ function Y_factor_results($td_keyID, $filterChecked) {
             <th width = '92px'>Pcold (dBm)</th>
             <th width = '92px'>Y-Factor</th><tr>";
 
-        $atten_cnt = 0;
-        $att_sum = 0;
+        $Ycnt = 0;
+        $Ysum = 0;
+        $Ymin = $spec['Ymin'];
+        $Ymax = $spec['Ymax'];
 
         while ($row = @mysql_fetch_array($r)) {
-            $att_sum = $att_sum + $row[3];
-            $atten_cnt++;
+            $Ysum += $row[3];
+            $Ycnt++;
 
             switch ($row[0]) {
                 case 0:
@@ -1044,13 +1047,12 @@ function Y_factor_results($td_keyID, $filterChecked) {
                 <td>".mon_data($row[2])."</td>";
 
             // check to see if Y factor is in spec
-            $Y_factor = $new_spec->chkNumAgnstSpec( mon_data($row[3]), "<", $spec['Y'] );
+            $Y_factor = $new_spec->chkNumAgnstSpec( mon_data($row[3]), "range", $Ymin, $Ymax);
             echo "<td width = '75px'>$Y_factor</tr> ";
         }
-        $avg_atten = mon_data($att_sum /$atten_cnt);
-        $avg_atten_text = $new_spec->chkNumAgnstSpec( $avg_atten , "<", $spec['Y'] );
-        echo "<tr><th colspan='3'>Average Y factor </th>
-            <th>$avg_atten_text</th>";
+        $Yavg = mon_data($Ysum / $Ycnt);
+        $YavgText = $new_spec->chkNumAgnstSpec( $Yavg , "range", $Ymin, $Ymax);
+        echo "<tr><th colspan='3'>Average Y factor </th><th>$YavgText</th></tr>";
         echo "</table></div>";
     }
 }
