@@ -61,7 +61,9 @@ function site_getDbConnection() {
 
 function site_warnProductionDb($dbname) {
     $server = $_SERVER['SERVER_NAME'];
-    if ($server == 'localhost' || $server == 'webtest.cv.nrao.edu' || $server == 'webtest2.cv.nrao.edu') {
+    if ($server == 'localhost' || $server == 'junco' ||
+        $server == 'webtest.cv.nrao.edu' || $server == 'webtest2.cv.nrao.edu')
+    {
         echo "<font size='+2' color='#ff0000' face='serif'><h><b>
         On $server using database $dbname
         </b></h></font>";
