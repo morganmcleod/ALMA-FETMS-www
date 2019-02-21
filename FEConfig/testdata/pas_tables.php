@@ -81,10 +81,11 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
 function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $filterChecked) {
 
     $db = site_getDbConnection();
-    $q = "SELECT keyId FROM `TestData_header`
+    $q = "SELECT `keyId` FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
-        AND BAND = $band AND fkDataStatus = $Data_Status";
+        AND BAND = $band AND fkDataStatus = $Data_Status
+        ORDER BY `keyId` DESC";
     $r = @mysql_query($q,$db) or die("QUERY FAILED: $q");
 
     $cnt = 0;
