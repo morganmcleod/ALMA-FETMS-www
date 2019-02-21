@@ -13,7 +13,7 @@ class FineLOSweep extends TestData_header {
 
         $q = "SELECT keyId, keyFacility FROM TEST_FineLOSweep_SubHeader
               WHERE fkHeader = $in_keyId AND keyFacility = $in_fc
-              order by keyId ASC;" ;
+              order by keyId DESC;" ;
         $r = @mysql_query($q, $this->dbconnection);
 
         // create tables for FineLOSweep SubHeaders for both polarization states
