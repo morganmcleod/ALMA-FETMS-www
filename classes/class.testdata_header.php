@@ -393,10 +393,6 @@ class TestData_header extends GenericTable {
     		case 14:
     		case 15:
 
-    		case 57: 	// LO lock test
-    		case 58: 	// Noise temperature
-    		case 59:	// fine LO sweep
-
     		case 44:	// WCA cartridge PAI plots
     		case 45:
     		case 46:
@@ -406,6 +402,10 @@ class TestData_header extends GenericTable {
     		case 42:	//CCA cartridge PAI plots
     			return false;
 
+    		case 39:    // I-V Curve
+    		case 57: 	// LO lock test
+    		case 58: 	// Noise temperature
+    		case 59:	// fine LO sweep
     		default:
     			return true;
     	}
