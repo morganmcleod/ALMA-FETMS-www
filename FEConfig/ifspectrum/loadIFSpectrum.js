@@ -20,7 +20,7 @@ function createIFSpectrumTabs(fc,id,fe,datasetgroup,band){
             items: [
             {
                 xtype: 'tbbutton',
-                text: 'Generate Plots And Data',
+                text: 'Generate Plots',
                 icon:'../icons/application_view_gallery.png',
                 handler: function() {
                     //Open ifspectrumplots.php. The "d=1" parameter tells it to draw plots.
