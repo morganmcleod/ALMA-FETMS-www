@@ -122,8 +122,5 @@ if ($band) {
 
 ?>
 </div>
-<?php
-    include('../footer.php');
-?>
 </body>
 </html>
