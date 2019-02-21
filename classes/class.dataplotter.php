@@ -818,7 +818,8 @@ class DataPlotter extends GenericTable{
 
                         $plot_title = "IV Curve, $CurrentLO GHz, CCA$band-$this->CCASN";
                         $plot_label_1 =" set label 'TDH: ".$this->TestDataHeader->keyId.", Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
-                        $plot_label_2 ="set label '".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
+                        $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
+                        $plot_label_2 ="set label 'Measured$fetms"." ".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
 
                         $imagepath = $imagedirectory . $imagename;
                         $fh = fopen($plot_command_file, 'w');
