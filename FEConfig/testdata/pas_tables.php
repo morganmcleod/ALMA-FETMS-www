@@ -63,19 +63,19 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
 
         // second title block line
         $fetms = $tdh->GetFetmsDescription(" at: ");
-        echo "<tr class = 'alt'><th colspan='100'>Measured".$fetms." ".$tdh->GetValue('TS')
-            .", TDH: <a href='$testpage?keyheader=".$tdh->GetValue('keyId')."&fc=40' target = 'blank'>".$tdh->GetValue('keyId')."</a>
+        echo "<tr class = 'alt'><th colspan='100'>Measured".$fetms." ".$tdh->GetValue('TS').
+            ", TDH: <a href='$testpage?keyheader=".$tdh->GetValue('keyId')."&fc=40' target = 'blank'>".$tdh->GetValue('keyId')."</a>
             </th></tr>";
 
         //third title block line
         // check to see if it was a FE component test or a FE config test
         if ($tdh->GetValue('fkFE_Config') != 0) {
-            echo "<tr class = 'alt'><th colspan='100'> FE Config: ".$tdh->GetValue('fkFE_Config')."
-                , Table SWVer: $table_ver, Meas SWVer: ".$tdh->GetValue('Meas_SWVer')."
+            echo "<tr class = 'alt'><th colspan='100'> FE Config: ".$tdh->GetValue('fkFE_Config').
+                ", Table SWVer: $table_ver, Meas SWVer: ".$tdh->GetValue('Meas_SWVer')."
                 </th></tr>";
         } else {
-            echo "<tr class = 'alt'><th colspan='100'> FE Component: ".$tdh->GetValue('fkFE_Components')."
-                , Table SWVer: $table_ver, Meas SWVer: ".$tdh->GetValue('Meas_SWVer')."
+            echo "<tr class = 'alt'><th colspan='100'> FE Component: ".$tdh->GetValue('fkFE_Components').
+                ", Table SWVer: $table_ver, Meas SWVer: ".$tdh->GetValue('Meas_SWVer')."
                 </th></tr>";
         }
         return true;
