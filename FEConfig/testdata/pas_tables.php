@@ -4,9 +4,16 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
+function results_section_header($desc) {
+    echo "<br><font size='+1' color='#f0fff0' face='sans-serif'><h><b>
+        $desc
+        </b></h></font>";
+}
+
 function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBox = "Select") {
-    $table_ver = "1.2.2";
+    $table_ver = "1.2.3";
     /*
+     * 1.2.3 Sort each section with newest at top, large font section headers
      * 1.2.2 Fix coloring of Y-factor results.
      * 1.2.1 Include FETMS_Description in table headers.
      * 1.2.0 added CCA SIS Warm Resistance table.
@@ -57,7 +64,7 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
         // second title block line
         $fetms = $tdh->GetFetmsDescription(" at: ");
         echo "<tr class = 'alt'><th colspan='100'>Measured".$fetms." ".$tdh->GetValue('TS')
-            .", TestData_header.key_ID: <a href='$testpage?keyheader=".$tdh->GetValue('keyId')."&fc=40' target = 'blank'>".$tdh->GetValue('keyId')."</a>
+            .", TDH: <a href='$testpage?keyheader=".$tdh->GetValue('keyId')."&fc=40' target = 'blank'>".$tdh->GetValue('keyId')."</a>
             </th></tr>";
 
         //third title block line
@@ -77,7 +84,6 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
         return false;
     }
 }
-
 
 function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $filterChecked) {
 
@@ -132,7 +138,8 @@ function results_table($FE_Config, $Data_Status, $TestData_Type, $filterChecked)
     $q = "SELECT keyId FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
-        AND fkDataStatus = $Data_Status";
+        AND fkDataStatus = $Data_Status
+        ORDER BY `keyId` DESC";
     $r = @mysql_query($q,$db) or die("QUERY FAILED: $q");
     while ($row = @mysql_fetch_array($r)) {
         switch ($TestData_Type) {

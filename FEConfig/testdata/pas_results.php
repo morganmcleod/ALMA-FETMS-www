@@ -70,53 +70,65 @@ echo "</div>";
 if ($band) {
 
 	// LNA - Actual Readings
+    results_section_header("LNA");
 	band_results_table($feconfig,$band,$Data_Status, 1, $filterChecked);
 
 	// SIS – Actual Readings
+	results_section_header("SIS");
 	band_results_table($feconfig,$band,$Data_Status, 3, $filterChecked);
 
-	// SIS – Resistance
-	band_results_table($feconfig,$band,$Data_Status, 60, $filterChecked);
-
 	// Temperature Sensors – Actual Readings
+	results_section_header("Temperature Sensors");
 	band_results_table($feconfig,$band,$Data_Status, 2, $filterChecked);
 
 	// WCA AMC Monitors
+	results_section_header("WCA AMC");
 	band_results_table($feconfig,$band,$Data_Status, 12, $filterChecked);
 
 	// WCA PA Monitors
+	results_section_header(" WCA PA");
 	band_results_table($feconfig,$band,$Data_Status, 13, $filterChecked);
 
 	// WCA PLL Monitors
+	results_section_header("WCA PLL");
 	band_results_table($feconfig,$band,$Data_Status, 14, $filterChecked);
 
 	// Nominal IF power levels
+	results_section_header("IF Power");
 	band_results_table($feconfig,$band,$Data_Status, 6, $filterChecked);
 
 	// Y-factor
+	results_section_header("Y-factor");
 	band_results_table($feconfig,$band,$Data_Status, 15, $filterChecked);
 
 	// I-V Curve
+	results_section_header("I-V Curve");
 	band_results_table($feconfig,$band,$Data_Status, 39, $filterChecked);
 
 } else {
 
 	// CPDS monitors
+    results_section_header("CPDS");
 	results_table($feconfig,$Data_Status, 24, $filterChecked);
 
 	// FLOOG Total Power
+	results_section_header("FLOOG Total Power");
 	results_table($feconfig,$Data_Status, 5, $filterChecked);
 
 	// IF switch temperature sensors
+	results_section_header("IF Switch Temperatures");
 	results_table($feconfig,$Data_Status, 10, $filterChecked);
 
 	// LO Photonic Receiver Monitor Data
+	results_section_header("LPR");
 	results_table($feconfig,$Data_Status, 8, $filterChecked);
 
 	// Photomixer Monitor Data
+	results_section_header("Photomixers");
 	results_table($feconfig,$Data_Status, 9, $filterChecked);
 
 	// Cryo-cooler Temperatures
+	results_section_header("Cryostat Temperatures");
 	results_table($feconfig,$Data_Status, 4, $filterChecked);
 }
 
