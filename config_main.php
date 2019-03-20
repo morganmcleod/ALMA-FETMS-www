@@ -44,13 +44,13 @@ switch ($site_hostname){
        	break;
 
  	case "localhost":
-   	case "finch":
+   	case "junco":
    		$FETMS_CCA_MODE = false;
-   		$rootdir_url = "http://finch/ALMA-FETMS-www/";
+   		$rootdir_url = "http://junco/ALMA-FETMS-www/";
    		$GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
    		$beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
    		break;
-       	
+
     default:
         echo "<font size = '+3' color = '#ff0000'><h><b>
         This application is not configured for host $site_hostname. <br>

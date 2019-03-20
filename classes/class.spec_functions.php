@@ -114,32 +114,32 @@
 		 * @return (string) returns and HTML string with $num and color encoding indicating
 		 * meeting spec.
 		 */
-		public function chkNumAgnstSpec($num, $operator, $spec) {
+		public function chkNumAgnstSpec($num, $operator, $spec, $spec2=0) {
+		    $inspec = false;
 			switch ($operator) {
-				case ">";
-				if ($num > $spec) {
-					$inspec = true;
-				} else {
-					$inspec = false;
-				}
-				break;
-				case "<";
-				if ($num < $spec) {
-					$inspec = true;
-				} else {
-					$inspec = false;
-				}
-				break;
-				case "=";
-				if ($num = $spec) {
-					$inspec = true;
-				} else {
-					$inspec = false;
-				}
-				break;
+				case ">":
+    				if ($num > $spec)
+    					$inspec = true;
+    				break;
+
+				case "<":
+    				if ($num < $spec)
+    					$inspec = true;
+    				break;
+
+				case "=":
+    				if ($num = $spec)
+    					$inspec = true;
+    				break;
+
+				case "range":
+				    if ($num >= $spec && $num <= $spec2)
+				        $inspec = true;
+				    break;
+
 				default;
-				$inspec = false;
-				break;
+    				$inspec = false;
+    				break;
 			}
 			$resp = $this->inspec($num, $inspec);
 			return $resp;

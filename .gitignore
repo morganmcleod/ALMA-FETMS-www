@@ -1,0 +1,17 @@
+.buildpath
+.project
+.settings
+Export to *
+*.o
+*.a
+*.exe
+cca_datafiles
+test_datafiles
+mmcl_datafiles
+beameff_64
+beameff2_64
+.externalToolBuilders/
+.htaccess
+ext
+ext4
+

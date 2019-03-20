@@ -4,9 +4,18 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
+function results_section_header($desc) {
+    echo "<br><font size='+1' color='#f0fff0' face='sans-serif'><h><b>
+        $desc
+        </b></h></font>";
+}
+
 function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBox = "Select") {
-    $table_ver = "1.2.0";
+    $table_ver = "1.2.3";
     /*
+     * 1.2.3 Sort each section with newest at top, large font section headers
+     * 1.2.2 Fix coloring of Y-factor results.
+     * 1.2.1 Include FETMS_Description in table headers.
      * 1.2.0 added CCA SIS Warm Resistance table.
      * 1.1.5 using PAIcheckBox to select TDHs for filtering.
      * 1.1.4 Fix display bugs when using 2 GHz (or other) steps in Band3_NT_results()
@@ -53,19 +62,20 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
         echo "</th></tr>";
 
         // second title block line
-        echo "<tr class = 'alt'><th colspan='100'>".$tdh->GetValue('TS')
-            .", TestData_header.key_ID: <a href='$testpage?keyheader=".$tdh->GetValue('keyId')."&fc=40' target = 'blank'>".$tdh->GetValue('keyId')."</a>
+        $fetms = $tdh->GetFetmsDescription(" at: ");
+        echo "<tr class = 'alt'><th colspan='100'>Measured".$fetms." ".$tdh->GetValue('TS').
+            ", TDH: <a href='$testpage?keyheader=".$tdh->GetValue('keyId')."&fc=40' target = 'blank'>".$tdh->GetValue('keyId')."</a>
             </th></tr>";
 
         //third title block line
         // check to see if it was a FE component test or a FE config test
         if ($tdh->GetValue('fkFE_Config') != 0) {
-            echo "<tr class = 'alt'><th colspan='100'> FE Config: ".$tdh->GetValue('fkFE_Config')."
-                , Table SWVer: $table_ver, Meas SWVer: ".$tdh->GetValue('Meas_SWVer')."
+            echo "<tr class = 'alt'><th colspan='100'> FE Config: ".$tdh->GetValue('fkFE_Config').
+                ", Table SWVer: $table_ver, Meas SWVer: ".$tdh->GetValue('Meas_SWVer')."
                 </th></tr>";
         } else {
-            echo "<tr class = 'alt'><th colspan='100'> FE Component: ".$tdh->GetValue('fkFE_Components')."
-                , Table SWVer: $table_ver, Meas SWVer: ".$tdh->GetValue('Meas_SWVer')."
+            echo "<tr class = 'alt'><th colspan='100'> FE Component: ".$tdh->GetValue('fkFE_Components').
+                ", Table SWVer: $table_ver, Meas SWVer: ".$tdh->GetValue('Meas_SWVer')."
                 </th></tr>";
         }
         return true;
@@ -75,14 +85,14 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
     }
 }
 
-
 function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $filterChecked) {
 
     $db = site_getDbConnection();
-    $q = "SELECT keyId FROM `TestData_header`
+    $q = "SELECT `keyId` FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
-        AND BAND = $band AND fkDataStatus = $Data_Status";
+        AND BAND = $band AND fkDataStatus = $Data_Status
+        ORDER BY `keyId` DESC";
     $r = @mysql_query($q,$db) or die("QUERY FAILED: $q");
 
     $cnt = 0;
@@ -128,7 +138,8 @@ function results_table($FE_Config, $Data_Status, $TestData_Type, $filterChecked)
     $q = "SELECT keyId FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
-        AND fkDataStatus = $Data_Status";
+        AND fkDataStatus = $Data_Status
+        ORDER BY `keyId` DESC";
     $r = @mysql_query($q,$db) or die("QUERY FAILED: $q");
     while ($row = @mysql_fetch_array($r)) {
         switch ($TestData_Type) {
@@ -1013,12 +1024,14 @@ function Y_factor_results($td_keyID, $filterChecked) {
             <th width = '92px'>Pcold (dBm)</th>
             <th width = '92px'>Y-Factor</th><tr>";
 
-        $atten_cnt = 0;
-        $att_sum = 0;
+        $Ycnt = 0;
+        $Ysum = 0;
+        $Ymin = $spec['Ymin'];
+        $Ymax = $spec['Ymax'];
 
         while ($row = @mysql_fetch_array($r)) {
-            $att_sum = $att_sum + $row[3];
-            $atten_cnt++;
+            $Ysum += $row[3];
+            $Ycnt++;
 
             switch ($row[0]) {
                 case 0:
@@ -1041,13 +1054,12 @@ function Y_factor_results($td_keyID, $filterChecked) {
                 <td>".mon_data($row[2])."</td>";
 
             // check to see if Y factor is in spec
-            $Y_factor = $new_spec->chkNumAgnstSpec( mon_data($row[3]), "<", $spec['Y'] );
+            $Y_factor = $new_spec->chkNumAgnstSpec( mon_data($row[3]), "range", $Ymin, $Ymax);
             echo "<td width = '75px'>$Y_factor</tr> ";
         }
-        $avg_atten = mon_data($att_sum /$atten_cnt);
-        $avg_atten_text = $new_spec->chkNumAgnstSpec( $avg_atten , "<", $spec['Y'] );
-        echo "<tr><th colspan='3'>Average Y factor </th>
-            <th>$avg_atten_text</th>";
+        $Yavg = mon_data($Ysum / $Ycnt);
+        $YavgText = $new_spec->chkNumAgnstSpec( $Yavg , "range", $Ymin, $Ymax);
+        echo "<tr><th colspan='3'>Average Y factor </th><th>$YavgText</th></tr>";
         echo "</table></div>";
     }
 }

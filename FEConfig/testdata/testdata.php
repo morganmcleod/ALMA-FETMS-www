@@ -120,7 +120,7 @@ switch ($td->GetValue('fkTestData_Type')) {
             </tr></td>
             <tr><td>
                 <a style='width:90px' href='$drawurl' class='button blue2 biground'>
-                <span style='width:130px'>Generate Plots And Data</span></a>
+                <span style='width:130px'>Generate Plots</span></a>
             </tr></td>";
         break;
 
@@ -136,7 +136,7 @@ switch ($td->GetValue('fkTestData_Type')) {
             </td></tr>
             <tr><td>
                 <a style='width:90px' href='$drawurl' class='button blue2 biground'>
-                <span style='width:130px'>Generate Plots And Data</span></a>
+                <span style='width:130px'>Generate Plots</span></a>
             </td></tr>
             <tr><td>
                 <a style='width:90px' href='$exportcsvurl' class='button blue2 biground'>

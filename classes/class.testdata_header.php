@@ -24,7 +24,9 @@ class TestData_header extends GenericTable {
     var $subheader; //Generic table object, for a record in a subheader table
 
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
-        $this->swversion = "1.1.0";
+        $this->swversion = "1.1.2";
+        // 1.1.2 added GetFetmsDescription()
+        // 1.1.1 display FETMS_Description above Notes
         // 1.1.0 added Export()
         // 1.0.13 merged CCA_IFSpec
         // 1.0.12 remove $NoiseFloorHeader and cleanup testdata.php
@@ -83,6 +85,15 @@ class TestData_header extends GenericTable {
             $this->SetValue('Notes',$_REQUEST['Notes']);
             parent::Update();
         }
+    }
+
+    public function GetFetmsDescription($textBefore = "") {
+        $fetms = trim($this->GetValue('FETMS_Description'));
+        if ($fetms) {
+            $fetms = $textBefore . $fetms;
+            $fetms = str_replace("'", "", $fetms);
+        }
+        return $fetms;
     }
 
     public function Display_Data_Cryostat($datatype) {
@@ -220,9 +231,14 @@ class TestData_header extends GenericTable {
 
 
     public function Display_DataForm() {
+        //Get FETMS description:
+        $fetms = $this->GetFetmsDescription("Measured at: ");
+
         echo "<div style='width:300px'>";
         echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
         echo "<table id = 'table1'>";
+        if ($fetms)
+            echo "<tr><th>$fetms</th></tr>";
         echo "<tr><th>Notes</th></tr>";
         echo "<tr><td><textarea rows='6' cols='90' name = 'Notes'>" . stripcslashes($this->GetValue('Notes')) . "</textarea>";
         echo "<input type='hidden' name='fc' value='".$this->GetValue('keyFacility')."'>";
@@ -387,19 +403,18 @@ class TestData_header extends GenericTable {
     		case 14:
     		case 15:
 
-    		case 57: 	// LO lock test
-    		case 58: 	// Noise temperature
-    		case 59:	// fine LO sweep
-
     		case 44:	// WCA cartridge PAI plots
     		case 45:
     		case 46:
     		case 47:
     		case 48:
-
+    		case 58: 	// Noise temperature
+    		case 59:	// fine LO sweep
     		case 42:	//CCA cartridge PAI plots
     			return false;
 
+    		case 39:    // I-V Curve
+    		case 57: 	// LO lock test
     		default:
     			return true;
     	}

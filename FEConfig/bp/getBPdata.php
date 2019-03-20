@@ -33,6 +33,9 @@ $eff->Initialize_eff_SingleScanSet($ssid,$fc);
 
 echo "<div style='background-color:#6C7070;width:1000px;'>";
 
+//Get FETMS description:
+$fetms = $tdh->GetFetmsDescription("Measured at: ");
+
 //Take an action based on which tab was selected.
 switch ($tabtype) {
     case 1:
@@ -48,10 +51,11 @@ switch ($tabtype) {
 
         echo "<div style='width:100px'>";
             echo "<table id = 'table1'>";
+                if ($fetms)
+                    echo "<tr><th>$fetms</th></tr>";
                 echo "<tr><th>Notes</th></tr>";
                 echo "<tr><td>";
-                    echo "
-                    <textarea rows='20' cols='85' name = 'Notes'>".stripslashes($tdh->GetValue('Notes'))."</textarea>";
+                    echo "<textarea rows='20' cols='85' name = 'Notes'>".stripslashes($tdh->GetValue('Notes'))."</textarea>";
                     echo "<input type='hidden' name='fc' value='".$tdh->GetValue('keyFacility')."'>";
                     echo "<input type='hidden' name='keyheader' value='$tdh->keyId'>";
                     echo "<br><input type='submit' name='submitted' value='SAVE'>";
@@ -68,6 +72,12 @@ switch ($tabtype) {
 
     case 2:
         //Data Tables tab
+        if ($fetms) {
+            echo "<div style='width:300px'>";
+            echo "<table id = 'table1'>";
+            echo "<tr><th>$fetms</th></tr>";
+            echo "</table></div>";
+        }
         $eff->Display_ApertureEff();
         $eff->Display_TaperEff();
 		$eff->Display_PhaseEff();
@@ -81,6 +91,12 @@ switch ($tabtype) {
 
     case 3:
         //Pointing Angles tab
+        if ($fetms) {
+            echo "<div style='width:300px'>";
+            echo "<table id = 'table1'>";
+            echo "<tr><th>$fetms</th></tr>";
+            echo "</table></div>";
+        }
         echo $eff->Display_PointingAngles();
         echo $eff->Display_PointingAngleDiff();
         echo "<br><br>";

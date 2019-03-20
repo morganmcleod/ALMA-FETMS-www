@@ -26,10 +26,10 @@ switch ($_SERVER['SERVER_NAME']) {
 	    break;
 
     case "localhost":
-    case "finch":
+    case "junco":
 //         include("C:/wamp64/dbConnect_band1.php");
-//         include("C:/wamp64/dbConnect_OSF.php");
-        include("C:/wamp64/dbConnect_private.php");
+//         include("C:/wamp64/dbConnect_private.php");
+        include("C:/wamp64/dbConnect_OSF.php");
         $mySQL57 = true;
         break;
 
@@ -62,8 +62,9 @@ function site_getDbConnection() {
 
 function site_warnProductionDb($dbname) {
     $server = $_SERVER['SERVER_NAME'];
-
-    if ($server == 'webtest.cv.nrao.edu' || $server == 'webtest2.cv.nrao.edu') {
+    if ($server == 'localhost' || $server == 'junco' ||
+        $server == 'webtest.cv.nrao.edu' || $server == 'webtest2.cv.nrao.edu')
+    {
         echo "<font size='+2' color='#ff0000' face='serif'><h><b>
         On $server using database $dbname
         </b></h></font>";

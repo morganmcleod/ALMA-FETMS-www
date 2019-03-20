@@ -19,43 +19,37 @@ if ($SelectorType == 2){
     $fkTestData_Type = $_REQUEST['type'];
 }
 
+// This query can take advantage of indexes on Front_Ends.keyFrontEnds and TestData_Types.keyId
 
-$q = "SELECT keyId, keyFacility, Band, TS, fkTestData_Type, fkFE_Config, Notes, fkFE_Components, DataSetGroup
-    FROM TestData_header
-    WHERE fkDataStatus LIKE '$TestStatus'
-    AND fkTestData_Type LIKE '$fkTestData_Type'
+$q="SELECT TDH.keyId, TDH.keyFacility, TDH.Band, TDH.TS, TDH.fkTestData_Type, 
+           TDH.Notes, TDH.fkFE_Components, TDH.DataSetGroup, 
+           Front_Ends.SN, Front_Ends.keyFrontEnds, TestData_Types.Description
+    FROM TestData_header AS TDH, 
+         FE_Config AS FCF,
+         Front_Ends, TestData_Types 
+    WHERE TDH.fkDataStatus LIKE '$TestStatus'
+    AND TDH.fkTestData_Type LIKE '$fkTestData_Type'
+    AND TDH.fkFE_Config = FCF.keyFEConfig
+    AND FCF.fkFront_Ends = Front_Ends.keyFrontEnds
+    AND TDH.fkTestData_Type = TestData_Types.keyId
     ORDER BY TS DESC LIMIT 200;";
-$r = @mysql_query($q,$db);
 
+$r = @mysql_query($q,$db);
 
 $outstring = "[";
 $rowcount = 0;
-
 
 while ($row= @mysql_fetch_array($r)){
     $keyId = $row['keyId'];
     $keyFacility = $row['keyFacility'];
     $Band = $row['Band'];
     $TS = $row['TS'];
-    $Notes = $row['Notes'];
     $fkTestData_Type = $row['fkTestData_Type'];
+    $Notes = $row['Notes'];
     $DataSetGroup = $row['DataSetGroup'];
-
-    //Get Test Data type
-    $qfd = "SELECT Description FROM TestData_Types
-            WHERE keyId = ".$row[4].";";
-
-    $rfd = @mysql_query($qfd,$db);
-    $TestType = @mysql_result($rfd,0,0);
-
-    //Get FE SN
-    $qfe = "SELECT Front_Ends.SN, Front_Ends.keyFrontEnds
-            FROM Front_Ends,FE_Config
-            WHERE FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
-            AND FE_Config.keyFEConfig = ".$row['fkFE_Config'].";";
-    $rfe = @mysql_query($qfe,$db);
-    $fesn = @mysql_result($rfe,0,0);
-    $keyFrontEnd = @mysql_result($rfe,0,1);
+    $fesn = $row['SN'];
+    $keyFrontEnd = $row['keyFrontEnds'];
+    $TestType = $row['Description'];
 
     if ($fesn == ''){
         $c = new FEComponent();
@@ -65,13 +59,11 @@ while ($row= @mysql_fetch_array($r)){
         unset($c);
     }
 
-    if ($rowcount == 0 ){
-        $outstring .= "{'SN':'$fesn',";
-    }
-    if ($rowcount > 0 ){
-        $outstring .= ",{'SN':'$fesn',";
-    }
-
+    if ($rowcount != 0 )
+        $outstring .= ",";
+    
+    $outstring .= "{'SN':'$fesn',";
+    
     $outstring .= "'Band':'$Band',";
     $outstring .= "'TS':'$TS',";
     $outstring .= "'keyId':'$keyId',";
@@ -79,19 +71,11 @@ while ($row= @mysql_fetch_array($r)){
     $outstring .= "'fkTestData_Type':'$fkTestData_Type',";
     $outstring .= "'keyFrontEnd':'$keyFrontEnd',";
     $outstring .= "'DataSetGroup':'$DataSetGroup',";
-
     $outstring .= "'Notes':'". @mysql_real_escape_string(stripslashes($Notes))."',";
     $outstring .= "'keyFacility':'$keyFacility'}";
-
     $rowcount += 1;
 }
 
-
 $outstring .= "]";
-
-
 echo $outstring;
-
-
-
 ?>
