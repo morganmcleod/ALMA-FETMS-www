@@ -31,6 +31,7 @@ switch ($site_hostname){
         break;
 
     case "webtest2.cv.nrao.edu":
+//         $FETMS_CCA_MODE = true;
         $rootdir_url = "https://webtest2.cv.nrao.edu/php/ntc/ws-mtm/ALMA-FETMS-www/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         break;

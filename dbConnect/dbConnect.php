@@ -12,6 +12,7 @@ switch ($_SERVER['SERVER_NAME']) {
     case "webtest2.cv.nrao.edu":    // webtest2 is just a temporary name.  will revert back to webtest soon.
         // database credentials are kept in the /conf/ directory, not in the webserver document root:
         require_once("/home/webtest.cv.nrao.edu/conf/mtm-dbConnect.conf");
+//         $dbname = 'alma_b1_fetms';
         break;
 
     case "safe.nrao.edu":
