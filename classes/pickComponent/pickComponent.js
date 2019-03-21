@@ -31,14 +31,14 @@ var formPanel = Ext.create('Ext.form.FormPanel', {
     }]
 });
 
-Ext.onReady(function() {
+function pickComponent(ctype, targetDiv) {
     Ext.create('Ext.data.JsonStore', {
         storeId: 'cstore',
         fields: [{name : 'name'}, {name : 'id'}],
-        autoLoad: false,
+        autoLoad: true,
         proxy: {
             type: 'ajax',
-            url: 'pickComponent_Get.php',
+            url: 'pickComponent_Get.php?ctype=' + ctype,
             reader: {
                 type: 'json',
                 root: 'records',
@@ -50,23 +50,13 @@ Ext.onReady(function() {
     Ext.create('Ext.form.field.ComboBox', {
         fieldLabel: 'Select Component',
         store: 'cstore',
-        queryMode: 'remote',
+        queryMode: 'local',
         displayField: 'name',
         valueField: 'id',
-        renderTo: 'toolbar',
+        renderTo: targetDiv,
         width : 400,
         height : 20    
-    });
-
-//    Ext.create('Ext.window.Window', {
-//        height: 125,
-//        width: 200,
-//        closable: false,
-//        title: 'Input needed.',
-//        border: false,
-//        layout: 'fit',
-//        items: formPanel
-//    }).show();
-});
+    }).show();
+};
 
 

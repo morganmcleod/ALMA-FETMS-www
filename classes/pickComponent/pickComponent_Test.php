@@ -4,9 +4,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link rel="stylesheet" type="text/css" href="../../ext4/resources/css/ext-all.css" />
 <script type="text/javascript" src="../../ext4/ext-all-debug.js"></script>
-<script src="pickComponent.js" type="text/javascript"></script>
+<script type="text/javascript" src="pickComponent.js"></script>
 <title>pickComponent Test</title>
-</head>
+</head><body>
 
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
@@ -14,9 +14,10 @@ require_once(site_get_config_main());
 
 $ctype = '100';
 
-// echo "<body onload='pickComponent($ctype);' style='background-color: #19475E; '>";
+echo "<div id='here'></div>";
 
-echo "<div id='toolbar'></div>";
+echo "<script type='text/javascript'> Ext.onReady(function() { pickComponent($ctype, 'here'); }); </script>";
+
 
 ?>
 </body>
