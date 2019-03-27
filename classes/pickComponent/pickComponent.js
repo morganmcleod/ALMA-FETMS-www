@@ -1,44 +1,33 @@
-// pickComponent.js
-//
-// a widget to present a drop-down list of FrontEnds or FEComponents so that the user can pick one
+/**
+ * @fileoverview a widget to present a drop-down list of FrontEnds or FEComponents so that the user can pick one.
+ */
 
+/**
+ * Types of components which can be displayed by the pickComponent list below
+ */
+const ComponentTypes = {
+  FE: '100',
+  CCA: '20',
+  WCA: '11'
+};
 
-var tpl = Ext.create('Ext.Template', ['Hello {firstName} {lastName}!',
-        ' Nice to meet you!']);
-var formPanel = Ext.create('Ext.form.FormPanel', {
-    itemId: 'formPanel',
-    frame: true,
-    layout: 'anchor',
-    defaultType: 'textfield',
-    defaults: {
-        anchor: '-10',
-        labelWidth: 65
-    },
-    items: [{
-        fieldLabel: 'First name',
-        name: 'firstName'
-    }, {
-        fieldLabel: 'Last name',
-        name: 'lastName'
-    }],
-    buttons: [{
-        text: 'Submit',
-        handler: function() {
-            var formPanel = this.up('#formPanel'), vals = formPanel
-                    .getValues(), greeting = tpl.apply(vals);
-            Ext.Msg.alert('Hello!', greeting);
-        }
-    }]
-});
-
-function pickComponent(ctype, targetDiv) {
+/**
+ * Displays a combobox to select either a FE configuration by FE SN or a component configuration by CCA/WCA SN. 
+ * @param cType {ComponentTypes} which kind of component to display 
+ * @param renderTo {string} the name of the div where the combobox should render
+ * @param fieldLabel {string} to display to the left of the combobox
+ * @param band {integer} in 0-10. Must be in 1-10 for cType = CCA or WCA 
+ * @param selectCallback {function} to call with the selected name and id
+ * @returns
+ */ 
+function pickComponent(cType, renderTo, fieldLabel, selectCallback = false, band = 0) {
     Ext.create('Ext.data.JsonStore', {
         storeId: 'cstore',
         fields: [{name : 'name'}, {name : 'id'}],
         autoLoad: true,
         proxy: {
             type: 'ajax',
-            url: 'pickComponent_Get.php?ctype=' + ctype,
+            url: 'pickComponent_Get.php?ctype=' + cType + '&band=' + band,
             reader: {
                 type: 'json',
                 root: 'records',
@@ -48,15 +37,22 @@ function pickComponent(ctype, targetDiv) {
     });
     
     Ext.create('Ext.form.field.ComboBox', {
-        fieldLabel: 'Select Component',
+        fieldLabel: fieldLabel,
         store: 'cstore',
-        queryMode: 'local',
         displayField: 'name',
         valueField: 'id',
-        renderTo: targetDiv,
-        width : 400,
-        height : 20    
-    }).show();
+        queryMode: 'local',
+        typeAhead: true,
+        minChars: 1,
+        forceSelection: true,
+        renderTo: renderTo,
+        listeners: {
+            'select' : function(combo, records, eOpts) {
+                if (selectCallback)
+                    selectCallback(records[0].data);
+            }
+        }
+    });
 };
 
 

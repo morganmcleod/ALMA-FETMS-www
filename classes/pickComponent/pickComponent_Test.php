@@ -12,12 +12,15 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once(site_get_config_main());
 
-$ctype = '100';
-
 echo "<div id='here'></div>";
 
-echo "<script type='text/javascript'> Ext.onReady(function() { pickComponent($ctype, 'here'); }); </script>";
-
+echo "<script type='text/javascript'>
+        function callback(obj) { alert(obj['name'] + ' : ' + obj['id']); }
+        Ext.onReady(function() {
+            pickComponent(ComponentTypes.FE, 'here', 'Select Front End', callback);
+            pickComponent(ComponentTypes.CCA, 'here', 'Select CCA', callback, 3);
+            pickComponent(ComponentTypes.WCA, 'here', 'Select WCA', callback, 3);
+        });</script>";
 
 ?>
 </body>
