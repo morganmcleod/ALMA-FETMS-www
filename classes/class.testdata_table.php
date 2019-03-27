@@ -193,8 +193,10 @@ class TestDataTable {
         $dataStatus = '()';
         if ($this->keyFrontEnd)
             $dataStatus = '(3)';
-            else
-        $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
+        else if ($this->band == 0)
+            $dataStatus = '(1, 7)';
+        else
+            $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
 
         return $this -> fetchData($dataStatus, $selectedOnly);
     }
