@@ -16,6 +16,7 @@ if ($ctype == '100') {
               WHERE B.keyFEConfig IS NULL
               AND Front_Ends.keyFrontEnds = A.fkFront_Ends
               ORDER BY SN;";
+
 } else if ($ctype == '11' || $ctype == '20') {
     $what = ($ctype == '11') ? "WCA" : "CCA";
 
@@ -32,25 +33,16 @@ if ($ctype == '100') {
               ORDER BY cName ASC;";
 }
 
-if (!$query) {
-    echo "[]";
+$output = "";
 
-} else {
+if ($query) {
     $r = mysql_query($query, $db);
-
-    $output = FALSE;
-
     while ($row = mysql_fetch_array($r)) {
-
-        if (!$output)
-            $output = '[';
-        else
+        if ($output)
             $output .= ',';
-
         $output .= '{"name":"' . $row[0] . '","id":"' . $row[1] . '"}';
     }
-
-    $output .= ']';
-    echo $output;
 }
+
+echo "[$output]";
 ?>

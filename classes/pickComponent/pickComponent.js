@@ -20,7 +20,7 @@ const ComponentTypes = {
  * @param selectCallback {function} to call with the selected name and id
  * @returns
  */ 
-function pickComponent(cType, renderTo, fieldLabel, selectCallback = false, band = 0) {
+function pickComponent(cType, renderTo, fieldLabel, onSelectCallback = false, band = 0) {
     Ext.create('Ext.data.JsonStore', {
         storeId: 'cstore',
         fields: [{name : 'name'}, {name : 'id'}],
@@ -48,8 +48,8 @@ function pickComponent(cType, renderTo, fieldLabel, selectCallback = false, band
         renderTo: renderTo,
         listeners: {
             'select' : function(combo, records, eOpts) {
-                if (selectCallback)
-                    selectCallback(records[0].data);
+                if (onSelectCallback)
+                    onSelectCallback(records[0].data);
             }
         }
     });
