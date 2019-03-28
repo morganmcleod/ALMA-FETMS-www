@@ -89,10 +89,10 @@ class TestData_header extends GenericTable {
 
     public function GetFetmsDescription($textBefore = "") {
         $fetms = trim($this->GetValue('FETMS_Description'));
-        if ($fetms) {
-            $fetms = $textBefore . $fetms;
-            $fetms = str_replace("'", "", $fetms);
-        }
+        if (!$fetms)
+            $fetms = "UNKNOWN";
+        $fetms = $textBefore . $fetms;
+        $fetms = str_replace("'", "", $fetms);
         return $fetms;
     }
 
@@ -103,25 +103,6 @@ class TestData_header extends GenericTable {
 
         echo "<table>";
         switch ($this->GetValue('fkTestData_Type')) {
-            case '7':
-                //if spectrum
-                $drawurl = "testdata.php?keyheader=$this->keyId&drawplot=1&fc=$this->fc";
-                $datasetsurl = "testdata.php?keyheader=$this->keyId&sd=1&fc=$this->fc";
-                echo "
-                    <tr><td>
-                        <a style='width:90px' href='$showrawurl' class='button blue2 biground'>
-                        <span style='width:130px'>Show Links To Raw Data</span></a>
-                    </tr></td>
-                    <tr><td>
-                        <a style='width:90px' href='$datasetsurl' class='button blue2 biground'>
-                        <span style='width:130px'>Show Data Sets</span></a>
-                    </tr></td>
-                    <tr><td>
-                        <a style='width:90px' href='$drawurl' class='button blue2 biground'>
-                        <span style='width:130px'>Generate Plots</span></a>
-                    </tr></td>";
-                break;
-
             case '57':
             case '58':
                 //LO Lock test or noise temperature
