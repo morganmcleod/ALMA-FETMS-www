@@ -3,9 +3,14 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon">
+
 <link rel="stylesheet" type="text/css" href="../Cartstyle.css">
 <link rel="stylesheet" type="text/css" href="../tables.css">
 <link rel="stylesheet" type="text/css" href="../buttons.css">
+
+<link rel="stylesheet" type="text/css" href="../../ext4/resources/css/ext-all.css" />
+<script type="text/javascript" src="../../ext4/ext-all.js"></script>
+<script type='text/javascript' src='../../classes/pickComponent/popupMoveToOtherFE.js'></script>
 
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');

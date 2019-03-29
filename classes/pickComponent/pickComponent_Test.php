@@ -5,6 +5,7 @@
 <link rel="stylesheet" type="text/css" href="../../ext4/resources/css/ext-all.css" />
 <script type="text/javascript" src="../../ext4/ext-all-debug.js"></script>
 <script type="text/javascript" src="pickComponent.js"></script>
+<script type="text/javascript" src="popupMoveToOtherFE.js"></script>
 <title>pickComponent Test</title>
 </head><body>
 
@@ -17,10 +18,13 @@ echo "<div id='here'></div>";
 echo "<script type='text/javascript'>
         function callback(obj) { alert(obj['name'] + ' : ' + obj['id']); }
         Ext.onReady(function() {
-            pickComponent(ComponentTypes.FE, 'here', 'Select Front End', callback);
-            pickComponent(ComponentTypes.CCA, 'here', 'Select CCA', callback, 3);
-            pickComponent(ComponentTypes.WCA, 'here', 'Select WCA', callback, 3);
+            popupMoveToOtherFE('100', \"$rootdir_url\", 0, 0);
         });</script>";
+
+// pickComponent(ComponentTypes.FE, 'here', 'Select Front End', callback);
+// pickComponent(ComponentTypes.CCA, 'here', 'Select CCA', callback, 3);
+// pickComponent(ComponentTypes.WCA, 'here', 'Select WCA', callback, 3);
+
 
 ?>
 </body>

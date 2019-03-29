@@ -25,6 +25,7 @@ class TestData_header extends GenericTable {
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
         $this->swversion = "1.2.0";
         // 1.2.0 refactored to move into the class stuff that was on the calling page
+        //       added popupMoveToOtherFE() buttons
         // 1.1.2 added GetFetmsDescription()
         // 1.1.1 display FETMS_Description above Notes
         // 1.1.0 added Export()
@@ -66,11 +67,11 @@ class TestData_header extends GenericTable {
             $qfe = "SELECT fkFront_Ends from FE_Config
                     WHERE keyFEConfig = " . $this->GetValue('fkFE_Config') . ";";
             $rfe = @mysql_query($qfe,$this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
-            $feid = @mysql_result($rfe,0);
-            $this->fe_keyId = $feid;
+            $feConfigId = @mysql_result($rfe,0);
+            $this->fe_keyId = $feConfigId;
             $this->FrontEnd = new FrontEnd();
-            $this->FrontEnd->Initialize_FrontEnd($feid, $this->fc, FrontEnd::INIT_SLN | FrontEnd::INIT_CONFIGS);
-            $this->Component->Initialize("Front_Ends", $feid, "keyFrontEnds", $this->fc, 'keyFacility');
+            $this->FrontEnd->Initialize_FrontEnd($feConfigId, $this->fc, FrontEnd::INIT_SLN | FrontEnd::INIT_CONFIGS);
+            $this->Component->Initialize("Front_Ends", $feConfigId, "keyFrontEnds", $this->fc, 'keyFacility');
             $this->Component->ComponentType = "Front End";
         }
     }
@@ -100,6 +101,11 @@ class TestData_header extends GenericTable {
         $showrawurl = "testdata.php?showrawdata=1&keyheader=$this->keyId&fc=$this->fc";
         $drawurl = "testdata.php?drawplot=1&keyheader=$this->keyId&fc=$this->fc";
         $exportcsvurl = "export_to_csv.php?keyheader=$this->keyId&fc=$this->fc";
+        $fesn = $this->FrontEnd->GetValue('SN');
+
+        require(site_get_config_main());  // for $rootdir_url
+        $feConfigId = $this->GetValue('fkFE_Config');
+        $popupScript = "javascript:popupMoveToOtherFE($fesn, \"$rootdir_url\", $this->keyId, $feConfigId);";
 
         echo "<table>";
         switch ($this->GetValue('fkTestData_Type')) {
@@ -110,16 +116,16 @@ class TestData_header extends GenericTable {
                 $datasetsurl = "testdata.php?keyheader=$this->keyId&sd=1&fc=$this->fc";
                 echo "
                     <tr><td>
-                        <a style='width:90px' href='$showrawurl' class='button blue2 biground'>
-                        <span style='width:130px'>Show Raw Data</span></a>
+                        <a style='width:100px' href='$showrawurl' class='button blue2 biground'>
+                        <span style='width:90px'>Show Raw Data</span></a>
                     </td></tr>
                     <tr><td>
-                        <a style='width:90px' href='$drawurl' class='button blue2 biground'>
-                        <span style='width:130px'>Generate Plots</span></a>
+                        <a style='width:100px' href='$drawurl' class='button blue2 biground'>
+                        <span style='width:90px'>Generate Plots</span></a>
                     </td></tr>
                     <tr><td>
-                        <a style='width:90px' href='$exportcsvurl' class='button blue2 biground'>
-                        <span style='width:130px'>Export CSV</span></a>
+                        <a style='width:100px' href='$exportcsvurl' class='button blue2 biground'>
+                        <span style='width:90px'>Export CSV</span></a>
                     </td></tr>";
 
                 if (isset($this->FrontEnd)) {
@@ -127,8 +133,12 @@ class TestData_header extends GenericTable {
                     $gridurl .= "&fe=". $this->FrontEnd->keyId . "&b=". $this->GetValue('Band') . "&d=".$this->GetValue('fkTestData_Type');
                     echo "
                         <tr><td>
-                            <a style='width:90px' href='$gridurl' class='button blue2 biground'>
-                            <span style='width:130px'>Edit Data Sets</span></a>
+                            <a style='width:100px' href='$popupScript' class='button blue2 biground'>
+                            <span style='width:90px'>Move to\nOther FE</span></a>
+                        </td></tr>
+                        <tr><td>
+                            <a style='width:100px' href='$gridurl' class='button blue2 biground'>
+                            <span style='width:90px'>Edit Data Sets</span></a>
                         </td></tr>";
                 }
                 break;
@@ -137,12 +147,12 @@ class TestData_header extends GenericTable {
                 //cryo pas
                 echo "
                     <tr><td>
-                        <a style='width:90px' href='$showrawurl' class='button blue2 biground'>
-                        <span style='width:130px'>Show Raw Data</span></a>
+                        <a style='width:100px' href='$showrawurl' class='button blue2 biground'>
+                        <span style='width:90px'>Show Raw Data</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:90px' href='$exportcsvurl' class='button blue2 biground'>
-                        <span style='width:130px'>Export CSV</span></a>
+                        <a style='width:100px' href='$exportcsvurl' class='button blue2 biground'>
+                        <span style='width:90px'>Export CSV</span></a>
                     </tr></td>";
                 break;
 
@@ -150,12 +160,12 @@ class TestData_header extends GenericTable {
                 //cryo first cooldown
                 echo "
                     <tr><td>
-                        <a style='width:90px' href='$showrawurl' class='button blue2 biground'>
-                        <span style='width:130px'>Show Raw Data</span></a>
+                        <a style='width:100px' href='$showrawurl' class='button blue2 biground'>
+                        <span style='width:90px'>Show Raw Data</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:90px' href='$exportcsvurl' class='button blue2 biground'>
-                        <span style='width:130px'>Export CSV</span></a>
+                        <a style='width:100px' href='$exportcsvurl' class='button blue2 biground'>
+                        <span style='width:90px'>Export CSV</span></a>
                     </tr></td>";
                 break;
 
@@ -163,30 +173,37 @@ class TestData_header extends GenericTable {
                 //cryo first warmup
                 echo "
                     <tr><td>
-                        <a style='width:90px' href='$showrawurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$showrawurl' class='button blue2 biground'>
                         <span style='width:130px'>Show Raw Data</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:90px' href='$exportcsvurl' class='button blue2 biground'>
-                        <span style='width:130px'>Export CSV</span></a>
+                        <a style='width:100px' href='$exportcsvurl' class='button blue2 biground'>
+                        <span style='width:90px'>Export CSV</span></a>
                     </tr></td>";
                 break;
 
             default:
                 echo "
                     <tr><td>
-                        <a style='width:90px' href='$showrawurl' class='button blue2 biground'>
-                        <span style='width:130px'>Show Raw Data</span></a>
+                        <a style='width:100px' href='$showrawurl' class='button blue2 biground'>
+                        <span style='width:90px'>Show Raw Data</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:90px' href='$exportcsvurl' class='button blue2 biground'>
-                        <span style='width:130px'>Export CSV</span></a>
+                        <a style='width:100px' href='$exportcsvurl' class='button blue2 biground'>
+                        <span style='width:90px'>Export CSV</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:90px' href='$drawurl' class='button blue2 biground'>
-                        <span style='width:130px'>Generate Plot</span></a>
+                        <a style='width:100px' href='$drawurl' class='button blue2 biground'>
+                        <span style='width:90px'>Generate Plot</span></a>
                     </tr></td>";
-                break;
+
+                if (isset($this->FrontEnd)) {
+                    echo "
+                        <tr><td>
+                            <a style='width:100px' href='$popupScript' class='button blue2 biground'>
+                            <span style='width:90px'>Move to\nOther FE</span></a>
+                        </td></tr>";
+                }break;
         }
         echo "</table>";
     }
