@@ -1,3 +1,19 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+
+<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
+<link rel="stylesheet" type="text/css" href="../tables.css">
+<link rel="stylesheet" type="text/css" href="../buttons.css">
+<link rel="stylesheet" type="text/css" href="../headerbuttons.css">
+
+<link rel="stylesheet" type="text/css" href="../../ext4/resources/css/ext-all.css" />
+<script type="text/javascript" src="../../ext4/ext-all.js"></script>
+<script type='text/javascript' src='../../classes/pickComponent/popupMoveToOtherFE.js'></script>
+<script type="text/javascript" src="loadIFSpectrum.js"></script>
+<script type="text/javascript" src="../spin.js"></script>
+
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require(site_get_config_main());
@@ -46,51 +62,24 @@ if ($drawPlots) {
     exit();
 }
 
-?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-
-<link rel="stylesheet" type="text/css" href="../tables.css">
-<link rel="stylesheet" type="text/css" href="../buttons.css">
-
-<link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
-<link type="text/css" href="../../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
-<link type="text/css" href="../Cartstyle.css" media="screen" rel="Stylesheet" />
-
-<script src="../../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
-<script src="../../ext/ext-all.js"              type="text/javascript"></script>
-<script src="loadIFSpectrum.js"                 type="text/javascript"></script>
-<script src="../spin.js"                        type="text/javascript"></script>
-
-<link rel="stylesheet" type="text/css" href="../headerbuttons.css">
-
-<?php
-require_once($site_FEConfig . '/jsFunctions.php');
-
 $title = "Band $band - IF Spectrum - DataSet $dataSetGroup ";
 
 echo "<title>$title</title>";
 echo "</head>";
-
-echo "<body id = 'body2' onload='createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band);' BGCOLOR='#19475E'>";
+echo "<body BGCOLOR='#19475E'>";
 
 include "header_ifspectrum.php";
 
-echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
+echo "<script type='text/javascript'>
+		Ext.onReady(function() {
+		    createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band);
+        });</script>";
+
 ?>
 
 <div id="content_inside_main2">
-	<div id="toolbar" style="margin-top:10px;"></div>
+	<div id="toolbar" style="margin-top:10px"></div>
     <div id="tabs1"></div>
-    <div id="tab_info" class="x-hide-display"></div>
-    <div id="tab_spurious" class="x-hide-display"></div>
-    <div id="tab_spurious2" class="x-hide-display"></div>
-    <div id="tab_pwrvar2" class="x-hide-display"></div>
-    <div id="tab_pwrvar31" class="x-hide-display"></div>
-    <div id="pwrvarfullband" class="x-hide-display"></div>
-    <div id="tab_totpwr" class="x-hide-display"></div>
 </div>
 </body>
 </html>
