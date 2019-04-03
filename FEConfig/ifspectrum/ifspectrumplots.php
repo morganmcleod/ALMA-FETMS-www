@@ -31,6 +31,12 @@ $drawPlots = isset($_REQUEST['d']) ? $_REQUEST['d'] : 0;
 $ifspec = new IFSpectrum_impl();
 $ifspec -> Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $TDHid);
 
+if ($TDHid) {
+    $tdh = new TestData_header();
+    $tdh->Initialize_TestData_header($TDHid, $fc);
+    $feconfig = $tdh->GetValue('fkFE_Config');
+}
+
 $fesn = $ifspec->FrontEnd->GetValue('SN');
 $tdhIdArray = $ifspec->GetTDHkeyString();
 

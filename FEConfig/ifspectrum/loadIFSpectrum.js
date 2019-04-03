@@ -1,13 +1,17 @@
-/*
- * This is called from ifspectrumplots.php.
- * 
- * Arguments:
- * 
- * fc- Facility code
- * id- Key value of record in TestData_header table
- * 
+/**
+ * @fileoverview loads the IF spectrum toolbars and tabs.
  */
 
+/**
+ * This is called from ifspectrumplots.php.
+ * @param fc Facility code
+ * @param tdhId Key value of record in TestData_header table
+ * @param fe FrontEnds.keyId
+ * @param datasetgroup 
+ * @param band
+ * @param popupCallback function to call for 'move to other fe' button.
+ * @returns
+ */
 function createIFSpectrumTabs(fc, tdhId, fe, datasetgroup, band, popupCallback = false) {    
     Ext.create('Ext.toolbar.Toolbar', {
         renderTo: 'toolbar',

@@ -1,3 +1,18 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+
+<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
+<link rel="stylesheet" type="text/css" href="../tables.css">
+<link rel="stylesheet" type="text/css" href="../buttons.css">
+<link rel="stylesheet" type="text/css" href="../headerbuttons.css">
+
+<link rel="stylesheet" type="text/css" href="../../ext4/resources/css/ext-all.css" />
+<script type="text/javascript" src="../../ext4/ext-all.js"></script>
+<script type='text/javascript' src='../../classes/pickComponent/popupMoveToOtherFE.js'></script>
+<script type="text/javascript" src="loadBP.js"></script>
+
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.eff.php');
@@ -33,7 +48,7 @@ $ssd->Initialize_ScanSetDetails($ssid,$fc);
 $eff = new eff();
 $eff->Initialize_eff_SingleScanSet($ssid,$fc);
 
-// Create the FrontEnd recorod object corresponding to the TestDataHeader configuration:
+// Create the FrontEnd record object corresponding to the TestDataHeader configuration:
 $fe = new FrontEnd();
 $fe->Initialize_FrontEnd_FromConfig($tdh->GetValue('fkFE_Config'), $fc, FrontEnd::INIT_NONE);
 
@@ -43,23 +58,6 @@ $feconfig = $fe->feconfig->keyId;
 // get the front end serial number and the current measurement cartridge band:
 $fesn = $fe->GetValue('SN');
 $band = $tdh->GetValue('Band');
-
-?>
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html401/loose.dtd">
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon" />
-
-<link rel="stylesheet" type="text/css" href="../Cartstyle.css">
-<link rel="stylesheet" type="text/css" href="../tables.css">
-<link rel="stylesheet" type="text/css" href="../buttons.css">
-<link rel="Stylesheet" type="text/css" href="../headerbuttons.css">
-<link rel="Stylesheet" type="text/css" href="../../ext/resources/css/ext-all.css" media="screen"/>
-
-
-<?php
 
 if ($eff->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nfamp') != '') {
     //All three scans are complete, and have already been processed.
@@ -77,14 +75,6 @@ if ($eff->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nf
     $bpstatus = 3;
 }
 
-?>
-
-<script type="text/javascript" src="../../ext/adapter/ext/ext-base.js"></script>
-<script type="text/javascript" src="../../ext/ext-all.js"></script>
-<script type="text/javascript" src="loadBP.js"></script>
-
-<?php
-
 $title = "";
 if ($fesn && !$FETMS_CCA_MODE)
     $title = "FE-$fesn - ";
@@ -95,7 +85,7 @@ echo "<title>" . $title . "</title></head>";
 echo "</head>";
 
 // start the HTML body.  Calls createBPTabs from loadBP.js to customize the button and create the data tabs:
-echo "<body id = 'body2' onload='createBPTabs($fc,$tdh_key,$band,$bpstatus)' BGCOLOR='#19475E'>";
+echo "<body BGCOLOR='#19475E'>";
 echo "<form action='".$_SERVER["PHP_SELF"]."' method='post' name='Submit' id='Submit'>";
 
 // show the standard header with the folllowing text plus Home, Front End NN, Bugs buttons:
@@ -121,11 +111,19 @@ if (isset($_REQUEST['drawplot'])) {
     }
 }
 
+echo "<script type='text/javascript'>
+		Ext.onReady(function() {
+		    function popupCallback() {
+		        popupMoveToOtherFE('FE-$fesn', \"$rootdir_url\", [$tdh->keyId]);
+		    }
+		    createBPTabs($fc, $tdh_key, $band, $bpstatus, popupCallback)
+        });</script>";
+
 // HTML code below are the targets for javaScript loaded from onload=createBPTabs() above.
 ?>
 <div style="padding-left: 2em; padding-top: 1em; width: 1100px; background-color: #19475E;">
     <div id="toolbar" style="margin-top:10px;"></div>
-    <div id="tabs1"  ></div>
+    <div id="tabs1"></div>
 </div>
 </form>
 

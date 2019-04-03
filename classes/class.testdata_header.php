@@ -104,7 +104,7 @@ class TestData_header extends GenericTable {
         $fesn = $this->FrontEnd->GetValue('SN');
 
         require(site_get_config_main());  // for $rootdir_url
-        $popupScript = "javascript:popupMoveToOtherFE(FE-$fesn, \"$rootdir_url\", [$this->keyId]);";
+        $popupScript = "javascript:popupMoveToOtherFE(\"FE-$fesn\", \"$rootdir_url\", [$this->keyId]);";
 
         echo "<table>";
         switch ($this->GetValue('fkTestData_Type')) {
