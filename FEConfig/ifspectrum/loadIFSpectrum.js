@@ -8,8 +8,7 @@
  * 
  */
 
-
-function createIFSpectrumTabs(fc, tdhId, fe, datasetgroup, band) {    
+function createIFSpectrumTabs(fc, tdhId, fe, datasetgroup, band, popupCallback = false) {    
     Ext.create('Ext.toolbar.Toolbar', {
         renderTo: 'toolbar',
         width: 1000,
@@ -34,7 +33,8 @@ function createIFSpectrumTabs(fc, tdhId, fe, datasetgroup, band) {
                 text: '<span style="font-weight:bold;">Move to Other FE</span>',
                 icon: '../icons/arrow_switch.png',
                 handler: function() {
-                    // call popupMoveToOtherFE(sn, \"$rootdir_url\", $this->keyId, $feConfigId);
+                    if (popupCallback)
+                        popupCallback();
                 }
             }
         ]

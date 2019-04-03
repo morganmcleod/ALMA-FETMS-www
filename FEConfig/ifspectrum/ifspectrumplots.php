@@ -31,6 +31,9 @@ $drawPlots = isset($_REQUEST['d']) ? $_REQUEST['d'] : 0;
 $ifspec = new IFSpectrum_impl();
 $ifspec -> Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $TDHid);
 
+$fesn = $ifspec->FrontEnd->GetValue('SN');
+$tdhIdArray = $ifspec->GetTDHkeyString();
+
 // Use $dataSetGroup from the IFSpectrum_impl if we don't have it yet.
 if (!$dataSetGroup)
     $dataSetGroup = $ifspec->getDataSetGroup();
@@ -72,7 +75,10 @@ include "header_ifspectrum.php";
 
 echo "<script type='text/javascript'>
 		Ext.onReady(function() {
-		    createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band);
+		    function popupCallback() {
+		        popupMoveToOtherFE('FE-$fesn', \"$rootdir_url\", [$tdhIdArray]);
+		    }
+		    createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band, popupCallback);
         });</script>";
 
 ?>

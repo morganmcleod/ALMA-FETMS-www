@@ -4,20 +4,27 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
 
-$ctype = isset($_REQUEST['ctype']) ? $_REQUEST['ctype'] : FALSE;
-$band = isset($_REQUEST['band']) ? $_REQUEST['band'] : FALSE;
-$tdhId = isset($_REQUEST['tdhId']) ? $_REQUEST['tdhId'] : FALSE;
-$oldCfg = isset($_REQUEST['oldCfg']) ? $_REQUEST['oldCfg'] : FALSE;
-$newCfg = isset($_REQUEST['newCfg']) ? $_REQUEST['newCfg'] : FALSE;
+$json = json_decode(file_get_contents('php://input'), true);
+
+$ctype = isset($json['ctype']) ? $json['ctype'] : FALSE;
+$band = isset($json['band']) ? $json['band'] : FALSE;
+$newCfg = isset($json['newCfg']) ? $json['newCfg'] : FALSE;
+$tdhIdArray = isset($json['tdhIdArray']) ? $json['tdhIdArray'] : FALSE;
+
 $query = FALSE;
 $output = '{"success" : false}';
 
-if ($tdhId && $oldCfg && $newCfg) {
+if ($tdhIdArray && $newCfg) {
+    $where = "";
+    foreach ($tdhIdArray as $tdh) {
+        if ($where)
+            $where .= " OR ";
+        $where .= "keyId = $tdh";
+    }
     if ($ctype == '100') {
         $query = "UPDATE TestData_header
                   SET fkFE_Config = $newCfg
-                  WHERE keyId = $tdhId
-                  AND fkFE_Config = $oldCfg;";
+                  WHERE ($where);";
     }
     if ($query) {
         $r = mysql_query($query, $db);

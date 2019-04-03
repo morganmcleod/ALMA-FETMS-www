@@ -104,8 +104,7 @@ class TestData_header extends GenericTable {
         $fesn = $this->FrontEnd->GetValue('SN');
 
         require(site_get_config_main());  // for $rootdir_url
-        $feConfigId = $this->GetValue('fkFE_Config');
-        $popupScript = "javascript:popupMoveToOtherFE($fesn, \"$rootdir_url\", $this->keyId, $feConfigId);";
+        $popupScript = "javascript:popupMoveToOtherFE(FE-$fesn, \"$rootdir_url\", [$this->keyId]);";
 
         echo "<table>";
         switch ($this->GetValue('fkTestData_Type')) {
@@ -239,7 +238,8 @@ class TestData_header extends GenericTable {
 
         switch ($this->GetValue('fkTestData_Type')) {
     		case 7:
-    			//IF Spectrum not handled by this class.   See /FEConfig/ifspectrum/ifspectrumplots.php and class IFSpectrum_impl
+    			//IF Spectrum not handled by this class.
+    			// See /FEConfig/ifspectrum/ifspectrumplots.php and class IFSpectrum_impl
     			break;
 
     		case 56:

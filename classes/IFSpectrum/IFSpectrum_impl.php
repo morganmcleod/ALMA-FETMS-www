@@ -77,6 +77,7 @@ class IFSpectrum_impl extends TestData_header {
     public function __construct() {
         $this->swVersion = "1.4.5";
         // 1.4.5  Move sizing the <div> for the info page out to the loader page
+        //        Added GetTDHkeyString()
         // 1.4.4  Display FETMS_Description in info table.
         // 1.4.3  Fix cases where rfMin and rfMax not available in specs.
         // 1.4.2  Show "Traces are drawn with an artificial 10 dB spacing." on IF spectrum plots.
@@ -183,8 +184,10 @@ class IFSpectrum_impl extends TestData_header {
 
             // load the CCA serial number:
             $this->CCASN = 0;
-            if ($this->FrontEnd->ccas[$this->band]->keyId != '') {
-                $this->CCASN = $this->FrontEnd->ccas[$this->band]->GetValue('SN');
+            if (isset($this->FrontEnd->ccas[$this->band])) {
+                if ($this->FrontEnd->ccas[$this->band]->keyId != '') {
+                    $this->CCASN = $this->FrontEnd->ccas[$this->band]->GetValue('SN');
+                }
             }
         } else if ($this->CCAid) {
             $comp = new GenericTable();
@@ -204,6 +207,10 @@ class IFSpectrum_impl extends TestData_header {
         $l .= ", DataSetGroup: " . $this->dataSetGroup
             . ", IFSpectrum Ver. " . $this->swVersion;
         $this->TDHdataLabels[] = $l;
+    }
+
+    public function GetTDHkeyString() {
+        return $this->TDHkeyString;
     }
 
     public function CreateNewProgressFile() {

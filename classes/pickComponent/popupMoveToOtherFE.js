@@ -2,7 +2,14 @@
  * @fileoverview Pop-up window to select the configuration for a FE.
  */
 
-function popupMoveToOtherFE(fromFESN, urlRoot, tdhId, oldCfg) {
+/**
+ * Displays a modal dialog box to select another front end to which test data should be moved.
+ * @param fromDescription {string} description of where moving from. 
+ * @param urlRoot {string} the root URL directory for the website
+ * @param tdhIdArray {array of int} test data header IDs to be moved.
+ * @returns null
+ */
+function popupMoveToOtherFE(fromDescription, urlRoot, tdhIdArray) {
     console.log(arguments[0]);
     console.log(arguments[1]);
     console.log(arguments[2]);
@@ -43,12 +50,16 @@ function popupMoveToOtherFE(fromFESN, urlRoot, tdhId, oldCfg) {
     function onSubmit(btn) {
         var win = btn.up('window');
         var combo = win.down('combo');
-        var params = '?ctype=100&band=0&tdhId=' + tdhId + '&oldCfg=' + oldCfg + '&newCfg=' + combo.newCfg;
         Ext.Ajax.request({
-            url: urlRoot + 'classes/pickComponent/pickComponent_Submit.php' + params,
+            url: urlRoot + 'classes/pickComponent/pickComponent_Submit.php',
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            params: '[]',
+            jsonData: {
+                "ctype": 100,
+                "band": 0,
+                "newCfg": combo.newCfg,
+                "tdhIdArray": tdhIdArray
+            },
             success: function(conn, response, options, eOpts) {
                 var result = Ext.JSON.decode(conn.responseText);
                 console.log(result);
@@ -110,7 +121,7 @@ function popupMoveToOtherFE(fromFESN, urlRoot, tdhId, oldCfg) {
         constrain: true,
         resizable: true,
         modal: true,
-        title: 'Move this test data from FE-' + fromFESN,
+        title: 'Move this test data from ' + fromDescription,
         border: false,
         items : [
             panel            
