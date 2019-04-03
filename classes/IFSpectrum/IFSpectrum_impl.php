@@ -75,7 +75,8 @@ class IFSpectrum_impl extends TestData_header {
     const EXPANDED_SPACING = 2.5; // dB  spacing between traces in expanded plot
 
     public function __construct() {
-        $this->swVersion = "1.4.4";
+        $this->swVersion = "1.4.5";
+        // 1.4.5  Move sizing the <div> for the info page out to the loader page
         // 1.4.4  Display FETMS_Description in info table.
         // 1.4.3  Fix cases where rfMin and rfMax not available in specs.
         // 1.4.2  Show "Traces are drawn with an artificial 10 dB spacing." on IF spectrum plots.
@@ -257,7 +258,6 @@ class IFSpectrum_impl extends TestData_header {
 
     public function DisplayTDHinfo() {
         //Display information for all TestData_header records
-        echo "<br><br><div style='height:900px;width:900px'>";
         echo "<table id = 'table1' border = '1'>";
         echo "<tr class = 'alt'><th colspan='4'>IF Spectrum data sets for TestData_header.dataSetGroup $this->dataSetGroup</th></tr>";
         echo "<tr><th>Key</th><th>Timestamp</th><th>Measured at</th><th>Notes</th></tr>";
@@ -278,7 +278,7 @@ class IFSpectrum_impl extends TestData_header {
             echo "<td style='text-align:left !important;'>" . $t->GetValue('Notes') . "</td>";
             echo "</tr>";
         }
-        echo "</table></div>";
+        echo "</table>";
     }
 
     public function Display_TotalPowerTable($ifChannel) {
