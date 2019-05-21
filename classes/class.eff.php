@@ -573,9 +573,6 @@ class eff {
                 $beameff-> SetValue("eta_pol_spill", $ini_array[$section]['eta_pol_spill']);
                 $beameff-> SetValue("defocus_efficiency", $ini_array[$section]['defocus_efficiency']);
                 $beameff-> SetValue("total_aperture_eff", $ini_array[$section]['total_aperture_eff']);
-//                 $beameff-> SetValue("shift_from_focus_mm", $ini_array[$section]['shift_from_focus_mm']);
-//                 $beameff-> SetValue("subreflector_shift_mm", $ini_array[$section]['subreflector_shift_mm']);
-//                 $beameff-> SetValue("defocus_efficiency_due_to_moving_the_subreflector", $ini_array[$section]['defocus_efficiency_due_to_moving_the_subreflector']);
                 $beameff-> SetValue("squint", $ini_array[$section]['squint']);
                 $beameff-> SetValue("squint_arcseconds", $ini_array[$section]['squint_arcseconds']);
                 $beameff-> SetValue("max_dbdifference", $ini_array[$section]['max_dbdifference']);
