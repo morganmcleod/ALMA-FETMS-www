@@ -22,7 +22,7 @@ function getPASfileName($ifchannel, $band, $lofreq) {
 
 function generatePASfile($ifspec_keyId,$ifchannel,$band,$lofreq,$facility)
 {
-    $getIfSpecData_query=mysql_query("SELECT Freq_Hz,Power_dBm FROM IFSpectrum WHERE
+    $getIfSpecData_query=mysqli_query($link, "SELECT Freq_Hz,Power_dBm FROM IFSpectrum WHERE
             fkSubHeader='$ifspec_keyId' AND fkFacility='$facility' ORDER BY Freq_Hz")
     or die("Could not get IfSpectrum data" .mysql_error());
 
@@ -31,10 +31,10 @@ function generatePASfile($ifspec_keyId,$ifchannel,$band,$lofreq,$facility)
     $filename="$main_write_directory/PASData/" . getPASfileName($ifchannel, $band, $lofreq);
     $delimiter="\t";
 
-    if(mysql_num_rows($getIfSpecData_query) > 0) {
+    if(mysqli_num_rows($getIfSpecData_query) > 0) {
         $file=fopen($filename,'w') or die("Cant create file");
 
-        while($IfSpecData=mysql_fetch_array($getIfSpecData_query))
+        while($IfSpecData=mysqli_fetch_array($getIfSpecData_query))
         {
             $data = $IfSpecData['Freq_Hz'];
             $data .= $delimiter . $IfSpecData['Power_dBm'];

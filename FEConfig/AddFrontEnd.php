@@ -32,7 +32,7 @@ $status_block = "";
 $location_block = "";
 
 $status_query=$getqueries->getStatusLocation('StatusTypes');
-while($stat_rs=mysql_fetch_array($status_query))
+while($stat_rs=mysqli_fetch_array($status_query))
 {
 	$name=$stat_rs['Status'];
 	$keystat=$stat_rs['keyStatusType'];
@@ -40,7 +40,7 @@ while($stat_rs=mysql_fetch_array($status_query))
 }
 
 $location_query=$getqueries->getStatusLocation('Locations');
-while($loc_rs=mysql_fetch_array($location_query))
+while($loc_rs=mysqli_fetch_array($location_query))
 {
 	$location=$loc_rs['Description'];
 	$keyloc=$loc_rs['keyId'];
@@ -49,8 +49,8 @@ while($loc_rs=mysql_fetch_array($location_query))
 
 //Check first to see if Front End record already exists
 $q = "SELECT DefaultFacility FROM DatabaseDefaults";
-$r = @mysql_query($q,$db);
-$facility = @mysql_result($r,0,0);
+$r = mysqli_query($link, $q);
+$facility = ADAPT_mysqli_result($r,0,0);
 
 if(isset($_POST['submit']))
 {
@@ -70,8 +70,8 @@ if(isset($_POST['submit']))
 	$q = "SELECT keyFrontEnds FROM Front_Ends
 		  WHERE keyFacility = $facility
 		  AND SN = $sn;";
-	$r = @mysql_query($q,$db);
-	$keyFE = @mysql_result($r,0,0);
+	$r = mysqli_query($link, $q);
+	$keyFE = ADAPT_mysqli_result($r,0,0);
 	if ($keyFE != ''){
 		Warn("Front End SN $sn already exists. Record not saved.");
 	}
@@ -144,8 +144,8 @@ if(isset($_POST['submit']))
 					";
 						$q = "SELECT Initials FROM Users
 							  ORDER BY Initials ASC;";
-						$r = @mysql_query($q,$db);
-						while($row = @mysql_fetch_Array($r)){
+						$r = mysqli_query($link, $q);
+						while($row = mysqli_fetch_array($r)){
 								echo "<option value='$row[0]'>$row[0]</option>";
 						}
 						echo "

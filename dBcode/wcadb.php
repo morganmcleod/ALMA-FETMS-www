@@ -25,7 +25,7 @@ class WCAdb { //extends DBRetrieval {
 	 * @return Resource ID- results from query
 	 */
 	public function run_query($query) {
-		return @mysql_query($query, $this->dbconnection);
+		return mysqli_query($link, $query, $this->dbconnection);
 	}
 
 	/**
@@ -80,7 +80,7 @@ class WCAdb { //extends DBRetrieval {
 		} elseif($request == 'MS') {
 			$q = "SELECT * FROM WCA_MaxSafePower WHERE fkFE_Component = ".$keys['old']." ORDER BY FreqLO ASC;";
 			$rMS = $this->run_query($q);
-			while ($rowMS = @mysql_fetch_array($rMS)){
+			while ($rowMS = mysqli_fetch_array($rMS)){
 				$qMSnew  = "INSERT INTO WCA_MaxSafePower(fkFacility,FreqLO,VD0_setting,VD1_setting,VD0,VD1,fkFE_Component) ";
 				$qMSnew .= "VALUES('". $rowMS['fkFacility'] . "','" . $rowMS['FreqLO'] . "','" . $rowMS['VD0_setting'];
 				$qMSnew .= "','". $rowMS['VD1_setting'] ."','". $rowMS['VD0'] ."','". $rowMS['VD1'] ."','".$keys['new']."')";

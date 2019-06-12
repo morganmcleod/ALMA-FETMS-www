@@ -45,10 +45,10 @@ and WCAs.TS >= '2017-02-21'
 and fkFE_ComponentType = 11 and Band >= 7 and Band <= 9
 group by Band, SN;";
 
-$r = @mysql_query($q, site_getDbConnection());
+$r = mysqli_query($link, $q, site_getDbConnection());
 $lastBand = false;
 
-while ($row = @mysql_fetch_array($r)) {
+while ($row = mysqli_fetch_array($r)) {
     $band = $row[0];
     $sn = $row[1];
     $id = $row[2];

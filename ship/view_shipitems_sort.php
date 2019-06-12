@@ -37,8 +37,8 @@ if (isset($_GET['AssyPNView'])){
 	//Get PTN from Component Types table, where keyId = AssyPNView
 	$qPTN = "SELECT ProductTreeNumber FROM ComponentTypes WHERE
 	keyId = '$AssyPNView'";
-	$rPTN = @mysql_query ($qPTN, $dbc);
-	$rowPTN = mysql_fetch_array($rPTN);
+	$rPTN = mysql_query ($qPTN, $dbc);
+	$rowPTN = mysqli_fetch_array($rPTN);
 	
 		
 	$ONstatement = $ONstatement . ' AND ShipItems.AssyPN= "' . $rowPTN[0] . '" ';
@@ -123,9 +123,9 @@ if (isset($_GET['p']) && is_numeric($_GET['p'])) { // Already been determined.
 	Shipments.ShipDate, Shipments.keyId FROM ShipItems INNER JOIN Shipments '
 	. $ONstatement . 
 	' ORDER BY Shipments.keyId ASC, Shipments.ShipToLocation ASC, ShipItems.Title ASC, Shipments.ShipDate ASC';	
-	$r = @mysql_query ($q, $dbc);
+	$r = mysql_query ($q, $dbc);
  	}
-	$records = @mysql_num_rows($r);
+	$records = mysqli_num_rows($r);
 	//echo $records . " records<br>";
 	
 	
@@ -167,7 +167,7 @@ Shipments.ShipDate, Shipments.keyId FROM ShipItems INNER JOIN Shipments '
 
 
 if ($initial != "1"){
-$r = @mysql_query ($qShipItems, $dbc);
+$r = mysql_query ($qShipItems, $dbc);
 
 
 $datatype = "shipitems_sort";
@@ -187,7 +187,7 @@ echo '<b><table align="center" cellspacing="1" cellpadding="5" width="100%" bgco
 
 // Fetch and print all the records....
 $bg = '#eeeeee'; 
-while ($row = mysql_fetch_array($r)) {
+while ($row = mysqli_fetch_array($r)) {
 	$bg = ($bg=='#eeeeee' ? '#ffffff' : '#eeeeee');
 		echo '<b><tr bgcolor="' . $bg . '">';
 		
@@ -216,7 +216,7 @@ while ($row = mysql_fetch_array($r)) {
 			//This part retrieves the description from the Locations table
 			$qLoc = "SELECT Description, Notes  FROM Locations WHERE keyId = $ShipToLocationID";		
 			$rLoc = mysql_query ($qLoc, $dbc);
-			$rowLoc = mysql_fetch_array ($rLoc);
+			$rowLoc = mysqli_fetch_array ($rLoc);
 			$tempLoc = $rowLoc[0] . " (" . $rowLoc[1] . ")";
 			echo '<td align="center"><font color="#000000">' . $tempLoc . '</td>';
 			echo '<td align="center"><font color="#000000">' . $ShipDate . '</td>';
@@ -293,6 +293,6 @@ if ($pages > 1) {
 } // End of links section.
 
 */
-@mysql_close($dbc);
+mysql_close($dbc);
 include ('footer.php');
 ?>

@@ -15,10 +15,10 @@ $icount=0;
 if($command=="getCombo")
 {
     //get Component_Type combo box values.
-    $combo_data=mysql_query("SELECT Description FROM ComponentTypes ORDER BY Description ASC")
+    $combo_data=mysqli_query($link, "SELECT Description FROM ComponentTypes ORDER BY Description ASC")
     or die("Could not get combo box data" .mysql_error());
 
-    while($combolist=mysql_fetch_object($combo_data))
+    while($combolist=mysqli_fetch_object($combo_data))
     {
         $combo[]=$combolist;
     }
@@ -53,12 +53,12 @@ else if($command =="saveData")
             $desc = $comps['Description'];
 
             //get Component id for given component description.
-            $compType=mysql_query("SELECT keyId FROM ComponentTypes WHERE Description='$desc'")
+            $compType=mysqli_query($link, "SELECT keyId FROM ComponentTypes WHERE Description='$desc'")
             or die("Could not get component type id" .mysql_error());
 
-            if(mysql_num_rows($compType) > 0)
+            if(mysqli_num_rows($compType) > 0)
             {
-                $type_id=mysql_result($compType,0,'keyId');
+                $type_id=ADAPT_mysqli_result($compType,0,'keyId');
 
                 $sn = $comps['SN'];
                 $band = $comps['Band'];
@@ -66,17 +66,17 @@ else if($command =="saveData")
                 //check if record already exists in the database
                 if($band != "" || $band != 0)
                 {
-                    $checkduplicates=mysql_query("SELECT keyId FROM FE_Components
+                    $checkduplicates=mysqli_query($link, "SELECT keyId FROM FE_Components
                     WHERE fkFE_ComponentType='$type_id' AND keyFacility='$fc'
                     AND SN='$sn' AND Band='$band'");
                 }
                 else
                 {
-                    $checkduplicates=mysql_query("SELECT keyId FROM FE_Components WHERE
+                    $checkduplicates=mysqli_query($link, "SELECT keyId FROM FE_Components WHERE
                             fkFE_ComponentType='$type_id' AND keyFacility='$fc'
                             AND SN='$sn' AND (Band is NULL OR Band='0')");
                 }
-                if(mysql_num_rows($checkduplicates) > 0)
+                if(mysqli_num_rows($checkduplicates) > 0)
                 {
                     $error=1;
                     $duplicate_comps_type[]=$comps['Description'];
@@ -89,14 +89,14 @@ else if($command =="saveData")
                     $esn2 = isset($comps['ESN2']) ? $comps['ESN2'] : '';
                     $pstat = isset($comps['Production_Status']) ? $comps['Production_Status'] : '';
 
-                    $insertQuery=mysql_query("INSERT INTO FE_Components(fkFE_ComponentType,
+                    $insertQuery=mysqli_query($link, "INSERT INTO FE_Components(fkFE_ComponentType,
                     SN,ESN1,ESN2,Band,Production_Status,keyFacility)
                     VALUES('$type_id','$sn','$esn1','$esn2','$band','$pstat','$fc')")
                     or die("Could not insert data" .mysql_error());
 
-                    $getKey_query=mysql_query("SELECT Max(keyId) AS maxkey FROM
+                    $getKey_query=mysqli_query($link, "SELECT Max(keyId) AS maxkey FROM
                     FE_Components");
-                    $inserted_key=mysql_result($getKey_query,0,'maxkey');
+                    $inserted_key=ADAPT_mysqli_result($getKey_query,0,'maxkey');
                     setcookie("compcookie['$icount']",$inserted_key,time()+3600,'/');
                     $icount=$icount+1;
                 }

@@ -41,8 +41,8 @@ $q = "SELECT `Description`
 	FROM `TestData_Types`
 	WHERE `keyId` = $datatype";
 
-$r = @mysql_query($q, $db);
-$test_desc = @mysql_result($r,0,0);
+$r = mysqli_query($link, $q);
+$test_desc = ADAPT_mysqli_result($r,0,0);
 
 $title = $test_desc;
 

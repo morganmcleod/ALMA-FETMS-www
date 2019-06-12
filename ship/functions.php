@@ -6,8 +6,8 @@
 function UpdateShipItemsPTN(){	
 	include('mysql_connect.php');
 	$q = "SELECT PN, keyId FROM ShipItems";
-	$r = @mysql_query ($q, $dbc);
-	while ($row = mysql_fetch_array($r)) {
+	$r = mysql_query ($q, $dbc);
+	while ($row = mysqli_fetch_array($r)) {
 		$tempPN = $row[0];
 		$id = $row[1];
 		$array = explode(".",$tempPN);
@@ -17,7 +17,7 @@ function UpdateShipItemsPTN(){
 			$PTN = $PTNarray[0];
 		$qInsert = "UPDATE ShipItems SET ProductTreeNumber='$PTN'
 		WHERE keyId=$id LIMIT 1";
-		$rInsert = @mysql_query ($qInsert, $dbc);
+		$rInsert = mysql_query ($qInsert, $dbc);
 			
 			
 		}
@@ -29,8 +29,8 @@ function UpdateShipItemsPTN(){
 function ErasePTN(){
 include('mysql_connect.php');
 	$q = "SELECT PN, keyId FROM ShipItems";
-	$r = @mysql_query ($q, $dbc);
-	while ($row = mysql_fetch_array($r)) {
+	$r = mysql_query ($q, $dbc);
+	while ($row = mysqli_fetch_array($r)) {
 		$tempPN = $row[0];
 		$id = $row[1];
 		$array = explode(".",$tempPN);
@@ -41,7 +41,7 @@ include('mysql_connect.php');
 		$PTN = $PTNarray[0];
 		$qInsert = "UPDATE ShipItems SET ProductTreeNumber=''
 		WHERE keyId=$id LIMIT 1";
-		$rInsert = @mysql_query ($qInsert, $dbc);
+		$rInsert = mysql_query ($qInsert, $dbc);
 	}
 }
 

@@ -54,6 +54,6 @@ include('ship_classes.php');
 	
 	$ShipmentTable->ShowTable();
 
-@mysql_close($dbc);
+mysql_close($dbc);
 include ('footer.php');
 ?>

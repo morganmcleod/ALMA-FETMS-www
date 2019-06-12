@@ -99,9 +99,9 @@ class NoiseTemperature extends TestData_header {
         $q = "SELECT keyId, keyFacility FROM Noise_Temp_SubHeader
               WHERE fkHeader = $in_keyId AND keyFacility = $in_fc
               order by keyId ASC;" ;
-        $r = @mysql_query($q, $this->dbconnection);
-        $keyID = @mysql_result($r, 0, 0);
-        $facility = @mysql_result($r, 0, 1);
+        $r = mysqli_query($link, $q, $this->dbconnection);
+        $keyID = ADAPT_mysqli_result($r, 0, 0);
+        $facility = ADAPT_mysqli_result($r, 0, 1);
         $this->NT_SubHeader = new GenericTable();
         $this->NT_SubHeader->Initialize('Noise_Temp_SubHeader', $keyID, 'keyId', $facility, 'keyFacility');
     }
@@ -222,9 +222,9 @@ class NoiseTemperature extends TestData_header {
         AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') ."
         AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
         ORDER BY Band ASC;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
         $this->NT_Logger->WriteLogFile("CCA SN Query: $q");
-        $this->CCA_SN = @mysql_result($r,0,0);
+        $this->CCA_SN = ADAPT_mysqli_result($r,0,0);
         $this->NT_Logger->WriteLogFile("CCA SN: $this->CCA_SN");
 
         //Get WCA Serial Number
@@ -236,9 +236,9 @@ class NoiseTemperature extends TestData_header {
         AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') ."
         AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
         GROUP BY Band ASC;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
         $this->NT_Logger->WriteLogFile("WCA SN Query: $q");
-        $this->WCA_SN = @mysql_result($r,0,0);
+        $this->WCA_SN = ADAPT_mysqli_result($r,0,0);
         $this->NT_Logger->WriteLogFile("WCA SN: $this->WCA_SN");
 
         //Get list of CCA FE_Component keyid, history for this CCA:
@@ -247,9 +247,9 @@ class NoiseTemperature extends TestData_header {
         AND band = " . $this->GetValue('Band') . "
         AND keyFacility =" . $this->GetValue('keyFacility') ."
         GROUP BY keyId DESC";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
         $this->NT_Logger->WriteLogFile("CCA FE_Component key query: $q");
-        while ($row = @mysql_fetch_array($r)) {
+        while ($row = mysqli_fetch_array($r)) {
             // append to the array of CCA component keys:
             $temp = $row[0];
             $this->CCA_componentKeys[] = $row[0];
@@ -285,9 +285,9 @@ class NoiseTemperature extends TestData_header {
                 $q = "SELECT keyID FROM TestData_header WHERE fkTestData_Type = 38
                 AND fkDataStatus = 7 AND fkFE_Components = $compKey
                 AND keyFacility =" . $this->GetValue('keyFacility');
-                $r = @mysql_query($q, $this->dbconnection);
+                $r = mysqli_query($link, $q, $this->dbconnection);
                 $this->NT_Logger->WriteLogFile("CCA Image Rejection Testdata_Header Query: $q");
-                $CCA_TD_key = @mysql_result($r, 0, 0);
+                $CCA_TD_key = ADAPT_mysqli_result($r, 0, 0);
                 $this->NT_Logger->WriteLogFile("CCA TD key: $CCA_TD_key");
 
                 $index++;
@@ -308,15 +308,15 @@ class NoiseTemperature extends TestData_header {
 
             // find the max keyDataSet for CCA image rejection:
             $q ="SELECT MAX(keyDataSet) FROM CCA_TEST_SidebandRatio WHERE fkheader = $CCA_TD_key";
-            $r = @mysql_query($q,$this->dbconnection);
-            $keyDataSet = @mysql_result($r,0,0);
+            $r = mysqli_query($link, $q);
+            $keyDataSet = ADAPT_mysqli_result($r,0,0);
 
             //get CCA Image Rejection data
             $q = "SELECT FreqLO, CenterIF, Pol, SB, SBR
             FROM CCA_TEST_SidebandRatio WHERE fkHeader = $CCA_TD_key
             AND fkFacility =" . $this->GetValue('keyFacility') . "
             ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
-            $r = @mysql_query($q,$this->dbconnection);
+            $r = mysqli_query($link, $q);
             $this->NT_Logger->WriteLogFile("CCA Image Rejection Data Query: $q");
 
             // initialize arrays:
@@ -330,7 +330,7 @@ class NoiseTemperature extends TestData_header {
             $this->IR_Pol1_Sb2 = array();
 
             $count = 0;
-            while ($row = @mysql_fetch_array($r)) {
+            while ($row = mysqli_fetch_array($r)) {
                 $count++;
                 if ($row[2] == 0) {                                    // Pol0
                     if ($row[3] == 2) {                                // SB2
@@ -437,10 +437,10 @@ class NoiseTemperature extends TestData_header {
         }
 
         $this->NT_Logger->WriteLogFile("LoadNoiseTempData query: $q");
-        $r = @mysql_query($q, $this->dbconnection);
+        $r = mysqli_query($link, $q, $this->dbconnection);
 
         // Append the loaded noise temperature data into a 2-d array:
-        while ($row = @mysql_fetch_array($r)) {
+        while ($row = mysqli_fetch_array($r)) {
             $rowData = array (
                 'FreqLO'         => $row[0],
                 'CenterIF'       => $row[1],
@@ -722,13 +722,13 @@ class NoiseTemperature extends TestData_header {
             //query to delete any existing data in the DB with the same TD Header keyID
             $q = "DELETE FROM `Noise_Temp_Band3_Results`
             WHERE  `fkHeader` = " . $this->GetValue('keyId') . "";
-            $r = @mysql_query($q, $this->dbconnection);
+            $r = mysqli_query($link, $q, $this->dbconnection);
 
             // query to insert new data into table
             $q ="INSERT INTO `Noise_Temp_Band3_Results`
             (`fkHeader`,`FreqLO`,`Pol0USB`,`Pol0LSB`,`Pol1USB`,`Pol1LSB`,`AvgNT`)
             VALUES $values";
-            $r = @mysql_query($q, $this->dbconnection);
+            $r = mysqli_query($link, $q, $this->dbconnection);
 
             $this->NT_Logger->WriteLogFile("Band3 Replace Query: $q\r\n");
 
@@ -906,9 +906,9 @@ class NoiseTemperature extends TestData_header {
             AND fkDataStatus=7
             AND keyFacility =" . $this->GetValue('keyFacility') ."
             GROUP BY keyId DESC";
-            $r = @mysql_query($q,$this->dbconnection);
+            $r = mysqli_query($link, $q);
             $this->NT_Logger->WriteLogFile("CCA Noise Temp Testdata record query: $q");
-            $CCA_NT_key = @mysql_result($r,0,0);
+            $CCA_NT_key = ADAPT_mysqli_result($r,0,0);
             $this->NT_Logger->WriteLogFile("CCA NoiseTemp Testdataheader key: $CCA_NT_key");
             $cnt++;
         } while ($CCA_NT_key === FALSE && $cnt < count($this->CCA_componentKeys));
@@ -922,20 +922,20 @@ class NoiseTemperature extends TestData_header {
 
             // find the max keyDataSet for CCA noise temp:
             $q ="SELECT MAX(keyDataSet) FROM CCA_TEST_NoiseTemperature WHERE fkheader = $CCA_NT_key";
-            $r = @mysql_query($q,$this->dbconnection);
-            $keyDataSet = @mysql_result($r,0,0);
+            $r = mysqli_query($link, $q);
+            $keyDataSet = ADAPT_mysqli_result($r,0,0);
 
             // finally get the CCA Noise Temp data...I'm sure there's a better way
             $q ="SELECT FreqLO, CenterIF, Pol, SB, Treceiver FROM CCA_TEST_NoiseTemperature
             WHERE fkheader = $CCA_NT_key AND keyDataSet = $keyDataSet
             ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
-            $r = @mysql_query($q,$this->dbconnection);
+            $r = mysqli_query($link, $q);
             $this->NT_Logger->WriteLogFile("CCA Noise Temp data query: $q");
 
             $cnt_band9_0 = 0;
             $cnt_band9_1 = 0;
             $currentLO = false;
-            while ($row = @mysql_fetch_array($r)) {
+            while ($row = mysqli_fetch_array($r)) {
 
                 // special band 3 NT_specs
                 if ( $this->GetValue('Band') == 3 && $row[0] == 104) {
@@ -1166,10 +1166,10 @@ class NoiseTemperature extends TestData_header {
             AND TestData_header.DataSetGroup= " . $this->GetValue('DataSetGroup')."
             AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ".$this->GetValue('fkFE_Config').")
             ORDER BY `TestData_header`.keyID DESC";
-            $r = @mysql_query($q, $this->dbconnection);
+            $r = mysqli_query($link, $q, $this->dbconnection);
 
             $cnt = 0; //initialize counter
-            while ($row = @mysql_fetch_array($r)) {
+            while ($row = mysqli_fetch_array($r)) {
                 if ($cnt == 0) { // initialize label variables
                     $keyId = $row[0];
                     $maxTS = $row[1];

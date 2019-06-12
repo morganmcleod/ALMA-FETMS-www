@@ -13,6 +13,6 @@ include ('header.php');
 	$Shipment->Display_data();
 	$Shipment->Import_csv();
 
-@mysql_close($dbc);	
+mysql_close($dbc);	
 include ('footer.php');
 ?>

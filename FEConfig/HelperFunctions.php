@@ -41,7 +41,7 @@ function FixHyperlinkForMySQL($doclink){
      */
     $newdoclink = trim($doclink);
     if (substr($doclink,0,1) == "\\"){
-        $newdoclink = @mysql_real_escape_string($doclink);
+        $newdoclink = mysqli_real_escape_string($link, $doclink);
     }
     return trim($newdoclink);
 }

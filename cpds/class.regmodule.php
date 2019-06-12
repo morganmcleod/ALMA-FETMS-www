@@ -2,7 +2,7 @@
 class RegulatorModule extends GenericTable{
 	public function Initialize_RegulatorModule($in_keyId,$in_dbconnection){
 		$this->dbconnection = $in_dbconnection;
-		parent::Initialize("CPDS_RegModules",$in_keyId,"keyId",$this->dbconnection);
+		parent::Initialize("CPDS_RegModules",$in_keyId,"keyId");
 	}
 	public function NewRecord_RegulatorModule(){
 		parent::NewRecord('CPDS_RegModules');

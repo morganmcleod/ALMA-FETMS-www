@@ -6,7 +6,7 @@ class dbGetQueries
     function getFrontEndConfig($feConfig,$facility)
     {
         //called from MupdateFE.php
-        $getFrontConfig=mysql_query("SELECT * FROM Front_Ends WHERE keyFrontEnds=(SELECT fkFront_Ends FROM FE_Config
+        $getFrontConfig=mysqli_query($link, "SELECT * FROM Front_Ends WHERE keyFrontEnds=(SELECT fkFront_Ends FROM FE_Config
         WHERE keyFEConfig='$feConfig' AND keyFacility='$facility')")
         or die("Could not get data" .mysql_error());
         return $getFrontConfig;
@@ -15,7 +15,7 @@ class dbGetQueries
     function getTwoDistinctNoCriteria($what1,$what2,$where,$orderby)
     {
         $this->tablename=$where;
-        $getvals=mysql_query("SELECT $what1,max($what2) AS maxkey FROM $this->tablename
+        $getvals=mysqli_query($link, "SELECT $what1,max($what2) AS maxkey FROM $this->tablename
         GROUP BY $what1")
         or die("Could not get data from!" .mysql_error());
         return $getvals;
@@ -23,7 +23,7 @@ class dbGetQueries
     function getFrontEndsSummary($facility = '%')
     {
         //called from GetFEData.php
-        $fe_summary=mysql_query("SELECT max(FE_Config.keyFEConfig) AS maxkey, Front_Ends.SN, Front_Ends.keyFacility,
+        $fe_summary=mysqli_query($link, "SELECT max(FE_Config.keyFEConfig) AS maxkey, Front_Ends.SN, Front_Ends.keyFacility,
                                  Front_Ends.Docs
                                  FROM FE_Config
                                  JOIN Front_Ends ON (FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
@@ -36,7 +36,7 @@ class dbGetQueries
     function getStatLocAndNotesWithJoin($keyval,$facility = '%')
     {
         //called from GetFEData.php
-        $statlist=mysql_query("Select FE_Config.keyFEConfig as config,Front_Ends.SN,FE_Config.TS,
+        $statlist=mysqli_query($link, "Select FE_Config.keyFEConfig as config,Front_Ends.SN,FE_Config.TS,
                                 StatTab.Notes,StatTab.Status,StatTab.Description,StatTab.Updated_By,
                                 Front_Ends.keyFacility AS keyFacility, Front_Ends.Docs AS Docs
 
@@ -64,7 +64,7 @@ class dbGetQueries
     function getFESN($keyFE,$facility)
     {
         //called from UpdateFE.php,ShowFEConfig.php
-        $fesn=mysql_query("SELECT SN FROM Front_Ends WHERE keyFrontEnds=(SELECT fkFront_Ends FROM FE_Config
+        $fesn=mysqli_query($link, "SELECT SN FROM Front_Ends WHERE keyFrontEnds=(SELECT fkFront_Ends FROM FE_Config
                            WHERE keyFEConfig='$keyFE' AND FE_Config.keyFacility='$facility') AND
                            Front_Ends.keyFacility='$facility'")
 
@@ -75,7 +75,7 @@ class dbGetQueries
     function getFEkeys($fe_sn,$facility)
     {
         //called from ShowFEConfig.php
-        $fe_keys=mysql_query("SELECT keyFEConfig FROM FE_Config WHERE fkFront_Ends= ANY(SELECT keyFrontEnds FROM
+        $fe_keys=mysqli_query($link, "SELECT keyFEConfig FROM FE_Config WHERE fkFront_Ends= ANY(SELECT keyFrontEnds FROM
                               Front_Ends WHERE SN='$fe_sn' AND keyFacility='$facility') AND keyFacility='$facility'
                               ORDER BY keyFEConfig DESC")
         or die("Could not get front end keys" .mysql_error());
@@ -85,7 +85,7 @@ class dbGetQueries
     {
         //called from ShowFEConfig.php
         $this->key=$keyval;
-        $statuslocationAndnotesData=mysql_query("SELECT FE_StatusLocationAndNotes.keyId,
+        $statuslocationAndnotesData=mysqli_query($link, "SELECT FE_StatusLocationAndNotes.keyId,
                                     FE_StatusLocationAndNotes.TS,
                                     FE_StatusLocationAndNotes.Updated_By,
                                     FE_StatusLocationAndNotes.lnk_Data,FE_StatusLocationAndNotes.Notes,
@@ -103,7 +103,7 @@ class dbGetQueries
     function getFrontEndComponents($feConfig,$band,$facility, $ComponentType = '%')
     {
         //called from getFrontEndData.php
-        $feComponents=mysql_query("SELECT FE_Components.keyId,FE_Components.SN,FE_Components.fkFE_ComponentType,
+        $feComponents=mysqli_query($link, "SELECT FE_Components.keyId,FE_Components.SN,FE_Components.fkFE_ComponentType,
                                 FE_Components.ESN1,FE_Components.ESN2,FE_Components.Description,
                                 FE_Components.Band,FE_Components.TS,ComponentTypes.Description AS Notes
                                 FROM FE_Components
@@ -119,7 +119,7 @@ class dbGetQueries
     function getFECompsNoBand($feConfig,$facility, $ComponentType = '%')
     {
         //called from getFrontEndData.php
-        $feComponents=mysql_query("SELECT FE_Components.keyId,FE_Components.SN,FE_Components.fkFE_ComponentType,
+        $feComponents=mysqli_query($link, "SELECT FE_Components.keyId,FE_Components.SN,FE_Components.fkFE_ComponentType,
                     FE_Components.ESN1,FE_Components.ESN2,FE_Components.Description,
                     FE_Components.Band,
                     FE_Components.TS,ComponentTypes.Description AS Notes FROM FE_Components
@@ -135,7 +135,7 @@ class dbGetQueries
     function getAllCompsofType($type,$band)
     {
         //called from AddFrontEnd.php
-        $comp=mysql_query("SELECT Max(keyId) AS maxkey, SN FROM FE_Components WHERE fkFE_ComponentType='$type' AND Band='$band'
+        $comp=mysqli_query($link, "SELECT Max(keyId) AS maxkey, SN FROM FE_Components WHERE fkFE_ComponentType='$type' AND Band='$band'
         GROUP BY SN ORDER BY SN ASC")
         or die("Could not get components" .mysql_error());
         return $comp;
@@ -143,7 +143,7 @@ class dbGetQueries
     function getCompsWithoutband($type)
     {
         //called from AddFrontEnd.php
-        $comp=mysql_query("SELECT MAX(keyId) AS maxkey, SN FROM FE_Components WHERE fkFE_ComponentType='$type'
+        $comp=mysqli_query($link, "SELECT MAX(keyId) AS maxkey, SN FROM FE_Components WHERE fkFE_ComponentType='$type'
         AND Band is Null
         GROUP BY SN ORDER BY SN ASC")
         or die("Could not get components" .mysql_error());
@@ -152,13 +152,13 @@ class dbGetQueries
     function getComponentTypes()
     {
         //called from FEHome.php
-        $comptypes=mysql_query("SELECT keyId, Description FROM ComponentTypes ORDER BY Description ASC");
+        $comptypes=mysqli_query($link, "SELECT keyId, Description FROM ComponentTypes ORDER BY Description ASC");
         return $comptypes;
     }
     function getTestDataHeader($fesn,$feConfig,$band,$facility,$ComponentType = "%")
     {
         //called from getFrontEndData.php
-        $testheader=mysql_query("SELECT TestData_header.keyId as TestKey,TestData_header.fkFE_Config, FE_Components.SN,
+        $testheader=mysqli_query($link, "SELECT TestData_header.keyId as TestKey,TestData_header.fkFE_Config, FE_Components.SN,
                                 ComponentTypes.Description AS ComponentDescription,DataStatus.Description,
                                 TestData_Types.TestData_TableName,
                                 TestData_header.Notes, TestData_header.TS
@@ -184,7 +184,7 @@ class dbGetQueries
     }
     function getCompsTestDataHeader($fkComp)
     {
-        $testheader=mysql_query("SELECT TestData_header.keyId as TestKey,TestData_header.fkFE_Components, FE_Components.SN,
+        $testheader=mysqli_query($link, "SELECT TestData_header.keyId as TestKey,TestData_header.fkFE_Components, FE_Components.SN,
                         ComponentTypes.Description AS ComponentDescription,DataStatus.Description,
                         TestData_Types.TestData_TableName,
                         TestData_header.Notes, TestData_header.TS
@@ -200,39 +200,39 @@ class dbGetQueries
     function getStatusLocation($tablename)
     {
         //called from MupdateFE.php,AddFrontEnd.php
-        $list=mysql_query("SELECT * FROM $tablename");
+        $list=mysqli_query($link, "SELECT * FROM $tablename");
         return $list;
     }
     function getNumBands($keyFE)
     {
         //called from ShowFEConfig.php
-        $getnumrows=mysql_query("SELECT Band FROM FE_Components WHERE
+        $getnumrows=mysqli_query($link, "SELECT Band FROM FE_Components WHERE
                                 keyId=ANY(Select fkFE_Components FROM FE_ConfigLink WHERE fkFE_Config='$keyFE')
                                 AND fkFE_ComponentType='20' GROUP BY Band")
         or die("Could not get data" .mysql_error());
 
-        $numbands=mysql_num_rows($getnumrows);
+        $numbands=mysqli_num_rows($getnumrows);
 
         return $numbands;
     }
     function getMaxKey($sn,$facility)
     {
         //called from AddFrontEnd.php
-        $maxkey_query=mysql_query("SELECT max(keyFrontEnds) AS maxFEkey FROM Front_Ends
+        $maxkey_query=mysqli_query($link, "SELECT max(keyFrontEnds) AS maxFEkey FROM Front_Ends
         WHERE SN='$sn' AND keyFacility='$facility'")
         or die("Could not get Max FE key" .mysql_error());
 
-        $maxkey=mysql_result($maxkey_query,0,"maxFEkey");
+        $maxkey=ADAPT_mysqli_result($maxkey_query,0,"maxFEkey");
 
         return $maxkey;
     }
     function getMaxKeyFE_Config($maxFEkey)
     {
         //called from AddFrontEnd.php
-        $FE_Configkey_query=mysql_query("SELECT MAX(keyFEConfig) as KeyFE FROM FE_Config WHERE fkFront_Ends='$maxFEkey'")
+        $FE_Configkey_query=mysqli_query($link, "SELECT MAX(keyFEConfig) as KeyFE FROM FE_Config WHERE fkFront_Ends='$maxFEkey'")
         or die("Could not get FE_Config key" .mysql_error());
 
-        $Fe_configkey=mysql_result($FE_Configkey_query,0,"KeyFE");
+        $Fe_configkey=ADAPT_mysqli_result($FE_Configkey_query,0,"KeyFE");
 
         return $Fe_configkey;
     }
@@ -241,21 +241,21 @@ class dbGetQueries
         //called from MupdateFE.php
         if($band != 0)
         {
-            $allComponents=mysql_query("SELECT SN, keyId FROM FE_Components WHERE
+            $allComponents=mysqli_query($link, "SELECT SN, keyId FROM FE_Components WHERE
                             keyId=ANY(SELECT fkFE_Components FROM FE_ConfigLink WHERE fkFE_Config='$keyFE') AND
                             fkFE_ComponentType='$componentType' AND Band='$band' ORDER BY keyId DESC LIMIT 1");
         }
         else
         {
-            $allComponents=mysql_query("SELECT SN, keyId FROM FE_Components WHERE
+            $allComponents=mysqli_query($link, "SELECT SN, keyId FROM FE_Components WHERE
                             keyId=ANY(SELECT fkFE_Components FROM FE_ConfigLink WHERE fkFE_Config='$keyFE') AND
                             fkFE_ComponentType='$componentType' AND (Band=0 OR Band is NULL) ORDER BY keyId DESC LIMIT 1");
         }
 
-        if(mysql_num_rows($allComponents)>0)
+        if(mysqli_num_rows($allComponents)>0)
         {
-            $component_sn=mysql_result($allComponents,0,"SN");
-            $component_key=mysql_result($allComponents,0,"keyId");
+            $component_sn=ADAPT_mysqli_result($allComponents,0,"SN");
+            $component_key=ADAPT_mysqli_result($allComponents,0,"keyId");
         }
         $component_option=array("cSN" => $component_sn, "cKey" => $component_key);
 
@@ -264,7 +264,7 @@ class dbGetQueries
     }
     function getStatusAndLocation($fkFEConfig)
     {
-        $statandLoc=mysql_query("SELECT fkLocationNames,fkStatusType FROM FE_StatusLocationAndNotes
+        $statandLoc=mysqli_query($link, "SELECT fkLocationNames,fkStatusType FROM FE_StatusLocationAndNotes
                                 WHERE fkFEConfig='$fkFEConfig' ORDER BY TS DESC LIMIT 1")
         or die("Could not get data" .mysql_error());
 
@@ -273,7 +273,7 @@ class dbGetQueries
     function getSelectedCompConfig($key)
     {
         //called from getComponentData.php
-        $getcomps=mysql_query("SELECT FE_Components.keyId,FE_Components.fkFE_ComponentType,FE_Components.SN,
+        $getcomps=mysqli_query($link, "SELECT FE_Components.keyId,FE_Components.fkFE_ComponentType,FE_Components.SN,
                                FE_Components.ESN1,FE_Components.ESN2,FE_Components.Description,FE_Components.Link1,
                                FE_Components.Description,
                                FE_Components.Band,FE_Components.TS ,
@@ -288,16 +288,16 @@ class dbGetQueries
     function getAllCompConfig($band,$comp_type,$selected_key)
     {
         //called from getComponentData.php
-        $sn_query=mysql_query("SELECT SN FROM FE_Components WHERE keyId='$selected_key'");
+        $sn_query=mysqli_query($link, "SELECT SN FROM FE_Components WHERE keyId='$selected_key'");
 
-        $num=mysql_num_rows($sn_query);
+        $num=mysqli_num_rows($sn_query);
         if($num > 0)
         {
-            $sn=mysql_result($sn_query,0,"SN");
+            $sn=ADAPT_mysqli_result($sn_query,0,"SN");
         }
         if($band != 0)
         {
-            $getcomps=mysql_query("SELECT FE_Components.keyId,FE_Components.fkFE_ComponentType,FE_Components.SN,
+            $getcomps=mysqli_query($link, "SELECT FE_Components.keyId,FE_Components.fkFE_ComponentType,FE_Components.SN,
                                FE_Components.ESN1,FE_Components.ESN2,FE_Components.Description,
                                FE_Components.Band,FE_Components.TS,
                                ComponentTypes.Description AS Descr
@@ -310,7 +310,7 @@ class dbGetQueries
         }
         else
         {
-            $getcomps=mysql_query("SELECT FE_Components.keyId,FE_Components.fkFE_ComponentType,FE_Components.SN,
+            $getcomps=mysqli_query($link, "SELECT FE_Components.keyId,FE_Components.fkFE_ComponentType,FE_Components.SN,
                                FE_Components.ESN1,FE_Components.ESN2,FE_Components.Description,
                                FE_Components.Band,FE_Components.TS,
                                ComponentTypes.Description AS Descr
@@ -327,7 +327,7 @@ class dbGetQueries
     function getOperatingParams($tablename,$selected_key,$band,$comp_type)
     {
         //called from getComponentData.php
-        $getOpParams=mysql_query("SELECT * FROM $tablename WHERE fkComponent=ANY(SELECT keyId FROM FE_Components
+        $getOpParams=mysqli_query($link, "SELECT * FROM $tablename WHERE fkComponent=ANY(SELECT keyId FROM FE_Components
                                  WHERE fkFE_ComponentType='$comp_type' AND SN=(SELECT SN FROM FE_Components WHERE
                                  keyId='$selected_key') AND Band='$band')
                                  ORDER BY fkComponent DESC");
@@ -336,7 +336,7 @@ class dbGetQueries
     function getTempSensors($compkey)
     {
         //called from getComponentData.php
-        $getTempSensors=mysql_query("SELECT * FROM CCA_TempSensors
+        $getTempSensors=mysqli_query($link, "SELECT * FROM CCA_TempSensors
                             WHERE fkHeader=ANY(SELECT keyId FROM TestData_header
                             WHERE fkFE_Components='$compkey' AND fkTestData_Type='2')");
         return $getTempSensors;
@@ -344,7 +344,7 @@ class dbGetQueries
     function getYIGvalues($selected_key,$band)
     {
         //called from getComponentData.php
-        $getYig=mysql_query("SELECT fkFE_Component, FloYIG,FhiYIG FROM WCAs WHERE
+        $getYig=mysqli_query($link, "SELECT fkFE_Component, FloYIG,FhiYIG FROM WCAs WHERE
                              fkFE_Component=ANY(SELECT keyId FROM FE_Components
                              WHERE fkFE_ComponentType='11' AND SN=(SELECT SN FROM FE_Components WHERE
                             keyId='$selected_key') AND Band='$band')
@@ -355,7 +355,7 @@ class dbGetQueries
     function getCompsSummary($ctype,$facility = '%')
     {
         //called from GetFEData.php
-        $getcomps=mysql_query("SELECT max(keyId) AS MaxKey, SN, Band, keyFacility FROM FE_Components
+        $getcomps=mysqli_query($link, "SELECT max(keyId) AS MaxKey, SN, Band, keyFacility FROM FE_Components
                                WHERE fkFE_ComponentType='$ctype' AND keyFacility LIKE '$facility'
                                 GROUP BY (SN + 0), Band")
         or die("Could not get Data" .mysql_error());
@@ -364,7 +364,7 @@ class dbGetQueries
     function getStatLocAndNotesComps($keyval,$facility = '%')
     {
         //called from GetFEData.php
-            $statlist=mysql_query("Select FE_Components.keyId as config,FE_Components.SN,FE_Components.Band,FE_Components.TS,
+            $statlist=mysqli_query($link, "Select FE_Components.keyId as config,FE_Components.SN,FE_Components.Band,FE_Components.TS,
                                 StatTab.Notes,StatTab.Status,StatTab.Description,StatTab.Updated_By,
                                 FE_Components.keyFacility
                                 FROM FE_Components
@@ -391,23 +391,23 @@ class dbGetQueries
     {
         //called from ShowComponents.php
 
-        $sn_query=mysql_query("SELECT SN FROM FE_Components WHERE keyId='$comp_key'
+        $sn_query=mysqli_query($link, "SELECT SN FROM FE_Components WHERE keyId='$comp_key'
                                 AND keyFacility='$facility'");
-        $num=mysql_num_rows($sn_query);
+        $num=mysqli_num_rows($sn_query);
         if($num > 0)
         {
-            $sn=mysql_result($sn_query,0,"SN");
+            $sn=ADAPT_mysqli_result($sn_query,0,"SN");
         }
 
         if($band != 0)
         {
-            $getCompkeys=mysql_query("SELECT keyId FROM FE_Components WHERE SN='$sn' AND Band='$band' AND
+            $getCompkeys=mysqli_query($link, "SELECT keyId FROM FE_Components WHERE SN='$sn' AND Band='$band' AND
             fkFE_ComponentType='$comptype' AND keyFacility='$facility'")
             or die("Could not get component keys" .mysql_error());
         }
         else
         {
-            $getCompkeys=mysql_query("SELECT keyId FROM FE_Components WHERE SN='$sn'
+            $getCompkeys=mysqli_query($link, "SELECT keyId FROM FE_Components WHERE SN='$sn'
             AND (Band='0' OR Band is Null) AND keyFacility='$facility'
             AND fkFE_ComponentType='$comptype'")
             or die("Could not get component keys" .mysql_error());
@@ -418,7 +418,7 @@ class dbGetQueries
     {
         //called from ShowComponents.php
 
-        $statuslocationAndnotesData=mysql_query("SELECT FE_StatusLocationAndNotes.keyId,
+        $statuslocationAndnotesData=mysqli_query($link, "SELECT FE_StatusLocationAndNotes.keyId,
                                     FE_StatusLocationAndNotes.TS,
                                     FE_StatusLocationAndNotes.Updated_By,
                                     FE_StatusLocationAndNotes.lnk_Data,FE_StatusLocationAndNotes.Notes,
@@ -442,15 +442,15 @@ class dbGetQueries
     function getCompSN($key,$facility)
     {
         //called from MupdateComponents.php
-        $compband=mysql_query("SELECT Band, fkFE_ComponentType FROM FE_Components WHERE keyId='$key' AND
+        $compband=mysqli_query($link, "SELECT Band, fkFE_ComponentType FROM FE_Components WHERE keyId='$key' AND
         keyFacility='$facility'");
-        $band=mysql_result($compband,0,"Band");
-        $comp_type=mysql_result($compband,0,"fkFE_ComponentType");
+        $band=ADAPT_mysqli_result($compband,0,"Band");
+        $comp_type=ADAPT_mysqli_result($compband,0,"fkFE_ComponentType");
 
         if($band != Null || $band != 0)
         {
             //called from MupdateComponents.php
-            $compsn=mysql_query("SELECT MAX(keyId) as MaxKey,SN FROM FE_Components WHERE
+            $compsn=mysqli_query($link, "SELECT MAX(keyId) as MaxKey,SN FROM FE_Components WHERE
             SN=(SELECT SN FROM FE_Components
             WHERE keyID='$key' AND Band='$band' AND keyFacility='$facility') AND fkFE_ComponentType='$comp_type'
             AND Band='$band' AND keyFacility='$facility' GROUP BY SN");
@@ -458,7 +458,7 @@ class dbGetQueries
         else
         {
             //called from MupdateComponents.php
-            $compsn=mysql_query("SELECT MAX(keyId) as MaxKey ,SN FROM FE_Components WHERE SN=(SELECT SN FROM FE_Components
+            $compsn=mysqli_query($link, "SELECT MAX(keyId) as MaxKey ,SN FROM FE_Components WHERE SN=(SELECT SN FROM FE_Components
             WHERE keyID='$key' AND (Band is NULL OR Band ='0') AND keyFacility='$facility')
             AND fkFE_ComponentType='$comp_type' AND keyFacility='$facility'
             AND Band='$band' GROUP BY SN");
@@ -470,7 +470,7 @@ class dbGetQueries
     function getPrevComponents($keyComp,$facility)
     {
         //called from MupdateComponents.php
-        $getComps=mysql_query("SELECT * FROM FE_Components WHERE keyId='$keyComp' AND keyFacility='$facility'")
+        $getComps=mysqli_query($link, "SELECT * FROM FE_Components WHERE keyId='$keyComp' AND keyFacility='$facility'")
         or die("Could not get Components data" .mysql_error());
 
         return $getComps;
@@ -478,17 +478,17 @@ class dbGetQueries
     function getcomponentName($comptype)
     {
         //called from MupdateComponents.php
-        $getCompName=mysql_query("SELECT Description FROM ComponentTypes WHERE keyId='$comptype'")
+        $getCompName=mysqli_query($link, "SELECT Description FROM ComponentTypes WHERE keyId='$comptype'")
         or die("Could not get comp name" .mysql_error());
 
-        $compname=mysql_result($getCompName,0,"Description");
+        $compname=ADAPT_mysqli_result($getCompName,0,"Description");
         return $compname;
 
     }
     function getStatusAndLocationComp($compkey,$facility)
     {
         //called from MupdateComponents.php
-        $statandLoc=mysql_query("SELECT fkLocationNames,fkStatusType FROM FE_StatusLocationAndNotes
+        $statandLoc=mysqli_query($link, "SELECT fkLocationNames,fkStatusType FROM FE_StatusLocationAndNotes
                                 WHERE fkFEComponents='$compkey' AND keyFacility='$facility'
                                 ORDER BY TS DESC LIMIT 1")
         or die("Could not get data" .mysql_error());
@@ -498,27 +498,27 @@ class dbGetQueries
     function getWhichFE($comp_id)
     {
         //called from getComponentsData.php
-        $getConfig_query=mysql_query("SELECT MAX(fkFE_Config) AS MaxFEConfig
+        $getConfig_query=mysqli_query($link, "SELECT MAX(fkFE_Config) AS MaxFEConfig
                         FROM FE_ConfigLink WHERE fkFE_Components='$comp_id'");
 
-        if(mysql_num_rows($getConfig_query) > 0)
+        if(mysqli_num_rows($getConfig_query) > 0)
         {
-            $fe_config=mysql_result($getConfig_query,0,"MaxFEConfig");
+            $fe_config=ADAPT_mysqli_result($getConfig_query,0,"MaxFEConfig");
 
-            $fe_sn_query=mysql_query("SELECT SN FROM Front_Ends WHERE
+            $fe_sn_query=mysqli_query($link, "SELECT SN FROM Front_Ends WHERE
             keyFrontEnds=(SELECT fkFront_Ends FROM FE_Config WHERE keyFEConfig='$fe_config')")
             or die("Could not get FE SN" .mysql_error());
 
-            if(mysql_num_rows($fe_sn_query) > 0)
+            if(mysqli_num_rows($fe_sn_query) > 0)
             {
-                $fesn=mysql_result($fe_sn_query,0,"SN");
+                $fesn=ADAPT_mysqli_result($fe_sn_query,0,"SN");
             }
 
-            $getMaxFEConfig_query=mysql_query("SELECT MAX(keyFEConfig) as MaxKeyConfig
+            $getMaxFEConfig_query=mysqli_query($link, "SELECT MAX(keyFEConfig) as MaxKeyConfig
                             FROM FE_Config WHERE fkFront_Ends=(SELECT MAX(keyFrontEnds)
                             FROM Front_Ends WHERE SN='$fesn')")
             or die("Could not get data" .mysql_error());
-            $getMaxFEConfig=mysql_result($getMaxFEConfig_query,0,"MaxKeyConfig");
+            $getMaxFEConfig=ADAPT_mysqli_result($getMaxFEConfig_query,0,"MaxKeyConfig");
 
             $arr=array("FESN" => $fesn,"FEConfig" => $getMaxFEConfig);
 

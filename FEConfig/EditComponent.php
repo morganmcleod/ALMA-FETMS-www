@@ -318,8 +318,8 @@ echo "          <tr><th>Updated By</th>
                         <option value=''></option>";
                         $q = "SELECT Initials FROM Users
                               ORDER BY Initials ASC;";
-                        $r = @mysql_query($q,$db);
-                        while($row = @mysql_fetch_Array($r)){
+                        $r = mysqli_query($link, $q);
+                        while($row = mysqli_fetch_array($r)){
                             echo "<option value='$row[0]'>$row[0]</option>";
                         }
                         echo "</select></td></tr>";

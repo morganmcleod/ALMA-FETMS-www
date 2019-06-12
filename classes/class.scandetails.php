@@ -30,8 +30,8 @@ class ScanDetails extends GenericTable {
 
         //Get keyId for Beam Efficiencies record for this scan
         $qbe = "SELECT keyBeamEfficiencies FROM BeamEfficiencies WHERE fkScanDetails = $keyId;";
-        $rbe = @mysql_query($qbe,$this->dbconnection);
-        $keyBE = @mysql_result($rbe,0);
+        $rbe = mysqli_query($link, $qbe);
+        $keyBE = ADAPT_mysqli_result($rbe,0);
         $this->BeamEfficencies = new GenericTable();
         $this->BeamEfficencies->Initialize("BeamEfficiencies",$keyBE,"keyBeamEfficiencies",$this->fc,'fkFacility');
     }
@@ -39,8 +39,8 @@ class ScanDetails extends GenericTable {
     public function GetNominalAnglesDB($band, &$nomAZ, &$nomEL) {
         $nomAZ = $nomEL = 0;
         $qn = "SELECT AZ, EL FROM NominalAngles WHERE Band = $band;";
-        $rn = @mysql_query($qn,site_getDbConnection());
-        $row = @mysql_fetch_array($rn);
+        $rn = mysqli_query($link, $qn,site_getDbConnection());
+        $row = mysqli_fetch_array($rn);
         $nomAZ = $row['AZ'];
         $nomEL = $row['EL'];
         return true;
@@ -48,8 +48,8 @@ class ScanDetails extends GenericTable {
 
     public function GetNominalAngles() {
         $qBand = "SELECT band FROM ScanSetDetails WHERE keyId = ".$this->GetValue(fkScanSetDetails).";";
-        $rband = @mysql_query($qBand,$this->dbconnection);
-        $band = @mysql_result($rband,0);
+        $rband = mysqli_query($link, $qBand);
+        $band = ADAPT_mysqli_result($rband,0);
         $nomAZ = $nomEL = 0;
         $this->GetNominalAnglesDB($band, $nomAZ, $nomEL);
         $this->nominal_az = $nomAZ;
@@ -58,7 +58,7 @@ class ScanDetails extends GenericTable {
 
     public function UploadListing_Nearfield($filename_nf){
         $q_delete = "DELETE FROM BeamListings_nearfield WHERE fkScanDetails = $this->keyId;";
-        $r_delete = @mysql_query($q_delete,$this->dbconnection);
+        $r_delete = mysqli_query($link, $q_delete);
         $nf_filecontents = file($filename_nf);
         $tempcount = 0;
         $startcounting=false;
@@ -70,7 +70,7 @@ class ScanDetails extends GenericTable {
             if($startcounting){
                 $qInsert = "INSERT INTO BeamListings_nearfield(fkScanDetails,x,y,amp,phase)
                     VALUES($this->keyId,'$NFArray[0]', '$NFArray[1]','$NFArray[2]', '$NFArray[3]')";
-                $Insert=@mysql_query($qInsert,$this->dbconnection);
+                $Insert=mysqli_query($link, $qInsert);
             }
             if (strstr($line_data,"line:") != ""){
                 $startcounting = true;
@@ -82,7 +82,7 @@ class ScanDetails extends GenericTable {
 
     public function UploadListing_Farfield($filename_ff){
         $q_delete = "DELETE FROM BeamListings_farfield WHERE fkScanDetails = $this->keyId;";
-        $r_delete = @mysql_query($q_delete,$this->dbconnection);
+        $r_delete = mysqli_query($link, $q_delete);
         $ff_filecontents = file($filename_ff);
         $tempcount = 0;
         $startcounting=false;
@@ -94,7 +94,7 @@ class ScanDetails extends GenericTable {
             if($startcounting){
                 $qInsert = "INSERT INTO BeamListings_farfield(fkScanDetails,x,y,amp,phase)
                     VALUES($this->keyId,'$FFArray[0]', '$FFArray[1]','$FFArray[2]', '$FFArray[3]')";
-                $Insert=@mysql_query($qInsert,$this->dbconnection);
+                $Insert=mysqli_query($link, $qInsert);
             }
             if (strstr($line_data,"line:") != ""){
                 $startcounting = true;
@@ -112,23 +112,23 @@ class ScanDetails extends GenericTable {
             //get max amp of this crosspol scan
             $qmax1 = "SELECT MAX(amp)+". $this->GetValue('ifatten') ."
                 FROM BeamListings_nearfield WHERE fkScanDetails = $this->keyId;";
-            $rmax1 = @mysql_query($qmax1,$this->dbconnection);
-            $max1 = @mysql_result($rmax1,0);
+            $rmax1 = mysqli_query($link, $qmax1);
+            $max1 = ADAPT_mysqli_result($rmax1,0);
 
             //Get keyId of corresponding crosspol scan in this set
             $q2 = "SELECT keyId, ifatten FROM ScanDetails
                 WHERE fkScanSetDetails = ". $this->GetValue('fkScanSetDetails') ."
                 AND pol = ". $this->GetValue('pol') ." AND copol = 1;";
-            $r2 = @mysql_query($q2,$this->dbconnection);
-            $row2 = @mysql_fetch_array($r2);
+            $r2 = mysqli_query($link, $q2);
+            $row2 = mysqli_fetch_array($r2);
             $id2 = $row2['keyId'];
             $ifatten2 = $row2['ifatten'];
 
             //get max amp of corresponding crosspol scan
             $qmax2 = "SELECT MAX(amp)+ $ifatten2
                 FROM BeamListings_nearfield WHERE fkScanDetails = $id2;";
-            $rmax2 = @mysql_query($qmax2,$this->dbconnection);
-            $rowmax2 = @mysql_fetch_array($rmax2);
+            $rmax2 = mysqli_query($link, $qmax2);
+            $rowmax2 = mysqli_fetch_array($rmax2);
             $max2 = $rowmax2['amp'];
 
             //get difference between the two values
@@ -154,22 +154,22 @@ class ScanDetails extends GenericTable {
             //get max amp of this crosspol scan
             $qmax1 = "SELECT MAX(amp)+". $this->GetValue('ifatten') ."
                 FROM BeamListings_farfield WHERE fkScanDetails = $this->keyId;";
-            $rmax1 = @mysql_query($qmax1,$this->dbconnection);
-            $max1 = @mysql_result($rmax1,0);
+            $rmax1 = mysqli_query($link, $qmax1);
+            $max1 = ADAPT_mysqli_result($rmax1,0);
 
             //Get keyId of corresponding crosspol scan in this set
             $q2 = "SELECT keyId, ifatten FROM ScanDetails
                 WHERE fkScanSetDetails = ". $this->GetValue('fkScanSetDetails') ."
                 AND pol = ". $this->GetValue('pol') ." AND copol = 1;";
-            $r2 = @mysql_query($q2,$this->dbconnection);
-            $row2 = @mysql_fetch_array($r2);
+            $r2 = mysqli_query($link, $q2);
+            $row2 = mysqli_fetch_array($r2);
             $id2 = $row2['keyId'];
             $ifatten2 = $row2['ifatten'];
 
             //get max amp of corresponding crosspol scan
             $qmax2 = "SELECT MAX(amp)+ $ifatten2 FROM BeamListings_farfield WHERE fkScanDetails = $id2;";
-            $rmax2 = @mysql_query($qmax2,$this->dbconnection);
-            $rowmax2 = @mysql_fetch_array($rmax2);
+            $rmax2 = mysqli_query($link, $qmax2);
+            $rowmax2 = mysqli_fetch_array($rmax2);
             $max2 = $rowmax2['amp'];
 
             //get difference between the two values
@@ -197,20 +197,20 @@ class ScanDetails extends GenericTable {
         unlink($data_file);
 
         $q="SELECT MAX(amp) FROM BeamListings_nearfield WHERE fkScanDetails=$this->keyId;";
-        $r=@mysql_query($q,$this->dbconnection);
-        $MaxAmp=@mysql_result($r,0);
+        $r=mysqli_query($link, $q);
+        $MaxAmp=ADAPT_mysqli_result($r,0);
 
         $q="SELECT x,y,(amp + ABS($MaxAmp) - $ampdiff),phase FROM BeamListings_nearfield
             WHERE fkScanDetails = $this->keyId
             ORDER BY y ASC, x ASC;";
 
-        $r=@mysql_query($q,$this->dbconnection);
+        $r=mysqli_query($link, $q);
 
-        $numpts = sqrt(@mysql_num_rows($r));
+        $numpts = sqrt(mysqli_num_rows($r));
         $tempct = 0;
 
         $fh = fopen($data_file, 'w');
-            while($row=@mysql_fetch_array($r)){
+            while($row=mysqli_fetch_array($r)){
                 fwrite($fh, "$row[0]\t$row[1]\t$row[2]\t$row[3]\t\r\n");
                 $tempct++;
                 if ($tempct >= $numpts){
@@ -288,19 +288,19 @@ class ScanDetails extends GenericTable {
         unlink($data_file);
 
         $q="SELECT MAX(amp) FROM BeamListings_farfield WHERE fkScanDetails=$this->keyId;";
-        $r=@mysql_query($q,$this->dbconnection);
-        $MaxAmp=@mysql_result($r,0);
+        $r=mysqli_query($link, $q);
+        $MaxAmp=ADAPT_mysqli_result($r,0);
 
         $q="SELECT x,y,(amp + ABS($MaxAmp) - $ampdiff),phase FROM BeamListings_farfield
             WHERE fkScanDetails = $this->keyId
             ORDER BY y ASC, x ASC;";
-        $r=@mysql_query($q,$this->dbconnection);
+        $r=mysqli_query($link, $q);
 
-        $numpts = sqrt(@mysql_num_rows($r));
+        $numpts = sqrt(mysqli_num_rows($r));
         $tempct = 0;
 
         $fh = fopen($data_file, 'w');
-            while($row=@mysql_fetch_array($r)){
+            while($row=mysqli_fetch_array($r)){
                 fwrite($fh, "$row[0]\t$row[1]\t$row[2]\t$row[3]\t\r\n");
                 $tempct++;
                 if ($tempct >= $numpts){
@@ -380,19 +380,19 @@ class ScanDetails extends GenericTable {
         unlink($data_file);
 
         $q="SELECT MAX(amp) FROM BeamListings_farfield WHERE fkScanDetails=$this->keyId;";
-        $r=@mysql_query($q,$this->dbconnection);
-        $MaxAmp=@mysql_result($r,0);
+        $r=mysqli_query($link, $q);
+        $MaxAmp=ADAPT_mysqli_result($r,0);
 
         $q="SELECT x,y,(amp + ABS($MaxAmp) - $ampdiff),phase FROM BeamListings_farfield
             WHERE fkScanDetails = $this->keyId
             ORDER BY y ASC, x ASC;";
-        $r=@mysql_query($q,$this->dbconnection);
+        $r=mysqli_query($link, $q);
 
-        $numpts = sqrt(@mysql_num_rows($r));
+        $numpts = sqrt(mysqli_num_rows($r));
         $tempct = 0;
 
         $fh = fopen($data_file, 'w');
-            while($row=@mysql_fetch_array($r)){
+            while($row=mysqli_fetch_array($r)){
                 fwrite($fh, "$row[0]\t$row[1]\t$row[2]\t$row[3]\t\r\n");
                 $tempct++;
                 if ($tempct >= $numpts){

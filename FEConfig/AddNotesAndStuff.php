@@ -18,7 +18,7 @@ if(strpos($urls,"http") === false){
 
 //insert record into StatusLocationAndNotes table
 
- mysql_query("INSERT INTO FE_StatusLocationAndNotes(fkFEConfig,keyFacility,fkLocationNames,
+ mysqli_query($link, "INSERT INTO FE_StatusLocationAndNotes(fkFEConfig,keyFacility,fkLocationNames,
  			  fkStatusType,Notes,Updated_By,lnk_Data)
 			  Values('$keyFE','$facility','$locval','$statval','$notes','$updatedby','$urls')")
  or die("Could not insert into StatusLocationAndNotes" .mysql_error());

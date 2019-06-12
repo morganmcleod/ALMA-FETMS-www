@@ -10,8 +10,8 @@ include('mysql_connect.php');
 	$q = "SELECT * FROM CPDS_RegModules
 		WHERE SN <> ''
 		ORDER BY SN ASC;";
-	$r = @mysql_query($q,$dbc);
-	while($row = mysql_fetch_array($r)){
+	$r = mysqli_query($link, $q,$dbc);
+	while($row = mysqli_fetch_array($r)){
 		echo $row['SN'] . "," . $row['Date'] . ",";
 		
 		if ($row['PassFail_Functional'] == 1){

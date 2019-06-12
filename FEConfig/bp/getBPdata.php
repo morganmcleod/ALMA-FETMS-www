@@ -26,8 +26,8 @@ $tdh->Initialize_TestData_header($keyId,$fc);
 
 //Instantiate a new eff object
 $q = "SELECT keyId FROM ScanSetDetails WHERE fkHeader = " . $keyId . ";";
-$r = @mysql_query($q,$db);
-$ssid = @mysql_result($r,0,0);
+$r = mysqli_query($link, $q);
+$ssid = ADAPT_mysqli_result($r,0,0);
 $eff = new eff();
 $eff->Initialize_eff_SingleScanSet($ssid,$fc);
 

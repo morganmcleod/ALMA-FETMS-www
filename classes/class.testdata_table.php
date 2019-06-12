@@ -115,7 +115,7 @@ class TestDataTable {
 
         $groupDetectArray = array();
 
-        while ($row = @mysql_fetch_array($resultSet)) {
+        while ($row = mysqli_fetch_array($resultSet)) {
 
             $fc = $row['keyFacility'];
             $keyId = $row['tdhID'];
@@ -255,7 +255,7 @@ class TestDataTable {
         // Sorted by test description, and TS in reverse order...
         $q .= "TestData_Types.Description ASC, TDH.TS DESC;";
 
-        $r = @mysql_query($q, $this->dbConnection);
+        $r = mysqli_query($link, $q, $this->dbConnection);
         return $r;
     }
 }

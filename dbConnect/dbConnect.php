@@ -1,6 +1,6 @@
 <?php
 
-$mySQL57 = false;
+$mySQL57 = true;
 
 switch ($_SERVER['SERVER_NAME']) {
     case "fetms.osf.alma.cl":
@@ -37,27 +37,27 @@ switch ($_SERVER['SERVER_NAME']) {
         die ("Unknown database credentials for server'" . $_SERVER['SERVER_NAME'] . "'");
 }
 
-$db = mysql_pconnect($dbserver, $dbusername, $dbpassword);
-if (!$db) {
+$link = mysqli_connect($dbserver, $dbusername, $dbpassword);
+if (!$link) {
     echo "<font size='+2' color='#ff0000' face='serif'><h><b>";
-    die('Could not connect to MySQL: ' . mysql_error());
-}
+    die('Could not connect to MySQL: ' . ((is_object($GLOBALS["___mysqli_ston"])) ? mysqli_error($GLOBALS["___mysqli_ston"]) : (($___mysqli_res = mysqli_connect_error()) ? $___mysqli_res : false)));
+} 
 
-$db_selected = mysql_select_db($dbname, $db);
+$db_selected = mysqli_select_db($link, $dbname);
 if (!$db_selected) {
     echo "<font size='+2' color='#ff0000' face='serif'><h><b>";
-    die ('Accessing database(' .$dbname . ") causes the following error:<br>" . mysql_error());
+    die ('Accessing database(' .$dbname . ") " . ((is_object($GLOBALS["___mysqli_ston"])) ? mysqli_error($GLOBALS["___mysqli_ston"]) : (($___mysqli_res = mysqli_connect_error()) ? $___mysqli_res : false)));
 }
 
 if ($mySQL57) {
     // workaround for MySQL 5.7, this application only:
     $q = "SET sql_mode=''";
-    $r = @mysql_query($q, $db);
+    $r = mysqli_query($link, $q);
 }
 
 function site_getDbConnection() {
-    global $db;
-    return $db;
+    global $link;
+    return $link;
 }
 
 function site_warnProductionDb($dbname) {
@@ -70,5 +70,11 @@ function site_warnProductionDb($dbname) {
         </b></h></font>";
     }
 }
+
+function ADAPT_mysqli_result($res, $row, $field=0) {
+    $res->data_seek($row);
+    $datarow = $res->fetch_array();
+    return $datarow[$field];
+} 
 
 ?>

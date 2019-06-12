@@ -13,12 +13,12 @@ $q = "SELECT keyId, keyFacility, Band, TS, fkTestData_Type, fkFE_Config, Notes
     WHERE fkFE_Config <> ''
     and fkDataStatus LIKE '$TestStatus'
     ORDER BY TS DESC LIMIT 200;";
-$r = @mysql_query($q,$db);
+$r = mysqli_query($link, $q);
 
 $outstring = "[";
 $rowcount = 0;
 
-while ($row= @mysql_fetch_array($r)){
+while ($row= mysqli_fetch_array($r)){
     $keyId = $row[0];
     $keyFacility = $row[1];
     $Band = $row[2];
@@ -29,16 +29,16 @@ while ($row= @mysql_fetch_array($r)){
     $qfd = "SELECT Description FROM TestData_Types
             WHERE keyId = ".$row[4].";";
 
-    $rfd = @mysql_query($qfd,$db);
-    $TestType = @mysql_result($rfd,0,0);
+    $rfd = mysqli_query($link, $qfd);
+    $TestType = ADAPT_mysqli_result($rfd,0,0);
 
     //Get FE SN
     $qfe = "SELECT Front_Ends.SN
             FROM Front_Ends,FE_Config
             WHERE FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
             AND FE_Config.keyFEConfig = ".$row['fkFE_Config'].";";
-    $rfe = @mysql_query($qfe,$db);
-    $fesn = @mysql_result($rfe,0,0);
+    $rfe = mysqli_query($link, $qfe);
+    $fesn = ADAPT_mysqli_result($rfe,0,0);
 
     if ($rowcount == 0 ){
         $outstring .= "{'SN':'$fesn',";
@@ -51,7 +51,7 @@ while ($row= @mysql_fetch_array($r)){
     $outstring .= "'TS':'$TS',";
     $outstring .= "'keyId':'$keyId',";
     $outstring .= "'TestType':'$TestType',";
-    $outstring .= "'Notes':'". @mysql_real_escape_string($Notes)."',";
+    $outstring .= "'Notes':'". mysqli_real_escape_string($link, $Notes)."',";
     //$outstring .= "'Notes':'test',";
     $outstring .= "'keyFacility':'$keyFacility'}";
 

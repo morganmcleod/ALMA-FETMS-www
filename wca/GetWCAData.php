@@ -12,22 +12,22 @@ $q = "select keyFacility, keyId, LPAD(SN, 2, '0') AS SN, Band, TS
      AND fkFE_ComponentType = 11
      ORDER BY SN ASC;";
 
-$r = @mysql_query($q,$db);
+$r = mysqli_query($link, $q);
 
 
 $outstring = "[";
 
 $rowcount = 0;
 $bgcolor = "";
-while ($row = @mysql_fetch_array($r)){
+while ($row = mysqli_fetch_array($r)){
     $bgcolor=($bgcolor == 'blue-row' ? 'alt-row' : 'blue-row');
 
 
 //     $qfd = "SELECT Description, Notes FROM Locations
 //             WHERE keyId = ".$row['keyFacility'].";";
-//     $rfd = @mysql_query($qfd,$db);
-//     $facdescr = @mysql_result($rfd,0,0) . " (";
-//     $facdescr .= @mysql_result($rfd,0,1) . " )";
+//     $rfd = mysqli_query($link, $qfd);
+//     $facdescr = ADAPT_mysqli_result($rfd,0,0) . " (";
+//     $facdescr .= ADAPT_mysqli_result($rfd,0,1) . " )";
 
     if ($rowcount == 0 ){
         $outstring .= "{'SN':'".$row['SN']."',";

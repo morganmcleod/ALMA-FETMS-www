@@ -101,10 +101,10 @@ echo '<br>
 <?
 echo "<br><br><b>Requestor:</b><select name='Requestor' onChange='submit()'>"; 
 $q_req = 'select distinct(Requestor) from ReceivedItems where Requestor <> "" ORDER BY Requestor ASC';
-$r_req = mysql_query($q_req,$dbc);
+$r_req = mysqli_query($link, $q_req,$dbc);
 
 $option_block_req .= "<option value='All'>All</option>";
-while ($options = @mysql_fetch_array($r_req)){
+while ($options = mysqli_fetch_array($r_req)){
 		if ($options[0]!=$requestor_selected){
 		$option_block_req .= "<option value='$options[0]'>$options[0]</option>";
 		}
@@ -119,10 +119,10 @@ echo '</select>';
 		
 echo "<b>Rx From:</b><select name='RxFrom' onChange='submit()'>"; 
 $q_rxfrom = 'select distinct(RxFrom) from ReceivedItems where RxFrom <> "" ORDER BY RxFrom ASC';
-$r_rxfrom = mysql_query($q_rxfrom,$dbc);
+$r_rxfrom = mysqli_query($link, $q_rxfrom,$dbc);
 
 $option_block_rxfrom .= "<option value='All'>All</option>";
-while ($options = @mysql_fetch_array($r_rxfrom)){
+while ($options = mysqli_fetch_array($r_rxfrom)){
 		if ($options[0]!=$RxFrom_selected){
 		$option_block_rxfrom .= "<option value='$options[0]'>$options[0]</option>";
 		}

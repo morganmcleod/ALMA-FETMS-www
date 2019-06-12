@@ -28,14 +28,14 @@ $q = "SELECT `Front_Ends`.`SN`
 	ON `FE_Config`.fkFront_Ends = `Front_Ends`.keyFrontEnds
 	WHERE `FE_Config`.keyFEConfig=$feconfig";
 
-$r = @mysql_query($q,$db);
-$fesn = @mysql_result($r,0,0);
+$r = mysqli_query($link, $q);
+$fesn = ADAPT_mysqli_result($r,0,0);
 
 // get Data Status Description
 $q = "SELECT `Description` FROM `DataStatus` WHERE `keyId` = $Data_Status ";
 
-$r = @mysql_query($q,$db);
-$Data_Status_Desc = @mysql_result($r,0,0);
+$r = mysqli_query($link, $q);
+$Data_Status_Desc = ADAPT_mysqli_result($r,0,0);
 
 $title = "";
 if ($fesn && !$FETMS_CCA_MODE)

@@ -21,27 +21,27 @@ class GenericTable{
 		$this->keyId_name = $in_keyId_name;
 		$this->keyId = $in_keyId;
 		$q = "show columns from $tableName;";
-		$r = @mysql_query($q,$this->dbconnection);
+		$r = mysqli_query($link, $q);
 		$counter=0;
-			while ($res = @mysql_fetch_array($r)){
+			while ($res = mysqli_fetch_array($r)){
 				$this->propertyNames[$counter] = $res[0];
 				$counter++;
 			}
 
 		$qVals = "SELECT * FROM $tableName WHERE $in_keyId_name = $in_keyId;";
-		$rVals = @mysql_query($qVals,$this->dbconnection);
-		$this->propertyVals = @mysql_fetch_array($rVals);	
+		$rVals = mysqli_query($link, $qVals);
+		$this->propertyVals = mysqli_fetch_array($rVals);	
 		
 	}
 	
 	public function NewRecord($tableName){
 		$this->tableName = $tableName;
 		$qNew = "INSERT INTO $this->tableName() VALUES();";
-		$rNew = @mysql_query($qNew,$this->dbconnection);
+		$rNew = mysqli_query($link, $qNew);
 		$qNew = "SELECT MAX($this->keyId_name) FROM $this->tableName;";
-		$rNew = @mysql_query($qNew,$this->dbconnection);
-		$this->keyId = @mysql_result($rNew,0);
-		$this->Initialize($tableName,$this->keyId,$this->keyId_name,$this->dbconnection);
+		$rNew = mysqli_query($link, $qNew);
+		$this->keyId = ADAPT_mysqli_result($rNew,0);
+		$this->Initialize($tableName,$this->keyId,$this->keyId_name);
 	}
 	
 	
@@ -69,7 +69,7 @@ class GenericTable{
 		//Remove the last comma
 		$qu=substr($qu,0,strlen($qu)-1);
 		$qu .= " WHERE $this->keyId_name = $this->keyId LIMIT 1;";	
-		$ru = @mysql_query($qu,$this->dbconnection);
+		$ru = mysqli_query($link, $qu);
 	}	
 	
 	public function Display_data(){
@@ -104,7 +104,7 @@ class GenericTable{
 	}
 	public function Delete_record(){
 		$qdelete = "DELETE FROM $this->tableName WHERE $this->keyId_name =$this->keyId";		
-		$rdelete = @mysql_query ($qdelete, $this->dbconnection);
+		$rdelete = mysql_query ($qdelete, $this->dbconnection);
 		echo '<p>The record has been deleted.</p>';	
 	}
 	

@@ -79,21 +79,21 @@ class WCA extends FEComponent {
 
         // Get WCA record:
         $rWCA = $this->db_pull->q_other('WCA', $this->keyId);
-        $WCAs_id = @mysql_result($rWCA, 0);
+        $WCAs_id = ADAPT_mysqli_result($rWCA, 0);
         $this->_WCAs = new GenericTable();
         $this->_WCAs->Initialize("WCAs", $WCAs_id, "keyId", $this->fc, 'fkFacility');
 
         // Get FE_Config information
         $rcfg = $this->db_pull->q_other('cfg', $this->keyId, $this->fc);
-        $this->ConfigId = @mysql_result($rcfg, 0, 0);
-        $this->ConfigLinkId = @mysql_result($rcfg, 0, 1);
-        $this->FEId = @mysql_result($rcfg, 0, 2);
-        $this->FESN = @mysql_result($rcfg, 0, 3);
+        $this->ConfigId = ADAPT_mysqli_result($rcfg, 0, 0);
+        $this->ConfigLinkId = ADAPT_mysqli_result($rcfg, 0, 1);
+        $this->FEId = ADAPT_mysqli_result($rcfg, 0, 2);
+        $this->FESN = ADAPT_mysqli_result($rcfg, 0, 3);
 
         if ($INIT_Options & self::INIT_SLN) {
             // Status location and notes
             $rsln = $this->db_pull->q_other('sln', $this->keyId);
-            $slnid = @mysql_result($rsln, 0, 0);
+            $slnid = ADAPT_mysqli_result($rsln, 0, 0);
             $this->sln = new GenericTable();
             $this->sln->Initialize("FE_StatusLocationAndNotes", $slnid, "keyId");
         }
@@ -101,7 +101,7 @@ class WCA extends FEComponent {
         if ($INIT_Options & self::INIT_LOPARAMS) {
             $r = $this->db_pull->q(1, $this->keyId);
             $lopcount = 1;
-            while ($row = @mysql_fetch_array($r)) {
+            while ($row = mysqli_fetch_array($r)) {
                 $this->LOParams [$lopcount] = new GenericTable();
                 $this->LOParams [$lopcount]->Initialize('WCA_LOParams', $row [0], 'keyId', $this->fc, 'fkFacility');
                 $lopcount += 1;
@@ -112,23 +112,23 @@ class WCA extends FEComponent {
             // Test data header objects
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseJitter');
             $this->tdh_phasejitter = new TestData_header();
-            $this->tdh_phasejitter->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_phasejitter->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
 
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AmplitudeStability');
             $this->tdh_ampstab = new TestData_header();
-            $this->tdh_ampstab->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_ampstab->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
 
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_OutputPower');
             $this->tdh_outputpower = new TestData_header();
-            $this->tdh_outputpower->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_outputpower->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
 
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseNoise');
             $this->tdh_phasenoise = new TestData_header();
-            $this->tdh_phasenoise->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_phasenoise->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
 
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AMNoise');
             $this->tdh_amnoise = new TestData_header();
-            $this->tdh_amnoise->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_amnoise->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
             /*
              * echo "ids...<br>";
              * echo "amnoise= " . $this->tdh_amnoise->keyId . "<br>";
@@ -161,7 +161,7 @@ class WCA extends FEComponent {
         }
 
         $r = $this->db_pull->q(2, $this->keyId);
-        $numrows = @mysql_num_rows($r);
+        $numrows = mysqli_num_rows($r);
         if ($numrows < 1) {
             $values = array ();
             $values [] = $this->_WCAs->GetValue('VG0');
@@ -301,7 +301,7 @@ class WCA extends FEComponent {
 
         $rpj = $this->db_pull->qpj('select', $this->tdh_phasejitter->keyId);
 
-        while ($rowpj = @mysql_fetch_array($rpj)) {
+        while ($rowpj = mysqli_fetch_array($rpj)) {
             $lo = $rowpj [0];
             $jitter = $rowpj [1];
             $pol = $rowpj [2];
@@ -508,14 +508,14 @@ class WCA extends FEComponent {
          * WHERE fkComponent = $this->keyId
          * ORDER BY FreqLO ASC
          * LIMIT 1;";
-         * $r = @mysql_query($q,$this->dbconnection); //
+         * $r = mysqli_query($link, $q); //
          */
         $r = $this->db_pull->q(3, $this->keyId);
-        $ts = @mysql_result($r, 0, 0);
+        $ts = ADAPT_mysqli_result($r, 0, 0);
         $band = $this->GetValue('Band');
         $sn = $this->GetValue('SN');
 
-        $r = @mysql_query($q, $this->dbconnection);
+        $r = mysqli_query($link, $q, $this->dbconnection);
         echo "<div style= 'width: 500px'>
             <table id = 'table1' border = '1'>";
         echo "<tr class='alt'><th colspan = '5'>
@@ -532,11 +532,11 @@ class WCA extends FEComponent {
          * $q = "SELECT * FROM WCA_LOParams
          * WHERE fkComponent = $this->keyId
          * ORDER BY FreqLO ASC;";
-         * $r = @mysql_query($q,$this->dbconnection);//
+         * $r = mysqli_query($link, $q);//
          */
         $r = $this->db_pull->q(4, $this->keyId);
         $count = 0;
-        while ($row = @mysql_fetch_array($r)) {
+        while ($row = mysqli_fetch_array($r)) {
             if ($count % 2 == 0) {
                 echo "<tr>";
             } else {
@@ -623,9 +623,9 @@ class WCA extends FEComponent {
 
         $output = array ();
 
-        /* $r = @mysql_query($q,$this->dbconnection);// */
+        /* $r = mysqli_query($link, $q);// */
         $r = $this->db_pull->run_query($q);
-        while ($row = @mysql_fetch_array($r))
+        while ($row = mysqli_fetch_array($r))
             $output [] = $row [0];
 
         return $output;
@@ -652,13 +652,13 @@ class WCA extends FEComponent {
          * AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol
          * ORDER BY FreqLO, VD ASC";
          *
-         * $r = @mysql_query($q, $this->dbconnection);//
+         * $r = mysqli_query($link, $q, $this->dbconnection);//
          */
         $r = $this->db_pull->q(5, NULL, $pol, $this->fc, $this->FormatTDHList($tdhArray));
 
         $allRows = array ();
 
-        while ($row = @mysql_fetch_array($r))
+        while ($row = mysqli_fetch_array($r))
             $allRows [] = $row; // append row to allRows.
 
         return $allRows;
@@ -673,16 +673,16 @@ class WCA extends FEComponent {
               Pol = 0 AND keyDataSet=2
               AND fkHeader in $tdhList";
 
-        $r = @mysql_query($q, $this->dbconnection);
-        $row = @mysql_fetch_array($r);
+        $r = mysqli_query($link, $q, $this->dbconnection);
+        $row = mysqli_fetch_array($r);
         $ret[0] = $row[0];
 
         $q = "SELECT MAX(VD1) FROM WCA_OutputPower WHERE
               Pol = 1 AND keyDataSet=2
               AND fkHeader in $tdhList";
 
-        $r = @mysql_query($q, $this->dbconnection);
-        $row = @mysql_fetch_array($r);
+        $r = mysqli_query($link, $q, $this->dbconnection);
+        $row = mysqli_fetch_array($r);
         $ret[1] = $row[0];
 
         return $ret;
@@ -1083,7 +1083,7 @@ class WCA extends FEComponent {
 
             // Copy Yig settings
             $rYIG = $this->db_pull->q_other('YIG', $this->keyId);
-            $YIGnumrows = @mysql_num_rowS($rYIG);
+            $YIGnumrows = mysqli_num_rows($rYIG);
 
             if ($YIGnumrows > 0) {
                 $this->_WCAs->SetValue('FloYIG', $FLOYIG);
@@ -1179,7 +1179,7 @@ class WCA extends FEComponent {
 
             // Copy Yig settings
             $rYIG = $this->db_pull->q_other('YIG', $this->keyId);
-            $YIGnumrows = @mysql_num_rowS($rYIG);
+            $YIGnumrows = mysqli_num_rows($rYIG);
 
             if ($YIGnumrows > 0) {
                 $this->_WCAs->SetValue('FloYIG', $FLOYIG);
@@ -1254,32 +1254,32 @@ class WCA extends FEComponent {
 
         // write data file from database
         $rFindLO = $this->db_pull->qFindLO('WCA_AmplitudeStability', $this->tdh_ampstab->keyId);
-        $rowLO = @mysql_fetch_array($rFindLO);
+        $rowLO = mysqli_fetch_array($rFindLO);
 
         $datafile_count = 0;
         $spec_value = 0.0000001;
 
         for($j = 0; $j <= 1; $j++) {
             for($i = 0; $i <= sizeof($rowLO); $i++) {
-                $CurrentLO = @mysql_result($rFindLO, $i);
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
                 $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $j, NULL, NULL, $CurrentLO);
 
-                if (@mysql_num_rows($r) > 1) {
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle [$datafile_count] = "Pol $j, $CurrentLO GHz";
                     $data_file [$datafile_count] = $this->writedirectory . "wca_as_data_" . $i . "_" . $j . ".txt";
                     if (file_exists($data_file [$datafile_count])) {
                         unlink($data_file [$datafile_count]);
                     }
                     $fh = fopen($data_file [$datafile_count], 'w');
-                    $row = @mysql_fetch_array($r);
+                    $row = mysqli_fetch_array($r);
                     $TimeVal = $row [0];
 
                     if ($TimeVal > 500) {
                         fwrite($fh, "$row[0]\t0.00000009\r\n");
                     }
-                    while ($row = @mysql_fetch_array($r)) {
+                    while ($row = mysqli_fetch_array($r)) {
                         $stringData = "$row[0]\t$row[1]\r\n";
                         fwrite($fh, $stringData);
                     }
@@ -1407,7 +1407,7 @@ class WCA extends FEComponent {
             $arrct = 0;
             // Get X axis values
             $rFreqLO = $this->db_pull->q_other('FreqLO', $this->tdh_amnoise->keyId, $this->fc, $pol, $FreqLOW, $FreqHI);
-            while ($row = @mysql_fetch_array($rFreqLO)) {
+            while ($row = mysqli_fetch_array($rFreqLO)) {
                 $amnzarr [0] [$arrct] = $row [0];
                 $amnzarr [1] [$arrct] = $row [1];
                 $arrct += 1;
@@ -1415,7 +1415,7 @@ class WCA extends FEComponent {
 
             $arrct = 0;
             $rlo = $this->db_pull->qlo('WCA_AMNoise', $this->tdh_amnoise->keyId, $this->fc, FALSE, $FreqLOW, $FreqHI, $pol);
-            while ($rowlo = @mysql_fetch_array($rlo)) {
+            while ($rowlo = mysqli_fetch_array($rlo)) {
                 $freqarr [$arrct] = $rowlo [0];
                 $arrct += 1;
             }
@@ -1497,7 +1497,7 @@ class WCA extends FEComponent {
             $imagepath = $imagedirectory . $imagename;
 
             $rNumIF = $this->db_pull->q_other('NumIF', $this->tdh_amnoise->keyId, $this->fc, $pol);
-            $NumIF = @mysql_num_rows($rNumIF);
+            $NumIF = mysqli_num_rows($rNumIF);
 
             $data_file [$pol] = $this->writedirectory . "wca_amnoise_data_pol$pol.txt";
             if (file_exists($data_file [$pol])) {
@@ -1507,7 +1507,7 @@ class WCA extends FEComponent {
 
             $IFcount = 0;
             $r = $this->db_pull->q(10, $this->tdh_amnoise->keyId, $pol, $this->fc);
-            while ($row = @mysql_fetch_array($r)) {
+            while ($row = mysqli_fetch_array($r)) {
                 $stringData = "$row[0]\t$row[1]\t$row[2]\r\n";
                 fwrite($fh, $stringData);
                 $IFcount += 1;
@@ -1584,7 +1584,7 @@ class WCA extends FEComponent {
 
         $rlo = $this->db_pull->qlo('WCA_PhaseNoise', $this->tdh_phasenoise->keyId, $this->fc);
 
-        while ($rowlo = @mysql_fetch_array($rlo)) {
+        while ($rowlo = mysqli_fetch_array($rlo)) {
             $lo = $rowlo [0];
             $pol = $rowlo [1];
             $jitterarray [$loindex] = $this->GetPhaseJitter($lo, $pol);
@@ -1600,26 +1600,26 @@ class WCA extends FEComponent {
 
         // write data file from database
         $rFindLO = $this->db_pull->qFindLO('WCA_PhaseNoise', $this->tdh_phasenoise->keyId, $this->fc);
-        $rowLO = @mysql_fetch_array($rFindLO);
+        $rowLO = mysqli_fetch_array($rFindLO);
 
         $datafile_count = 0;
         for($j = 0; $j <= 1; $j++) {
             for($i = 0; $i <= sizeof($rowLO); $i++) {
-                $CurrentLO = @mysql_result($rFindLO, $i);
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
                 $r = $this->db_pull->q(11, $this->tdh_phasenoise->keyId, $j, $this->fc, NULL, $CurrentLO);
 
-                if (@mysql_num_rows($r) > 1) {
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle [$datafile_count] = "Pol $j, $CurrentLO GHz";
                     $data_file [$datafile_count] = $this->writedirectory . "wca_phasenz_" . $i . "_" . $j . ".txt";
                     if (file_exists($data_file [$datafile_count])) {
                         unlink($data_file [$datafile_count]);
                     }
                     $fh = fopen($data_file [$datafile_count], 'w');
-                    $row = @mysql_fetch_array($r);
+                    $row = mysqli_fetch_array($r);
 
-                    while ($row = @mysql_fetch_array($r)) {
+                    while ($row = mysqli_fetch_array($r)) {
                         $stringData = "$row[0]\t$row[1]\r\n";
                         fwrite($fh, $stringData);
                     }
@@ -1691,7 +1691,7 @@ class WCA extends FEComponent {
 
         $RawData = -1234;
 
-        while ($row = @mysql_fetch_array($r)) {
+        while ($row = mysqli_fetch_array($r)) {
             $RawData_temp = $row [2];
             $OffsetFrequency_temp = $row [0];
             $AntiLog_temp = pow(10.0, $RawData_temp / 10.0);
@@ -1760,7 +1760,7 @@ class WCA extends FEComponent {
     public function Plot_OutputPower_vs_frequency() {
         $Band = $this->GetValue('Band');
         $rTS = $this->db_pull->q_other('TS', $this->tdh_outputpower->keyId, $this->fc);
-        $rowTS = @mysql_fetch_array($rTS);
+        $rowTS = mysqli_fetch_array($rTS);
         $VD0 = $rowTS [0];
         $VD1 = $rowTS [1];
 
@@ -1789,7 +1789,7 @@ class WCA extends FEComponent {
             }
             $fh = fopen($data_file [$pol], 'w');
             $rOP = $this->db_pull->q_other('OP', $this->tdh_outputpower->keyId, $this->fc, $pol);
-            while ($row = @mysql_fetch_array($rOP)) {
+            while ($row = mysqli_fetch_array($rOP)) {
                 $stringData = "$row[0]\t$row[1]\r\n";
                 fwrite($fh, $stringData);
             }
@@ -1811,7 +1811,7 @@ class WCA extends FEComponent {
 
         // set xrange
         $rx = $this->db_pull->q_other('x', $this->tdh_outputpower->keyId, $this->fc);
-        $xMAX = @mysql_result($rx, 0) + 1;
+        $xMAX = ADAPT_mysqli_result($rx, 0) + 1;
         fwrite($fh, "set xrange[:$xMAX]\r\n");
 
         fwrite($fh, "set xlabel 'LO Frequency (GHz)'\r\n");
@@ -1867,17 +1867,17 @@ class WCA extends FEComponent {
 
         $datafile_count = 0;
         $rFindLO = $this->db_pull->qFindLO('WCA_OutputPower', $this->tdh_outputpower->keyId, $this->fc, $pol, '<> 1');
-        $rowLO = @mysql_fetch_array($rFindLO);
+        $rowLO = mysqli_fetch_array($rFindLO);
         $i = 0;
         $data_file = array ();
 
         if ($rFindLO) {
-            while ($rowLO = mysql_fetch_array($rFindLO)) {
-                $CurrentLO = @mysql_result($rFindLO, $i);
+            while ($rowLO = mysqli_fetch_array($rFindLO)) {
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
 
                 $r = $this->db_pull->q(14, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
 
-                if (@mysql_num_rows($r) > 1) {
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle [$datafile_count] = "$CurrentLO GHz";
                     $data_file [$datafile_count] = $this->writedirectory . "wca_op_vs_dv_" . $i . "_" . $pol . ".txt";
                     if (file_exists($data_file [$datafile_count])) {
@@ -1885,8 +1885,8 @@ class WCA extends FEComponent {
                     }
 
                     $fh = fopen($data_file [$datafile_count], 'w');
-                    $row = @mysql_fetch_array($r);
-                    while ($row = @mysql_fetch_array($r)) {
+                    $row = mysqli_fetch_array($r);
+                    while ($row = mysqli_fetch_array($r)) {
                         $stringData = "$row[0]\t$row[1]\r\n";
                         fwrite($fh, $stringData);
                     }
@@ -1961,21 +1961,21 @@ class WCA extends FEComponent {
         $data_file = array ();
 
         if ($rFindLO) {
-            while ($rowLO = mysql_fetch_array($rFindLO)) {
-                $CurrentLO = @mysql_result($rFindLO, $i);
+            while ($rowLO = mysqli_fetch_array($rFindLO)) {
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
                 $r = $this->db_pull->q(15, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
 
-                if (@mysql_num_rows($r) > 1) {
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle [$datafile_count] = "$CurrentLO GHz";
                     $data_file [$datafile_count] = $this->writedirectory . "wca_op_vs_ss_" . $i . "_" . $pol . ".txt";
                     if (file_exists($data_file [$datafile_count])) {
                         unlink($data_file [$datafile_count]);
                     }
                     $fh = fopen($data_file [$datafile_count], 'w');
-                    $row = @mysql_fetch_array($r);
+                    $row = mysqli_fetch_array($r);
 
                     $k = 0;
-                    while ($rowSS = @mysql_fetch_array($r)) {
+                    while ($rowSS = mysqli_fetch_array($r)) {
                         $VD_pwr_array [$k] = "$rowSS[0],$rowSS[1]";
                         $VDarray_unsorted [$k] = $rowSS [0];
                         $Pwrarray_unsorted [$k] = $rowSS [1];
@@ -2110,7 +2110,7 @@ class WCA extends FEComponent {
 
         if ($ImageURL == "") {
             $rCheck = $this->db_pull->q_other('Check', $this->keyId, $this->fc, NULL, NULL, NULL, NULL, $tableName);
-            if (@mysql_num_rows($rCheck) > 0) {
+            if (mysqli_num_rows($rCheck) > 0) {
                 $PlotNeeded = true;
             }
         }

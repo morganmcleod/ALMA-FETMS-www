@@ -49,9 +49,9 @@ if ($keyScanDet) {
     else
         $q = "SHOW COLUMNS FROM BeamListings_farfield;";
 
-    $r = @mysql_query ($q, $db);
+    $r = mysql_query ($q);
     $first = true;
-    while($row = mysql_fetch_array($r)) {
+    while($row = mysqli_fetch_array($r)) {
         $name = $row[0];
         
         if ($which == 'ff' && $name == 'x')
@@ -73,8 +73,8 @@ if ($keyScanDet) {
     else        
         $q = "SELECT * FROM BeamListings_farfield WHERE fkScanDetails = $keyScanDet;";
     
-    $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r, MYSQL_NUM)) {
+    $r = mysql_query ($q);
+    while($row = mysqli_fetch_array($r, MYSQL_NUM)) {
         $first = true;
         foreach($row as $cell) {
             if ($first)

@@ -36,8 +36,8 @@ if ($ctype == '100') {
 $output = "";
 
 if ($query) {
-    $r = mysql_query($query, $db);
-    while ($row = mysql_fetch_array($r)) {
+    $r = mysqli_query($link, $query);
+    while ($row = mysqli_fetch_array($r)) {
         if ($output)
             $output .= ',';
         $output .= '{"name":"' . $row[0] . '","id":"' . $row[1] . '"}';

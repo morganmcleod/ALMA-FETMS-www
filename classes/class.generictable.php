@@ -89,9 +89,9 @@ class GenericTable{
 
         //Get parameter names (column names in table)
         $q = "show columns from $tableName;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($this->dbconnection, $q);
         $counter=0;
-        while ($res = @mysql_fetch_array($r)){
+        while ($res = mysqli_fetch_array($r)){
             $this->propertyNames[$counter] = $res[0];
             $counter++;
         }
@@ -104,8 +104,8 @@ class GenericTable{
         if ($this->fckeyname == 'none'){
             $qVals = "SELECT * FROM $tableName WHERE $in_keyId_name = $in_keyId;";
         }
-        $rVals = @mysql_query($qVals,$this->dbconnection);
-        $this->propertyVals = @mysql_fetch_array($rVals);
+        $rVals = mysqli_query($this->dbconnection, $qVals);
+        $this->propertyVals = mysqli_fetch_array($rVals);
     }
 
     public function NewRecord($tableName, $in_keyIdname = 'keyId', $in_fc = '0', $in_fckeyname = 'none'){
@@ -134,12 +134,12 @@ class GenericTable{
             $qNew = "INSERT INTO $this->tableName() VALUES();";
         }
 
-        $rNew = @mysql_query($qNew,$this->dbconnection);
+        $rNew = mysqli_query($this->dbconnection, $qNew);
 
         //After the record has been created, get the new primary key value
         $qNew = "SELECT MAX($this->keyId_name) FROM $this->tableName;";
-        $rNew = @mysql_query($qNew,$this->dbconnection);
-        $this->keyId = @mysql_result($rNew,0);
+        $rNew = mysqli_query($this->dbconnection, $qNew);
+        $this->keyId = ADAPT_mysqli_result($rNew,0);
 
         //Call the Initialize function again, so that this object represents what is in the new record.
         $this->Initialize($tableName,$this->keyId,$this->keyId_name,$in_fc,$in_fckeyname);
@@ -182,7 +182,7 @@ class GenericTable{
         $qu = "UPDATE $this->tableName SET ";
         foreach($this->propertyNames as $tempName){
             if ($tempName != $this->keyId_name){
-                $qu .= " $tempName='" . @mysql_real_escape_string($this->propertyVals[array_search($tempName,$this->propertyNames,true)]) . "',";
+                $qu .= " $tempName='" . mysqli_real_escape_string($this->dbconnection, $this->propertyVals[array_search($tempName,$this->propertyNames,true)]) . "',";
             }
         }
 
@@ -197,7 +197,7 @@ class GenericTable{
             $qu .= " WHERE $this->keyId_name = $this->keyId
                     AND $this->fckeyname = " . $this->GetValue($this->fckeyname) . " LIMIT 1;";
         }
-        $ru = @mysql_query($qu,$this->dbconnection);
+        $ru = mysqli_query($this->dbconnection, $qu);
     }
 
     public function Display_data(){
@@ -257,7 +257,7 @@ class GenericTable{
             $qdelete = "DELETE FROM $this->tableName WHERE $this->keyId_name =$this->keyId
                         AND $this->fckeyname = $this->fc LIMIT 1";
         }
-        $rdelete = @mysql_query ($qdelete, $this->dbconnection);
+        $rdelete = mysqli_query($this->dbconnection, $qdelete);
     }
 
     public function DuplicateRecord(){
@@ -283,13 +283,13 @@ class GenericTable{
             }
         }
         $qCopy = rtrim($qCopy,",") . ");";
-        $rCopy = @mysql_query($qCopy,$this->dbconnection);
+        $rCopy = mysqli_query($this->dbconnection, $qCopy);
 
         //After the new duplicate record is created, get the primary key value and reinitialize
         //this object to the newly created record.
         $qMax = "SELECT MAX($this->keyId_name) FROM $this->tableName;";
-        $rMax = @mysql_query($qMax,$this->dbconnection);
-        $newId = @mysql_result($rMax,0,0);
+        $rMax = mysqli_query($this->dbconnection, $qMax);
+        $newId = ADAPT_mysqli_result($rMax,0,0);
         $this->Initialize($this->tableName,$newId,$this->keyId_name,$this->GetValue($this->fckeyname), $this->fckeyname);
     }
 }

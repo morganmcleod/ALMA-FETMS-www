@@ -12,15 +12,15 @@ echo "dbname=$dbname<br><br>";
 
 $q = "SELECT keyId, Description FROM Locations ORDER BY keyId ASC;";
 echo "Query: $q<br><br>";
-$r = @mysql_query($q,$db);
+$r = mysqli_query($link, $q);
 
-$numrows = @mysql_num_rows($r);
+$numrows = mysqli_num_rows($r);
 
 echo "Number of records: $numrows<br><br>";
 
-$r = @mysql_query($q,$db);
+$r = mysqli_query($link, $q);
 
-while ($row = @mysql_fetch_array($r)){
+while ($row = mysqli_fetch_array($r)){
 	echo "keyId: $row[0], Description: $row[1]<br>";
 
 }

@@ -19,7 +19,7 @@ if ($action == 'checkbox') {
         $q .= "0";
 
     $q .= " WHERE keyFacility=$fc AND keyId=$keyTDH;";
-    $r = @mysql_query($q, $db);
+    $r = mysqli_query($link, $q);
 
 //     $logger -> WriteLogFile("action=checkbox, key=$keyTDH, checked=$checked, result=$r");
 }

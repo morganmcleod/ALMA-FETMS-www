@@ -31,9 +31,9 @@
     ";
 
     $q = "SELECT keyId,Description FROM DataStatus ORDER BY Description ASC;";
-    $r = @mysql_query($q,$db) or die ('Could not execute query.');
+    $r = mysqli_query($link, $q,$db) or die ('Could not execute query.');
 
-    while ($row=@mysql_fetch_array($r)){
+    while ($row=mysqli_fetch_array($r)){
         $selected = '';
         if ($row[0] == 3){
             $selected = "selected";
@@ -54,9 +54,9 @@
 
     ";
     $q = "SELECT keyId,Description FROM TestData_Types ORDER BY Description ASC;";
-    $r = @mysql_query($q,$db) or die ('Could not execute query.');
+    $r = mysqli_query($link, $q,$db) or die ('Could not execute query.');
 
-    while ($row=@mysql_fetch_array($r)){
+    while ($row=mysqli_fetch_array($r)){
         echo "<option value = '$row[0]'>$row[1]</option>";
     }
 

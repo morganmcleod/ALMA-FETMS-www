@@ -13,8 +13,8 @@ class Cryostat_tempsensor extends GenericTable{
             AND sensor_number = $sensor_number
             AND fkFacility = $in_fc;";
 
-        $r=@mysql_query($q,$this->dbconnection);
-        $tempsensor_keyId=@mysql_result($r,0);
+        $r=mysqli_query($link, $q);
+        $tempsensor_keyId=ADAPT_mysqli_result($r,0);
         parent::Initialize("Cryostat_tempsensors",$tempsensor_keyId,"keyId",$in_fc,'fkFacility');
     }
 

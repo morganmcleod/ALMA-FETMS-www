@@ -18,8 +18,8 @@ if (isset($_REQUEST['band_sn'])){
     $q="SELECT keyFacility, MAX(keyId) FROM FE_Components
     WHERE band=$Band AND SN = $SN
     AND fkFE_ComponentType = 11;";
-    $r = @mysql_query($q,$db);
-    $row = @mysql_fetch_array($r);
+    $r = mysqli_query($link, $q);
+    $row = mysqli_fetch_array($r);
     $fc = $row[0];
     $keyId = $row[1];
 

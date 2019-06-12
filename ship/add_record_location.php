@@ -17,7 +17,7 @@ if (isset($_POST['submitted']))
  	include ('mysql_connect.php'); // Connect to the db.
 	$Description = $_POST['Description'];
 	$Notes= $_POST['Notes'];
-	$tempPassword = mysql_real_escape_string($_POST['Password']);
+	$tempPassword = mysqli_real_escape_string($link, $_POST['Password']);
 	
 	
 	if ($tempPassword == "nrao")
@@ -26,7 +26,7 @@ if (isset($_POST['submitted']))
 		// Make the query:
 		$qInsert = "INSERT INTO Locations (Description, Notes) VALUES ('$Description', '$Notes')";	
 		
-		$rInsert = @mysql_query ($qInsert, $dbc); // Run the query.
+		$rInsert = mysql_query ($qInsert, $dbc); // Run the query.
 	
 		// Print a message:
 		echo '<h1>Thank you!</h1>

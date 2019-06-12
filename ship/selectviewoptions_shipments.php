@@ -50,14 +50,14 @@ if (isset($_GET['ComponentTypeView'])){
 	ORDER BY ComponentTypes.Description ASC;";
 
 	
-	$rTitle = @mysql_query ($qTitle, $dbc);
-	while ($row = mysql_fetch_array($rTitle)) {
+	$rTitle = mysql_query ($qTitle, $dbc);
+	while ($row = mysqli_fetch_array($rTitle)) {
 			$tempAssyPN = $row[0];
 			//Get Item description from ComponentTypes table
 			$qCtypeDesc = "SELECT Description, keyId FROM ComponentTypes WHERE keyId
 			 = '$tempAssyPN'";
-			$rCtypeDesc = @mysql_query ($qCtypeDesc, $dbc);
-			$rowCtypeDesc = mysql_fetch_array($rCtypeDesc);
+			$rCtypeDesc = mysql_query ($qCtypeDesc, $dbc);
+			$rowCtypeDesc = mysqli_fetch_array($rCtypeDesc);
 		
 			
 			$DescTEMP=$rowCtypeDesc[0];
@@ -93,8 +93,8 @@ if (isset($_GET['ComponentTypeView'])){
 	$option_blockLoc .= "<option value='All'>All</option>";
 	$qLoc = "SELECT keyId AS IDLoc, Description AS DescriptionLoc, Notes AS NotesLoc 
 	FROM Locations ORDER BY Description ASC";		
-	$rLoc = @mysql_query ($qLoc, $dbc);
-	while ($rowLoc = mysql_fetch_array($rLoc)) {
+	$rLoc = mysql_query ($qLoc, $dbc);
+	while ($rowLoc = mysqli_fetch_array($rLoc)) {
 			$keyIdTEMPLoc=$rowLoc[0];
 			$DescTEMPLoc=$rowLoc[1];
 			$NotesTEMPLoc=$rowLoc[2];
@@ -125,8 +125,8 @@ if (isset($_GET['ComponentTypeView'])){
 	$option_blockVendor .= "<option value='All'>All</option>";
 	$qVendor = "SELECT DISTINCT Vendor 
 	FROM ShipItems WHERE Vendor <> '' ORDER BY Vendor ASC";		
-	$rVendor = @mysql_query ($qVendor, $dbc);
-	while ($rowVendor = mysql_fetch_array($rVendor)) {
+	$rVendor = mysql_query ($qVendor, $dbc);
+	while ($rowVendor = mysqli_fetch_array($rVendor)) {
 			$VendorTemp = $rowVendor[0];
 			//if ($VendorrTemp != ""){
 				if ($VendorTemp == $CurrentVendor){	

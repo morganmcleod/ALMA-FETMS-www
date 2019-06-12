@@ -23,12 +23,12 @@ if($ctype==100)
           AND Front_Ends.keyFrontEnds = A.fkFront_Ends
           ORDER BY SN;";
 
-    $rfe = mysql_query($q, $db);
+    $rfe = mysqli_query($link, $q);
 
     $feRecs = array();
     $configIds = FALSE;
 
-    while ($row = mysql_fetch_array($rfe)) {
+    while ($row = mysqli_fetch_array($rfe)) {
         $feRecs[] = $row;
         if ($configIds)
             $configIds .= ",";
@@ -45,11 +45,11 @@ if($ctype==100)
           WHERE B.keyId IS NULL
           AND A.fkFEConfig IN ($configIds);";
 
-    $rsl = mysql_query($q, $db);
-
+    $rsl = mysqli_query($link, $q);
+    
     $slnRecs = array();
 
-    while ($row = mysql_fetch_array($rsl))
+    while ($row = mysqli_fetch_array($rsl))
         $slnRecs[] = $row;
 
     $retJSON = FALSE;
@@ -69,7 +69,7 @@ if($ctype==100)
         $retJSON .= ",'TS':'" . (($slKey) ? $slnRecs[$slKey]['TS'] : $row['TS']) . "'";
         $retJSON .= ",'Docs':'" . $row['Docs'] . "'";
         $notes = (($slKey) ? $slnRecs[$slKey]['Notes'] : "");
-        $retJSON .= ",'Notes':'" . mysql_real_escape_string($notes) . "'}";
+        $retJSON .= ",'Notes':'" . mysqli_real_escape_string($link, $notes) . "'}";
     }
     $retJSON .= "]";
     echo $retJSON;
@@ -88,12 +88,12 @@ else
           AND B.keyId IS NULL
           ORDER BY A.Band ASC, (0 + A.SN) ASC;";
 
-    $rcm = mysql_query($q, $db);
+    $rcm = mysqli_query($link, $q);
 
     $cmRecs = array();
     $configIds = FALSE;
 
-    while ($row = mysql_fetch_array($rcm)) {
+    while ($row = mysqli_fetch_array($rcm)) {
         $cmRecs[] = $row;
         if ($configIds)
             $configIds .= ",";
@@ -110,11 +110,11 @@ else
           WHERE B.keyId IS NULL
           AND A.fkFEComponents IN ($configIds);";
 
-    $rsl = mysql_query($q, $db);
+    $rsl = mysqli_query($link, $q);
 
     $slnRecs = array();
 
-    while ($row = mysql_fetch_array($rsl))
+    while ($row = mysqli_fetch_array($rsl))
         $slnRecs[] = $row;
 
     // Find the max ConfigLink records which refer to the components in our list,
@@ -129,10 +129,10 @@ else
           AND A.fkFE_Components IN ($configIds)
           ORDER BY fkFE_Components ASC;";
 
-    $rcl = mysql_query($q, $db);
+    $rcl = mysqli_query($link, $q);
     $clRecs = array();
 
-    while ($row = mysql_fetch_array($rcl))
+    while ($row = mysqli_fetch_array($rcl))
         $clRecs[] = $row;
 
     $retJSON = FALSE;
@@ -154,7 +154,7 @@ else
         $retJSON .= ",'TS':'" . (($slKey) ? $slnRecs[$slKey]['TS'] : $row['TS']) . "'";
         $retJSON .= ",'FESN':'" . (($clKey) ? $clRecs[$clKey]['SN'] : "") . "'";
         $notes = (($slKey) ? $slnRecs[$slKey]['Notes'] : "");
-        $retJSON .= ",'Notes':'" . mysql_real_escape_string($notes) . "'}";
+        $retJSON .= ",'Notes':'" . mysqli_real_escape_string($link, $notes) . "'}";
     }
     $retJSON .= "]";
     echo $retJSON;

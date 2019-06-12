@@ -27,7 +27,7 @@ if ($tdhIdArray && $newCfg) {
                   WHERE ($where);";
     }
     if ($query) {
-        $r = mysql_query($query, $db);
+        $r = mysqli_query($link, $query);
         if ($r)
             $output = '{"success" : true}';
     }

@@ -11,14 +11,14 @@ class SLN extends GenericTable{
 
         $q = "SELECT Description, Notes FROM Locations
               WHERE keyId = " . $this->GetValue('fkLocationNames') . ";";
-        $r = @mysql_query($q,$this->dbconnection);
-        $locid = @mysql_result($r,0,0);
-        $this->location = @mysql_result($r,0,0) . " (" . @mysql_result($r,0,1) . ")";
+        $r = mysqli_query($link, $q);
+        $locid = ADAPT_mysqli_result($r,0,0);
+        $this->location = ADAPT_mysqli_result($r,0,0) . " (" . ADAPT_mysqli_result($r,0,1) . ")";
 
         $q = "SELECT Status FROM StatusTypes
               WHERE keyStatusType = " . $this->GetValue('fkStatusType') . ";";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->status = @mysql_result($r,0,0);
+        $r = mysqli_query($link, $q);
+        $this->status = ADAPT_mysqli_result($r,0,0);
     }
 }
 ?>

@@ -15,14 +15,14 @@ WHERE fkFE_ComponentType = 11
 AND Band <> 0
 ORDER BY Band ASC;";
 
-$rBand = @mysql_query($qBand,$db);
+$rBand = mysqli_query($link, $qBand);
 
 echo '
 <div style="width:330px; margin:30px;">
 <form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
     echo "<select name='Band_selected' id='Band_selected' onChange='creategrid(this.value)'>";
 
-    while($rowBand = @mysql_fetch_array($rBand)){
+    while($rowBand = mysqli_fetch_array($rBand)){
         if ($rowBand[0] == $Band){
             $option_band .= "<option value='$rowBand[0]' selected = 'selected'>Band $rowBand[0]</option>";
         }

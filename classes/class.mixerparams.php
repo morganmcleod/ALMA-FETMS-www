@@ -45,9 +45,9 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->imag01 = @mysql_result($r,0,0);
-        $this->imag01_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->imag01 = ADAPT_mysqli_result($r,0,0);
+        $this->imag01_key = ADAPT_mysqli_result($r,0,1);
 
         $q = "SELECT IMAG, keyId FROM CCA_MixerParams
               WHERE fkComponent = $in_fkCCA
@@ -55,9 +55,9 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->imag02 = @mysql_result($r,0);
-        $this->imag02_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->imag02 = ADAPT_mysqli_result($r,0);
+        $this->imag02_key = ADAPT_mysqli_result($r,0,1);
 
         $q = "SELECT IMAG, keyId FROM CCA_MixerParams
               WHERE fkComponent = $in_fkCCA
@@ -65,9 +65,9 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->imag11 = @mysql_result($r,0);
-        $this->imag11_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->imag11 = ADAPT_mysqli_result($r,0);
+        $this->imag11_key = ADAPT_mysqli_result($r,0,1);
 
         $q = "SELECT IMAG, keyId FROM CCA_MixerParams
               WHERE fkComponent = $in_fkCCA
@@ -75,9 +75,9 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->imag12 = @mysql_result($r,0);
-        $this->imag12_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->imag12 = ADAPT_mysqli_result($r,0);
+        $this->imag12_key = ADAPT_mysqli_result($r,0,1);
 
 
         $q = "SELECT VJ, keyId FROM CCA_MixerParams
@@ -86,9 +86,9 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->vj01 = @mysql_result($r,0);
-        $this->vj01_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->vj01 = ADAPT_mysqli_result($r,0);
+        $this->vj01_key = ADAPT_mysqli_result($r,0,1);
 
 
         $q = "SELECT VJ, keyId FROM CCA_MixerParams
@@ -97,9 +97,9 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->vj02 = @mysql_result($r,0,0);
-        $this->vj0201_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->vj02 = ADAPT_mysqli_result($r,0,0);
+        $this->vj0201_key = ADAPT_mysqli_result($r,0,1);
 
         $q = "SELECT VJ, keyId FROM CCA_MixerParams
               WHERE fkComponent = $in_fkCCA
@@ -107,9 +107,9 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->vj11 = @mysql_result($r,0,0);
-        $this->vj11_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->vj11 = ADAPT_mysqli_result($r,0,0);
+        $this->vj11_key = ADAPT_mysqli_result($r,0,1);
 
         $q = "SELECT VJ, keyId FROM CCA_MixerParams
               WHERE fkComponent = $in_fkCCA
@@ -117,9 +117,9 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->vj12 = @mysql_result($r,0,0);
-        $this->vj12_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->vj12 = ADAPT_mysqli_result($r,0,0);
+        $this->vj12_key = ADAPT_mysqli_result($r,0,1);
 
 
 
@@ -130,9 +130,9 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->ij01 = @mysql_result($r,0,0);
-        $this->ij01_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->ij01 = ADAPT_mysqli_result($r,0,0);
+        $this->ij01_key = ADAPT_mysqli_result($r,0,1);
 
 
         $q = "SELECT IJ, keyId FROM CCA_MixerParams
@@ -141,9 +141,9 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->ij02 = @mysql_result($r,0,0);
-        $this->ij02_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->ij02 = ADAPT_mysqli_result($r,0,0);
+        $this->ij02_key = ADAPT_mysqli_result($r,0,1);
 
         $q = "SELECT IJ, keyId FROM CCA_MixerParams
               WHERE fkComponent = $in_fkCCA
@@ -151,9 +151,9 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->ij11 = @mysql_result($r,0,0);
-        $this->ij11_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->ij11 = ADAPT_mysqli_result($r,0,0);
+        $this->ij11_key = ADAPT_mysqli_result($r,0,1);
 
         $q = "SELECT IJ, keyId FROM CCA_MixerParams
               WHERE fkComponent = $in_fkCCA
@@ -161,9 +161,9 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->ij12 = @mysql_result($r,0,0);
-        $this->ij12_key = @mysql_result($r,0,1);
+        $r = mysqli_query($link, $q);
+        $this->ij12 = ADAPT_mysqli_result($r,0,0);
+        $this->ij12_key = ADAPT_mysqli_result($r,0,1);
     }
 
 
@@ -176,7 +176,7 @@ class MixerParams extends GenericTable {
           AND Pol = 0
           AND SB = 1
           AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
         $q = "UPDATE CCA_MixerParams
@@ -186,7 +186,7 @@ class MixerParams extends GenericTable {
           AND Pol = 0
           AND SB = 2
           AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
         $q = "UPDATE CCA_MixerParams
@@ -196,7 +196,7 @@ class MixerParams extends GenericTable {
           AND Pol = 1
           AND SB = 1
           AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
         $q = "UPDATE CCA_MixerParams
@@ -206,7 +206,7 @@ class MixerParams extends GenericTable {
           AND Pol = 1
           AND SB = 2
           AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
         $q = "UPDATE CCA_MixerParams
@@ -216,7 +216,7 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
 
@@ -227,7 +227,7 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
         $q = "UPDATE CCA_MixerParams
@@ -237,7 +237,7 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
 
@@ -248,7 +248,7 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
 
@@ -260,7 +260,7 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
 
@@ -271,7 +271,7 @@ class MixerParams extends GenericTable {
               AND Pol = 0
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
         $q = "UPDATE CCA_MixerParams
@@ -281,7 +281,7 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 1
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
         $q = "UPDATE CCA_MixerParams
@@ -291,7 +291,7 @@ class MixerParams extends GenericTable {
               AND Pol = 1
               AND SB = 2
               AND fkFacility = $in_fc;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($link, $q);
 
 
     }

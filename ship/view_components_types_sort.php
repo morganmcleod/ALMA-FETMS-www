@@ -18,8 +18,8 @@ if (isset($_GET['p']) && is_numeric($_GET['p'])) { // Already been determined.
 } else { // Need to determine.
  	// Count the number of records:
 	$q = "SELECT COUNT(keyId) FROM ComponentTypes";
-	$r = @mysql_query ($q, $dbc);
-	$row = @mysql_fetch_array ($r, mysql_NUM);
+	$r = mysql_query ($q, $dbc);
+	$row = mysqli_fetch_array ($r, mysql_NUM);
 	$records = $row[0];
 	// Calculate the number of pages...
 	if ($records > $display) { // More than 1 page.
@@ -60,7 +60,7 @@ switch ($sort) {
 // Make the query:
 $q = "SELECT keyId AS IDTemp, ProductTreeNumber as PTNTemp, Description AS DescriptionTemp, Docs AS 
 DocsTemp FROM ComponentTypes ORDER BY $order_by LIMIT $start, $display";		
-$r = @mysql_query ($q, $dbc);
+$r = mysql_query ($q, $dbc);
 
 
 
@@ -78,7 +78,7 @@ echo '<table align="center" cellspacing="5" cellpadding="10" width="85%">
 
 // Fetch and print all the records....
 $bg = '#eeeeee'; 
-while ($row = mysql_fetch_array($r)) {
+while ($row = mysqli_fetch_array($r)) {
 	$bg = ($bg=='#eeeeee' ? '#ffffff' : '#eeeeee');
 		echo '<tr bgcolor="' . $bg . '">
 		<td align="left"><a href="edit_record_component_type.php?id=' . $row['IDTemp'] . '">Edit</a></td>

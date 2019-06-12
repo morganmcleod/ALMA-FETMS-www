@@ -28,8 +28,8 @@ if (isset($_REQUEST['UserCode'])){
 
 //Check first to see if Front End record already exists
 $q = "SELECT DefaultFacility FROM DatabaseDefaults";
-$r = @mysql_query($q,$db);
-$facility = @mysql_result($r,0,0);
+$r = mysqli_query($link, $q);
+$facility = ADAPT_mysqli_result($r,0,0);
 $fc = $facility;
 
 
@@ -38,11 +38,11 @@ $fc = $facility;
 if($command=="getComboDesc")
 {
     //get all component types
-    $combo_data=mysql_query("SELECT keyId,Description FROM ComponentTypes
+    $combo_data=mysqli_query($link, "SELECT keyId,Description FROM ComponentTypes
                 ORDER BY Description ASC")
     or die("Could not get description combo box data" .mysql_error());
 
-    while($combolist=mysql_fetch_object($combo_data))
+    while($combolist=mysqli_fetch_object($combo_data))
     {
         $combo[]=$combolist;
     }
@@ -51,24 +51,24 @@ if($command=="getComboDesc")
 else if ($command=="getComboSN")
 {
     // get all serial numbers for a given component type
-    $getCompkey=mysql_query("SELECT keyId FROM ComponentTypes WHERE Description='$compTypeName'")
+    $getCompkey=mysqli_query($link, "SELECT keyId FROM ComponentTypes WHERE Description='$compTypeName'")
     or die("Could not get Component key" .mysql_error());
 
-    $compType=mysql_result($getCompkey,0,"keyId");
+    $compType=ADAPT_mysqli_result($getCompkey,0,"keyId");
     if($band != "No band" && $band != "")
     {
-        $combo_data=mysql_query("SELECT DISTINCT SN FROM FE_Components
+        $combo_data=mysqli_query($link, "SELECT DISTINCT SN FROM FE_Components
         WHERE SN IS NOT NULL AND fkFE_ComponentType='$compType' AND Band='$band' ORDER BY (SN + 0) ASC")
         or die("Could not get SN combo box data" .mysql_error());
     }
     else
     {
-        $combo_data=mysql_query("SELECT DISTINCT SN FROM FE_Components
+        $combo_data=mysqli_query($link, "SELECT DISTINCT SN FROM FE_Components
         WHERE SN IS NOT NULL AND fkFE_ComponentType='$compType' AND (Band IS NULL OR Band='0')
         ORDER BY BINARY SN ASC")
         or die("Could not get SN combo box data" .mysql_error());
     }
-    while($combolist=mysql_fetch_object($combo_data))
+    while($combolist=mysqli_fetch_object($combo_data))
     {
         $combo[]=$combolist;
     }
@@ -77,7 +77,7 @@ else if ($command=="getComboSN")
 else if($command == "getData")
 {
     //get all components integrated in a front end
-    $comp_data=mysql_query("Select FE_Components.keyId,FE_Components.SN,FE_Components.Band,
+    $comp_data=mysqli_query($link, "Select FE_Components.keyId,FE_Components.SN,FE_Components.Band,
     ComponentTypes.Description
     FROM FE_Components
     LEFT JOIN ComponentTypes ON FE_Components.fkFE_ComponentType=ComponentTypes.keyId
@@ -87,7 +87,7 @@ else if($command == "getData")
     ORDER BY ComponentTypes.Description ASC")
     or die("Could not get data" .mysql_error());
 
-    while($comp=mysql_fetch_object($comp_data))
+    while($comp=mysqli_fetch_object($comp_data))
     {
         $data[]=$comp;
     }
@@ -168,10 +168,10 @@ else if($command =="saveData")
             //get Component id for given component description.
             $desc = $comps['Description'];
 
-            $compType=mysql_query("SELECT keyId FROM ComponentTypes WHERE Description='$desc'");
-            if(mysql_num_rows($compType) > 0)
+            $compType=mysqli_query($link, "SELECT keyId FROM ComponentTypes WHERE Description='$desc'");
+            if(mysqli_num_rows($compType) > 0)
             {
-                $type_id=mysql_result($compType,0,'keyId');
+                $type_id=ADAPT_mysqli_result($compType,0,'keyId');
                 $dbop = new DBOperations();
                 $sn = $comps['SN'];
                 $band = $comps['Band'];
@@ -179,19 +179,19 @@ else if($command =="saveData")
                 //get the latest configuration number of a given frontend
                 if($band != "No band") //band is not 0 or null
                 {
-                    $checkduplicates=mysql_query("SELECT MAX(keyId) AS MaxKey FROM
+                    $checkduplicates=mysqli_query($link, "SELECT MAX(keyId) AS MaxKey FROM
                     FE_Components WHERE fkFE_ComponentType='$type_id'
                     AND SN='$sn' AND Band='$band' AND keyFacility='$facility'");
                 }
                 else
                 {
-                    $checkduplicates=mysql_query("SELECT MAX(keyId) AS MaxKey
+                    $checkduplicates=mysqli_query($link, "SELECT MAX(keyId) AS MaxKey
                     FROM FE_Components WHERE fkFE_ComponentType='$type_id'
                     AND SN='$sn' AND (Band is NULL OR Band='0')
                     AND keyFacility='$facility'");
                 }
 
-                $CompKey=mysql_result($checkduplicates,0,"MaxKey");
+                $CompKey=ADAPT_mysqli_result($checkduplicates,0,"MaxKey");
 
                 //Possible new method
                 $dbop->AddComponentToFrontEnd($fe->keyId, $CompKey, $fc, $fc, '', '', $UserCode);

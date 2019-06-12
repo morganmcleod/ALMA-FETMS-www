@@ -36,8 +36,8 @@ class Shipment_class{
 		TrackingNumber2,TrackingNumber3,TrackingNumber4,TrackingNumber5,TrackingNumber6,
         TrackingNumber7,TrackingNumber8,TrackingNumber9,TrackingNumber10,Shipper
 		FROM Shipments WHERE keyId = $in_keyId;";
-		$rInit = @mysql_query($qInit,$dbc);
-		$rowInit = @mysql_fetch_array($rInit);
+		$rInit = mysqli_query($link, $qInit,$dbc);
+		$rowInit = mysqli_fetch_array($rInit);
 		$this->keyId = $in_keyId;
 		$this->Notes = $rowInit[0];
 		$this->ShipToLocation = $rowInit[1];
@@ -80,7 +80,7 @@ class Shipment_class{
 		TrackingNumber7 = '$this->TrackingNumber7',TrackingNumber8 = '$this->TrackingNumber8',
 		TrackingNumber9 = '$this->TrackingNumber9',TrackingNumber10 = '$this->TrackingNumber10'
 		WHERE keyId='$this->keyId' LIMIT 1";
-		$r = @mysql_query ($q, $dbc);
+		$r = mysql_query ($q, $dbc);
 	}
 	
 	
@@ -88,7 +88,7 @@ class Shipment_class{
 	function Delete_all_ship_items(){
 		include ('mysql_connect.php');
 		$q="DELETE FROM ShipItems WHERE fkShipment = $this->keyId;";
-		$r=@mysql_query($q,$dbc);	
+		$r=mysqli_query($link, $q,$dbc);	
 	}
 	
 	
@@ -98,8 +98,8 @@ class Shipment_class{
 		//Get ShipLocation description
 		$LocationNumber = $this->ShipToLocation;
 		$qLocation = "SELECT Description, Notes FROM Locations WHERE keyId=$LocationNumber";		
-		$rLocation = @mysql_query ($qLocation, $dbc);
-		$rowLocation = mysql_fetch_array ($rLocation, MYSQL_NUM);
+		$rLocation = mysql_query ($qLocation, $dbc);
+		$rowLocation = mysqli_fetch_array ($rLocation, MYSQL_NUM);
 		$ShipToLocation = $rowLocation[0] . ' (' . $rowLocation[1] . ')';
 		
 	
@@ -152,7 +152,7 @@ class Shipment_class{
 	WHERE fkShipment=$this->keyId";	
 	
 	echo $q . "<br>";
-	$r = @mysql_query ($q, $dbc);
+	$r = mysql_query ($q, $dbc);
 	
 	echo "<h1>Shipment Items</h1><br>";
 	$datatype = "shipment";
@@ -178,7 +178,7 @@ class Shipment_class{
 	
 	// Fetch and print all the records....
 	$bg = '#eeeeee'; 
-	while ($row = mysql_fetch_array($r)) {
+	while ($row = mysqli_fetch_array($r)) {
 		$bg = ($bg=='#eeeeee' ? '#ffffff' : '#eeeeee');
 		
 		
@@ -244,9 +244,9 @@ class Shipment_class{
 						FROM Shipments 
 						WHERE Shipper <> ''
 						ORDER BY Shipper ASC";		
-			$rshipper = @mysql_query ($qshipper, $dbc);
+			$rshipper = mysql_query ($qshipper, $dbc);
 			$option_shipper .= "<option value='Other' selected = 'selected' >Other</option>";	
-			while ($rowshipper = mysql_fetch_array($rshipper)) {
+			while ($rowshipper = mysqli_fetch_array($rshipper)) {
 			
 						if ($rowshipper[0] == $this->Shipper){	
 				   		    $option_shipper .= "<option value='$rowshipper[0]' selected = 'selected' >$rowshipper[0]</option>";
@@ -346,36 +346,36 @@ class Shipment_class{
 		        $tempShipItem->NetKitQty=str_replace('"','',$arr[0]);
 		        
 		        
-		        $tempShipItem->Stock=mysql_real_escape_string(str_replace('"','',$arr[1]));
-		        $tempShipItem->Unit=mysql_real_escape_string(str_replace('"','',$arr[2]));
-		        $tempShipItem->PN=mysql_real_escape_string(str_replace('"','',$arr[3]));
-		        $tempShipItem->Title=mysql_real_escape_string(str_replace('"','',$arr[4]));
-		        $tempShipItem->Vendor=mysql_real_escape_string(str_replace('"','',$arr[5]));
-		        $tempShipItem->VendorPN=mysql_real_escape_string(str_replace('"','',$arr[6]));
-		        $tempShipItem->DrawingNumber=mysql_real_escape_string(str_replace('"','',$arr[7]));
-		        $tempShipItem->StorageLocation=mysql_real_escape_string(str_replace('"','',$arr[8]));
-		        $tempShipItem->AssyPN=mysql_real_escape_string(str_replace('"','',$arr[9]));
+		        $tempShipItem->Stock=mysqli_real_escape_string($link, str_replace('"','',$arr[1]));
+		        $tempShipItem->Unit=mysqli_real_escape_string($link, str_replace('"','',$arr[2]));
+		        $tempShipItem->PN=mysqli_real_escape_string($link, str_replace('"','',$arr[3]));
+		        $tempShipItem->Title=mysqli_real_escape_string($link, str_replace('"','',$arr[4]));
+		        $tempShipItem->Vendor=mysqli_real_escape_string($link, str_replace('"','',$arr[5]));
+		        $tempShipItem->VendorPN=mysqli_real_escape_string($link, str_replace('"','',$arr[6]));
+		        $tempShipItem->DrawingNumber=mysqli_real_escape_string($link, str_replace('"','',$arr[7]));
+		        $tempShipItem->StorageLocation=mysqli_real_escape_string($link, str_replace('"','',$arr[8]));
+		        $tempShipItem->AssyPN=mysqli_real_escape_string($link, str_replace('"','',$arr[9]));
 	  			
 			    //Add new record to ComponentTypes table, if there is not one
 			    //already for this ProductTreeNumber (AssyPN)
 				$qDescr = "SELECT keyId FROM ComponentTypes WHERE ProductTreeNumber = '$AssyPN'";
-				$rDescr = @mysql_query ($qDescr, $dbc);
-				//echo "NumRows: " . @mysql_num_rows($rDescr);
+				$rDescr = mysql_query ($qDescr, $dbc);
+				//echo "NumRows: " . mysqli_num_rows($rDescr);
 				
 				
-				if (@mysql_num_rows($rDescr) < 1){
+				if (mysqli_num_rows($rDescr) < 1){
 					//echo $tempPTN . ", " . $Description . "<br>";
 					$qInsert = $q = "INSERT INTO ComponentTypes (ProductTreeNumber, Description) 
 					VALUES ('$AssyPN', '$Title')";	
 					
 
 					
-					$rInsert = @mysql_query ($qInsert, $dbc);
-					$rDescr = @mysql_query ($qDescr, $dbc); 
+					$rInsert = mysql_query ($qInsert, $dbc);
+					$rDescr = mysql_query ($qDescr, $dbc); 
 				}
 			   
 				//keyId of ComponentType is also fkComponentType for new record
-				$row_fkCtype = mysql_fetch_array($rDescr);
+				$row_fkCtype = mysqli_fetch_array($rDescr);
 		
 				$tempShipItem->fkComponentType= $row_fkCtype[0];	
 				$tempShipItem->fkShipment=$this->keyId;
@@ -419,20 +419,20 @@ class Shipment_class{
 	
 	public function RequestValues(){
 		if (isset($_REQUEST['Notes'])){
-			$this->Notes = trim(mysql_real_escape_string($_REQUEST['Notes']));
+			$this->Notes = trim(mysqli_real_escape_string($link, $_REQUEST['Notes']));
 		}
 		if (isset($_REQUEST['Location'])){	
 			$this->ShipToLocation = $_REQUEST['Location'];
 		}
 		
 		if (isset($_REQUEST['Date'])){
-			$this->ShipDate = str_replace("/","-",mysql_real_escape_string($_REQUEST['Date']));
+			$this->ShipDate = str_replace("/","-",mysqli_real_escape_string($link, $_REQUEST['Date']));
 		}
 		if (isset($_REQUEST['Title'])){
-			$this->Title = trim(mysql_real_escape_string($_REQUEST['Title']));	
+			$this->Title = trim(mysqli_real_escape_string($link, $_REQUEST['Title']));	
 		}
 		if (isset($_REQUEST['SICL'])){
-			$this->SICL = trim(mysql_real_escape_string($_REQUEST['SICL']));
+			$this->SICL = trim(mysqli_real_escape_string($link, $_REQUEST['SICL']));
 		}	
 		if (isset($_REQUEST['TRF'])){			
 			$this->TRF = trim($_REQUEST['TRF']);	
@@ -490,10 +490,10 @@ class Shipment_class{
 	public function NewRecord(){
 		include('mysql_connect.php');
 		$qNew = "INSERT INTO Shipments() VALUES();";
-		$rNew = @mysql_query($qNew,$dbc);
+		$rNew = mysqli_query($link, $qNew,$dbc);
 		$qNew = "SELECT keyId FROM Shipments ORDER BY keyId DESC LIMIT 1;";
-		$rNew = @mysql_query($qNew,$dbc);
-		$rowNew = @mysql_fetch_array($rNew);
+		$rNew = mysqli_query($link, $qNew,$dbc);
+		$rowNew = mysqli_fetch_array($rNew);
 		$this->keyId = $rowNew[0];
 	}
 	
@@ -516,9 +516,9 @@ class Shipment_class{
 	public function Delete_record(){
 		include('mysql_connect.php');
 		$q = "DELETE FROM ShipItems WHERE fkShipment=$this->keyId";		
-		$r = @mysql_query ($q, $dbc);
+		$r = mysql_query ($q, $dbc);
 		$q = "DELETE FROM Shipments WHERE keyId=$this->keyId LIMIT 1";		
-		$r = @mysql_query ($q, $dbc);	
+		$r = mysql_query ($q, $dbc);	
 		echo '<p>The record has been deleted.</p>';	
 		echo '<meta http-equiv="Refresh" content="1;url=shipping.php">';
 	}
@@ -534,9 +534,9 @@ class Location_selector_class{
 		echo '<p>Location:<select name="Location">'; 
 	
 		$qLoc = "SELECT keyId FROM Locations";	
-		$rLoc = @mysql_query ($qLoc, $dbc);
+		$rLoc = mysql_query ($qLoc, $dbc);
 
-		while ($rowLoc = mysql_fetch_array($rLoc)) {
+		while ($rowLoc = mysqli_fetch_array($rLoc)) {
 				$Location = new Location_class();
 				$Location->Initialize($rowLoc[0]);
 				if ($Location->keyId == $CurrentLocation){
@@ -600,7 +600,7 @@ class ShipmentTable_class{
 		//echo "query:<br>$this->DisplayQuery<br>";					
 		
 		$qTable = $this->DisplayQuery;
-		$rTable = @mysql_query($qTable,$dbc);
+		$rTable = mysqli_query($link, $qTable,$dbc);
 		$Shipment = new Shipment_class;
 		
 		
@@ -619,7 +619,7 @@ class ShipmentTable_class{
 		// Fetch and print all the records....
 		$bg = '#eeeeee'; 
 		$do_once = false;
-		while ($rowTable = @mysql_fetch_array($rTable)) {
+		while ($rowTable = mysqli_fetch_array($rTable)) {
 			
 				$showrecord = true;
 				$Shipment->Initialize($rowTable[0]);
@@ -637,13 +637,13 @@ class ShipmentTable_class{
 				//}
 				
 				
-				$rSI = @mysql_query ($qSI, $dbc);
-				if (mysql_num_rows($rSI) == 0){
+				$rSI = mysql_query ($qSI, $dbc);
+				if (mysqli_num_rows($rSI) == 0){
 					$showrecord = false;
 					//find out if there are any shipitem records for this shipment
 					$qSI2 = "SELECT keyId FROM ShipItems WHERE fkShipment = $Shipment->keyId;";	
-					$rSI2 = @mysql_query ($qSI2, $dbc);
-					if (mysql_num_rows($rSI2)==0){
+					$rSI2 = mysql_query ($qSI2, $dbc);
+					if (mysqli_num_rows($rSI2)==0){
 						$showrecord = true;
 					}
 					
@@ -700,8 +700,8 @@ class Location_class{
 	function Initialize($in_keyId){
 		include('mysql_connect.php');
 		$qL = "SELECT Notes, Description FROM Locations WHERE keyId = $in_keyId;";
-		$rL = @mysql_query($qL,$dbc);
-		$rowL = @mysql_fetch_array($rL);
+		$rL = mysqli_query($link, $qL,$dbc);
+		$rowL = mysqli_fetch_array($rL);
 		
 		$this->keyId = $in_keyId;
 		$this->Notes = $rowL[0];
@@ -741,8 +741,8 @@ class Ship_item_class{
 		         VendorPN,DrawingNumber,StorageLocation,AssyPN,ProductTreeNumber,fkComponentType
         		FROM ShipItems WHERE keyId = $In_keyId;";
         		
-		$rInit = @mysql_query($qInit,$dbc);
-		$rowInit = @mysql_fetch_array($rInit);
+		$rInit = mysqli_query($link, $qInit,$dbc);
+		$rowInit = mysqli_fetch_array($rInit);
 		$this->keyId = $In_keyId;
 		$this->fkShipment = $rowInit[0];
 		$this->NetKitQty = $rowInit[1];
@@ -809,10 +809,10 @@ class Ship_item_class{
 	public function NewRecord(){
 		include('mysql_connect.php');
 		$qNew = "INSERT INTO ShipItems() VALUES();";
-		$rNew = @mysql_query($qNew,$dbc);
+		$rNew = mysqli_query($link, $qNew,$dbc);
 		$qNew = "SELECT keyId FROM ShipItems ORDER BY keyId DESC LIMIT 1;";
-		$rNew = @mysql_query($qNew,$dbc);
-		$rowNew = @mysql_fetch_array($rNew);
+		$rNew = mysqli_query($link, $qNew,$dbc);
+		$rowNew = mysqli_fetch_array($rNew);
 		$this->keyId = $rowNew[0];
 	}
 	
@@ -825,7 +825,7 @@ class Ship_item_class{
 		AssyPN = '$this->AssyPN',ProductTreeNumber = '$this->ProductTreeNumber',
 		fkComponentType = '$this->fkComponentType'
 		WHERE keyId='$this->keyId' LIMIT 1";
-		$r = @mysql_query ($q, $dbc);
+		$r = mysql_query ($q, $dbc);
 	}
 	
 	public function Display_add_form($action = "add"){
@@ -876,7 +876,7 @@ class Ship_item_class{
 	public function Delete_record(){
 		include('mysql_connect.php');
 		$q = "DELETE FROM ShipItems WHERE keyId=$this->keyId";		
-		$r = @mysql_query ($q, $dbc);
+		$r = mysql_query ($q, $dbc);
 		echo '<p>The record has been deleted.</p>';	
 		echo '<meta http-equiv="Refresh" content="1;url=view_shipment_full_record.php?id='.$this->fkShipment.'">';
 	}

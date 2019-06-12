@@ -17,7 +17,7 @@ echo "<br><input type='submit' name = 'exportcsv' value='EXPORT TO CSV'>";
 $qList = "SELECT keyId FROM CPDS_RegModules
 		WHERE SN <> ''
 		ORDER BY SN ASC;";
-$rList = @mysql_query($qList,$dbc);
+$rList = mysqli_query($link, $qList,$dbc);
 
 //Table Header
 echo "";
@@ -36,7 +36,7 @@ echo '<tr bgcolor="#ffff66">
     </tr>';
 
 
-while ($rowList = @mysql_fetch_array($rList)){
+while ($rowList = mysqli_fetch_array($rList)){
 	$bg_color = ($bg_color=="#ffffff" ? '#dddddd' : "#ffffff");
 	$RegModule = new RegulatorModule;
 	$RegModule ->Initialize_RegulatorModule($rowList[0],$dbc);

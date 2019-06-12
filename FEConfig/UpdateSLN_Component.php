@@ -102,8 +102,8 @@ echo "
 						<option value='' selected = 'selected'></option>";
 						$q = "SELECT Initials FROM Users
 							  ORDER BY Initials ASC;";
-						$r = @mysql_query($q,$db);
-						while($row = @mysql_fetch_Array($r)){
+						$r = mysqli_query($link, $q);
+						while($row = mysqli_fetch_array($r)){
 							if ($row[0] == $c->sln->GetValue('Updated_By')){
 								echo "<option value='$row[0]' selected = 'selected'>$row[0]</option>";
 							}
@@ -126,8 +126,8 @@ echo "
 					<select name='fkStatusType' id='fkStatusType'>";
 						$q = "SELECT keyStatusType,Status FROM StatusTypes
 							  ORDER BY keyStatusType ASC;";
-						$r = @mysql_query($q,$db);
-						while($row = @mysql_fetch_Array($r)){
+						$r = mysqli_query($link, $q);
+						while($row = mysqli_fetch_array($r)){
 							if ($row[0] == $c->sln->GetValue('fkStatusType')){
 								echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";
 							}
@@ -153,8 +153,8 @@ echo "
 					<select name='fkLocationNames' id='fkLocationNames'>";
 						$q = "SELECT keyId,Description FROM Locations
 							  ORDER BY Description ASC;";
-						$r = @mysql_query($q,$db);
-						while($row = @mysql_fetch_Array($r)){
+						$r = mysqli_query($link, $q);
+						while($row = mysqli_fetch_array($r)){
 							if ($row[0] == $c->sln->GetValue('fkLocationNames')){
 								echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";
 							}

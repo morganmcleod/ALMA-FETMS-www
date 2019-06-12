@@ -14,10 +14,10 @@ $q = "SELECT DISTINCT(FE_Components.keyId)
     FE_Components.fkFE_ComponentType = 6
     AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
     AND FE_ConfigLink.fkFE_Config = $feConfig;";
-$r = @mysql_query($q,$db);
+$r = mysqli_query($link, $q);
 
 $component = new FEComponent();
-$component->Initialize_FEComponent(@mysql_result($r,0,0), $facility);
+$component->Initialize_FEComponent(ADAPT_mysqli_result($r,0,0), $facility);
 
 echo "component SN= " . $component->GetValue('SN') ."<br>";
 
@@ -38,7 +38,7 @@ echo "component SN= " . $component->GetValue('SN') ."<br>";
 
 <?php
 
-while($comp=mysql_fetch_array($getComponents)) {
+while($comp=mysqli_fetch_array($getComponents)) {
     $trclass = ($trclass=="" ? 'class="alt"' : "");
 
 ?>

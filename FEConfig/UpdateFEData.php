@@ -13,7 +13,7 @@ if(strpos($url,"http") === false){
 }
 
 //get front end config value
-$updateFE=mysql_query("UPDATE Front_Ends SET ESN='$cansn',Docs='$url',Description='$notes'
+$updateFE=mysqli_query($link, "UPDATE Front_Ends SET ESN='$cansn',Docs='$url',Description='$notes'
 					  WHERE keyFrontEnds=(SELECT fkFront_Ends FROM FE_Config WHERE
 					  keyFEConfig='$keyFE' AND FE_Config.keyFacility='$facility')
 					  AND Front_Ends.keyFacility='$facility'")

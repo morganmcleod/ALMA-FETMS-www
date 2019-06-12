@@ -49,7 +49,7 @@ class IFSpectrum_db {
      * @param string $query
      */
     private function run_query($query) {
-        return @mysql_query($query);
+        return mysqli_query($link, $query);
     }
 
     /**
@@ -154,7 +154,7 @@ class IFSpectrum_db {
 	    $r = $this->run_query($q);
 
 	    $output = array();
-	    while ($row = @mysql_fetch_array($r)) {
+	    while ($row = mysqli_fetch_array($r)) {
 	        $output[] = array(
 	                'LO_GHz' => $row[0],
 	                'keyIFS' => $row[1],
@@ -204,7 +204,7 @@ class IFSpectrum_db {
 
 	    $output = array();
 	    $count = 0;
-	    while ($row = mysql_fetch_assoc($r)) {
+	    while ($row = mysqli_fetch_assoc($r)) {
 	        $output[] = $row;
 	        $count++;
 	    }
@@ -236,7 +236,7 @@ class IFSpectrum_db {
 
 	    $tdh = array();
 	    $TS = 0;
-	    while ($row = @mysql_fetch_array($r)) {
+	    while ($row = mysqli_fetch_array($r)) {
     	    $tdh[] = $row[0];
     	    $this->lastTS = $row[1];
     	}
@@ -267,7 +267,7 @@ class IFSpectrum_db {
 
 	    $tdh = array();
 	    $TS = 0;
-	    while ($row = @mysql_fetch_array($r)) {
+	    while ($row = mysqli_fetch_array($r)) {
 	        $tdh[] = $row[0];
 	        $this->lastTS = $row[1];
 	    }
@@ -300,9 +300,9 @@ class IFSpectrum_db {
 
 	    $urls = array();
 	    $r = $this->run_query($q);
-	    $numurl = @mysql_num_rows($r);
+	    $numurl = mysqli_num_rows($r);
 
-	    while ($row = @mysql_fetch_array($r)) {
+	    while ($row = mysqli_fetch_array($r)) {
 	        $ifchannel = $row[1];
 	        $urls[$ifchannel] = new GenericTable();
 	        $urls[$ifchannel] -> Initialize('TEST_IFSpectrum_urls', $row[0], 'keyId', 40, 'fkFacility');
@@ -327,7 +327,7 @@ class IFSpectrum_db {
 	    AND TestData_header.keyId = IFSpectrum_SubHeader.fkHeader LIMIT 1";
 
 	    $rnf = $this->run_query($qnf);
-	    $keyNF = @mysql_result($rnf,0,0);
+	    $keyNF = ADAPT_mysqli_result($rnf,0,0);
 
 	    $NFHeader = new GenericTable();
 	    $NFHeader -> Initialize('TEST_IFSpectrum_NoiseFloor_Header', $keyNF, 'keyId');
@@ -402,7 +402,7 @@ class IFSpectrum_db {
 
 		// loop on results sorted by LO, IFChannel
 	    $r = $this->run_query($q);
-	    while ($row = @mysql_fetch_array($r)) {
+	    while ($row = mysqli_fetch_array($r)) {
 	        $LO = $row[0];
 	        $IF = $row[1];
 
@@ -532,7 +532,7 @@ class IFSpectrum_db {
 	    $PI15 = 0;   // in-band power 15 dB
 
 	    $r = $this->run_query($q);
-	    while ($row = @mysql_fetch_array($r)) {
+	    while ($row = mysqli_fetch_array($r)) {
 	        $LO = $row[0];
 	        $gain = $row[1];
 

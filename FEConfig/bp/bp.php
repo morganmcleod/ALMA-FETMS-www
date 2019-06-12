@@ -37,8 +37,8 @@ if (isset($_REQUEST['Notes'])) {
 
 // Find the ScanSetDetails record id corresponding to the TestDataHeader id:
 $q = "SELECT keyId FROM ScanSetDetails WHERE fkHeader = " . $tdh->keyId . ";";
-$r = @mysql_query($q,$db);
-$ssid = @mysql_result($r,0,0);
+$r = mysqli_query($link, $q);
+$ssid = ADAPT_mysqli_result($r,0,0);
 
 // Make a ScanSetDetails record object;
 $ssd = new ScanSetDetails();

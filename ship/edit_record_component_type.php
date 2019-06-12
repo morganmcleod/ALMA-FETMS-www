@@ -25,10 +25,10 @@ include ('mysql_connect.php');
 if (isset($_POST['submitted'])) {
 
 		$errors = array();
-		$PTN = mysql_real_escape_string($_POST['PTN']);
-		$DescriptionEdit = mysql_real_escape_string($_POST['Description']);
-		$DocsEdit = mysql_real_escape_string($_POST['Docs']);
-		$tempPassword = mysql_real_escape_string($_POST['Password']);
+		$PTN = mysqli_real_escape_string($link, $_POST['PTN']);
+		$DescriptionEdit = mysqli_real_escape_string($link, $_POST['Description']);
+		$DocsEdit = mysqli_real_escape_string($link, $_POST['Docs']);
+		$tempPassword = mysqli_real_escape_string($link, $_POST['Password']);
 
 if ($tempPassword == "nrao")
 {	
@@ -37,7 +37,7 @@ if ($tempPassword == "nrao")
 	
 			// Make the query:
 			$q = "UPDATE ComponentTypes SET ProductTreeNumber='$PTN', Description='$DescriptionEdit',Docs='$DocsEdit' WHERE keyId=$id LIMIT 1";
-			$r = @mysql_query ($q, $dbc);
+			$r = mysql_query ($q, $dbc);
 			if (mysql_affected_rows($dbc) == 1) { // If it ran OK.
 			
 				// Print a message:
@@ -69,13 +69,13 @@ if ($tempPassword == "nrao")
 
 // Retrieve the user's information:
 $q = "SELECT ProductTreeNumber, Description, Docs FROM ComponentTypes WHERE keyId=$id";		
-$r = @mysql_query ($q, $dbc);
+$r = mysql_query ($q, $dbc);
 
 
-if (mysql_num_rows($r) == 1) { // Valid user ID, show the form.
+if (mysqli_num_rows($r) == 1) { // Valid user ID, show the form.
 
 	// Get the user's information:
-	$row = mysql_fetch_array ($r, MYSQL_NUM);
+	$row = mysqli_fetch_array ($r, MYSQL_NUM);
 
 	// Create the form:
 	echo '<form action="edit_record_component_type.php" method="post">

@@ -51,7 +51,6 @@ class Cryostat extends GenericTable{
 
         require(site_get_config_main());
 
-        //$this->dbconnection = $in_dbconnection;
         $this->tempsensors = array();
         parent::Initialize('FE_Components',$in_keyId,"keyId", $in_fc, 'keyFacility');
 
@@ -66,10 +65,10 @@ class Cryostat extends GenericTable{
             AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
             AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
             GROUP BY FE_Config.keyFEConfig DESC LIMIT 1;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->FESN = @mysql_result($r,0,0);
-        $this->FEConfig = @mysql_result($r,0,1);
-        $this->FEid = @mysql_result($r,0,2);
+        $r = mysqli_query($this->dbConnection, $q);
+        $this->FESN = ADAPT_mysqli_result($r,0,0);
+        $this->FEConfig = ADAPT_mysqli_result($r,0,1);
+        $this->FEid = ADAPT_mysqli_result($r,0,2);
 
         //Fill the array of tempsensors
         for ($i=1;$i<=13;$i++){
@@ -80,8 +79,8 @@ class Cryostat extends GenericTable{
         //Get TestData_header and SubHeader objects
         $qtdh = "SELECT * FROM TestData_header
                  WHERE fkFE_Components = $this->keyId;";
-        $rtdh = @mysql_query($qtdh,$this->dbconnection);
-        while ($rowtdh = @mysql_fetch_array($rtdh)){
+        $rtdh = mysqli_query($this->dbConnection, $qtdh);
+        while ($rowtdh = mysqli_fetch_array($rtdh)){
             switch ($rowtdh['fkTestData_Type']){
                 case 50:
                     //First Rate of Rise
@@ -127,8 +126,8 @@ class Cryostat extends GenericTable{
         AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
         AND FE_Components.keyId = FE_ConfigLink.fkFE_Components
         AND FE_Components.fkFE_ComponentType = 6;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $id = @mysql_result($r,0,0);
+        $r = mysqli_query($this->dbConnection, $q);
+        $id = ADAPT_mysqli_result($r,0,0);
 
         $this->Initialize_Cryostat($id, $in_fc);
     }
@@ -702,19 +701,19 @@ class Cryostat extends GenericTable{
         //delete from Cryostat_tempsensors
         $qd1 = "DELETE FROM Cryostat_tempsensors
                 WHERE fkCryostat = $this->keyId;";
-        $rd1 = @mysql_query($qd1,$this->dbconnection);
+        $rd1 = mysqli_query($this->dbConnection, $qd1);
     }
 
     public function DeleteRecord_cryostat(){
 
         $qd1 = "DELETE FROM FE_Components
                 WHERE keyId = $this->keyId;";
-        $rd1 = @mysql_query($qd1,$this->dbconnection);
+        $rd1 = mysqli_query($this->dbConnection, $qd1);
 
         //delete from Cryostat_tempsensors
         $qd1 = "DELETE FROM Cryostat_tempsensors
                 WHERE fkCryostat = $this->keyId;";
-        $rd1 = @mysql_query($qd1,$this->dbconnection);
+        $rd1 = mysqli_query($this->dbConnection, $qd1);
 
         //Delete TestData_header and Subheader records
         for ($i = 1; $i <= 5; $i++){
@@ -725,7 +724,7 @@ class Cryostat extends GenericTable{
 
             $qd = "DELETE FROM TEST_Cryostat_data
                 WHERE fkSubHeader = ".$this->tdheaders[$i]->subheader->keyId . ";";
-            $rd = @mysql_query($qd,$this->dbconnection);
+            $rd = mysqli_query($this->dbConnection, $qd);
             }
         }
 
@@ -751,7 +750,7 @@ class Cryostat extends GenericTable{
 
             $qd = "DELETE FROM TEST_Cryostat_data
                 WHERE fkSubHeader = ".$this->tdheaders[$data_type]->subheader->keyId . ";";
-            $rd = @mysql_query($qd,$this->dbconnection);
+            $rd = mysqli_query($this->dbConnection, $qd);
         }
         $tdtypes = array(0,50,53,52,54,25);
 
@@ -779,7 +778,7 @@ class Cryostat extends GenericTable{
 
         $qDelete = "DELETE FROM TEST_Cryostat_data WHERE fkSubHeader =
                     " . $this->tdheaders[$data_type]->subheader->keyId . ";";
-        $rDelete = @mysql_query ($qDelete, $this->dbconnection);
+        $rDelete = mysqli_query ($this->dbconnection, $qDelete);
 
         $timestep=0;
 
@@ -884,7 +883,7 @@ class Cryostat extends GenericTable{
                 //echo $qInsert . "<br><br><br>";
                    }
                    $dcount +=1;
-                   $rInsert = @mysql_query ($qInsert, $this->dbconnection);
+                   $rInsert = mysqli_query($this->dbconnection, $qInsert);
                    $timestep+=($timestepsize/60/60);
             }
         }
@@ -1015,10 +1014,10 @@ class Cryostat extends GenericTable{
                 WHERE fkSubHeader = ". $this->tdheaders[$datatype]->subheader->keyId ."
                 AND fkFacility = ".$this->tdheaders[$datatype]->GetValue('keyFacility')."
                 ORDER BY Time_hours ASC;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($this->dbConnection, $q);
         $fh = fopen($data_file, 'w');
 
-        while($row = @mysql_fetch_array($r)){
+        while($row = mysqli_fetch_array($r)){
             $stringData = "$row[2]\t$row[1]\r\n";
             fwrite($fh, $stringData);
         }
@@ -1096,11 +1095,11 @@ class Cryostat extends GenericTable{
                 AND Time_hours >= $starttime
                 AND Time_hours <= $endtime
                 ORDER BY Time_hours ASC;";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($this->dbConnection, $q);
 
         $fh = fopen($data_file, 'w');
 
-        while($row = @mysql_fetch_array($r)){
+        while($row = mysqli_fetch_array($r)){
             $stringData = "$row[2]\t$row[1]\r\n";
             fwrite($fh, $stringData);
         }
@@ -1149,8 +1148,8 @@ class Cryostat extends GenericTable{
         fkSubHeader = '. $this->tdheaders[$datatype]->subheader->keyId .';';
 
 
-        $r_slope=@mysql_query($q_slope,$this->dbconnection);
-        $res=@mysql_fetch_array($r_slope);
+        $r_slope=mysqli_query($this->dbConnection, $q_slope);
+        $res=mysqli_fetch_array($r_slope);
 
         $N          =$res[0];
         $Xmean      =$res[1];
@@ -1207,8 +1206,8 @@ class Cryostat extends GenericTable{
                 AND Time_hours >= $starttime
                 AND Time_hours <= $endtime
                 ORDER BY Time_hours ASC LIMIT 1;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $row = @mysql_fetch_array($r);
+        $r = mysqli_query($this->dbConnection, $q);
+        $row = mysqli_fetch_array($r);
         $t_start =$row[1]*60*60;
         $p_start =$row[0];
 
@@ -1217,8 +1216,8 @@ class Cryostat extends GenericTable{
                 AND Time_hours >= $starttime
                 AND Time_hours <= $endtime
                 ORDER BY Time_hours DESC LIMIT 1;";
-        $r = @mysql_query($q,$this->dbconnection);
-        $row = @mysql_fetch_array($r);
+        $r = mysqli_query($this->dbConnection, $q);
+        $row = mysqli_fetch_array($r);
         $t_stop = $row[1]*60*60;
         $p_stop = $row[0];
 
@@ -1260,10 +1259,10 @@ class Cryostat extends GenericTable{
               ORDER BY Time_hours ASC;";
 
         //echo $q . "<br>";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($this->dbConnection, $q);
         $fh = fopen($data_file, 'w');
 
-        while($row = @mysql_fetch_array($r)){
+        while($row = mysqli_fetch_array($r)){
             $stringData = $row['Time_hours'] . "\t" . $row['sensor1_k'] . "\t" . $row['sensor2_k'];
             $stringData .= "\t" . $row['sensor3_k'] . "\t" . $row['sensor4_k'] . "\t" . $row['sensor5_k'];
             $stringData .= "\t" . $row['sensor6_k'] . "\t" . $row['sensor7_k'] . "\t" . $row['sensor8_k'];
@@ -1430,8 +1429,8 @@ class Cryostat extends GenericTable{
         ORDER BY Time_hours DESC
         LIMIT 1;";
 
-        $r=@mysql_query($q,$this->dbconnection);
-        $cryodata=@mysql_fetch_object($r);
+        $r=mysqli_query($this->dbConnection, $q);
+        $cryodata=mysqli_fetch_object($r);
 
         echo '
         <div style = "width:300px">
@@ -1523,9 +1522,9 @@ class Cryostat extends GenericTable{
         //$optvar = ${"optvar$i"};
 
 
-        $r_ror = @mysql_query($q_ror,$this->dbconnection);
+        $r_ror = mysqli_query($this->dbConnection, $q_ror);
         echo "$message <select name='$selname'>";
-        while ($row_ror=@mysql_fetch_array($r_ror)){
+        while ($row_ror=mysqli_fetch_array($r_ror)){
             //echo "val= $row_ror[0]<br>";
             if (round($row_ror[0],0)== round($this->tdheaders[$datatype]->subheader->GetValue($getval),0)){
             ${"optvar$datatype"} .= "<option value='$row_ror[0]' selected = 'selected'>".round($row_ror[0],2)."</option>";

@@ -10,8 +10,8 @@ class TestData_Component extends GenericTable{
 
         $q = "SELECT Description FROM ComponentTypes
               WHERE keyId = " . $this->GetValue('fkFE_ComponentType');
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->ComponentType = @mysql_result($r,0);
+        $r = mysqli_query($link, $q);
+        $this->ComponentType = ADAPT_mysqli_result($r,0);
     }
 
     public function DisplayMainData(){

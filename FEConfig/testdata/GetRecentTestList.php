@@ -34,12 +34,12 @@ $q="SELECT TDH.keyId, TDH.keyFacility, TDH.Band, TDH.TS, TDH.fkTestData_Type,
     AND TDH.fkTestData_Type = TestData_Types.keyId
     ORDER BY TS DESC LIMIT 200;";
 
-$r = @mysql_query($q,$db);
+$r = mysqli_query($link, $q);
 
 $outstring = "[";
 $rowcount = 0;
 
-while ($row= @mysql_fetch_array($r)){
+while ($row= mysqli_fetch_array($r)){
     $keyId = $row['keyId'];
     $keyFacility = $row['keyFacility'];
     $Band = $row['Band'];
@@ -71,7 +71,7 @@ while ($row= @mysql_fetch_array($r)){
     $outstring .= "'fkTestData_Type':'$fkTestData_Type',";
     $outstring .= "'keyFrontEnd':'$keyFrontEnd',";
     $outstring .= "'DataSetGroup':'$DataSetGroup',";
-    $outstring .= "'Notes':'". @mysql_real_escape_string(stripslashes($Notes))."',";
+    $outstring .= "'Notes':'". mysqli_real_escape_string($link, stripslashes($Notes))."',";
     $outstring .= "'keyFacility':'$keyFacility'}";
     $rowcount += 1;
 }

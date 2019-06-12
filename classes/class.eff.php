@@ -96,7 +96,7 @@ class eff {
     public function Initialize_eff_TDH($in_TDHId) {
         $in_fc = 40;
         $r = $this->db_pull->qTDH($in_TDHId, $in_fc);
-        $ssid = @mysql_result($r,0,0);
+        $ssid = ADAPT_mysqli_result($r,0,0);
         $this->Initialize_eff_SingleScanSet($ssid, $in_fc);
     }
 
@@ -105,8 +105,8 @@ class eff {
         $this->scanSetFc = $in_fc;
 
         $rss = $this->db_pull->qss(2, NULL, $in_keyId, NULL, $this->scanSetFc, NULL);
-        $this->effBand = @mysql_result($rss,0,1);
-        $this->fe_id = @mysql_result($rss,0,2);
+        $this->effBand = ADAPT_mysqli_result($rss,0,1);
+        $this->fe_id = ADAPT_mysqli_result($rss,0,2);
 
         $this->scansets[0] = new ScanSetDetails();
         $this->scansets[0]->Initialize_ScanSetDetails($in_keyId, $this->scanSetFc);
@@ -230,7 +230,7 @@ class eff {
         $scanSetId = $this->scansets[$scanSetIdx]->GetValue('keyId');
 
         $rss = $this->db_pull->qss(4, NULL, NULL, NULL, $this->scanSetFc, $scanSetId);
-        $rowss = @mysql_fetch_array($rss);
+        $rowss = mysqli_fetch_array($rss);
         return $rowss[0];
     }
 
@@ -636,8 +636,8 @@ class eff {
     }
 
     function Display_PointingAngles() {
-        $nomAZ = @mysql_result($rn,0,0);
-        $nomEL = @mysql_result($rn,0,1);
+        $nomAZ = ADAPT_mysqli_result($rn,0,0);
+        $nomEL = ADAPT_mysqli_result($rn,0,1);
         //Get nominal Az, El
         $sd = new ScanDetails();
 

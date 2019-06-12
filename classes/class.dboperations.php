@@ -51,8 +51,8 @@ class DBOperations{
         fkFE_Components = $in_COMPid AND
         fkFE_ConfigFacility = $in_fc_fe AND
         fkFE_Config = ".$this->FrontEnd->feconfig->keyId.";";
-        $r = @mysql_query($q,$this->dbconnection);
-        $numrows = @mysql_num_rows($r);
+        $r = mysqli_query($this->dbconnection, $q);
+        $numrows = mysqli_num_rows($r);
 
         if ($numrows < 1){
 
@@ -201,8 +201,8 @@ class DBOperations{
         $q = "SELECT max(keyId) FROM FE_StatusLocationAndNotes WHERE
         fkFEConfig LIKE '$FE_Config_Original' AND
         keyFacility = $in_fc_fe;";
-        $r = @mysql_query($q,$db);
-        $keyId = @mysql_result($r, 0, 0);
+        $r = mysqli_query($link, $q);
+        $keyId = ADAPT_mysqli_result($r, 0, 0);
 
         $sln = new GenericTable();
         $sln->NewRecord('FE_StatusLocationAndNotes','keyId',$in_fc_fe,'keyFacility');
@@ -272,8 +272,8 @@ class DBOperations{
         $q = "SELECT max(keyId) FROM FE_StatusLocationAndNotes WHERE
         fkFEComponents LIKE '$fkFEComponents' AND
         keyFacility = $in_fc_comp;";
-        $r = @mysql_query($q,$db);
-        $keyId = @mysql_result($r, 0, 0);
+        $r = mysqli_query($link, $q);
+        $keyId = ADAPT_mysqli_result($r, 0, 0);
 
         $sln = new GenericTable();
         $sln->NewRecord('FE_StatusLocationAndNotes','keyId',$in_fc_comp,'keyFacility');
@@ -285,8 +285,8 @@ class DBOperations{
         $qloc = "SELECT fkLocationNames FROM FE_StatusLocationAndNotes
                 WHERE fkFEConfig = $component_old->FEConfig
                 ORDER BY keyId DESC;";
-        $rloc = @mysql_query($qloc,$this->dbconnection);
-        $locid = @mysql_result($rloc,0,0);
+        $rloc = mysqli_query($this->dbconnection, $qloc);
+        $locid = ADAPT_mysqli_result($rloc,0,0);
         if ($fkLocationNames == ''){
             $sln->SetValue('fkLocationNames', $locid);
         }
@@ -343,8 +343,8 @@ class DBOperations{
              WHERE
              fkFE_ConfigFacility = $in_fc_fe AND
              fkFE_Config = $in_feconfig_old;";
-        $r = @mysql_query($q,$db);
-        while ($row = @mysql_fetch_array($r)){
+        $r = mysqli_query($link, $q);
+        while ($row = mysqli_fetch_array($r)){
             $fecl_old = new GenericTable();
             $fecl_old->Initialize('FE_ConfigLink',$row[0],'keyId',$in_fc_fe,'fkFE_ConfigFacility');
 
@@ -376,8 +376,8 @@ class DBOperations{
              WHERE
              fkFE_ConfigFacility = $in_fc_fe AND
              fkFE_Config = $in_feconfig_old;";
-        $r = @mysql_query($q,$db);
-        while ($row = @mysql_fetch_array($r)){
+        $r = mysqli_query($link, $q);
+        while ($row = mysqli_fetch_array($r)){
             $fecl_old = new GenericTable();
             $fecl_old->Initialize('FE_ConfigLink',$row[0],'keyId',$in_fc_fe,'fkFE_ConfigFacility');
 
