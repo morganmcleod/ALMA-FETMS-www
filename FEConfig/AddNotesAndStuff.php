@@ -3,6 +3,7 @@
 //called from AddNotesEtc.js
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 $notes=$_POST['notes'];
 $locval=$_POST['locval'];
@@ -18,10 +19,10 @@ if(strpos($urls,"http") === false){
 
 //insert record into StatusLocationAndNotes table
 
- mysqli_query($link, "INSERT INTO FE_StatusLocationAndNotes(fkFEConfig,keyFacility,fkLocationNames,
+mysqli_query($dbconnection, "INSERT INTO FE_StatusLocationAndNotes(fkFEConfig,keyFacility,fkLocationNames,
  			  fkStatusType,Notes,Updated_By,lnk_Data)
 			  Values('$keyFE','$facility','$locval','$statval','$notes','$updatedby','$urls')")
- or die("Could not insert into StatusLocationAndNotes" .mysql_error());
+			  or die("Could not insert into StatusLocationAndNotes" . mysqli_error($dbconnection));
 
 echo "{success:true}"
 

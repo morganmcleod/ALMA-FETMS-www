@@ -3,6 +3,7 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.fecomponent.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 $TestStatus = $_REQUEST['type'];
 $SelectorType = $_REQUEST['stype'];
@@ -34,7 +35,7 @@ $q="SELECT TDH.keyId, TDH.keyFacility, TDH.Band, TDH.TS, TDH.fkTestData_Type,
     AND TDH.fkTestData_Type = TestData_Types.keyId
     ORDER BY TS DESC LIMIT 200;";
 
-$r = mysqli_query($link, $q);
+$r = mysqli_query($dbconnection, $q);
 
 $outstring = "[";
 $rowcount = 0;
@@ -71,7 +72,7 @@ while ($row= mysqli_fetch_array($r)){
     $outstring .= "'fkTestData_Type':'$fkTestData_Type',";
     $outstring .= "'keyFrontEnd':'$keyFrontEnd',";
     $outstring .= "'DataSetGroup':'$DataSetGroup',";
-    $outstring .= "'Notes':'". mysqli_real_escape_string($link, stripslashes($Notes))."',";
+    $outstring .= "'Notes':'". mysqli_real_escape_string($dbconnection, stripslashes($Notes))."',";
     $outstring .= "'keyFacility':'$keyFacility'}";
     $rowcount += 1;
 }

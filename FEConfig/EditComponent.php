@@ -19,6 +19,7 @@ require_once($site_classes . '/class.fecomponent.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.wca.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 $keyId = $_REQUEST['id'];  //keyId of FE_Components table
 $fc = $_REQUEST['fc'];
@@ -318,7 +319,7 @@ echo "          <tr><th>Updated By</th>
                         <option value=''></option>";
                         $q = "SELECT Initials FROM Users
                               ORDER BY Initials ASC;";
-                        $r = mysqli_query($link, $q);
+                        $r = mysqli_query($dbconnection, $q);
                         while($row = mysqli_fetch_array($r)){
                             echo "<option value='$row[0]'>$row[0]</option>";
                         }

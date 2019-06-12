@@ -636,8 +636,8 @@ class eff {
     }
 
     function Display_PointingAngles() {
-        $nomAZ = ADAPT_mysqli_result($rn,0,0);
-        $nomEL = ADAPT_mysqli_result($rn,0,1);
+//         $nomAZ = ADAPT_mysqli_result($rn,0,0);
+//         $nomEL = ADAPT_mysqli_result($rn,0,1);
         //Get nominal Az, El
         $sd = new ScanDetails();
 

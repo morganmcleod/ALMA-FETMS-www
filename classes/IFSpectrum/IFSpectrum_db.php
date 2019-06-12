@@ -28,7 +28,7 @@ require_once($site_libraries . '/array_column/src/array_column.php');
 require_once($site_dbConnect);
 
 class IFSpectrum_db {
-    private $dbConnection;
+    private $dbconnection;
     private $FEid;
     private $CCAid;
     private $band;
@@ -40,7 +40,7 @@ class IFSpectrum_db {
      */
     public function __construct() {
         require(site_get_config_main());
-        $this->dbConnection = site_getDbConnection();
+        $this->dbconnection = site_getDbConnection();
 	    $this->FEid = $this->band = $this->dataSetGroup = $this->lastTS = 0;
     }
 
@@ -49,7 +49,7 @@ class IFSpectrum_db {
      * @param string $query
      */
     private function run_query($query) {
-        return mysqli_query($link, $query);
+        return mysqli_query($this->dbconnection, $query);
     }
 
     /**

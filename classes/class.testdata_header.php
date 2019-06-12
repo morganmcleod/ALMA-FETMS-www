@@ -22,6 +22,10 @@ class TestData_header extends GenericTable {
     var $fc; //facility
     var $subheader; //Generic table object, for a record in a subheader table.
 
+    public function __construct() {
+        parent::__construct();
+    }
+    
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
         $this->swversion = "1.2.0";
         // 1.2.0 refactored to move into the class stuff that was on the calling page
@@ -45,28 +49,28 @@ class TestData_header extends GenericTable {
 
         $q = "SELECT Description, TestData_TableName FROM TestData_Types
               WHERE keyId = " . $this->GetValue('fkTestData_Type') . ";";
-        $r = mysqli_query($link, $q) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+        $r = mysqli_query($this->dbconnection, $q);
         $this->TestDataType      = ADAPT_mysqli_result($r,0);
         $this->TestDataTableName = ADAPT_mysqli_result($r,0,1);
 
         $q = "SELECT Description FROM DataStatus
               WHERE keyId = " . $this->GetValue('fkDataStatus') . ";";
-        $r = mysqli_query($link, $q) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+        $r = mysqli_query($this->dbconnection, $q);
         $this->DataStatus        = ADAPT_mysqli_result($r,0);
 
         $this->Component = new FEComponent();
 
-        if ($this->GetValue('fkFE_Components') != '') {
+        if ($this->GetValue('fkFE_Components')) {
             $this->Component->Initialize_FEComponent($this->GetValue('fkFE_Components'), $this->fc);
             $q = "SELECT Description FROM ComponentTypes WHERE keyId = " . $this->Component->GetValue('fkFE_ComponentType') . ";";
-            $r = mysqli_query($link, $q, $this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+            $r = mysqli_query($this->dbconnection, $q);
             $this->Component->ComponentType = ADAPT_mysqli_result($r,0);
         }
 
-        if (($this->GetValue('fkFE_Config') != "") && ($this->GetValue('fkFE_Config') != "0")) {
+        if ($this->GetValue('fkFE_Config')) {
             $qfe = "SELECT fkFront_Ends from FE_Config
                     WHERE keyFEConfig = " . $this->GetValue('fkFE_Config') . ";";
-            $rfe = mysqli_query($link, $qfe) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+            $rfe = mysqli_query($this->dbconnection, $qfe);
             $feConfigId = ADAPT_mysqli_result($rfe,0);
             $this->fe_keyId = $feConfigId;
             $this->FrontEnd = new FrontEnd();
@@ -101,11 +105,11 @@ class TestData_header extends GenericTable {
         $showrawurl = "testdata.php?showrawdata=1&keyheader=$this->keyId&fc=$this->fc";
         $drawurl = "testdata.php?drawplot=1&keyheader=$this->keyId&fc=$this->fc";
         $exportcsvurl = "export_to_csv.php?keyheader=$this->keyId&fc=$this->fc";
-        $fesn = $this->FrontEnd->GetValue('SN');
-
-        require(site_get_config_main());  // for $rootdir_url
-        $popupScript = "javascript:popupMoveToOtherFE(\"FE-$fesn\", \"$rootdir_url\", [$this->keyId]);";
-
+        if ($this->FrontEnd) {
+            $fesn = $this->FrontEnd->GetValue('SN');
+            require(site_get_config_main());  // for $rootdir_url
+            $popupScript = "javascript:popupMoveToOtherFE(\"FE-$fesn\", \"$rootdir_url\", [$this->keyId]);";
+        }
         echo "<table>";
         switch ($this->GetValue('fkTestData_Type')) {
             case '57':
@@ -417,7 +421,7 @@ class TestData_header extends GenericTable {
                 " AND `FE_Config`.fkFront_Ends = $this->fe_keyId
                 AND `TestData_header`.`fkTestData_Type` = ". $this->GetValue('fkTestData_Type');
 
-            $rkeys = mysqli_query($link, $qkeys);
+            $rkeys = mysqli_query($this->dbconnection, $qkeys);
 
             $i=0;
             while ($rowkeys = mysqli_fetch_array($rkeys)) {
@@ -455,7 +459,7 @@ class TestData_header extends GenericTable {
                 //Cryostat
                 $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
                       WHERE fkHeader = $this->keyId;";
-                $r = mysqli_query($link, $q) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+                $r = mysqli_query($this->dbconnection, $q);
                 $fkHeader = ADAPT_mysqli_result($r,0,0);
                 $qgetdata = "SELECT * FROM $this->TestDataTableName WHERE
                 fkSubHeader = $fkHeader AND fkFacility = ".$this->fc.";";
@@ -484,7 +488,7 @@ class TestData_header extends GenericTable {
                 $q = "SELECT keyId FROM Noise_Temp_SubHeader
                       WHERE fkHeader = $this->keyId
                       AND keyFacility = " . $this->fc;
-                $r = mysqli_query($link, $q);
+                $r = mysqli_query($this->dbconnection, $q);
                 $subid = ADAPT_mysqli_result($r,0,0);
                 $qgetdata = "SELECT * FROM Noise_Temp WHERE fkSub_Header = $subid AND keyFacility = "
                         . $this->fc . " ORDER BY FreqLO, CenterIF;";
@@ -504,7 +508,7 @@ class TestData_header extends GenericTable {
         }
 
         $q = "SHOW COLUMNS FROM $this->TestDataTableName;";
-        $r = mysqli_query($link, $q) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+        $r = mysqli_query($this->dbconnection, $q);
 
         echo        "<table id = 'table1'>";
 
@@ -519,7 +523,7 @@ class TestData_header extends GenericTable {
         }
 
 
-        $r = mysql_query ($qgetdata, $this->dbconnection) ; //or die('Failed on query in class.testdata_header.php line ' . __LINE__);
+        $r = mysqli_query($this->dbconnection, $qgetdata);
         while($row = mysqli_fetch_array($r)) {
             echo "<tr>";
             for ($i=0;$i<count($row)/2;$i++) {
@@ -646,7 +650,7 @@ class TestData_header extends GenericTable {
 
     public function DrawPlot() {
         $plt = new DataPlotter();
-        $plt->Initialize_DataPlotter($this->keyId,$this->dbconnection,$this->fc);
+        $plt->Initialize_DataPlotter($this->keyId, $this->fc);
 
         //Determine which type of plot to draw...
         switch ($this->GetValue('fkTestData_Type')) {
@@ -788,7 +792,7 @@ class TestData_header extends GenericTable {
                         fkHeader = $this->keyId
                         and angle < ($nom_0_m90 + 10)
                         and angle > ($nom_0_m90 - 10);";
-        $rpa = mysqli_query($link, $qpa);
+        $rpa = mysqli_query($this->dbconnection, $qpa);
 
         $pol0_min1 = ADAPT_mysqli_result($rpa,0);
 
@@ -799,7 +803,7 @@ class TestData_header extends GenericTable {
                 and ROUND(amp_pol0,5) = " . round($pol0_min1, 5) . "
                         and angle < ($nom_0_m90 + 10)
                         and angle > ($nom_0_m90 - 10);";
-        $rpa = mysqli_query($link, $qpa);
+        $rpa = mysqli_query($this->dbconnection, $qpa);
 
         $angle_min0_1 = ADAPT_mysqli_result($rpa,0);
 
@@ -810,7 +814,7 @@ class TestData_header extends GenericTable {
         AND fkFacility = ".$this->fc."
         and angle < ($nom_0_p90 + 10)
         and angle > ($nom_0_p90 - 10);";
-        $rpa = mysqli_query($link, $qpa);
+        $rpa = mysqli_query($this->dbconnection, $qpa);
 
         $pol0_min2 = ADAPT_mysqli_result($rpa,0);
 
@@ -821,7 +825,7 @@ class TestData_header extends GenericTable {
                 and ROUND(amp_pol0,5) = " . round($pol0_min2, 5) . "
                         and angle < ($nom_0_p90 + 10)
                         and angle > ($nom_0_p90 - 10);";
-        $rpa = mysqli_query($link, $qpa);
+        $rpa = mysqli_query($this->dbconnection, $qpa);
 
         $angle_min0_2 = ADAPT_mysqli_result($rpa,0);
 
@@ -833,7 +837,7 @@ class TestData_header extends GenericTable {
         AND fkFacility = ".$this->fc."
         and angle < ($nom_1_m90 + 10)
         and angle > ($nom_1_m90 - 10);";
-        $rpa = mysqli_query($link, $qpa);
+        $rpa = mysqli_query($this->dbconnection, $qpa);
 
         $pol1_min1 = ADAPT_mysqli_result($rpa,0);
 
@@ -844,7 +848,7 @@ class TestData_header extends GenericTable {
                 and ROUND(amp_pol1,5) = " . round($pol1_min1, 5) . "
                         and angle < ($nom_1_m90 + 10)
                         and angle > ($nom_1_m90 - 10);";
-        $rpa = mysqli_query($link, $qpa);
+        $rpa = mysqli_query($this->dbconnection, $qpa);
 
         $angle_min1_1 = ADAPT_mysqli_result($rpa,0);
 
@@ -855,7 +859,7 @@ class TestData_header extends GenericTable {
         AND fkFacility = ".$this->fc."
         and angle < ($nom_1_p90 + 10)
         and angle > ($nom_1_p90 - 10);";
-        $rpa = mysqli_query($link, $qpa);
+        $rpa = mysqli_query($this->dbconnection, $qpa);
 
         $pol1_min2 = ADAPT_mysqli_result($rpa,0);
 
@@ -866,7 +870,7 @@ class TestData_header extends GenericTable {
                 and ROUND(amp_pol1,5) = " . round($pol1_min2, 5) . "
                         and angle < ($nom_1_p90 + 10)
                         and angle > ($nom_1_p90 - 10);";
-        $rpa = mysqli_query($link, $qpa);
+        $rpa = mysqli_query($this->dbconnection, $qpa);
 
         $angle_min1_2 = ADAPT_mysqli_result($rpa,0);
 

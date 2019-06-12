@@ -7,7 +7,7 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 class BeamEffDB { //extends DBRetrieval {
-	var $dbConnection;
+	var $dbconnection;
 
 	/**
 	 * Initializes class and creates database connection
@@ -16,7 +16,7 @@ class BeamEffDB { //extends DBRetrieval {
 	 */
 	public function BeamEffDB($db) {
 		require(site_get_config_main());
-		$this->dbConnection = $db;
+		$this->dbconnection = $db;
 	}
 	 /**
 	  * @param string $query- SQL query
@@ -24,7 +24,7 @@ class BeamEffDB { //extends DBRetrieval {
 	  * @return Resource Id for SQL query
 	  */
 	public function run_query($query) {
-		return mysqli_query($link, $query, $this->dbConnection);
+	    return mysqli_query($this->dbconnection, $query);
 	}
 
 	/**

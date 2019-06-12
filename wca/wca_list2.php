@@ -2,6 +2,7 @@
 
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 include('header_js.php');
 
@@ -15,7 +16,7 @@ WHERE fkFE_ComponentType = 11
 AND Band <> 0
 ORDER BY Band ASC;";
 
-$rBand = mysqli_query($link, $qBand);
+$rBand = mysqli_query($dbconnection, $qBand);
 
 echo '
 <div style="width:330px; margin:30px;">

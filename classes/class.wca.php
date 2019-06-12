@@ -29,13 +29,13 @@ class WCA extends FEComponent {
     var $tdh_phasejitter; // TestData_header record object for Phase Jitter
     var $db_pull;
     var $new_spec;
-    var $dbconnection;
     var $maxSafePowerTable; // Array of rows for the Max Safe Operating Parameters table.
     var $SubmittedFileExtension; // Extension of submitted file for update (csv, ini or zip)
     var $SubmittedFileName; // Uploaded file (csv, zip, ini), base name
     var $SubmittedFileTmp; // Uploaded file (csv, zip, ini), actual path
     var $ErrorArray; // Array of errors
     function __construct() {
+        parent::__construct();
         $this->fkDataStatus = '7';
         $this->swversion = "1.1.3";
         /*
@@ -54,7 +54,6 @@ class WCA extends FEComponent {
 
         require (site_get_config_main());
         $this->writedirectory = $wca_write_directory;
-        $this->dbconnection = site_getDbConnection();
         $this->db_pull = new WCAdb($this->dbconnection);
         $this->new_spec = new Specifications();
         $this->url_directory = $wca_url_directory;
@@ -100,11 +99,13 @@ class WCA extends FEComponent {
 
         if ($INIT_Options & self::INIT_LOPARAMS) {
             $r = $this->db_pull->q(1, $this->keyId);
-            $lopcount = 1;
-            while ($row = mysqli_fetch_array($r)) {
-                $this->LOParams [$lopcount] = new GenericTable();
-                $this->LOParams [$lopcount]->Initialize('WCA_LOParams', $row [0], 'keyId', $this->fc, 'fkFacility');
-                $lopcount += 1;
+            $lopcount = 0;
+            if ($r) {
+                while ($row = mysqli_fetch_array($r)) {
+                    $this->LOParams [$lopcount] = new GenericTable();
+                    $this->LOParams [$lopcount]->Initialize('WCA_LOParams', $row [0], 'keyId', $this->fc, 'fkFacility');
+                    $lopcount += 1;
+                }
             }
         }
 
@@ -503,19 +504,11 @@ class WCA extends FEComponent {
         return $ret;
     }
     public function Display_LOParams() {
-        /*
-         * $q = "SELECT TS FROM WCA_LOParams
-         * WHERE fkComponent = $this->keyId
-         * ORDER BY FreqLO ASC
-         * LIMIT 1;";
-         * $r = mysqli_query($link, $q); //
-         */
         $r = $this->db_pull->q(3, $this->keyId);
         $ts = ADAPT_mysqli_result($r, 0, 0);
         $band = $this->GetValue('Band');
         $sn = $this->GetValue('SN');
 
-        $r = mysqli_query($link, $q, $this->dbconnection);
         echo "<div style= 'width: 500px'>
             <table id = 'table1' border = '1'>";
         echo "<tr class='alt'><th colspan = '5'>
@@ -528,12 +521,6 @@ class WCA extends FEComponent {
                 <th>VGP1</th>
             </tr>";
 
-        /*
-         * $q = "SELECT * FROM WCA_LOParams
-         * WHERE fkComponent = $this->keyId
-         * ORDER BY FreqLO ASC;";
-         * $r = mysqli_query($link, $q);//
-         */
         $r = $this->db_pull->q(4, $this->keyId);
         $count = 0;
         while ($row = mysqli_fetch_array($r)) {
@@ -623,7 +610,6 @@ class WCA extends FEComponent {
 
         $output = array ();
 
-        /* $r = mysqli_query($link, $q);// */
         $r = $this->db_pull->run_query($q);
         while ($row = mysqli_fetch_array($r))
             $output [] = $row [0];
@@ -644,16 +630,6 @@ class WCA extends FEComponent {
     }
     private function loadPowerData($pol, $tdhArray) {
         // Load the output power data for one polarization, coarse and fine combined:
-        /*
-         * $q = "SELECT FreqLO, VD$pol as VD, Power FROM WCA_OutputPower WHERE
-         * fkHeader IN " . $this->FormatTDHList($tdhArray);
-         *
-         * $q .= " AND fkFacility = $this->fc
-         * AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol
-         * ORDER BY FreqLO, VD ASC";
-         *
-         * $r = mysqli_query($link, $q, $this->dbconnection);//
-         */
         $r = $this->db_pull->q(5, NULL, $pol, $this->fc, $this->FormatTDHList($tdhArray));
 
         $allRows = array ();
@@ -673,7 +649,7 @@ class WCA extends FEComponent {
               Pol = 0 AND keyDataSet=2
               AND fkHeader in $tdhList";
 
-        $r = mysqli_query($link, $q, $this->dbconnection);
+        $r = mysqli_query($this->dbconnection, $q);
         $row = mysqli_fetch_array($r);
         $ret[0] = $row[0];
 
@@ -681,7 +657,7 @@ class WCA extends FEComponent {
               Pol = 1 AND keyDataSet=2
               AND fkHeader in $tdhList";
 
-        $r = mysqli_query($link, $q, $this->dbconnection);
+        $r = mysqli_query($this->dbconnection, $q);
         $row = mysqli_fetch_array($r);
         $ret[1] = $row[0];
 

@@ -32,7 +32,7 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
 
     $q = "SELECT `Description` FROM `TestData_Types`
         WHERE `keyId` = ".$tdh->GetValue('fkTestData_Type')."";
-    $r = mysqli_query($link, $q,$tdh->dbconnection);
+    $r = mysqli_query($tdh->dbconnection, $q);
     $test_name = ADAPT_mysqli_result($r,0,0);
 
     // decide if the box is checked:
@@ -87,13 +87,13 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
 
 function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $filterChecked) {
 
-    $db = site_getDbConnection();
+    $dbconnection = site_getDbConnection();
     $q = "SELECT `keyId` FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
         AND BAND = $band AND fkDataStatus = $Data_Status
         ORDER BY `keyId` DESC";
-    $r = mysqli_query($link, $q,$db) or die("QUERY FAILED: $q");
+    $r = mysqli_query($dbconnection, $q) or die("QUERY FAILED: $q");
 
     $cnt = 0;
     while ($row = mysqli_fetch_array($r)) {
@@ -134,13 +134,13 @@ function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $fi
 }
 
 function results_table($FE_Config, $Data_Status, $TestData_Type, $filterChecked) {
-    $db = site_getDbConnection();
+    $dbconnection = site_getDbConnection();
     $q = "SELECT keyId FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
         AND fkDataStatus = $Data_Status
         ORDER BY `keyId` DESC";
-    $r = mysqli_query($link, $q,$db) or die("QUERY FAILED: $q");
+    $r = mysqli_query($dbconnection, $q) or die("QUERY FAILED: $q");
     while ($row = mysqli_fetch_array($r)) {
         switch ($TestData_Type) {
             case 4:
@@ -203,7 +203,7 @@ function CPDS_results($td_keyID, $filterChecked) {
                 FROM `CPDS_monitor`
                 WHERE `fkHeader` = $td_keyID
                 ORDER BY BAND ASC";
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         // write table subheader
         echo "</tr>";
@@ -247,7 +247,7 @@ function LNA_results($td_keyID, $filterChecked) {
         $q = "SELECT Pol, SB, Stage, FreqLO, VdRead, IdRead, VgRead
             FROM CCA_LNA_bias
             WHERE fkHeader = $td_keyID ORDER BY `Pol`ASC, `SB` ASC, Stage ASC";
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         $FreqLO = 0;
         $Cntrl_FreqLO = 0;
@@ -292,12 +292,12 @@ function LNA_results($td_keyID, $filterChecked) {
             $q_any_lo = $q . $ord;
 
             // try the exact LO match query:
-            $r = mysqli_query($link, $q_default, $tdh->dbconnection) or die("QUERY FAILED: $q_default");
+            $r = mysqli_query($tdh->dbconnection, $q_default) or die("QUERY FAILED: $q_default");
 
             // if no result, try the any LO query:
             $numRows = mysqli_num_rows($r);
             if (!$numRows)
-                $r = mysqli_query($link, $q_any_lo, $tdh->dbconnection) or die("QUERY FAILED: $q_any_lo");
+                $r = mysqli_query($tdh->dbconnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
 
             // Match up control data with monitor data:
             while ($row = mysqli_fetch_array($r)) {
@@ -401,7 +401,7 @@ function SIS_results($td_keyID, $filterChecked) {
         $q = "SELECT `Pol`,`SB`,`FreqLO`,`VjRead`,`IjRead`,`VmagRead`,`ImagRead`
             FROM `CCA_SIS_bias`
             WHERE `fkHeader` = $td_keyID ORDER BY `Pol`ASC, `SB` ASC";
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         $FreqLO = 0;
         $output = array();
@@ -437,12 +437,12 @@ function SIS_results($td_keyID, $filterChecked) {
             $q_any_lo = $q . $ord;
 
             // try the exact LO match query:
-            $r = mysqli_query($link, $q_default, $tdh->dbconnection) or die("QUERY FAILED: $q_default");
+            $r = mysqli_query($tdh->dbconnection, $q_default) or die("QUERY FAILED: $q_default");
 
             // if no result, try the any LO query:
             $numRows = mysqli_num_rows($r);
             if (!$numRows)
-                $r = mysqli_query($link, $q_any_lo, $tdh->dbconnection) or die("QUERY FAILED: $q_any_lo");
+                $r = mysqli_query($tdh->dbconnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
 
             // Match up control data with monitor data:
             while ($row = mysqli_fetch_array($r)) {
@@ -566,7 +566,7 @@ function SIS_Resistance_results($td_keyID, $filterChecked) {
         $q = "SELECT `Pol`,`SB`,`ROhms`
         FROM `CCA_TEST_SISResistance`
         WHERE `fkHeader` = $td_keyID ORDER BY `Pol`ASC, `SB` ASC";
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         echo "<tr><th>Device</th><th colspan='2'>Resistance (Ohms)</th></tr>";
 
@@ -602,7 +602,7 @@ function Temp_Sensor_results($td_keyID, $filterChecked) {
             FROM CCA_TempSensors
             WHERE fkHeader= $td_keyID";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
         $i=0;
         foreach ($col_name  as $Col) {
             echo "<tr>";
@@ -652,7 +652,7 @@ function WCA_AMC_results($td_keyID, $filterChecked) {
             FROM WCA_AMC_bias
             WHERE fkHeader= $td_keyID";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");;
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");;
 
         echo "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values</th>";
 
@@ -690,7 +690,7 @@ function WCA_PA_results($td_keyID, $filterChecked) {
             FROM WCA_PA_bias
             WHERE fkHeader= $td_keyID";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         echo "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values</th>";
 
@@ -728,7 +728,7 @@ function WCA_MISC_results($td_keyID, $filterChecked) {
             FROM WCA_Misc_bias
             WHERE fkHeader= $td_keyID";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         echo "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values</th>";
 
@@ -759,7 +759,7 @@ function FLOOG_results($td_keyID, $filterChecked) {
 
         $q = "SELECT `Band`, `RefTotalPower` FROM `FLOOGdist`
                 WHERE `fkHeader` = $td_keyID";
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         echo "<tr><th></th><th colspan='2'>Reference Total Power (dBm)</th><tr>";
 
@@ -791,7 +791,7 @@ function IF_Power_results($td_keyID, $filterChecked) {
             FROM `IFTotalPower`
             WHERE `fkHeader` = $td_keyID";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         echo "<tr><th>IFChannel</th>
             <th>Power 0dB gain (dBm)</th>
@@ -837,7 +837,7 @@ function IF_Power_results($td_keyID, $filterChecked) {
 
             }
         }
-        $avg_atten = mon_data($att_sum /$atten_cnt);
+        $avg_atten = ($atten_cnt) ? mon_data($att_sum / $atten_cnt) : 0;
         //check to see if avgerage attunuation is in range
         $check3=$new_spec->numInRange(16,$avg_atten,14);
         echo "<tr><th width = '200px'>Average Attenutation (dB) </th>
@@ -869,7 +869,7 @@ function IF_Switch_Temp_results($td_keyID, $filterChecked) {
 
         echo "<tr><th></th><th colspan='2'>Monitor Values (K)</th>";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
         $i=0;
         foreach ($col_name  as $Col) {
             echo "<tr>";
@@ -901,7 +901,7 @@ function LPR_results($td_keyID, $filterChecked) {
             FROM `LPR_WarmHealth`
             WHERE `fkHeader`= $td_keyID";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         echo "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values </th>";
 
@@ -935,7 +935,7 @@ function Photomixer_results($td_keyID, $filterChecked) {
             FROM `Photomixer_WarmHealth`
             WHERE `fkHeader` = $td_keyID";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         $col_name = array("Photomixer Voltage (V)", "Photomixer Current (mA)");
 
@@ -977,7 +977,7 @@ function Cryo_Temp_results($td_keyID, $filterChecked) {
 
         echo "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values (K)</th>";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
         $i=0;
         foreach ($col_name  as $Col) {
             echo "<tr>
@@ -1014,10 +1014,10 @@ function Y_factor_results($td_keyID, $filterChecked) {
         $q = "SELECT $col_strg
             FROM Yfactor
             WHERE fkHeader= $td_keyID";
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         $FreqLO = ADAPT_mysqli_result($r,0,4);
-        mysql_data_seek    ($r,0);
+        mysqli_data_seek($r,0);
 
         echo "<tr><th width = '199px'>LO= $FreqLO GHz</th>
             <th width = '92px'>Phot (dBm)</th>
@@ -1113,7 +1113,7 @@ function Band3_NT_results($td_keyID) {
         FROM `Noise_Temp_Band3_Results`
         WHERE fkHeader= $td_keyID
         ORDER BY FreqLO;";
-    $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+    $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
     table_header(800, $tdh, 7);
 
@@ -1216,7 +1216,7 @@ function Band3_CCA_NT_results($td_keyID) {
          AND keyFacility =" . $tdh->GetValue('keyFacility') ."
          GROUP BY keyId DESC";
 
-    $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");;
+    $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");;
     while ($row = mysqli_fetch_array($r)) {
         $CCA_key[]=$row[0];
     }
@@ -1228,7 +1228,7 @@ function Band3_CCA_NT_results($td_keyID) {
         $q = "SELECT keyID FROM TestData_header WHERE fkTestData_Type = 42
             AND fkDataStatus = 7 AND fkFE_Components = $CCA_key[$cnt]
             AND keyFacility =" . $tdh->GetValue('keyFacility') ."";
-        $r = mysqli_query($link, $q,$tdh->dbconnection);
+        $r = mysqli_query($tdh->dbconnection, $q);
 
         $CCA_TD_key = ADAPT_mysqli_result($r,0,0);
         $cnt++;
@@ -1247,7 +1247,7 @@ function Band3_CCA_NT_results($td_keyID) {
             WHERE fkHeader= $CCA_TD_key AND `CenterIF` != 0
             ORDER BY `Pol` ASC, `SB` ASC, `FreqLO` ASC, `CenterIF` ASC";
 
-        $r = mysqli_query($link, $q,$tdh->dbconnection) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         // read sort and average Noise Temperature Data
         $last_FREQ_LO = 0;
@@ -1315,7 +1315,7 @@ function Band3_CCA_NT_results($td_keyID) {
         $q = "SELECT `AvgNT`, `FreqLO`
             FROM `Noise_Temp_Band3_Results`
             WHERE fkHeader= $td_keyID";
-        $r = mysqli_query($link, $q,$tdh->dbconnection);
+        $r = mysqli_query($tdh->dbconnection, $q);
     	$TFETMS = array();
         while ($row = mysqli_fetch_array($r)) {
             $TFETMS[$row[1]]=$row[0];

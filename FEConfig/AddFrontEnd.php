@@ -14,6 +14,7 @@
 
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 require_once('HelperFunctions.php');
 require_once('functions.php');
@@ -49,7 +50,7 @@ while($loc_rs=mysqli_fetch_array($location_query))
 
 //Check first to see if Front End record already exists
 $q = "SELECT DefaultFacility FROM DatabaseDefaults";
-$r = mysqli_query($link, $q);
+$r = mysqli_query($dbconnection, $q);
 $facility = ADAPT_mysqli_result($r,0,0);
 
 if(isset($_POST['submit']))
@@ -70,7 +71,7 @@ if(isset($_POST['submit']))
 	$q = "SELECT keyFrontEnds FROM Front_Ends
 		  WHERE keyFacility = $facility
 		  AND SN = $sn;";
-	$r = mysqli_query($link, $q);
+	$r = mysqli_query($dbconnection, $q);
 	$keyFE = ADAPT_mysqli_result($r,0,0);
 	if ($keyFE != ''){
 		Warn("Front End SN $sn already exists. Record not saved.");
@@ -144,7 +145,7 @@ if(isset($_POST['submit']))
 					";
 						$q = "SELECT Initials FROM Users
 							  ORDER BY Initials ASC;";
-						$r = mysqli_query($link, $q);
+						$r = mysqli_query($dbconnection, $q);
 						while($row = mysqli_fetch_array($r)){
 								echo "<option value='$row[0]'>$row[0]</option>";
 						}

@@ -36,7 +36,6 @@ require_once(site_get_config_main());
 require_once($site_classes . '/class.cca.php');
 require_once($site_classes . '/class.cryostat.php');
 require_once($site_classes . '/class.fecomponent.php');
-require_once($site_classes . '/xlreader/reader.php');
 require_once('dbGetQueries.php');
 require_once('HelperFunctions.php');
 require_once('jsFunctions.php');

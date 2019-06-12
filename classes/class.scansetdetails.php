@@ -29,7 +29,11 @@ class ScanSetDetails extends GenericTable {
     var $Scan_180;
     var $fc; //facility key
     var $tdh;  //TestData_header record (class.generictable.php)
-
+    
+    public function __construct() {
+        parent::__construct();
+    }
+    
     public function Initialize_ScanSetDetails($keyId, $in_fc){
         $this->fc = $in_fc;
         parent::Initialize("ScanSetDetails",$keyId,"keyId",$this->fc,'fkFacility');
@@ -70,7 +74,7 @@ class ScanSetDetails extends GenericTable {
                     AND SourcePosition < 3
                     AND fkFacility = $this->fc
                     LIMIT 1;";
-        $r_scans = mysqli_query($link, $q_scans);
+        $r_scans = mysqli_query($this->dbconnection, $q_scans);
         $this->keyId_copol_pol0_scan = ADAPT_mysqli_result($r_scans,0);
         $this->Scan_copol_pol0 = new ScanDetails;
         $this->Scan_copol_pol0->Initialize_ScanDetails($this->keyId_copol_pol0_scan, $this->fc);
@@ -89,7 +93,7 @@ class ScanSetDetails extends GenericTable {
                     AND SourcePosition < 3
                     AND fkFacility = $this->fc
                     LIMIT 1;";
-        $r_scans = mysqli_query($link, $q_scans);
+        $r_scans = mysqli_query($this->dbconnection, $q_scans);
         $this->keyId_xpol_pol0_scan = ADAPT_mysqli_result($r_scans,0);
         $this->Scan_xpol_pol0 = new ScanDetails;
         //$this->Scan_copol_pol0->Initialize("ScanDetails",$this->keyId_copol_pol0_scan,"keyId");
@@ -110,7 +114,7 @@ class ScanSetDetails extends GenericTable {
                     AND SourcePosition < 3
                     AND fkFacility = $this->fc
                     LIMIT 1;";
-        $r_scans = mysqli_query($link, $q_scans);
+        $r_scans = mysqli_query($this->dbconnection, $q_scans);
         $this->keyId_copol_pol1_scan = ADAPT_mysqli_result($r_scans,0);
         $this->Scan_copol_pol1 = new ScanDetails;
         $this->Scan_copol_pol1->Initialize_ScanDetails($this->keyId_copol_pol1_scan, $this->fc);
@@ -130,7 +134,7 @@ class ScanSetDetails extends GenericTable {
                     AND SourcePosition < 3
                     AND fkFacility = $this->fc
                     LIMIT 1;";
-        $r_scans = mysqli_query($link, $q_scans);
+        $r_scans = mysqli_query($this->dbconnection, $q_scans);
         $this->keyId_xpol_pol1_scan = ADAPT_mysqli_result($r_scans,0);
         $this->Scan_xpol_pol1 = new ScanDetails;
         $this->Scan_xpol_pol1->Initialize_ScanDetails($this->keyId_xpol_pol1_scan, $this->fc);
@@ -149,7 +153,7 @@ class ScanSetDetails extends GenericTable {
                     AND SourcePosition > 2
                     AND fkFacility = $this->fc
                     LIMIT 1;";
-        $r_scans = mysqli_query($link, $q_scans);
+        $r_scans = mysqli_query($this->dbconnection, $q_scans);
         $this->keyId_180_scan = ADAPT_mysqli_result($r_scans,0);
         $this->Scan_180 = new ScanDetails;
         $this->Scan_180->Initialize_ScanDetails($this->keyId_180_scan, $this->fc);
@@ -306,10 +310,8 @@ class ScanSetDetails extends GenericTable {
         for ($i=0;$i<4;$i++){
             $qNew = "INSERT INTO ScanDetails(fkScanSetDetails, scan_type)
                      VALUES(".$this->propertyVals['keyId'].",$i);";
-            $rNew = mysqli_query($link, $qNew);
+            $rNew = mysqli_query($this->dbconnection, $qNew);
         }
-
-        //mysql_close($this->dbconnection);
     }
 
     public function DisplayPlots(){

@@ -1,6 +1,7 @@
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 $NumArgs = strlen($_REQUEST['query']);
 $SearchVal = '%';
@@ -18,7 +19,7 @@ else{
 		WHERE Description in ('CCA', 'WCA')
 		ORDER BY Description ASC;";
 }
-$r = mysqli_query($link, $q);
+$r = mysqli_query($dbconnection, $q);
 
 if ($NumArgs == 0){
 	$jsonstring = '{"sucess":true,"records":[{"stateName":"Front End", "stateCode":"100"}';

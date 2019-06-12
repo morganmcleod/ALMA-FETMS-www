@@ -37,8 +37,12 @@ class GenericTable{
     var $fckeyname;     //faciliity key name
     var $subheader;     //Generic table object, for a record in a subheader table with a
                         //foreign key pointing to this object record.
-
-    public function GetValue($ValueName){
+    
+    public function __construct() {
+        $this->dbconnection = site_getDbConnection();        
+    }
+    
+    public function GetValue($ValueName) {
         /*
          * Arguments:
          * ValueName- Column name
@@ -80,32 +84,36 @@ class GenericTable{
          * in_fc        - Facility code value (optional)
          * in_fckeyname - Name of facility code key field (optional)
          */
-
+        
         $this->tableName = $tableName;
         $this->keyId = $in_keyId;
         $this->keyId_name = $in_keyId_name;
         $this->fckeyname = $in_fckeyname;
-        $this->dbconnection = site_getDbConnection();
 
         //Get parameter names (column names in table)
         $q = "show columns from $tableName;";
+//         var_dump($q);
         $r = mysqli_query($this->dbconnection, $q);
+//         var_dump($r);
         $counter=0;
         while ($res = mysqli_fetch_array($r)){
             $this->propertyNames[$counter] = $res[0];
             $counter++;
         }
 
-        //Get parameter values. Facility code is optional, so one of two possible
-        //queries will be used.
-        if ($this->fckeyname != 'none'){
-            $qVals = "SELECT * FROM $tableName WHERE $in_keyId_name = $in_keyId AND $this->fckeyname = $in_fc;";
+        if ($in_keyId) {
+            //Get parameter values. Facility code is optional, so one of two possible
+            //queries will be used.
+            if ($this->fckeyname != 'none'){
+                $qVals = "SELECT * FROM $tableName WHERE $in_keyId_name = $in_keyId AND $this->fckeyname = $in_fc;";
+            }
+            if ($this->fckeyname == 'none'){
+                $qVals = "SELECT * FROM $tableName WHERE $in_keyId_name = $in_keyId;";
+            }
+//             var_dump($qVals);
+            $rVals = mysqli_query($this->dbconnection, $qVals);
+            $this->propertyVals = mysqli_fetch_array($rVals);
         }
-        if ($this->fckeyname == 'none'){
-            $qVals = "SELECT * FROM $tableName WHERE $in_keyId_name = $in_keyId;";
-        }
-        $rVals = mysqli_query($this->dbconnection, $qVals);
-        $this->propertyVals = mysqli_fetch_array($rVals);
     }
 
     public function NewRecord($tableName, $in_keyIdname = 'keyId', $in_fc = '0', $in_fckeyname = 'none'){
@@ -123,8 +131,6 @@ class GenericTable{
         $this->fckeyname = $in_fckeyname;
 
         //If no facility code is provided, a default value is obtained in config_main.php.
-        //dbconnection is created as a persisten connection in dbConnect.php.
-        $this->dbconnection = site_getDbConnection();
 
         //Facility code is optional, so one of two INSERT statements will be used for the new record.
         if ($this->fckeyname != "none"){

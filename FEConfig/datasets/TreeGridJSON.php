@@ -2,6 +2,7 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 $action   = $_REQUEST['action'];
 $FEid     = $_REQUEST['FEid'];
@@ -32,7 +33,7 @@ if ($action == 'read') {
             AND TestData_header.fkFE_Components = $compId";
     }
 
-    $r = mysqli_query($link, $q);
+    $r = mysqli_query($dbconnection, $q);
     $count = 0;
     // for each Testdata_header get all data specific subHeader records
     while ($row = mysqli_fetch_array($r)){
@@ -53,7 +54,7 @@ if ($action == 'read') {
                     AND IFGain = 15
                     ORDER BY FreqLO ASC, IFChannel ASC";
 
-            $rif = mysqli_query($link, $qif);
+            $rif = mysqli_query($dbconnection, $qif);
             $num_children = 0;
 
             $numrowsif = mysqli_num_rows($rif);
@@ -79,7 +80,7 @@ if ($action == 'read') {
         case 57: //lolocktest
             $qlosub = "SELECT keyId FROM TEST_LOLockTest_SubHeader
                         WHERE fkHeader = $tdheader->keyId;";
-            $rlosub = mysqli_query($link, $qlosub);
+            $rlosub = mysqli_query($dbconnection, $qlosub);
             $losubId = ADAPT_mysqli_result($rlosub,0,0);
 
 
@@ -87,7 +88,7 @@ if ($action == 'read') {
                     WHERE fkHeader = $losubId
                     ORDER BY LOFreq ASC";
 
-            $rlo = mysqli_query($link, $qlo);
+            $rlo = mysqli_query($dbconnection, $qlo);
             $num_children = mysqli_num_rows($rlo);
 
             $count_losub = 0;
@@ -113,14 +114,14 @@ if ($action == 'read') {
 
             $qntsub = "SELECT keyId FROM Noise_Temp_SubHeader
                         WHERE fkHeader = $tdheader->keyId;";
-            $rntsub = mysqli_query($link, $qntsub);
+            $rntsub = mysqli_query($dbconnection, $qntsub);
             $ntsubId = ADAPT_mysqli_result($rntsub,0,0);
 
             $qnt = "SELECT FreqLO, IsIncluded FROM Noise_Temp
                     WHERE fkSub_Header= $ntsubId
                     ORDER BY FreqLO ASC";
 
-            $rnt = mysqli_query($link, $qnt);
+            $rnt = mysqli_query($dbconnection, $qnt);
             $num_children = mysqli_num_rows($rnt);
 
             $count_ntsub = 0;
@@ -160,7 +161,7 @@ if ($action == 'read') {
         $tdh[$count]['text'] = 'TestData_header ' . $tdheader->keyId;
         $tdh[$count]['config'] = ($FEid) ? $row['keyFEConfig'] : $row['fkFE_Components'];
         $tdh[$count]['ts'] = $tdheader->GetValue('TS');
-        $tdh[$count]['notes'] = mysqli_real_escape_string($link, $tdheader->GetValue('Notes'));
+        $tdh[$count]['notes'] = mysqli_real_escape_string($dbconnection, $tdheader->GetValue('Notes'));
         $tdh[$count]['cls'] = 'folder';
         $tdh[$count]['expanded'] = false;
         $tdh[$count]['id'] = $tdheader->keyId;
@@ -199,7 +200,7 @@ if ($action == 'update_children') {
 
                 //Now apply the checked value to the record where IFGain=0 and IFGain=15 for the same LO frequency
                 $q0 = "UPDATE IFSpectrum_SubHeader SET IsIncluded = $checked WHERE FreqLO=$ifsubLO AND fkHeader = $fkHeader;";
-                $r0 = mysqli_query($link, $q0,$ifsub->dbconnection);
+                $r0 = mysqli_query($dbconnection, $q0);
                 unset($ifsub);
             }
             break;
@@ -212,7 +213,7 @@ if ($action == 'update_children') {
                 $subid = $subid_array[0];
                 $lofreq = $subid_array[1];
                 $q  = "UPDATE TEST_LOLockTest SET IsIncluded = $checked WHERE fkHeader = $subid AND LOFreq = $lofreq;";
-                $r = mysqli_query($link, $q);
+                $r = mysqli_query($dbconnection, $q);
             }
             break;
 
@@ -224,7 +225,7 @@ if ($action == 'update_children') {
                 $subid = $subid_array[0];
                 $lofreq = $subid_array[1];
                 $q  = "UPDATE Noise_Temp SET IsIncluded = $checked WHERE fkSub_Header = $subid AND FreqLO = $lofreq;";
-                $r = mysqli_query($link, $q);
+                $r = mysqli_query($dbconnection, $q);
             }
             break;
     }

@@ -3,6 +3,7 @@
 
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 $ctype = isset($_REQUEST['ctype']) ? $_REQUEST['ctype'] : FALSE;
 $band = isset($_REQUEST['band']) ? $_REQUEST['band'] : FALSE;
@@ -36,7 +37,7 @@ if ($ctype == '100') {
 $output = "";
 
 if ($query) {
-    $r = mysqli_query($link, $query);
+    $r = mysqli_query($dbconnection, $query);
     while ($row = mysqli_fetch_array($r)) {
         if ($output)
             $output .= ',';

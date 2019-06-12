@@ -28,6 +28,10 @@ class FrontEnd extends GenericTable {
 
     private $JSONstring;        //JSON string representing the front end and some components
 
+    public function __construct() {
+        parent::__construct();
+    }
+    
     private function GetJSONstring() {
         // TODO:  This seems to be dead code -- not called from anywhere.
         //http://labs.adobe.com/technologies/spry/samples/data_region/JSONDataSetSample.html
@@ -94,14 +98,14 @@ class FrontEnd extends GenericTable {
         $qcfg = "SELECT MAX(FE_Config.keyFEConfig)
                 FROM FE_Config
                 WHERE FE_Config.fkFront_Ends = $this->keyId;";
-        $rcfg = mysqli_query($link, $qcfg);
+        $rcfg = mysqli_query($this->dbconnection, $qcfg);
         $this->feconfig_id = ADAPT_mysqli_result($rcfg,0,0);
         $this->feconfig_id_latest = $this->feconfig_id;
         if ($in_cfg != 0) {
             $this->feconfig_id = $in_cfg;
         }
         $this->feconfig = new GenericTable();
-        $this->feconfig->Initialize('FEConfig',$this->feconfig_id,'keyFEConfig');
+        $this->feconfig->Initialize('FE_Config',$this->feconfig_id,'keyFEConfig');
 
         if ($INIT_Options & self::INIT_CONFIGS) {
             //Get FE Configs
@@ -109,7 +113,7 @@ class FrontEnd extends GenericTable {
                     FROM FE_Config
                     WHERE FE_Config.fkFront_Ends = $this->keyId
                     ORDER BY keyFEConfig DESC;";
-            $rcfg = mysqli_query($link, $qcfg);
+            $rcfg = mysqli_query($this->dbconnection, $qcfg);
             $count = 0;
             while($rowcfg = mysqli_fetch_array($rcfg)) {
                 $this->feconfig_ids_all[$count] = $rowcfg[0];
@@ -126,7 +130,7 @@ class FrontEnd extends GenericTable {
                          WHERE fkFEConfig = ".$this->feconfig->keyId."
                          AND keyFacility = ". $this->GetValue('keyFacility') ."
                          ORDER BY keyId DESC LIMIT 1;";
-                $rsln = mysqli_query($link, $qsln);
+                $rsln = mysqli_query($this->dbconnection, $qsln);
                 $slnid = ADAPT_mysqli_result($rsln,0,0);
             }
 
@@ -143,7 +147,7 @@ class FrontEnd extends GenericTable {
                      WHERE FE_ConfigLink.fkFE_Config = ".$this->feconfig->keyId."
                      AND FE_Components.fkFE_ComponentType = 17
                      AND FE_ConfigLink.fkFE_Components = FE_Components.keyId;";
-            $rlpr = mysqli_query($link, $qlpr);
+            $rlpr = mysqli_query($this->dbconnection, $qlpr);
             $lpr_id = ADAPT_mysqli_result($rlpr,0,0);
             $this->lpr = new GenericTable();
             $this->lpr->Initialize('FE_Components',$lpr_id,'keyId',$this->fc,'keyFacility');
@@ -157,7 +161,7 @@ class FrontEnd extends GenericTable {
                      AND FE_Components.fkFE_ComponentType = 6
                      AND FE_Components.keyFacility = $this->fc
                      AND FE_ConfigLink.fkFE_Components = FE_Components.keyId;";
-            $rcryo = mysqli_query($link, $qcryo);
+            $rcryo = mysqli_query($this->dbconnection, $qcryo);
             $cryo_id = ADAPT_mysqli_result($rcryo,0,0);
             $this->cryostat = new GenericTable();
             $this->cryostat->Initialize('FE_Components',$cryo_id,'keyId',$this->fc,'keyFacility');
@@ -179,7 +183,7 @@ class FrontEnd extends GenericTable {
                         AND FE_Config.fkFront_Ends = $this->keyId
                         AND FE_Config.keyFEConfig = ".$this->feconfig->keyId.";";
                 //echo $qwcas . "<br>";
-                $rwcas = mysqli_query($link, $qwcas);
+                $rwcas = mysqli_query($this->dbconnection, $qwcas);
                 $wca_id = ADAPT_mysqli_result($rwcas,0,0);
                 if ($wca_id != '') {
                     $this->wcas[$band] = new WCA();
@@ -203,7 +207,7 @@ class FrontEnd extends GenericTable {
                         AND FE_Components.Band = $band
                         AND FE_Config.fkFront_Ends = $this->keyId
                         AND FE_Config.keyFEConfig = ".$this->feconfig->keyId.";";
-                $rccas = mysqli_query($link, $qccas);
+                $rccas = mysqli_query($this->dbconnection, $qccas);
                 $cca_id = ADAPT_mysqli_result($rccas,0,0);
                 if ($cca_id != '') {
                     $this->ccas[$band] = new CCA();
@@ -215,17 +219,15 @@ class FrontEnd extends GenericTable {
     }
 
     public function Initialize_FrontEnd_FromSN($in_sn, $in_fc, $INIT_Options = self::INIT_ALL) {
-        $link = site_getDbConnection();
         $q = "SELECT max(keyFrontEnds) FROM Front_Ends WHERE SN = $in_sn;";
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         $this->keyId = ADAPT_mysqli_result($r,0,0);
         $this->Initialize_FrontEnd($this->keyId, $in_fc, $INIT_Options);
     }
 
     public function Initialize_FrontEnd_FromConfig($in_cfg, $in_fc, $INIT_Options = self::INIT_ALL) {
-        $link = site_getDbConnection();
         $q = "SELECT fkFront_Ends FROM FE_Config WHERE keyFEConfig = $in_cfg;";
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         $this->keyId = ADAPT_mysqli_result($r,0,0);
         $this->Initialize_FrontEnd($this->keyId, $in_fc, $INIT_Options, $in_cfg);
         $this->feconfig_id = $in_cfg;
@@ -250,7 +252,7 @@ class FrontEnd extends GenericTable {
             AND is_deleted <> 1
             GROUP BY ScanSetDetails.band ASC, ScanSetDetails.TS ASC;";
 
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
 
         $trclass = '';
         while ($row = mysqli_fetch_array($r)) {
@@ -280,7 +282,7 @@ class FrontEnd extends GenericTable {
                   ORDER BY band ASC, TS ASC";
 
             //echo "<td>$q</td>";
-            $r = mysqli_query($link, $q);
+            $r = mysqli_query($this->dbconnection, $q);
             if (mysqli_num_rows($r) > 0) {
                 while ($row = mysqli_fetch_array($r)) {
                     echo "<tr><td width='50px'>$row[0]</td>";
@@ -314,7 +316,7 @@ class FrontEnd extends GenericTable {
                     GROUP BY TestData_header.Band ASC;";
 
                     //echo $q ."<br><br>";
-                    $r = mysqli_query($link, $q);
+                    $r = mysqli_query($this->dbconnection, $q);
                     $tdhid = ADAPT_mysqli_result($r,0,0);
                     $ts = ADAPT_mysqli_result($r,0,1);
                     if ($tdhid != "") {
@@ -325,7 +327,7 @@ class FrontEnd extends GenericTable {
             }
 
             //echo "<td>$q</td>";
-            $r = mysqli_query($link, $q);
+            $r = mysqli_query($this->dbconnection, $q);
             if (mysqli_num_rows($r) > 0) {
                 while ($row = mysqli_fetch_array($r)) {
                     echo "<tr><td width='50px'>$row[0]</td>";
@@ -357,7 +359,7 @@ class FrontEnd extends GenericTable {
              AND FE_Config.fkFront_Ends = $this->keyId
              GROUP BY TestData_header.band ASC, TestData_header.TS ASC;";
 
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         if (mysqli_num_rows($r) > 0) {
             while ($row = mysqli_fetch_array($r)) {
                 echo "<tr><td width='50px'>$row[0]</td>";
@@ -383,7 +385,7 @@ class FrontEnd extends GenericTable {
         AND TestData_header.fkTestData_Type = 29
         AND FE_Config.fkFront_Ends = $this->keyId
         GROUP BY TestData_header.band ASC, TestData_header.TS ASC;";
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         if (mysqli_num_rows($r) > 0) {
             while ($row = mysqli_fetch_array($r)) {
                 echo "<tr><td width='50px'>$row[0]</td>";
@@ -415,7 +417,7 @@ class FrontEnd extends GenericTable {
         AND FE_Config.fkFront_Ends = $this->keyId
         GROUP BY TestData_header.band ASC, TestData_header.TS ASC;";
 
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         if (mysqli_num_rows($r) > 0) {
             while ($row = mysqli_fetch_array($r)) {
                 echo "<tr><td width='50px'>$row[0]</td>";
@@ -438,7 +440,7 @@ class FrontEnd extends GenericTable {
              WHERE Cryostat_SubHeader.SN = Front_Ends.SN
              AND Front_Ends.keyFrontEnds = $this->keyId;";
 
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         if (mysqli_num_rows($r) > 0) {
             while ($row = mysqli_fetch_array($r)) {
                 echo "<tr><th>Cryostat $row[1]</th>";
@@ -466,7 +468,7 @@ class FrontEnd extends GenericTable {
             $q = "SELECT keyId FROM FE_StatusLocationAndNotes
                   WHERE fkFEConfig = " .$this->feconfig_ids_all[$i]."
                   ORDER BY keyId DESC";
-            $r = mysqli_query($link, $q);
+            $r = mysqli_query($this->dbconnection, $q);
 
             while ($row = mysqli_fetch_array($r)) {
                 $bg = ($bg=="#ffffff" ? "#E6E6FF" : "#ffffff");
@@ -514,7 +516,7 @@ class FrontEnd extends GenericTable {
             $q = "SELECT keyId FROM FE_StatusLocationAndNotes
                   WHERE fkFEConfig = " .$this->feconfig_ids_all[$i]."
                   ORDER BY keyId DESC";
-            $r = mysqli_query($this->dbConnection, $q);
+            $r = mysqli_query($this->dbconnection, $q);
 
             while ($row = mysqli_fetch_array($r)) {
                 $sln = new SLN();
@@ -531,7 +533,7 @@ class FrontEnd extends GenericTable {
             $outstring .= "'Config':'".  $this->feconfig_ids_all[$i]."',";
             $outstring .= "'Link':'".    FixHyperLink($sln->GetValue('lnk_Data'))."',";
 
-            $notes = mysqli_real_escape_string($this->dbConnection, $sln->GetValue('Notes'));
+            $notes = mysqli_real_escape_string($this->dbconnection, $sln->GetValue('Notes'));
             $outstring .= "'Notes':'".   str_replace('"', "'", $notes)."'}";
             $rowcount += 1;
             }
@@ -573,7 +575,7 @@ class FrontEnd extends GenericTable {
               AND LINK.fkFE_Config = $searchconfig
               ORDER BY CT.Description ASC, COMP.SN ASC;";
 
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
 
         $trclass = '';
         while ($row = mysqli_fetch_array($r)) {
@@ -644,7 +646,7 @@ class FrontEnd extends GenericTable {
             GROUP BY ScanSetDetails.band ASC, ScanSetDetails.TS ASC;";
 
 
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
 
         $trclass = '';
         while ($row = mysqli_fetch_array($r)) {
@@ -684,7 +686,7 @@ class FrontEnd extends GenericTable {
             AND TestData_header.fkTestData_Type IN (1,2,3,13,24)
             ORDER BY TestData_header.fkFE_Config DESC, TestData_header.fkDataStatus ASC, TestData_header.TS DESC";
 
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
 
         $prev_data_status = -1;
         $prev_fe_config = -1;

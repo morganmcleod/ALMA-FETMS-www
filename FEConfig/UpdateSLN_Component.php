@@ -14,6 +14,8 @@
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.dboperations.php');
 require_once($site_classes . '/class.fecomponent.php');
+require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 $keyId = $_REQUEST['id'];  //keyId of FE_Components table
 $fc = $_REQUEST['fc'];
@@ -102,7 +104,7 @@ echo "
 						<option value='' selected = 'selected'></option>";
 						$q = "SELECT Initials FROM Users
 							  ORDER BY Initials ASC;";
-						$r = mysqli_query($link, $q);
+						$r = mysqli_query($dbconnection, $q);
 						while($row = mysqli_fetch_array($r)){
 							if ($row[0] == $c->sln->GetValue('Updated_By')){
 								echo "<option value='$row[0]' selected = 'selected'>$row[0]</option>";
@@ -126,7 +128,7 @@ echo "
 					<select name='fkStatusType' id='fkStatusType'>";
 						$q = "SELECT keyStatusType,Status FROM StatusTypes
 							  ORDER BY keyStatusType ASC;";
-						$r = mysqli_query($link, $q);
+						$r = mysqli_query($dbconnection, $q);
 						while($row = mysqli_fetch_array($r)){
 							if ($row[0] == $c->sln->GetValue('fkStatusType')){
 								echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";
@@ -153,7 +155,7 @@ echo "
 					<select name='fkLocationNames' id='fkLocationNames'>";
 						$q = "SELECT keyId,Description FROM Locations
 							  ORDER BY Description ASC;";
-						$r = mysqli_query($link, $q);
+						$r = mysqli_query($dbconnection, $q);
 						while($row = mysqli_fetch_array($r)){
 							if ($row[0] == $c->sln->GetValue('fkLocationNames')){
 								echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";

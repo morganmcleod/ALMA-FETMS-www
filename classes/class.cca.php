@@ -73,6 +73,7 @@ class CCA extends FEComponent {
     var $ErrorArray; //Array of errors
 
     function __construct() {
+        parent::__construct();
         $this->fkDataStatus = '7';
         $this->swversion = "1.0.15";
 
@@ -128,7 +129,7 @@ class CCA extends FEComponent {
             $q = "SELECT keyId, Location FROM CCA_TempSensorConfig
                   WHERE fkComponent = $this->keyId
                   ORDER BY Location ASC;";
-            $r = mysqli_query($this->dbConnection, $q);
+            $r = mysqli_query($this->dbconnection, $q);
             while ($row = mysqli_fetch_array($r)) {
                 $tempsensor_id = $row[0];
                 $ts_location = $row[1];
@@ -143,7 +144,7 @@ class CCA extends FEComponent {
             $q = "SELECT DISTINCT(FreqLO), keyId FROM CCA_MixerParams
             WHERE fkComponent = $this->keyId
             GROUP BY FreqLO ASC;";
-            $r = mysqli_query($this->dbConnection, $q);
+            $r = mysqli_query($this->dbconnection, $q);
             $mpcount = 0;
             while ($row = mysqli_fetch_array($r)) {
                 $this->MixerParams[$mpcount] = new MixerParams();
@@ -160,7 +161,7 @@ class CCA extends FEComponent {
                   AND Temperature < 20
                   ORDER BY Pol ASC, SB ASC, FreqLO ASC;";
             //echo "preamps: " . $q . "<br>";
-            $r = mysqli_query($this->dbConnection, $q);
+            $r = mysqli_query($this->dbconnection, $q);
             $pcount = 0;
             while ($row = mysqli_fetch_array($r)) {
                 $this->PreampParams[$pcount] = new GenericTable();
@@ -199,7 +200,7 @@ class CCA extends FEComponent {
 
 
         $q_url = "INSERT INTO CCA_urls(fkFE_Component) VALUES($this->keyId);";
-        $r_url = mysqli_query($this->dbConnection, $q_url);
+        $r_url = mysqli_query($this->dbconnection, $q_url);
         $this->CCA_urls = new GenericTable();
         $this->CCA_urls->keyId_name = "fkFE_Component";
 
@@ -208,7 +209,7 @@ class CCA extends FEComponent {
         $q_status = "INSERT INTO FE_StatusLocationAndNotes
         (fkFEComponents, fkLocationNames,fkStatusType)
         VALUES($this->keyId,'40','7');";
-        $r_status = mysqli_query($this->dbConnection, $q_status);
+        $r_status = mysqli_query($this->dbconnection, $q_status);
     }
 
     // return a string formatted as the FrontEndControlDLL.ini section for this CCA:
@@ -229,6 +230,8 @@ class CCA extends FEComponent {
         $mstring = "";
 
         switch ($band) {
+            case 1:
+            case 2:
             case 3:
                 $output .= "MagnetParams=0\r\n";
                 break;
@@ -437,9 +440,9 @@ class CCA extends FEComponent {
                       AND SB = $sb
                       ORDER BY FreqLO ASC";
 
-                $r = mysqli_query($this->dbConnection, $q);
+                $r = mysqli_query($this->dbconnection, $q);
                 $ts = ADAPT_mysqli_result($r,0,5);
-                $r = mysqli_query($this->dbConnection, $q);
+                $r = mysqli_query($this->dbconnection, $q);
                 if (mysqli_num_rows($r) > 0) {
                     $found++;
                     echo "<div style= 'width: 500px;'><table id = 'table1' border = '1'>";
@@ -777,19 +780,19 @@ class CCA extends FEComponent {
     public function DeleteRecord_CCA() {
         $this->Delete_ALL_TestData();
         $qDel = "DELETE FROM FE_Components WHERE fkFE_Component = $this->keyId;";
-        $rDel = mysqli_query($this->dbConnection, $qDel);
+        $rDel = mysqli_query($this->dbconnection, $qDel);
         $qDel = "DELETE FROM CCA_MixerParams WHERE fkComponent = $this->keyId;";
-        $rDel = mysqli_query($this->dbConnection, $qDel);
+        $rDel = mysqli_query($this->dbconnection, $qDel);
         $qDel = "DELETE FROM CCA_PreampParams WHERE fkComponent = $this->keyId;";
-        $rDel = mysqli_query($this->dbConnection, $qDel);
+        $rDel = mysqli_query($this->dbconnection, $qDel);
         $qDel = "DELETE FROM CCA_TempSensorConfig WHERE fkComponent = $this->keyId;";
-        $rDel = mysqli_query($this->dbConnection, $qDel);
+        $rDel = mysqli_query($this->dbconnection, $qDel);
         $qDel = "DELETE FROM CCA_urls WHERE fkFE_Component = $this->keyId;";
-        $rDel = mysqli_query($this->dbConnection, $qDel);
+        $rDel = mysqli_query($this->dbconnection, $qDel);
         $qDel = "DELETE FROM TestData_header WHERE fkFE_Components = $this->keyId;";
-        $rDel = mysqli_query($this->dbConnection, $qDel);
+        $rDel = mysqli_query($this->dbconnection, $qDel);
         $qDel = "DELETE FROM FE_StatusLocationAndNotes WHERE fkFEComponents = $this->keyId;";
-        $rDel = mysqli_query($this->dbConnection, $qDel);
+        $rDel = mysqli_query($this->dbconnection, $qDel);
 
         parent::Delete_record();
         echo '<p>The record has been deleted.</p>';
@@ -800,7 +803,7 @@ class CCA extends FEComponent {
     public function Delete_ALL_TestData() {
         $q = "SELECT keyId FROM TestData_header
               WHERE keyFacility = '$this->fc' AND fkFE_Components = '$this->keyId';";
-        $r = mysqli_query($this->dbConnection, $q);
+        $r = mysqli_query($this->dbconnection, $q);
 
         $keyList = "(";
         $first = true;
@@ -814,29 +817,29 @@ class CCA extends FEComponent {
         $keyList .= ")";
 
         $qDelete = "DELETE FROM CCA_TEST_AmplitudeStability WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_GainCompression WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_IFSpectrum WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_InBandPower WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_NoiseTemperature WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_PhaseDrift WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_PolAccuracy WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_PowerVariation WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_SidebandRatio WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_TotalPower WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM CCA_TEST_IVCurve WHERE fkFacility = '$this->fc' AND fkHeader IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
         $qDelete = "DELETE FROM TestData_header WHERE keyFacility = '$this->fc' AND keyId IN $keyList;";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
+        $rDelete = mysqli_query($this->dbconnection, $qDelete);
     }
 
 
@@ -1040,7 +1043,7 @@ class CCA extends FEComponent {
                     AND keyFacility = " . $this->GetValue('keyFacility') . "
                     AND fkFE_ComponentType = 20;";
 
-                    $rc = mysqli_query($this->dbConnection, $qc);
+                    $rc = mysqli_query($this->dbconnection, $qc);
                     $numrows = mysqli_num_rows($rc);
 
                     if ($numrows > 1) {
@@ -1101,7 +1104,7 @@ class CCA extends FEComponent {
 
     public function UploadTempSensors() {
         $qdelete = "DELETE FROM CCA_TempSensorConfig WHERE fkComponent = $this->keyId;";
-        $rdelete = mysqli_query($this->dbConnection, $qdelete);
+        $rdelete = mysqli_query($this->dbconnection, $qdelete);
 
         if (!isset($this->file_TEMPSENSORS))
             return;
@@ -1134,7 +1137,7 @@ class CCA extends FEComponent {
 
     public function UploadMixerParams() {
         $qdelete = "DELETE FROM CCA_MixerParams WHERE fkComponent = $this->keyId;";
-        $rdelete = mysqli_query($this->dbConnection, $qdelete);
+        $rdelete = mysqli_query($this->dbconnection, $qdelete);
 
         if (!isset($this->file_MIXERPARAMS))
             return;
@@ -1194,7 +1197,7 @@ class CCA extends FEComponent {
     public function UploadPreampParams() {
         $qdelete = "DELETE FROM CCA_PreampParams WHERE fkComponent = $this->keyId
                     AND fkFacility = " . $this->GetValue('keyFacility').";";
-        $rdelete = mysqli_query($this->dbConnection, $qdelete);
+        $rdelete = mysqli_query($this->dbconnection, $qdelete);
 
         if (!isset($this->file_PREAMPPARAMS))
             return;
@@ -1310,7 +1313,7 @@ class CCA extends FEComponent {
 
                 $qAS = "INSERT INTO CCA_TEST_AmplitudeStability(FreqLO,Pol,SB,Time,AllanVar,fkHeader,keyDataSet)
                 VALUES('$FreqLO','$Pol','$SB','$Time','$AllanVar','$TestData_header->keyId','$ds')";
-                $rAS = mysqli_query($this->dbConnection, $qAS);
+                $rAS = mysqli_query($this->dbconnection, $qAS);
 
                 $ct+=1;
             }
@@ -1370,7 +1373,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_PhaseDrift(FreqLO,FreqCarrier,Pol,SB,Time,AllanPhase,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$FreqCarrier','$Pol','$SB','$Time','$AllanPhase','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
             }
         }
         $TestData_header->SetValue("TS",$TS);
@@ -1414,7 +1417,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_GainCompression(FreqLO,Pol,SB,Compression,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$Pol','$SB','$Compression','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
             }
         }
         $TestData_header->SetValue("TS",$TS);
@@ -1452,7 +1455,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_PolAccuracy(FreqLO,FreqCarrier,Pol,AngleError,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$FreqCarrier','$Pol','$AngleError','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
             }
         }
         $TestData_header->SetValue("TS",$TS);
@@ -1496,7 +1499,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_InBandPower(FreqLO,Pol,SB,Power,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$Pol','$SB','$Power','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
             }
         }
         $TestData_header->SetValue("TS",$TS);
@@ -1540,7 +1543,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_TotalPower(FreqLO,Pol,SB,Power,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$Pol','$SB','$Power','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
             }
         }
         $TestData_header->SetValue("TS",$TS);
@@ -1587,7 +1590,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_SidebandRatio(FreqLO,CenterIF,BWIF,Pol,SB,SBR,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$CenterIF','$BWIF','$Pol','$SB','$SBR','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
             }
         }
         $TestData_header->SetValue("TS",$TS);
@@ -1632,7 +1635,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_IVCurve(FreqLO,Pol,SB,VJ,IJ,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$Pol','$SB','$VJ','$IJ','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
             }
         }
         $TestData_header->SetValue("TS",$TS);
@@ -1678,7 +1681,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_PowerVariation(FreqLO,Pol,SB,CenterIF,BWIF,PowerVar,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$Pol','$SB','$CenterIF','$BWIF','$PowerVar','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
             }
         }
         $TestData_header->SetValue("TS",$TS);
@@ -1724,7 +1727,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_IFSpectrum(FreqLO,Pol,SB,CenterIF,BWIF,Power,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$Pol','$SB','$CenterIF','$BWIF','$Power','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
             }
         }
         $TestData_header->SetValue("TS",$TS);
@@ -1772,7 +1775,7 @@ class CCA extends FEComponent {
 
                   $qAS = "INSERT INTO CCA_TEST_NoiseTemperature(FreqLO,CenterIF,BWIF,Pol,SB,Treceiver,fkHeader,keyDataSet)
                   VALUES('$FreqLO','$CenterIF','$BWIF','$Pol','$SB','$Treceiver','$TestData_header->keyId','$ds')";
-                  $rAS = mysqli_query($this->dbConnection, $qAS);
+                  $rAS = mysqli_query($this->dbconnection, $qAS);
 
             }
         }
@@ -1800,7 +1803,7 @@ class CCA extends FEComponent {
         $qt = "SELECT keyStatusType, Status
                FROM StatusTypes
                ORDER BY keyStatusType ASC;";
-        $rt = mysqli_query($this->dbConnection, $qt);
+        $rt = mysqli_query($this->dbconnection, $qt);
 
         echo "<select name = 'status_selector'>";
 
@@ -1819,7 +1822,7 @@ class CCA extends FEComponent {
         $qt = "SELECT keyStatusType, Status
                FROM StatusTypes
                ORDER BY keyStatusType ASC;";
-        $rt = mysqli_query($this->dbConnection, $qt);
+        $rt = mysqli_query($this->dbconnection, $qt);
 
         echo "<select name = 'status_selector'>";
 
@@ -1839,7 +1842,7 @@ class CCA extends FEComponent {
         $qt = "SELECT keyId, Description, Notes
                FROM Locations
                ORDER BY Description ASC;";
-        $rt = mysqli_query($this->dbConnection, $qt);
+        $rt = mysqli_query($this->dbconnection, $qt);
 
         echo "<select name = 'location_selector'>";
 
@@ -1934,9 +1937,9 @@ class CCA extends FEComponent {
 
             //delete newly created duplicate mixer/preamp params, to be replaced from the contents of the ini file.
             $qdel = "DELETE FROM CCA_MixerParams WHERE fkComponent = $this->keyId;";
-            $rdel = mysqli_query($this->dbConnection, $qdel);
+            $rdel = mysqli_query($this->dbconnection, $qdel);
             $qdel = "DELETE FROM CCA_PreampParams WHERE fkComponent = $this->keyId;";
-            $rdel = mysqli_query($this->dbConnection, $qdel);
+            $rdel = mysqli_query($this->dbconnection, $qdel);
 
             for ($i_mp=0; $i_mp< 100; $i_mp++) {
                 $keyName = "MixerParam" . str_pad($i_mp+1,2,"0",STR_PAD_LEFT);
@@ -1950,20 +1953,20 @@ class CCA extends FEComponent {
 
                     $qmx01 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                     $qmx01 .= "VALUES('$lo','0','1','$this->keyId','" . $this->GetValue('keyFacility') . "');";
-                    $rmx01 = mysqli_query($this->dbConnection, $qmx01);
+                    $rmx01 = mysqli_query($this->dbconnection, $qmx01);
 
                     $qmx11 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                     $qmx11 .= "VALUES('$lo','1','1','$this->keyId','" . $this->GetValue('keyFacility') . "');";
-                    $rmx11 = mysqli_query($this->dbConnection, $qmx11);
+                    $rmx11 = mysqli_query($this->dbconnection, $qmx11);
 
                     if ($this->GetValue('Band') < 9) {
                         $qmx02 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                         $qmx02 .= "VALUES('$lo','0','2','$this->keyId','" . $this->GetValue('keyFacility') . "');";
-                        $rmx02 = mysqli_query($this->dbConnection, $qmx02);
+                        $rmx02 = mysqli_query($this->dbconnection, $qmx02);
 
                         $qmx12 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                         $qmx12 .= "VALUES('$lo','1','2','$this->keyId','" . $this->GetValue('keyFacility') . "');";
-                        $rmx12 = mysqli_query($this->dbConnection, $qmx12);
+                        $rmx12 = mysqli_query($this->dbconnection, $qmx12);
                     }
 
                     $this->MixerParams[$i_mp] = new MixerParams();
@@ -2063,9 +2066,9 @@ class CCA extends FEComponent {
 
             //delete newly created duplicate mixer/preamp params, to be replaced from the contents of the ini file.
             $qdel = "DELETE FROM CCA_MixerParams WHERE fkComponent = $this->keyId;";
-            $rdel = mysqli_query($this->dbConnection, $qdel);
+            $rdel = mysqli_query($this->dbconnection, $qdel);
             $qdel = "DELETE FROM CCA_PreampParams WHERE fkComponent = $this->keyId;";
-            $rdel = mysqli_query($this->dbConnection, $qdel);
+            $rdel = mysqli_query($this->dbconnection, $qdel);
 
             //Get magnet params array indexed by LO string:
             $magnetParams = array();
@@ -2091,20 +2094,20 @@ class CCA extends FEComponent {
                 // Create empty CCA_MixerParams records to update:
                 $qmx01 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                 $qmx01 .= "VALUES('$FreqLO','0','1','$this->keyId','" . $this->GetValue('keyFacility') . "');";
-                $rmx01 = mysqli_query($this->dbConnection, $qmx01);
+                $rmx01 = mysqli_query($this->dbconnection, $qmx01);
 
                 $qmx11 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                 $qmx11 .= "VALUES('$FreqLO','1','1','$this->keyId','" . $this->GetValue('keyFacility') . "');";
-                $rmx11 = mysqli_query($this->dbConnection, $qmx11);
+                $rmx11 = mysqli_query($this->dbconnection, $qmx11);
 
                 if ($this->GetValue('Band') < 9) {
                     $qmx02 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                     $qmx02 .= "VALUES('$FreqLO','0','2','$this->keyId','" . $this->GetValue('keyFacility') . "');";
-                    $rmx02 = mysqli_query($this->dbConnection, $qmx02);
+                    $rmx02 = mysqli_query($this->dbconnection, $qmx02);
 
                     $qmx12 = "INSERT INTO CCA_MixerParams(FreqLO,Pol,SB,fkComponent,fkFacility) ";
                     $qmx12 .= "VALUES('$FreqLO','1','2','$this->keyId','" . $this->GetValue('keyFacility') . "');";
-                    $rmx12 = mysqli_query($this->dbConnection, $qmx12);
+                    $rmx12 = mysqli_query($this->dbconnection, $qmx12);
                 }
 
                 $this->MixerParams[$i] = new MixerParams();
@@ -2234,7 +2237,7 @@ class CCA extends FEComponent {
         //Duplicate Mixer Params
         $qmx = "SELECT keyId FROM CCA_MixerParams WHERE fkComponent = $old_id
                 AND fkFacility = " . $this->GetValue('keyFacility') . ";";
-        $rmx = mysqli_query($this->dbConnection, $qmx);
+        $rmx = mysqli_query($this->dbconnection, $qmx);
         while ($rowmx = mysqli_fetch_array($rmx)) {
             $mx_temp = new GenericTable();
             $mx_temp->Initialize('CCA_MixerParams',$rowmx[0],'keyId',$this->GetValue('keyFacility'),'fkFacility');
@@ -2273,9 +2276,9 @@ class CCA extends FEComponent {
                       AND SB = $sb
                       ORDER BY FreqLO ASC";
 
-                $r = mysqli_query($this->dbConnection, $q);
+                $r = mysqli_query($this->dbconnection, $q);
                 $ts = ADAPT_mysqli_result($r,0,5);
-                $r = mysqli_query($this->dbConnection, $q);
+                $r = mysqli_query($this->dbconnection, $q);
                 if (mysqli_num_rows($r) > 0 ) {
                 echo "
                     <div style= 'width: 500px;'>

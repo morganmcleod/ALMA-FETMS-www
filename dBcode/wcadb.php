@@ -5,6 +5,7 @@ require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.dboperations.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.frontend.php');
+require_once($site_dbConnect);
 
 class WCAdb { //extends DBRetrieval {
 	var $dbconnection;
@@ -14,9 +15,8 @@ class WCAdb { //extends DBRetrieval {
 	 *
 	 * @param $db- existing database connection
 	 */
-	public function WCAdb($db) {
-		require(site_get_config_main());
-		$this->dbconnection = $db;
+	public function __construct($db) {
+		$this->dbconnection = site_getDbConnection();
 	}
 
 	/**
@@ -25,7 +25,7 @@ class WCAdb { //extends DBRetrieval {
 	 * @return Resource ID- results from query
 	 */
 	public function run_query($query) {
-		return mysqli_query($link, $query, $this->dbconnection);
+	    return mysqli_query($this->dbconnection, $query);
 	}
 
 	/**

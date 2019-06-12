@@ -10,7 +10,7 @@ require_once($site_classes . '/class.logger.php');
 require_once($site_dbConnect);
 
 class DPdb{ //extends DBRetrieval{
-	var $dbConnection;
+	var $dbconnection;
 
 	/**
 	 * Initializes class and creates database connection
@@ -19,7 +19,7 @@ class DPdb{ //extends DBRetrieval{
 	 */
 	public function DPdb($dB) {
 		require(site_get_config_main());
-		$this->dbConnection = $dB;
+		$this->dbconnection = $dB;
 	}
 
 	/**
@@ -29,7 +29,7 @@ class DPdb{ //extends DBRetrieval{
 	 * @return resource Id for SQL query
 	 */
 	public function run_query($query) {
-		return mysqli_query($link, $query, $this->dbConnection);
+		return mysqli_query($this->dbconnection, $query);
 	}
 
 

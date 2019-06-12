@@ -17,6 +17,10 @@ class FEComponent extends GenericTable {
     var $MaxConfig;        //Max keyId value in FE_Components with the same SN and Band (if band is not NA)
     var $JSONstring;       //JSON string with basic information about the component
 
+    public function __construct() {
+        parent::__construct();
+    }
+    
     public function GetJSONstring(){
         $jstring  = "{'id':'"   . $this->keyId . "'";
         $jstring .= ",'sn':'"   . $this->GetValue('SN') . "'";
@@ -28,12 +32,10 @@ class FEComponent extends GenericTable {
         $this->keyId = $in_keyId;
         parent::Initialize('FE_Components',$this->keyId,'keyId',$in_fc,'keyFacility');
 
-        $q = "SELECT keyId FROM ComponentTypes
-              WHERE keyId = " . $this->GetValue('fkFE_ComponentType') . ";";
-        $r = mysqli_query($this->dbConnection, $q);
         $this->ComponentType = new GenericTable();
-        $CompType = ADAPT_mysqli_result($r,0,0);
-        $this->ComponentType->Initialize('ComponentTypes', $CompType,'keyId');
+        
+        $compType = $this->GetValue('fkFE_ComponentType');
+        $this->ComponentType->Initialize('ComponentTypes', $compType,'keyId');
 
         //Find which Front End this component is in (if any)
         $q = "select Front_Ends.SN, FE_Config.keyFEConfig,Front_Ends.keyFrontEnds, Front_Ends.keyFacility,
@@ -44,24 +46,24 @@ class FEComponent extends GenericTable {
             AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
             GROUP BY FE_ConfigLink.keyId DESC LIMIT 1;";
 
-        $r = mysqli_query($this->dbConnection, $q);
+        $r = mysqli_query($this->dbconnection, $q);
+//         var_dump($r);
         if (mysqli_num_rows($r) > 0){
-            $r = mysqli_query($this->dbConnection, $q);
             $this->FESN              = ADAPT_mysqli_result($r,0,0);
             $this->FEConfig       = ADAPT_mysqli_result($r,0,1);
             $this->FEid           = ADAPT_mysqli_result($r,0,2);
             $this->FEfc           = ADAPT_mysqli_result($r,0,3);
             $this->FE_ConfigLink = new GenericTable();
-            $this->FE_ConfigLink->Initialize('FE_ConfigLink',ADAPT_mysqli_result($r,0,4),'keyId',$this->GetValue('keyFacility'),'fkFE_ComponentFacility');
+            $this->FE_ConfigLink->Initialize('FE_ConfigLink',ADAPT_mysqli_result($r,0,4),'keyId',$in_fc,'fkFE_ComponentFacility');
         }
 
         //Get sln
         $qsln = "SELECT MAX(keyId) FROM FE_StatusLocationAndNotes
                  WHERE fkFEComponents = $this->keyId
-                 AND keyFacility = ". $this->GetValue('keyFacility') .";";
+                 AND keyFacility = ". $in_fc .";";
 
-        $rsln = mysqli_query($this->dbConnection, $qsln);
-
+        $rsln = mysqli_query($this->dbconnection, $qsln);
+//         var_dump($qsln);
         $slnid = ADAPT_mysqli_result($rsln,0,0);
 
         if ($slnid != ''){
@@ -112,20 +114,20 @@ class FEComponent extends GenericTable {
         echo "<tr><th>ESN1</th><td>".$this->GetValue('ESN1')."</td></tr>";
         echo "<tr><th>ESN2</th><td>".$this->GetValue('ESN2')."</td></tr>";
 
-        $this->dbConnection1 = $this->GetValue('Link1');
-        $this->dbConnection2 = $this->GetValue('Link2');
+        $link1 = $this->GetValue('Link1');
+        $link2 = $this->GetValue('Link2');
 
-        $this->dbConnection1string = "";
-        if (strlen($this->dbConnection1) > 5) {
-            $this->dbConnection1string = "Link1";
+        $link1string = "";
+        if (strlen($link1) > 5) {
+            $link1string = "Link1";
         }
-        echo "<tr><th>Link1 (CIDL)</th><td><a href='".FixHyperlink($this->dbConnection1)."' target = 'blank'>$this->dbConnection1string</td></tr>";
+        echo "<tr><th>Link1 (CIDL)</th><td><a href='".FixHyperlink($link1)."' target = 'blank'>$link1string</td></tr>";
 
-        $this->dbConnection2string = "";
-        if (strlen($this->dbConnection2) > 5) {
-            $this->dbConnection2string = "Link2";
+        $link2string = "";
+        if (strlen($link2) > 5) {
+            $link2string = "Link2";
         }
-        echo "<tr><th>Link2 (SICL)</th><td><a href='".FixHyperlink($this->dbConnection2)."' target = 'blank'>$this->dbConnection2string</td></tr>";
+        echo "<tr><th>Link2 (SICL)</th><td><a href='".FixHyperlink($link2)."' target = 'blank'>$link2string</td></tr>";
 
         echo "<tr><th>Description</th><td>".$this->GetValue('Description')."</td></tr>";
 
@@ -191,13 +193,13 @@ class FEComponent extends GenericTable {
         }
 
         $q = "SELECT keyId, keyFacility FROM FE_Components
-              WHERE SN = " . $this->GetValue('SN') . "
+              WHERE SN = '" . $this->GetValue('SN') . "'
               AND Band LIKE '$Band'
               AND fkFE_ComponentType = ".$this->GetValue('fkFE_ComponentType')."
               ORDER BY keyId DESC;";
-        $r = mysqli_query($this->dbConnection, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         if (mysqli_num_rows($r) > 1){
-            $r = mysqli_query($this->dbConnection, $q);
+            $r = mysqli_query($this->dbconnection, $q);
 
             echo "<div style = 'width:700px'>";
 
@@ -214,14 +216,14 @@ class FEComponent extends GenericTable {
                 $c_old = new FEComponent();
                 $c_old->Initialize_FEComponent($row['keyId'],$row['keyFacility']);
 
-                $this->dbConnection_component = "ShowComponents.php?conf=$c_old->keyId&fc=" . $row['keyFacility'];
-                $this->dbConnection_fe = "ShowFEConfig.php?key=$c_old->FEConfig&fc=$c_old->FEfc";
+                $link_component = "ShowComponents.php?conf=$c_old->keyId&fc=" . $row['keyFacility'];
+                $link_fe = "ShowFEConfig.php?key=$c_old->FEConfig&fc=$c_old->FEfc";
 
                 echo "<tr >";
-                echo "<td><a href='$this->dbConnection_component'>".$c_old->keyId."</a></td>";
+                echo "<td><a href='$link_component'>".$c_old->keyId."</a></td>";
                 echo "<td>".$c_old->GetValue('ESN1')."</td>";
                 echo "<td>".$c_old->GetValue('ESN2')."</td>";
-                echo "<td><a href='$this->dbConnection_fe'>".$c_old->FEConfig ."</a></td>";
+                echo "<td><a href='$link_fe'>".$c_old->FEConfig ."</a></td>";
                 echo "<td>".$c_old->GetValue('TS')  ."</td>";
 
                 echo "</tr>";
@@ -288,7 +290,7 @@ class FEComponent extends GenericTable {
         echo $q . "<br>";
 
 
-            $r = mysqli_query($this->dbConnection, $q);
+        $r = mysqli_query($this->dbconnection, $q);
 
             echo "<div style = 'width:1100px'>";
 
@@ -317,23 +319,22 @@ class FEComponent extends GenericTable {
                 $sln = new SLN();
                 $sln->Initialize_SLN($SLNID,$SLNFC);
 
-                $this->dbConnection_component = "ShowComponents.php?conf=$c->keyId&fc=" . $row['COMPFC'];
-                //$this->dbConnection_fe = "ShowFEConfig.php?key=$c_old->FEConfig&fc=$c_old->FEfc";
-
+                $link_component = "ShowComponents.php?conf=$c->keyId&fc=" . $row['COMPFC'];
+                
                 echo "<tr >";
 
                 echo "<td>".$sln->GetValue('TS')."</td>";
                 echo "<td>".$sln->location."</td>";
                 echo "<td>".$sln->status."</td>";
                 echo "<td>".$sln->GetValue('Updated_By')."</td>";
-                echo "<td><a href='$this->dbConnection_component'>".$c->keyId."</a></td>";
+                echo "<td><a href='$link_component'>".$c->keyId."</a></td>";
 
-                $this->dbConnectiontext = '';
+                $linktext = '';
                 if (strlen($sln->GetValue('lnk_Data')) > 7){
-                    $this->dbConnection = FixHyperlink($sln->GetValue('lnk_Data'));
-                    $this->dbConnectiontext = "Link";
+                    $link = FixHyperlink($sln->GetValue('lnk_Data'));
+                    $linktext = "Link";
                 }
-                echo "<td><a href='$this->dbConnection'>$this->dbConnectiontext</td>";
+                echo "<td><a href='$link'>$linktext</td>";
                 echo "<td>".$sln->GetValue('Notes')."</td>";
 
                 echo "</tr>";
@@ -397,7 +398,7 @@ class FEComponent extends GenericTable {
                 GROUP BY FE_StatusLocationAndNotes.keyId DESC;";
         }
 
-        $r = mysqli_query($this->dbConnection, $q);
+        $r = mysqli_query($this->dbconnection, $q);
 
             $outstring = "[";
             $rowcount = 0;
@@ -414,8 +415,8 @@ class FEComponent extends GenericTable {
                 $sln->Initialize_SLN($SLNID,$SLNFC);
 
                 if (strlen($sln->GetValue('lnk_Data')) > 7){
-                    $this->dbConnection = FixHyperlink($sln->GetValue('lnk_Data'));
-                    $this->dbConnectiontext = "Link";
+                    $link = FixHyperlink($sln->GetValue('lnk_Data'));
+                    $linktext = "Link";
                 }
 
                 if ($rowcount == 0 ){
@@ -440,7 +441,7 @@ class FEComponent extends GenericTable {
                     $outstring .= "'Status':'',";
                 }
 
-                $notes = mysqli_real_escape_string($this->dbConnection, $sln->GetValue('Notes'));
+                $notes = mysqli_real_escape_string($this->dbconnection, $sln->GetValue('Notes'));
                 $outstring .= "'Notes':'".   str_replace('"', "'", $notes)."'}";
 
 
@@ -477,7 +478,7 @@ class FEComponent extends GenericTable {
     public function GetFEConfig(){
         $q = "SELECT MAX(fkFE_Config) FROM FE_ConfigLink
               WHERE fkFE_Components = $this->keyId;";
-        $r = mysqli_query($this->dbConnection, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         $this->FEConfig = ADAPT_mysqli_result($r,0,0);
     }
 
@@ -493,11 +494,11 @@ class FEComponent extends GenericTable {
             }
 
             $qcfg = "SELECT MAX(keyId) FROM FE_Components
-            WHERE SN = " . $this->GetValue('SN') . " AND Band LIKE '$band'
+            WHERE SN = '" . $this->GetValue('SN') . "' AND Band LIKE '$band'
             AND fkFE_ComponentType = " . $this->GetValue('fkFE_ComponentType') . "
             and keyFacility = " . $this->GetValue('keyFacility') .";";
 
-            $rcfg = mysqli_query($this->dbConnection, $qcfg);
+            $rcfg = mysqli_query($this->dbconnection, $qcfg);
             $this->MaxConfig = ADAPT_mysqli_result($rcfg,0,0);
         }
     }

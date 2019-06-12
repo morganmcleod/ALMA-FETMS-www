@@ -6,6 +6,7 @@ require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.fecomponent.php');
 require_once($site_libraries . '/array_column/src/array_column.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 require('dbGetQueries.php');
 
 $ctype=$_GET['ctype'];
@@ -23,7 +24,7 @@ if($ctype==100)
           AND Front_Ends.keyFrontEnds = A.fkFront_Ends
           ORDER BY SN;";
 
-    $rfe = mysqli_query($link, $q);
+    $rfe = mysqli_query($dbconnection, $q);
 
     $feRecs = array();
     $configIds = FALSE;
@@ -45,7 +46,7 @@ if($ctype==100)
           WHERE B.keyId IS NULL
           AND A.fkFEConfig IN ($configIds);";
 
-    $rsl = mysqli_query($link, $q);
+    $rsl = mysqli_query($dbconnection, $q);
     
     $slnRecs = array();
 
@@ -69,7 +70,7 @@ if($ctype==100)
         $retJSON .= ",'TS':'" . (($slKey) ? $slnRecs[$slKey]['TS'] : $row['TS']) . "'";
         $retJSON .= ",'Docs':'" . $row['Docs'] . "'";
         $notes = (($slKey) ? $slnRecs[$slKey]['Notes'] : "");
-        $retJSON .= ",'Notes':'" . mysqli_real_escape_string($link, $notes) . "'}";
+        $retJSON .= ",'Notes':'" . mysqli_real_escape_string($dbconnection, $notes) . "'}";
     }
     $retJSON .= "]";
     echo $retJSON;
@@ -88,7 +89,7 @@ else
           AND B.keyId IS NULL
           ORDER BY A.Band ASC, (0 + A.SN) ASC;";
 
-    $rcm = mysqli_query($link, $q);
+    $rcm = mysqli_query($dbconnection, $q);
 
     $cmRecs = array();
     $configIds = FALSE;
@@ -110,7 +111,7 @@ else
           WHERE B.keyId IS NULL
           AND A.fkFEComponents IN ($configIds);";
 
-    $rsl = mysqli_query($link, $q);
+    $rsl = mysqli_query($dbconnection, $q);
 
     $slnRecs = array();
 
@@ -129,7 +130,7 @@ else
           AND A.fkFE_Components IN ($configIds)
           ORDER BY fkFE_Components ASC;";
 
-    $rcl = mysqli_query($link, $q);
+    $rcl = mysqli_query($dbconnection, $q);
     $clRecs = array();
 
     while ($row = mysqli_fetch_array($rcl))
@@ -154,7 +155,7 @@ else
         $retJSON .= ",'TS':'" . (($slKey) ? $slnRecs[$slKey]['TS'] : $row['TS']) . "'";
         $retJSON .= ",'FESN':'" . (($clKey) ? $clRecs[$clKey]['SN'] : "") . "'";
         $notes = (($slKey) ? $slnRecs[$slKey]['Notes'] : "");
-        $retJSON .= ",'Notes':'" . mysqli_real_escape_string($link, $notes) . "'}";
+        $retJSON .= ",'Notes':'" . mysqli_real_escape_string($dbconnection, $notes) . "'}";
     }
     $retJSON .= "]";
     echo $retJSON;

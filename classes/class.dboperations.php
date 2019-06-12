@@ -125,8 +125,8 @@ class DBOperations{
         $UpdatedBy  = person who made the update
         */
 
-        $db = site_getDbConnection();    // TODO: not used?
-
+        $this->dbconnection = site_getDbConnection();
+        
         if (!isset($this->Component) || !($this->Component-keyId)) {
             $this->Component = new FEComponent();
             $this->Component->Initialize_FEComponent($in_COMPid, $in_fc_comp);
@@ -191,8 +191,8 @@ class DBOperations{
         $UpdatedBy       = person who made the update
         */
 
-        $db = site_getDbConnection();
-
+        $this->dbconnection = site_getDbConnection();
+        
 //         if ($fkFEComponents == ''){
 //             $fkFEComponents = '%';
 //         }
@@ -201,7 +201,7 @@ class DBOperations{
         $q = "SELECT max(keyId) FROM FE_StatusLocationAndNotes WHERE
         fkFEConfig LIKE '$FE_Config_Original' AND
         keyFacility = $in_fc_fe;";
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         $keyId = ADAPT_mysqli_result($r, 0, 0);
 
         $sln = new GenericTable();
@@ -265,14 +265,14 @@ class DBOperations{
         $fkFEConfig      = key of FE_Config
         */
 
-        $db = site_getDbConnection();
-
+        $this->dbconnection = site_getDbConnection();
+        
         //See if a previous SLN record exists. If so, make a new one, and copy the old record,
         //but change any values that are passed as arguments to this function.
         $q = "SELECT max(keyId) FROM FE_StatusLocationAndNotes WHERE
         fkFEComponents LIKE '$fkFEComponents' AND
         keyFacility = $in_fc_comp;";
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         $keyId = ADAPT_mysqli_result($r, 0, 0);
 
         $sln = new GenericTable();
@@ -336,14 +336,14 @@ class DBOperations{
          * $in_fc_comp = facility code of component
          * $in_component = key of component (FE_Components.keyId)
          */
-        $db = site_getDbConnection();
-
+        $this->dbconnection = site_getDbConnection();
+        
         //Make new config link records for all components in this front end
         $q = "SELECT keyId FROM FE_ConfigLink
              WHERE
              fkFE_ConfigFacility = $in_fc_fe AND
              fkFE_Config = $in_feconfig_old;";
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         while ($row = mysqli_fetch_array($r)){
             $fecl_old = new GenericTable();
             $fecl_old->Initialize('FE_ConfigLink',$row[0],'keyId',$in_fc_fe,'fkFE_ConfigFacility');
@@ -369,14 +369,14 @@ class DBOperations{
          * $in_component = key of component (FE_Components.keyId)
          * $comp_id = id of component that has been removed
          */
-        $db = site_getDbConnection();
-
+        $this->dbconnection = site_getDbConnection();
+        
         //Make new config link records for all components in this front end
         $q = "SELECT keyId FROM FE_ConfigLink
              WHERE
              fkFE_ConfigFacility = $in_fc_fe AND
              fkFE_Config = $in_feconfig_old;";
-        $r = mysqli_query($link, $q);
+        $r = mysqli_query($this->dbconnection, $q);
         while ($row = mysqli_fetch_array($r)){
             $fecl_old = new GenericTable();
             $fecl_old->Initialize('FE_ConfigLink',$row[0],'keyId',$in_fc_fe,'fkFE_ConfigFacility');

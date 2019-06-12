@@ -49,7 +49,7 @@ if ($keyScanDet) {
     else
         $q = "SHOW COLUMNS FROM BeamListings_farfield;";
 
-    $r = mysql_query ($q);
+    $r = mysqli_query(site_getDbConnection(), $q);
     $first = true;
     while($row = mysqli_fetch_array($r)) {
         $name = $row[0];
@@ -73,7 +73,7 @@ if ($keyScanDet) {
     else        
         $q = "SELECT * FROM BeamListings_farfield WHERE fkScanDetails = $keyScanDet;";
     
-    $r = mysql_query ($q);
+    $r = mysqli_query(site_getDbConnection(), $q);
     while($row = mysqli_fetch_array($r, MYSQL_NUM)) {
         $first = true;
         foreach($row as $cell) {

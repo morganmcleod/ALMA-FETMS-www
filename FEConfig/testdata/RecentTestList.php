@@ -1,3 +1,9 @@
+<?php
+require_once(dirname(__FILE__) . '/../../SiteConfig.php');
+require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
+?>
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -31,7 +37,7 @@
     ";
 
     $q = "SELECT keyId,Description FROM DataStatus ORDER BY Description ASC;";
-    $r = mysqli_query($link, $q,$db) or die ('Could not execute query.');
+    $r = mysqli_query($dbconnection, $q) or die ('Could not execute query.');
 
     while ($row=mysqli_fetch_array($r)){
         $selected = '';
@@ -54,7 +60,7 @@
 
     ";
     $q = "SELECT keyId,Description FROM TestData_Types ORDER BY Description ASC;";
-    $r = mysqli_query($link, $q,$db) or die ('Could not execute query.');
+    $r = mysqli_query($dbconnection, $q) or die ('Could not execute query.');
 
     while ($row=mysqli_fetch_array($r)){
         echo "<option value = '$row[0]'>$row[1]</option>";

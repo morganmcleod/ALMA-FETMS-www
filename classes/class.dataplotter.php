@@ -16,7 +16,6 @@ class DataPlotter extends GenericTable{
     var $url_directory;
     var $GNUPLOT_path;
     var $TestDataHeader;
-    var $dbconnection;
     var $Component;
     var $swversion;
 
@@ -31,6 +30,7 @@ class DataPlotter extends GenericTable{
     var $db_pull;    // dataplotter database object
 
     function __construct() {
+        parent::__construct();
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
@@ -54,9 +54,8 @@ class DataPlotter extends GenericTable{
         $this->logging = 0;
    }
 
-    public function Initialize_DataPlotter($in_TestDataHeaderID,$in_dbconnection,$in_fc){
+    public function Initialize_DataPlotter($in_TestDataHeaderID, $in_fc){
         $this->fc = $in_fc;
-        $this->dbconnection = site_getDbConnection();
         $this->db_pull = new DPdb($this->dbconnection);
         $this->TestDataHeader = new TestData_header();
         $this->TestDataHeader->Initialize_TestData_header($in_TestDataHeaderID,$in_fc);
@@ -79,7 +78,7 @@ class DataPlotter extends GenericTable{
         AND FE_ConfigLink.fkFE_Components = FE_Components.keyId;";
 
 
-        $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
         $this->CCASN = "N/A";
         if (mysqli_num_rows($r) > 0){
@@ -94,7 +93,7 @@ class DataPlotter extends GenericTable{
             //IF Spectrum
                 $q = "SELECT TS FROM IFSpectrum_SubHeader
                 WHERE fkHeader = " . $this->TestDataHeader->keyId . ";";
-                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
                 $this->measdate = ADAPT_mysqli_result($r,0,0);
                 break;
         }
@@ -112,7 +111,7 @@ class DataPlotter extends GenericTable{
                     AND FE_Config.keyFacility = $this->fc
                     AND IFSpectrum_SubHeader.fkFacility = $this->fc
                     ;";
-            $rfe = mysqli_query($this->dbConnection, $qfe);//  or die('Failed on query in dataplotter.php line ' . __LINE__);
+            $rfe = mysqli_query($this->dbconnection, $qfe);//  or die('Failed on query in dataplotter.php line ' . __LINE__);
             $this->measdate = ADAPT_mysqli_result($rfe,0,2);
         }
 
@@ -126,7 +125,7 @@ class DataPlotter extends GenericTable{
                     AND Front_Ends.keyFacility = $this->fc
                     AND TestData_header.keyFacility = $this->fc
                     AND FE_Config.keyFacility = $this->fc;";
-            $rfe = mysqli_query($this->dbConnection, $qfe)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+            $rfe = mysqli_query($this->dbconnection, $qfe)  or die('Failed on query in dataplotter.php line ' . __LINE__);
             $this->measdate = ADAPT_mysqli_result($rfe,0,2);
         }
     }
@@ -147,7 +146,7 @@ class DataPlotter extends GenericTable{
                     WHERE fkHeader = $TestData_Id
                     AND fkFacility = $tdhfc
                     ORDER BY FreqLO ASC;";
-        $rFindLO = mysqli_query($this->dbConnection, $qFindLO)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $rFindLO = mysqli_query($this->dbconnection, $qFindLO)  or die('Failed on query in dataplotter.php line ' . __LINE__);
         $rowLO=mysqli_fetch_array($rFindLO);
 
         $datafile_count=0;
@@ -164,7 +163,7 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     AND fkFacility = $tdhfc
                     ORDER BY Time ASC;";
-                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
                 if (mysqli_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "Pol $j, $CurrentLO GHz";
@@ -242,7 +241,7 @@ class DataPlotter extends GenericTable{
         $qlo = "SELECT DISTINCT(FreqLO), Pol FROM CCA_TEST_PhaseDrift
               WHERE fkHeader = $TestData_Id
               ORDER BY FreqLO ASC;";
-        $rlo = mysqli_query($this->dbConnection, $qlo)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $rlo = mysqli_query($this->dbconnection, $qlo)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
         $loindex=0;
 
@@ -250,20 +249,21 @@ class DataPlotter extends GenericTable{
                     WHERE fkHeader = $TestData_Id
                     AND TS <> ''
                     LIMIT 1;";
-        $rTS = mysqli_query($this->dbConnection, $qTS)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $rTS = mysqli_query($this->dbconnection, $qTS)  or die('Failed on query in dataplotter.php line ' . __LINE__);
         $TS = ADAPT_mysqli_result($rTS,0);
 
         //write data file from database
         $qFindLO = "SELECT DISTINCT(FreqLO) FROM CCA_TEST_PhaseDrift
                     WHERE fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
-        $rFindLO = mysqli_query($this->dbConnection, $qFindLO)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-        $rowLO=mysqli_fetch_array($rFindLO);
+        $rFindLO = mysqli_query($this->dbconnection, $qFindLO)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $numLO = mysqli_num_rows($rFindLO);
+        $rowLO = mysqli_fetch_array($rFindLO);
 
         $datafile_count=0;
         for ($j=0;$j<=1;$j++){
-            for ($i=0;$i<=sizeof($rowLO);$i++){
-                $CurrentLO = ADAPT_mysqli_result($rFindLO,$i);
+            for ($i=0; $i<$numLO; $i++){
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
                 $q = "SELECT FreqCarrier,AllanPhase FROM CCA_TEST_PhaseDrift
@@ -271,7 +271,7 @@ class DataPlotter extends GenericTable{
                     AND Pol = $j
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqCarrier ASC;";
-                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
                 if (mysqli_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "Pol $j, $CurrentLO GHz";
@@ -358,7 +358,7 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
                 //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
                 if (mysqli_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "Pol $pol, SB $sb";
@@ -386,7 +386,7 @@ class DataPlotter extends GenericTable{
         }
         $imagename = "CCA_InBandPower_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " In-Band Power ($TS)";
+        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " In-Band Power";
 
         //Update plot url
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
@@ -438,7 +438,7 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
                 //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
                 if (mysqli_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "Pol $pol, SB $sb";
@@ -466,7 +466,7 @@ class DataPlotter extends GenericTable{
         }
         $imagename = "CCA_TotalPower_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Total Power ($TS)";
+        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Total Power";
 
         //Update plot url
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
@@ -519,7 +519,7 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
                 //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
                 if (mysqli_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "Pol $pol, SB $sb";
@@ -590,8 +590,8 @@ class DataPlotter extends GenericTable{
 
         //Pol 0 and 1
         for ($pol=0;$pol<=1;$pol++){
-            //SB 0, 1 or 2
-            for ($sb=0;$sb<=2;$sb++){
+            //SB 1 or 2
+            for ($sb=1;$sb<=2;$sb++){
                 $DataSeriesName = "Pol $pol SB $sb";
 
                 $q = "SELECT CenterIF,Power FROM CCA_TEST_IFSpectrum
@@ -600,7 +600,7 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
                 //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
                 if (mysqli_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "Pol $pol, SB $sb";
@@ -628,7 +628,7 @@ class DataPlotter extends GenericTable{
         }
         $imagename = "CCA_IFSpectrum_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " IF Spectrum ($TS)";
+        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " IF Spectrum";
 
         //Update plot url
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
@@ -677,7 +677,7 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
                 //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
                 if (mysqli_num_rows($r) > 1){
                     $plottitle[$datafile_count] = "Pol $pol";
@@ -704,7 +704,7 @@ class DataPlotter extends GenericTable{
         }
         $imagename = "CCA_PolAccuracy_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Polarization Accuracy ($TS)";
+        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Polarization Accuracy";
 
         //Update plot url
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
@@ -773,7 +773,7 @@ class DataPlotter extends GenericTable{
             AND fkHeader = $TestData_Id
             GROUP BY FreqLO ASC";
         $l->WriteLogFile($qlo);
-        $rlo = mysqli_query($this->dbConnection, $qlo);
+        $rlo = mysqli_query($this->dbconnection, $qlo);
 
         $image_url = "";
 
@@ -791,7 +791,7 @@ class DataPlotter extends GenericTable{
                         AND fkHeader = $TestData_Id
                         ORDER BY FreqLO ASC;";
                     $l->WriteLogFile($q);
-                    $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                    $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
                     if (mysqli_num_rows($r) > 1){
                         $plottitle = "$DataSeriesName";
@@ -1454,7 +1454,7 @@ class DataPlotter extends GenericTable{
             GROUP BY TEST_LOLockTest.LOFreq ASC;";
         }
         $t->WriteLogFile($qdata);
-        $rdata = mysqli_query($this->dbConnection, $qdata) or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $rdata = mysqli_query($this->dbconnection, $qdata) or die('Failed on query in dataplotter.php line ' . __LINE__);
 
         $UnlocksFound = array();
         $count = 0;

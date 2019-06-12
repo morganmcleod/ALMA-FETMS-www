@@ -4,7 +4,7 @@ require_once($site_dbConnect);
 require_once(site_get_config_main());
 
 class TestDataTable {
-    private $dbConnection;
+    private $dbconnection;
     private $fc;
     private $band;
     private $keyFrontEnd;
@@ -13,7 +13,7 @@ class TestDataTable {
     private $FETMS_CCA_MODE;
 
     public function __construct($band = 0) {
-        $this->dbConnection = site_getDbConnection();
+        $this->dbconnection = site_getDbConnection();
         $this->fc = 40;
         $this->band = $band;
         $this->keyFrontEnd = 0;
@@ -255,7 +255,7 @@ class TestDataTable {
         // Sorted by test description, and TS in reverse order...
         $q .= "TestData_Types.Description ASC, TDH.TS DESC;";
 
-        $r = mysqli_query($link, $q, $this->dbConnection);
+        $r = mysqli_query($this->dbconnection, $q);
         return $r;
     }
 }

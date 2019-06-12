@@ -4,6 +4,10 @@ require_once($site_classes . '/class.testdata_header.php');
 
 class cca_image_rejection extends TestData_header{
 
+    public function __construct() {
+        parent::__construct();
+    }    
+    
     public function Initialize_cca_image_rejection($in_keyId, $in_fc){
         parent::Initialize_TestData_header($in_keyId, $in_fc);
     }
