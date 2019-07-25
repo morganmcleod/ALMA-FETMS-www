@@ -11,7 +11,7 @@ mmcl_datafiles
 beameff_64
 beameff2_64
 .externalToolBuilders/
-.htaccess
+.user.ini
 ext
 ext4
 
