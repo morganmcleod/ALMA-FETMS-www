@@ -30,9 +30,9 @@ switch ($site_hostname){
         $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff_64";
         break;
 
-    case "webtest2.cv.nrao.edu":
+    case "webtest.cv.nrao.edu":
 //         $FETMS_CCA_MODE = true;
-        $rootdir_url = "https://webtest2.cv.nrao.edu/php/ntc/ws-mtm/ALMA-FETMS-www/";
+        $rootdir_url = "https://webtest.cv.nrao.edu/php/ntc/ws-mtm/ALMA-FETMS-www/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         break;
 
