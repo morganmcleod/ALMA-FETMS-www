@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.8";
+        $this->swversion = "1.2.9";
 
         /*
+         * 1.2.9:  Added 15K stage plots to WorkAmp
          * 1.2.8:  Fix WorkAmp to exclude IF2 IF3 for bands 1, 9, 10
          * 1.2.7:  Include FETMS_Description in plot footers.
          * 1.2.6:  Plot WorkAmp when Band=0 (all bands off)
@@ -891,7 +892,7 @@ class DataPlotter extends GenericTable{
         $data_file = $imagedirectory . "wkm_amp_data.txt";
         $plot_command_file = $imagedirectory . "wkm_amp_command_tdh$TestData_Id.txt";
         $this->url_directory = $main_url_directory . $filesDir;
-        
+
         // True if this receiver band has uses all four IF outputs:
         $is2SB = !($band == 1 || $band == 9 || $band == 10);
 
@@ -923,6 +924,8 @@ class DataPlotter extends GenericTable{
             return;
 
         $fh = fopen($data_file, 'w');
+        if (!$fh)
+            return;
 
         $row=@mysql_fetch_array($r);
         $timeStart = 0;
@@ -1051,16 +1054,13 @@ class DataPlotter extends GenericTable{
             mkdir($imagedirectory);
         }
 
-        $r = $this->db_pull->q(2, $TestData_Id, $this->fc);
-
-        $tiltmin = @MYSQL_RESULT($r,0,0) - 10;
-        $tiltmax = @MYSQL_RESULT($r,0,1) + 10;
-
         $r = $this->db_pull->q(8, $TestData_Id, $this->fc);
         if (!@mysql_num_rows($r))
             return;
 
         $fh = fopen($data_file, 'w');
+        if (!$fh)
+            return;
 
         $row=@mysql_fetch_array($r);
         $timeStart = 0;
@@ -1080,7 +1080,7 @@ class DataPlotter extends GenericTable{
                 $minutes = $elapsed->d * 1440 + $elapsed->h * 60 + $elapsed->i + $elapsed->s / 60;
             }
 
-            $stringData = "$minutes\t$row[0]\t$row[1]\t$row[2]\t$row[3]\t$row[4]\t$row[5]\t$row[6]\t$row[7]\t$row[8]\r\n";
+            $stringData = "$minutes\t$row[0]\t$row[1]\t$row[2]\t$row[3]\t$row[4]\t$row[5]\t$row[6]\t$row[7]\t$row[8]\t$row[9]\t$row[10]\t$row[11]\t$row[2]\r\n";
             fwrite($fh, $stringData);
 
             if ($ts === false) {
@@ -1090,6 +1090,19 @@ class DataPlotter extends GenericTable{
             }
         }
         fclose($fh);
+        $this->Impl_Plot_WorkAmpTemperatures($TestData_Id, $band, $imagedirectory, $plot_command_file, $data_file, $appendURL, false);
+        $this->Impl_Plot_WorkAmpTemperatures($TestData_Id, $band, $imagedirectory, $plot_command_file, $data_file, $appendURL, true);
+    }
+
+    private function Impl_Plot_WorkAmpTemperatures($TestData_Id, $band, $imagedirectory, $plot_command_file, $data_file,
+            $appendURL, $fifteenKStage) {
+
+        require(site_get_config_main());
+
+        $r = $this->db_pull->q(2, $TestData_Id, $this->fc);
+
+        $tiltmin = @MYSQL_RESULT($r,0,0) - 10;
+        $tiltmax = @MYSQL_RESULT($r,0,1) + 10;
 
         //Lookup the WkAmp subheader ID:
         $subheader_id = $this->db_pull->q_other('wkamp_sh', NULL, $TestData_Id);
@@ -1099,9 +1112,11 @@ class DataPlotter extends GenericTable{
         //Get the measurement LO frequency:
         $fLO = $wsub->GetValue('lo');
 
-
         $imagename = "WorkAmpTemperatures_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . "$imagename";
+        if ($fifteenKStage)
+            $image_url = $this->url_directory . "15K_$imagename";
+        else
+            $image_url = $this->url_directory . "$imagename";
         $plot_title = "Workmanship Temperatures, FE" . $this->TestDataHeader->Component->GetValue('SN');
         if ($band)
             $plot_title .= " Band $band, LO $fLO GHz";
@@ -1118,7 +1133,10 @@ class DataPlotter extends GenericTable{
         $this->TestDataHeader->SetValue('PlotURL',$image_url);
         $this->TestDataHeader->Update();
 
-        $imagepath = $imagedirectory . $imagename;
+        if ($fifteenKStage)
+            $imagepath = $imagedirectory . "15K_" . $imagename;
+        else
+            $imagepath = $imagedirectory . $imagename;
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
@@ -1141,17 +1159,23 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n");
 
         $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
-        if ($band > 0) {
-            $plot_string .= ", '$data_file'  using 1:3 title 'CCA 4K stage' with lines axis x1y1";
-            $plot_string .= ", '$data_file'  using 1:4 title 'CCA pol0 mixer' with lines axis x1y1";
-            $plot_string .= ", '$data_file'  using 1:5 title 'CCA pol1 mixer' with lines axis x1y1";
+        if ($fifteenKStage) {
+            $plot_string .= ", '$data_file'  using 1:11 title 'Cryo 15K stage' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:12 title 'Cryo 15K plate near link' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:13 title 'Cryo 15K plate far side' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:14 title 'Cryo 15K shield top' with lines axis x1y1";
+        } else {
+            if ($band > 0) {
+                $plot_string .= ", '$data_file'  using 1:3 title 'CCA 4K stage' with lines axis x1y1";
+                $plot_string .= ", '$data_file'  using 1:4 title 'CCA pol0 mixer' with lines axis x1y1";
+                $plot_string .= ", '$data_file'  using 1:5 title 'CCA pol1 mixer' with lines axis x1y1";
+            }
+            $plot_string .= ", '$data_file'  using 1:6 title 'Cryo 4K stage' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:7 title 'Cryo 4K link 1' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:8 title 'Cryo 4K link 2' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:9 title 'Cryo 4K far side 1' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:10 title 'Cryo 4K far side 2' with lines axis x1y1";
         }
-        $plot_string .= ", '$data_file'  using 1:6 title 'Cryo 4K stage' with lines axis x1y1";
-        $plot_string .= ", '$data_file'  using 1:7 title 'Cryo 4K link 1' with lines axis x1y1";
-        $plot_string .= ", '$data_file'  using 1:8 title 'Cryo 4K link 2' with lines axis x1y1";
-        $plot_string .= ", '$data_file'  using 1:9 title 'Cryo 4K far side 1' with lines axis x1y1";
-        $plot_string .= ", '$data_file'  using 1:10 title 'Cryo 4K far side 2' with lines axis x1y1";
-
         $plot_string .= "\r\n";
         fwrite($fh, $plot_string);
         fclose($fh);
@@ -1160,7 +1184,6 @@ class DataPlotter extends GenericTable{
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-
 
     public function Plot_WorkmanshipPhase(){
         require(site_get_config_main());
