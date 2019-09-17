@@ -1150,8 +1150,10 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set y2range[$tiltmin:$tiltmax]\r\n");
         fwrite($fh, "set y2label 'Tilt Angle (deg)'\r\n");
         fwrite($fh, "set y2tics\r\n");
-        fwrite($fh, "set yrange[2.5:5.5]\r\n");
-        fwrite($fh, "set ytics\r\n");
+        if ($fifteenKStage)
+            fwrite($fh, "set yrange[14:22]\r\n");
+        else
+            fwrite($fh, "set yrange[2.5:5.5]\r\n");fwrite($fh, "set ytics\r\n");
         fwrite($fh, "set ylabel 'Temperature (K)'\r\n");
         fwrite($fh, "set bmargin 6\r\n");
         fwrite($fh, "set label 'TDH: " . $this->TestDataHeader->keyId . ", Dataplotter v. $this->swversion' at screen 0.01, 0.01\r\n");
