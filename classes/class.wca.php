@@ -37,8 +37,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.1.3";
+        $this->swversion = "1.1.4";
         /*
+         * 1.1.4 Added GetXmlFileContent() and calls to download 'XML Data 2019'
          * 1.1.3 Deleted 2nd Max Safe Power table.  Added WCA SN and TS to Max Safe table.
          * 1.1.2 Display "Date Added" instead of "In Front End"
          * 1.1.1 Moved ini format code into this->GetIniFileContent().
@@ -362,9 +363,16 @@ class WCA extends FEComponent {
         echo "<tr>";
         echo "<th>INI file downloads</th>";
         echo "<td>";
-        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&wca=1'>FrontEndControl.ini</a><br>";
-        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&wca=1&type=wca'>FEMC WCA.ini</a>";
 
+        $xmlname = hexdec($this->GetValue('ESN1'));
+        if ($xmlname)
+            $xmlname = "&xmlname=$xmlname";
+        else
+            $xmlname = "";
+
+        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=xml$xmlname'>XML Data (2019)</a><br>";
+        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=fec'>FrontEndControl.ini</a><br>";
+        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=wca'>FEMC WCA.ini</a>";
         echo "</td>";
         echo "</tr>";
 
@@ -408,6 +416,46 @@ class WCA extends FEComponent {
 
         echo "</table></div>";
     }
+
+    private function GetLowLOForBand($band) {
+        //Get lowest LO
+        //TODO: move into specs class
+        $lowlo = "0.000";
+        switch ($band){
+            case 1:
+                $lowlo = "35.000";
+                break;
+            case 2:
+                $lowlo = "67.000";
+                break;
+            case 3:
+                $lowlo = "92.000";
+                break;
+            case 4:
+                $lowlo = "133.000";
+                break;
+            case 5:
+                $lowlo = "171.000";
+                break;
+            case 6:
+                $lowlo = "221.000";
+                break;
+            case 7:
+                $lowlo = "283.000";
+                break;
+            case 8:
+                $lowlo = "393.000";
+                break;
+            case 9:
+                $lowlo = "614.000";
+                break;
+            case 10:
+                $lowlo = "795.000";
+                break;
+        }
+        return $lowlo;
+    }
+
     public function GetIniFileContent($type) {
         // type is either 'fec' or 'wca'.
 
@@ -415,6 +463,7 @@ class WCA extends FEComponent {
         $sn   = ltrim($this->GetValue('SN'),'0');
         $esn  = $this->GetValue('ESN1');
         $description = "Description=WCA$band-$sn";
+        $lowlo = $this->GetLowLOForBand($band);
 
         $ret = "";
         if ($type == 'fec') {
@@ -425,42 +474,6 @@ class WCA extends FEComponent {
             $ret .= "ESN=$esn\r\n";
             $ret .= "FLOYIG=" . $this->_WCAs->GetValue('FloYIG') . "\r\n";
             $ret .= "FHIYIG=" . $this->_WCAs->GetValue('FhiYIG') . "\r\n";
-
-            //Get lowest LO
-            //TODO: move into specs class
-            $lowlo = "0.000";
-            switch ($band){
-                case 1:
-                    $lowlo = "35.00";
-                    break;
-                case 2:
-                    $lowlo = "67.00";
-                    break;
-                case 3:
-                    $lowlo = "92.00";
-                    break;
-                case 4:
-                    $lowlo = "133.00";
-                    break;
-                case 5:
-                    $lowlo = "171.00";
-                    break;
-                case 6:
-                    $lowlo = "221.00";
-                    break;
-                case 7:
-                    $lowlo = "283.00";
-                    break;
-                case 8:
-                    $lowlo = "393.00";
-                    break;
-                case 9:
-                    $lowlo = "614.00";
-                    break;
-                case 10:
-                    $lowlo = "795.00";
-                    break;
-            }
 
             $ret .= "LOParams=1\r\n";
             $mstring = "LOParam01=$lowlo";
@@ -506,6 +519,81 @@ class WCA extends FEComponent {
         }
         return $ret;
     }
+
+    public function GetXmlFileContent() {
+        $band = $this->GetValue('Band');
+        $sn   = ltrim($this->GetValue('SN'),'0');
+        $esn  = $this->GetValue('ESN1');
+        $description = "WCA$band-$sn";
+        $FLOYIG = $this->_WCAs->GetValue('FloYIG') . "E9"; // Hz
+        $FHIYIG = $this->_WCAs->GetValue('FhiYIG') . "E9";
+        $powerLimit = $this->maxSafePowerForBand($band);
+        $lowlo = $this->GetLowLOForBand($band) . "E9"; //Hz
+
+        $xw = new XMLWriter();
+        $xw->openMemory();
+        $xw->setIndent(true);
+        $xw->setIndentString('    ');
+        $xw->startDocument('1.0', 'ISO-8859-1');
+        $xw->startElement("ConfigData");
+        $xw->writeAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+        $xw->writeAttribute("xsi:noNamespaceSchemaLocation", "membuffer.xsd");
+
+        $xw->startElement("ASSEMBLY");
+        $xw->writeAttribute("value", "WCA$band");
+        $xw->endElement();
+
+        $xw->startElement("WCAConfig");
+        $xw->writeAttribute("value", $this->GetValue('keyId'));
+        $xw->writeAttribute("TS", $this->GetValue('TS'));
+        $xw->endElement();
+
+        $xw->startElement("ESN");
+        $xw->writeAttribute("value", $esn);
+        $xw->endElement();
+
+        $xw->startElement("SN");
+        $xw->writeAttribute("value", $description);
+        $xw->endElement();
+
+        $xw->startElement("FLOYIG");
+        $xw->writeAttribute("value", $FLOYIG);
+        $xw->endElement();
+
+        $xw->startElement("FHIYIG");
+        $xw->writeAttribute("value", $FHIYIG);
+        $xw->endElement();
+
+        $xw->startElement("PowerAmp");
+        $xw->writeAttribute("FreqLO", $lowlo);
+        $xw->writeAttribute("VD0", "0.00");
+        $xw->writeAttribute("VD1", "0.00");
+        $xw->writeAttribute("VG0", number_format(floatval($this->_WCAs->GetValue('VG0')),2));
+        $xw->writeAttribute("VG1", number_format(floatval($this->_WCAs->GetValue('VG1')),2));
+        $xw->endElement();
+
+        if ($powerLimit != 0) {
+            $table = $this->Compute_MaxSafePowerLevels(TRUE);
+            foreach ($table as $row) {
+                $xw->startElement("PowerAmpLimit");
+                $xw->writeAttribute("count", $row['YTO']);
+                $xw->writeAttribute("VD0", number_format(floatval($row['VD0']), 3));
+                $xw->writeAttribute("VD1", number_format(floatval($row['VD1']), 3));
+                $xw->endElement();
+            }
+        }
+
+        $xw->startElement("OptimizationTargets");
+        $xw->writeAttribute("FreqLO", $lowlo);
+        $xw->writeAttribute("PhotoMixerCurrent", "0");
+        $xw->endElement();
+
+        $xw->endElement(); // ConfigData
+        $xw->endDocument();
+        $ret = $xw->outputMemory();
+        return $ret;
+    }
+
     public function Display_LOParams() {
         $r = $this->db_pull->q(3, $this->keyId);
         $ts = ADAPT_mysqli_result($r, 0, 0);
