@@ -162,12 +162,14 @@ class WCA extends FEComponent {
         }
 
         $r = $this->db_pull->q(2, $this->keyId);
-        $numrows = mysqli_num_rows($r);
-        if ($numrows < 1) {
-            $values = array ();
-            $values [] = $this->_WCAs->GetValue('VG0');
-            $values [] = $this->_WCAs->GetValue('VG1');
-            $rn = $this->db_pull->q_other('n', $this->keyId, NULL, NULL, $FreqLO, NULL, NULL, $values);
+        if ($r) {
+            $numrows = mysqli_num_rows($r);
+            if ($numrows < 1) {
+                $values = array ();
+                $values [] = $this->_WCAs->GetValue('VG0');
+                $values [] = $this->_WCAs->GetValue('VG1');
+                $rn = $this->db_pull->q_other('n', $this->keyId, NULL, NULL, $FreqLO, NULL, NULL, $values);
+            }
         }
     }
     public function Update_WCA() {
@@ -301,17 +303,18 @@ class WCA extends FEComponent {
                     </tr>";
 
         $rpj = $this->db_pull->qpj('select', $this->tdh_phasejitter->keyId);
+        if ($rpj) {
+            while ($rowpj = mysqli_fetch_array($rpj)) {
+                $lo = $rowpj [0];
+                $jitter = $rowpj [1];
+                $pol = $rowpj [2];
 
-        while ($rowpj = mysqli_fetch_array($rpj)) {
-            $lo = $rowpj [0];
-            $jitter = $rowpj [1];
-            $pol = $rowpj [2];
-
-            echo   "<tr>
-                        <td>" . round($lo, 0) . "</td>
-                        <td>$pol</td>
-                        <td>" . round($jitter, 1) . "</td>
-                    </tr>";
+                echo   "<tr>
+                            <td>" . round($lo, 0) . "</td>
+                            <td>$pol</td>
+                            <td>" . round($jitter, 1) . "</td>
+                        </tr>";
+            }
         }
         echo "</td></table></div>";
     }

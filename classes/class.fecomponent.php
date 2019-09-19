@@ -20,7 +20,7 @@ class FEComponent extends GenericTable {
     public function __construct() {
         parent::__construct();
     }
-    
+
     public function GetJSONstring(){
         $jstring  = "{'id':'"   . $this->keyId . "'";
         $jstring .= ",'sn':'"   . $this->GetValue('SN') . "'";
@@ -33,7 +33,7 @@ class FEComponent extends GenericTable {
         parent::Initialize('FE_Components',$this->keyId,'keyId',$in_fc,'keyFacility');
 
         $this->ComponentType = new GenericTable();
-        
+
         $compType = $this->GetValue('fkFE_ComponentType');
         $this->ComponentType->Initialize('ComponentTypes', $compType,'keyId');
 
@@ -48,8 +48,8 @@ class FEComponent extends GenericTable {
 
         $r = mysqli_query($this->dbconnection, $q);
 //         var_dump($r);
-        if (mysqli_num_rows($r) > 0){
-            $this->FESN              = ADAPT_mysqli_result($r,0,0);
+        if ($r && mysqli_num_rows($r) > 0) {
+            $this->FESN           = ADAPT_mysqli_result($r,0,0);
             $this->FEConfig       = ADAPT_mysqli_result($r,0,1);
             $this->FEid           = ADAPT_mysqli_result($r,0,2);
             $this->FEfc           = ADAPT_mysqli_result($r,0,3);
@@ -320,7 +320,7 @@ class FEComponent extends GenericTable {
                 $sln->Initialize_SLN($SLNID,$SLNFC);
 
                 $link_component = "ShowComponents.php?conf=$c->keyId&fc=" . $row['COMPFC'];
-                
+
                 echo "<tr >";
 
                 echo "<td>".$sln->GetValue('TS')."</td>";
