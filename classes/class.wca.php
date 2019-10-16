@@ -37,8 +37,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.1.4";
+        $this->swversion = "1.1.5";
         /*
+         * 1.1.5 Plots guard against empty keyId
          * 1.1.4 Added GetXmlFileContent() and calls to download 'XML Data 2019'
          * 1.1.3 Deleted 2nd Max Safe Power table.  Added WCA SN and TS to Max Safe table.
          * 1.1.2 Display "Date Added" instead of "In Front End"
@@ -1315,102 +1316,105 @@ class WCA extends FEComponent {
             mkdir($this->writedirectory);
         }
 
-        $TS = $this->tdh_ampstab->GetValue('TS');
-
-        // $TS = $tdh->GetValue('TS');
+        if (!$this->tdh_ampstab->keyId)
+            return;
 
         // write data file from database
         $rFindLO = $this->db_pull->qFindLO('WCA_AmplitudeStability', $this->tdh_ampstab->keyId);
-        $rowLO = mysqli_fetch_array($rFindLO);
+        if (!$rFindLO)
+            $image_url = "";
 
-        $datafile_count = 0;
-        $spec_value = 0.0000001;
+        else {
+            $rowLO = mysqli_fetch_array($rFindLO);
 
-        for($j = 0; $j <= 1; $j++) {
-            for($i = 0; $i <= sizeof($rowLO); $i++) {
-                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
-                $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
+            $datafile_count = 0;
+            $spec_value = 0.0000001;
 
-                $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $j, NULL, NULL, $CurrentLO);
+            for($j = 0; $j <= 1; $j++) {
+                for($i = 0; $i <= sizeof($rowLO); $i++) {
+                    $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
+                    $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
-                if (mysqli_num_rows($r) > 1) {
-                    $plottitle [$datafile_count] = "Pol $j, $CurrentLO GHz";
-                    $data_file [$datafile_count] = $this->writedirectory . "wca_as_data_" . $i . "_" . $j . ".txt";
-                    if (file_exists($data_file [$datafile_count])) {
-                        unlink($data_file [$datafile_count]);
+                    $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $j, NULL, NULL, $CurrentLO);
+
+                    if (mysqli_num_rows($r) > 1) {
+                        $plottitle [$datafile_count] = "Pol $j, $CurrentLO GHz";
+                        $data_file [$datafile_count] = $this->writedirectory . "wca_as_data_" . $i . "_" . $j . ".txt";
+                        if (file_exists($data_file [$datafile_count])) {
+                            unlink($data_file [$datafile_count]);
+                        }
+                        $fh = fopen($data_file [$datafile_count], 'w');
+                        $row = mysqli_fetch_array($r);
+                        $TimeVal = $row [0];
+
+                        if ($TimeVal > 500) {
+                            fwrite($fh, "$row[0]\t0.00000009\r\n");
+                        }
+                        while ($row = mysqli_fetch_array($r)) {
+                            $stringData = "$row[0]\t$row[1]\r\n";
+                            fwrite($fh, $stringData);
+                        }
+                        // }
+
+                        fclose($fh);
+                        $datafile_count++;
                     }
-                    $fh = fopen($data_file [$datafile_count], 'w');
-                    $row = mysqli_fetch_array($r);
-                    $TimeVal = $row [0];
+                } // end for i
+            } // end for j
 
-                    if ($TimeVal > 500) {
-                        fwrite($fh, "$row[0]\t0.00000009\r\n");
-                    }
-                    while ($row = mysqli_fetch_array($r)) {
-                        $stringData = "$row[0]\t$row[1]\r\n";
-                        fwrite($fh, $stringData);
-                    }
-                    // }
+            // Write command file for gnuplot
+            $TS = $this->tdh_ampstab->GetValue('TS');
 
-                    fclose($fh);
-                    $datafile_count++;
-                }
-            } // end for i
-        } // end for j
+            $plot_command_file = $this->writedirectory . "wca_as_command.txt";
+            if (file_exists($plot_command_file)) {
+                unlink($plot_command_file);
+            }
+            $imagedirectory = $this->writedirectory . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
+            if (!file_exists($imagedirectory)) {
+                mkdir($imagedirectory);
+            }
+            $imagename = "WCA_AmplitudeStability_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
+            $image_url = $this->url_directory . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/$imagename";
 
-        // Create data file for spec
+            $plot_title = "WCA Band" . $this->GetValue('Band') . " SN" . $this->GetValue('SN') . " Amplitude Stability ($TS)";
+            $this->_WCAs->SetValue('amp_stability_url', $image_url);
+            $this->_WCAs->Update();
+            $imagepath = $imagedirectory . $imagename;
 
-        // Write command file for gnuplot
-        $plot_command_file = $this->writedirectory . "wca_as_command.txt";
-        if (file_exists($plot_command_file)) {
-            unlink($plot_command_file);
+            $fh = fopen($plot_command_file, 'w');
+            fwrite($fh, "set terminal png size 900,500\r\n");
+            fwrite($fh, "set output '$imagepath'\r\n");
+            fwrite($fh, "set title '$plot_title'\r\n");
+            fwrite($fh, "set grid\r\n");
+            fwrite($fh, "set log xy\r\n");
+            fwrite($fh, "set key outside\r\n");
+            fwrite($fh, "set ylabel 'Allan Variance'\r\n");
+            fwrite($fh, "set xlabel 'Allan Time, T (=Integration, Tau)'\r\n");
+
+            $ymax = pow(10, -5);
+            fwrite($fh, "set yrange [:$ymax]\r\n");
+
+            fwrite($fh, "f1(x)=((x>500) && (x<100000)) ? 0.00000009 : 1/0\r\n");
+            fwrite($fh, "f2(x)=((x>290000) && (x<350000)) ? 0.000001 : 1/0\r\n");
+            $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
+            $plot_string .= ", f2(x) title 'Spec' with points pt 5 pointsize 1";
+            $plot_string .= ", '$data_file[0]' using 1:2 title '$plottitle[0]' with lines";
+            for($i = 1; $i < sizeof($data_file); $i++) {
+                $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
+            }
+            $plot_string .= "\r\n";
+            fwrite($fh, $plot_string);
+
+            fclose($fh);
+
+            // Make the plot
+            $GNUPLOT = '/usr/bin/gnuplot';
+            $CommandString = "$GNUPLOT $plot_command_file";
+            system($CommandString);
         }
-        $imagedirectory = $this->writedirectory . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)) {
-            mkdir($imagedirectory);
-        }
-        $imagename = "WCA_AmplitudeStability_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/$imagename";
-
         $this->tdh_ampstab->SetValue('PlotURL', "$image_url");
         $this->tdh_ampstab->Update();
         unset($tdh);
-
-        $plot_title = "WCA Band" . $this->GetValue('Band') . " SN" . $this->GetValue('SN') . " Amplitude Stability ($TS)";
-        $this->_WCAs->SetValue('amp_stability_url', $image_url);
-        $this->_WCAs->Update();
-        $imagepath = $imagedirectory . $imagename;
-
-        $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set output '$imagepath'\r\n");
-        fwrite($fh, "set title '$plot_title'\r\n");
-        fwrite($fh, "set grid\r\n");
-        fwrite($fh, "set log xy\r\n");
-        fwrite($fh, "set key outside\r\n");
-        fwrite($fh, "set ylabel 'Allan Variance'\r\n");
-        fwrite($fh, "set xlabel 'Allan Time, T (=Integration, Tau)'\r\n");
-
-        $ymax = pow(10, -5);
-        fwrite($fh, "set yrange [:$ymax]\r\n");
-
-        fwrite($fh, "f1(x)=((x>500) && (x<100000)) ? 0.00000009 : 1/0\r\n");
-        fwrite($fh, "f2(x)=((x>290000) && (x<350000)) ? 0.000001 : 1/0\r\n");
-        $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
-        $plot_string .= ", f2(x) title 'Spec' with points pt 5 pointsize 1";
-        $plot_string .= ", '$data_file[0]' using 1:2 title '$plottitle[0]' with lines";
-        for($i = 1; $i < sizeof($data_file); $i++) {
-            $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
-        }
-        $plot_string .= "\r\n";
-        fwrite($fh, $plot_string);
-
-        fclose($fh);
-
-        // Make the plot
-        $GNUPLOT = '/usr/bin/gnuplot';
-        $CommandString = "$GNUPLOT $plot_command_file";
-        system($CommandString);
     }
     public function Upload_AMNoise_file($datafile_name) {
         // Test Data Header object
@@ -1436,6 +1440,9 @@ class WCA extends FEComponent {
         $this->Plot_AMNoise_Pol0_1();
     }
     public function Plot_AMNoise_DSB() {
+        if (!$this->tdh_amnoise->keyId)
+            return;
+
         $TS = $this->tdh_amnoise->GetValue('TS');
         $Band = $this->GetValue('Band');
         $spec_value = 10;
@@ -1548,6 +1555,9 @@ class WCA extends FEComponent {
         return $avg;
     }
     public function Plot_AMNoise_Pol0_1() {
+        if (!$this->tdh_amnoise->keyId)
+            return;
+
         $TS = $this->tdh_amnoise->GetValue('TS');
         for($pol = 0; $pol <= 1; $pol++) {
 
@@ -1640,6 +1650,9 @@ class WCA extends FEComponent {
         // fclose($filecontents);
     }
     public function Plot_PhaseNoise() {
+        if (!$this->tdh_phasenoise->keyId)
+            return;
+
         if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);
         }
@@ -1825,6 +1838,9 @@ class WCA extends FEComponent {
         $this->Plot_OutputPower_vs_stepsize(1);
     }
     public function Plot_OutputPower_vs_frequency() {
+        if (!$this->tdh_outputpower->keyId)
+            return;
+
         $Band = $this->GetValue('Band');
         $rTS = $this->db_pull->q_other('TS', $this->tdh_outputpower->keyId, $this->fc);
         $rowTS = mysqli_fetch_array($rTS);
@@ -1920,6 +1936,9 @@ class WCA extends FEComponent {
         system($CommandString);
     }
     public function Plot_OutputPower_vs_Vd($pol) {
+        if (!$this->tdh_outputpower->keyId)
+            return;
+
         $TS = $this->tdh_outputpower->GetValue('TS');
 
         // write data files from database
@@ -2017,6 +2036,9 @@ class WCA extends FEComponent {
         system($CommandString);
     }
     public function Plot_OutputPower_vs_stepsize($pol) {
+        if (!$this->tdh_outputpower->keyId)
+            return;
+
         // Get timestamp
         $TS = $this->tdh_outputpower->GetValue('TS');
 
