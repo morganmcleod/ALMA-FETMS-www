@@ -146,7 +146,7 @@ class WCAdb { //extends DBRetrieval {
 		} elseif($occur == 13) {
 			$q = "SELECT VD$pol,Power FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet = 2 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY VD$pol ASC;";
 		} elseif($occur == 14) {
-			$q = "SELECT VD$pol,Power FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet <> 1 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY VD$pol ASC;";
+			$q = "SELECT VD$pol,Power,VG$pol,TS FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet <> 1 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY VD$pol ASC;";
 		} elseif($occur == 15) {
 			$q = "SELECT VD$pol,Power FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet = 3 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY Power ASC, VD$pol ASC;";
 		} else {
@@ -238,7 +238,7 @@ class WCAdb { //extends DBRetrieval {
 	 * @param integer $fc (default = NULL)
 	 * @param TestData_header $other_object- if additional tdh desired (default = NULL)
 	 */
-	public function del_ins($request, $filecontents, $object, $fc=NULL, $other_object=NULL) {
+	public function del_ins($request, $filecontents, $object, $fc=NULL, $other_object=NULL, $delim = ",") {
 		switch ($request) {
 		    case 'WCA_MaxSafePower':
 		        $colNames = array('TS', 'FreqLO', 'VD0_setting', 'VD1_setting', 'VD0', 'VD1', 'fkFE_Component', 'fkFacility');
@@ -255,6 +255,9 @@ class WCAdb { //extends DBRetrieval {
 			case 'WCA_PhaseNoise':
 			    $colNames = array('fkHeader', 'FreqLO', 'Pol', 'CarrierOffset', 'Lf');
 		        break;
+			case 'WCA_Isolation':
+			    $colNames = array('fkHeader', 'FreqLO', 'S11AmpdB', 'S11PhaseDeg', 'S21AmpdB', 'S21PhaseDeg', 'S12AmpdB', 'S12PhaseDeg', 'S22AmpdB', 'S22PhaseDeg');
+			    break;
 			default:
 			    return;
 		}
@@ -283,16 +286,18 @@ class WCAdb { //extends DBRetrieval {
 		$first = true;
 		foreach ($filecontents as $line) {
 		    $line_data = trim($line);
-		    $tempArray = explode(",", $line_data);
+		    $tempArray = explode($delim, $line_data);
 		    // skip header line:
 		    if (is_numeric(substr($tempArray[0],0,1))) {
 		        if (!$first)
 		            // prepend a comma if not the first set of values:
 		            $qins .= ",";
 		        else {
-		            // update the TDH time stamp with the data from the first row:
-		            $object->SetValue('TS', $tempArray[3]);
-		            $object->Update();
+		            if ($request != 'WCA_Isolation') {
+    		            // update the TDH time stamp with the data from the first row:
+    		            $object->SetValue('TS', $tempArray[3]);
+    		            $object->Update();
+		            }
 		            // TODO:  what is other_object used for?
 		            if(!is_null($other_object)){
 		                $other_object->SetValue('TS', $tempArray[3]);
@@ -361,6 +366,19 @@ class WCAdb { //extends DBRetrieval {
 		                                $tempArray[7]  //Lf
 		                );
 		                break;
+		            case 'WCA_Isolation':
+		                $values = array($object->keyId, //fkHeader
+                		                floatval($tempArray[0]) / 1.0e9 , //FreqLO
+                		                $tempArray[1], //S11AmpdB
+                		                $tempArray[2], //S11PhaseDeg
+                		                $tempArray[3], //S21AmpdB
+                		                $tempArray[4], //S21PhaseDeg
+                		                $tempArray[5], //S12AmpdB
+                		                $tempArray[6], //S12PhaseDeg
+                		                $tempArray[7], //S22AmpdB
+                		                $tempArray[8]  //S22PhaseDeg
+		                );
+		                break;
 		        }
 		        $qins .= "(";
 		        $first = true;
@@ -405,6 +423,8 @@ class WCAdb { //extends DBRetrieval {
 			$q .= "48";
 		} elseif($test_type == 'WCA_AMNoise') {
 			$q .= "44";
+		} elseif($test_type == 'WCA_Isolation') {
+		    $q .= "61";
 		} else {
 			$q .= "0";
 		}
