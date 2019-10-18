@@ -2132,7 +2132,7 @@ class WCA extends FEComponent {
             unlink($plot_command_file);
         }
         $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png size 1000,600\r\n");
+        fwrite($fh, "set terminal png size 900,500\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
