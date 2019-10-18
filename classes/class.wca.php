@@ -38,8 +38,8 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.1.5";
-        /*
+        $this->swversion = "1.2.0";
+        /* 1.2.0 Added new-style ouput power plot and isolation plot for band 1.
          * 1.1.5 Plots guard against empty keyId
          * 1.1.4 Added GetXmlFileContent() and calls to download 'XML Data 2019'
          * 1.1.3 Deleted 2nd Max Safe Power table.  Added WCA SN and TS to Max Safe table.
@@ -277,6 +277,11 @@ class WCA extends FEComponent {
         if ($band != 1 && $this->_WCAs->GetValue('op_vs_ss_pol1_url') != "") {
             echo "<div style='margin-top:20px;margin-bottom:20px;'>";
             echo "<img src='" . $this->_WCAs->GetValue('op_vs_ss_pol1_url') . "'>";
+            echo "</div>";
+        }
+        if ($band == 1 && $this->_WCAs->GetValue('isolation_url') != "") {
+            echo "<div style='margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('isolation_url') . "'>";
             echo "</div>";
         }
         echo "</form>";
@@ -1319,8 +1324,6 @@ class WCA extends FEComponent {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_MaxSafePower', $filecontents, $this, $this->fc);
         unlink($datafile_name);
-        unset($tdh);
-        // fclose($filecontents);
     }
     private function Upload_AmplitudeStability_file($datafile_name) {
         // Test Data Header object
@@ -1336,8 +1339,6 @@ class WCA extends FEComponent {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_AmplitudeStability', $filecontents, $this->tdh_ampstab);
         unlink($datafile_name);
-        unset($tdh);
-        // fclose($filecontents);
     }
     public function Plot_AmplitudeStability() {
         if (!file_exists($this->writedirectory)) {
@@ -1442,7 +1443,6 @@ class WCA extends FEComponent {
         }
         $this->tdh_ampstab->SetValue('PlotURL', "$image_url");
         $this->tdh_ampstab->Update();
-        unset($tdh);
     }
     private function Upload_AMNoise_file($datafile_name) {
         // Test Data Header object
@@ -1458,7 +1458,6 @@ class WCA extends FEComponent {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_AMNoise', $filecontents, $this->tdh_amnoise);
         unlink($datafile_name);
-        unset($tdh);
     }
     public function Plot_AMNoise() {
         if (!file_exists($this->writedirectory)) {
@@ -1674,8 +1673,6 @@ class WCA extends FEComponent {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_PhaseNoise', $filecontents, $this->tdh_phasenoise, $this->fc, $this->tdh_phasejitter);
         unlink($datafile_name);
-        unset($tdh);
-        // fclose($filecontents);
     }
     public function Plot_PhaseNoise() {
         if (!$this->tdh_phasenoise->keyId)
@@ -1779,7 +1776,6 @@ class WCA extends FEComponent {
         $GNUPLOT = $this->GNUplot;
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
-        unset($tdh);
     }
     private function Upload_Isolation_file($datafile_name) {
         // Delete any existing header records
@@ -1792,20 +1788,86 @@ class WCA extends FEComponent {
         $this->tdh_isolation->SetValue('fkFE_Components', $this->keyId);
         $this->tdh_isolation->Update();
         $fileContents = file($datafile_name);
-        $fileCleaned = array();
-        // discard any lines starting with ! or #:
-        foreach ($fileContents as $line) {
-            $ch1 = substr($line, 0, 1);
-            if ($ch1 != "!" && $ch1 != "#")
-                $fileCleaned[] = $line;
-        }
-        $this->db_pull->del_ins('WCA_Isolation', $fileCleaned, $this->tdh_isolation, NULL, NULL, " ");
-        unlink($datafile_name);
-        unset($tdh);
-    }
-    private function Plot_Isolation() {
 
+        $this->db_pull->del_ins('WCA_Isolation', $fileContents, $this->tdh_isolation, NULL, NULL, " ");
+        unlink($datafile_name);
     }
+
+    private function Plot_Isolation() {
+        if (!$this->tdh_isolation->keyId)
+            return;
+        if (!file_exists($this->writedirectory))
+            mkdir($this->writedirectory);
+
+        $r = $this->db_pull->q(16, $this->tdh_isolation->keyId);
+        if (!$r)
+            return;
+
+        $band = $this->GetValue('Band');
+        $specs = $this->new_spec->getSpecs('wca', $band);
+        $specIsolation = $specs['specIsolation'];
+
+        $data_file = $this->writedirectory . "wca_isolation.txt";
+        if (file_exists($data_file))
+            unlink($data_file);
+
+        $fMin = 999.0;
+        $fMax = 0.0;
+        $TS = false;
+        $fh = fopen($data_file, 'w');
+        while ($row = mysqli_fetch_array($r)) {
+            $LO = floatval($row[1]);
+            fwrite($fh, "$LO\t$row[2]\t$row[3]\r\n");
+            if ($LO < $fMin)
+                $fMin = $LO;
+            if ($LO > $fMax)
+                $fMax = $LO;
+            if (!$TS)
+                $TS = $row[0];
+        }
+        fclose($fh);
+
+        // Create command file for GnuPlot:
+        $imagedirectory = $this->writedirectory;
+        if (!file_exists($imagedirectory)) {
+            mkdir($imagedirectory);
+        }
+        $imagename = "WCA_Isolation_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $imagename;
+
+        $plot_title = "LO$band-" . $this->GetValue('SN') . " Isolation  $TS";
+        $this->_WCAs->SetValue('isolation_url', $image_url);
+        $this->_WCAs->Update();
+        $imagepath = $imagedirectory . $imagename;
+
+        // Write command file for gnuplot
+        $plot_command_file = $this->writedirectory . "wca_iso_command.txt";
+        if (file_exists($plot_command_file)) {
+            unlink($plot_command_file);
+        }
+        $fh = fopen($plot_command_file, 'w');
+        fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set output '$imagepath'\r\n");
+        fwrite($fh, "set title '$plot_title'\r\n");
+        fwrite($fh, "set grid\r\n");
+        fwrite($fh, "set xrange [$fMin:$fMax]\r\n");
+
+        fwrite($fh, "set xlabel 'LO (GHz)'\r\n");
+        fwrite($fh, "set ylabel 'Isolation (dB)'\r\n");
+        fwrite($fh, "set key outside\r\n");
+        $plot_string = "plot $specIsolation title 'spec' with lines lw 4 lt 1 ";
+        $plot_string .= ", '$data_file' using 1:2 title 'S12' with lines";
+        $plot_string .= ", '$data_file' using 1:3 title 'S21' with lines";
+        $plot_string .= "\r\n";
+        fwrite($fh, $plot_string);
+        fclose($fh);
+
+        // Make the plot
+        $GNUPLOT = $this->GNUplot;
+        $CommandString = "$GNUPLOT $plot_command_file";
+        system($CommandString);
+    }
+
     private function GetPhaseJitter($LOfreq, $pol) {
         $counter = 0;
 
@@ -1877,8 +1939,6 @@ class WCA extends FEComponent {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_OutputPower', $filecontents, $this->tdh_outputpower, $this->fc);
         unlink($datafile_name);
-        unset($tdh);
-        // fclose($filecontents);
     }
     public function Plot_OutputPower() {
         if (!file_exists($this->writedirectory)) {

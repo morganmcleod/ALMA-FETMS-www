@@ -149,6 +149,8 @@ class WCAdb { //extends DBRetrieval {
 			$q = "SELECT VD$pol,Power,VG$pol,TS FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet <> 1 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY VD$pol ASC;";
 		} elseif($occur == 15) {
 			$q = "SELECT VD$pol,Power FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet = 3 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY Power ASC, VD$pol ASC;";
+		} elseif($occur == 16) {
+		    $q = "SELECT TS, FreqLO, S21AmpdB, S12AmpdB FROM WCA_Isolation WHERE fkHeader = $keyId ORDER BY FreqLO ASC;";
 		} else {
 			$q = '';
 		}
@@ -256,7 +258,7 @@ class WCAdb { //extends DBRetrieval {
 			    $colNames = array('fkHeader', 'FreqLO', 'Pol', 'CarrierOffset', 'Lf');
 		        break;
 			case 'WCA_Isolation':
-			    $colNames = array('fkHeader', 'FreqLO', 'S11AmpdB', 'S11PhaseDeg', 'S21AmpdB', 'S21PhaseDeg', 'S12AmpdB', 'S12PhaseDeg', 'S22AmpdB', 'S22PhaseDeg');
+			    $colNames = array('fkHeader', 'FreqLO', 'S11AmpdB', 'S11PhaseDeg', 'S21AmpdB', 'S21PhaseDeg', 'S12AmpdB', 'S12PhaseDeg', 'S22AmpdB', 'S22PhaseDeg', 'TS');
 			    break;
 			default:
 			    return;
@@ -283,12 +285,25 @@ class WCAdb { //extends DBRetrieval {
 		}
 		$qins .= ") VALUES ";
 
+		$TS = false;
 		$first = true;
 		foreach ($filecontents as $line) {
 		    $line_data = trim($line);
-		    $tempArray = explode($delim, $line_data);
-		    // skip header line:
-		    if (is_numeric(substr($tempArray[0],0,1))) {
+		    // skip header lines but look for date:
+		    if (!is_numeric(substr($line_data, 0, 1))) {
+		        if (!$TS) {
+    		        $pos = stripos($line_data, "date");
+    		        if ($pos) {
+    		            $TS = date_parse(substr($line_data, $pos + 5));
+    		            if ($TS) {
+    		                $t = sprintf("%d-%02d-%02d %02d-%02d-%02d",
+    		                        $TS['year'], $TS['month'], $TS['hour'], $TS['hour'], $TS['minute'], $TS['second']);
+    		                $TS = "'$t'";
+    		            }
+    		        }
+		        }
+		    } else {
+		        $tempArray = explode($delim, $line_data);
 		        if (!$first)
 		            // prepend a comma if not the first set of values:
 		            $qins .= ",";
@@ -378,6 +393,7 @@ class WCAdb { //extends DBRetrieval {
                 		                $tempArray[7], //S22AmpdB
                 		                $tempArray[8]  //S22PhaseDeg
 		                );
+		                $values[]= ($TS) ? $TS : 'NULL';
 		                break;
 		        }
 		        $qins .= "(";
