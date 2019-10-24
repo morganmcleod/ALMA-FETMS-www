@@ -868,6 +868,8 @@ class CCA extends FEComponent {
 
         $feconfig = $this->FEConfig;
         $dbopszip = new DBOperations();
+
+        $this->UpdateStatus(7);
         /*
         $dbopszip->UpdateStatusLocationAndNotes_FE($this->FEfc, '', '',$updatestring,$feconfig, $feconfig, ' ','');
         $dbopszip->UpdateStatusLocationAndNotes_Component('', '', '',$updatestring,$this->keyId, ' ','');
@@ -943,7 +945,8 @@ class CCA extends FEComponent {
 
         }
 
-        unlink($upload_dir.'/'.$filename); //delete uploaded file
+        if (file_exists($upload_dir.'/'.$filename))
+            unlink($upload_dir.'/'.$filename); //delete uploaded file
 
         if ($this->file_COLDCARTS != "") {
             $this->Upload_CCAs_file();
