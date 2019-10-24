@@ -113,12 +113,12 @@ class WCAdb { //extends DBRetrieval {
 	 * @param integer $keyId (default = NULL)
 	 * @param integer $pol (default = NULL)
 	 * @param integer $fc (default = NULL)
-	 * @param integer $FormatTDHListArr- tdhArray value from FormatTDHList (default = NULL)
+	 * @param integer $tdh (default = NULL)
 	 * @param integer $CurrentLO (default = NULL)
 	 * @param integer $LOfreq (default = NULL)
 	 *
 	 */
-	public function q($occur, $keyId=NULL, $pol=NULL, $fc=NULL, $FormatTDHListArr=NULL, $CurrentLO=NULL, $LOfreq=NULL) {
+	public function q($occur, $keyId=NULL, $pol=NULL, $fc=NULL, $tdh=NULL, $CurrentLO=NULL, $LOfreq=NULL) {
 		if($occur == 1) {
 			$q = "SELECT keyId FROM LOParams WHERE fkComponent = $keyId ORDER BY FreqLO ASC;";
 		} elseif($occur == 2) {
@@ -128,9 +128,9 @@ class WCAdb { //extends DBRetrieval {
 		} elseif($occur == 4) {
 			$q = "SELECT * FROM WCA_LOParams WHERE fkComponent = $keyId ORDER BY FreqLO ASC;";
 		} elseif($occur == 5) {
-			$q = "SELECT FreqLO, VD$pol as VD, Power FROM WCA_OutputPower WHERE fkHeader IN $FormatTDHListArr AND fkFacility = $fc AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol ORDER BY FreqLO, VD ASC";
+		    $q = "SELECT FreqLO, VD$pol as VD, Power FROM WCA_OutputPower WHERE fkHeader = $tdh AND fkFacility = $fc AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol ORDER BY FreqLO, VD ASC";
 		} elseif($occur == 6) {
-			$q = "SELECT MAX(VD0), MAX(VD1) FROM WCA_OutputPower WHERE fkHeader in $FormatTDHListArr AND fkFacility = $fc AND keyDataSet=2";
+		    $q = "SELECT MAX(VD0), MAX(VD1) FROM WCA_OutputPower WHERE fkHeader = $tdh AND fkFacility = $fc AND keyDataSet=2";
 		} elseif($occur == 7) {
 			$q = "DELETE FROM WCA_LOParams WHERE fkComponent = $keyId;";
 		} elseif($occur == 8) {

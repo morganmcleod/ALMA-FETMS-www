@@ -74,7 +74,7 @@ if ($tabtype == "testdata") {
             break;
 
         case 3:
-            $wca->Compute_MaxSafePowerLevels(TRUE);
+            $wca->Compute_MaxSafePowerLevels();
             $wca->Display_MaxSafePowerLevels();
             break;
 

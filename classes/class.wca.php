@@ -30,7 +30,7 @@ class WCA extends FEComponent {
     private $tdh_isolation; // TDH record for Isolation
     var $db_pull;
     var $new_spec;
-    var $maxSafePowerTable; // Array of rows for the Max Safe Operating Parameters table.
+    private $maxSafePowerTable; // Array of rows for the Max Safe Operating Parameters table.
     var $SubmittedFileExtension; // Extension of submitted file for update (csv, ini or zip)
     var $SubmittedFileName; // Uploaded file (csv, zip, ini), base name
     var $SubmittedFileTmp; // Uploaded file (csv, zip, ini), actual path
@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.2.0";
-        /* 1.2.0 Added new-style ouput power plot and isolation plot for band 1.
+        $this->swversion = "1.2.1";
+        /* 1.2.1 Fix how Max Safe Power table computed.  Was using all history for (Band, SN).
+         * 1.2.0 Added new-style ouput power plot and isolation plot for band 1.
          * 1.1.5 Plots guard against empty keyId
          * 1.1.4 Added GetXmlFileContent() and calls to download 'XML Data 2019'
          * 1.1.3 Deleted 2nd Max Safe Power table.  Added WCA SN and TS to Max Safe table.
@@ -214,7 +215,7 @@ class WCA extends FEComponent {
         if ($this->keyId != "") {
             echo "<table>";
             echo "<tr><td>";
-            $this->Compute_MaxSafePowerLevels(FALSE);
+            $this->Compute_MaxSafePowerLevels();
             $this->Display_MaxSafePowerLevels();
             echo "</td></tr>";
             echo "<tr><td><br>";
@@ -519,7 +520,7 @@ class WCA extends FEComponent {
             if ($powerLimit == 0)
                 $ret .= "ENTRIES=0\r\n";
             else {
-                $table = $this->Compute_MaxSafePowerLevels(TRUE);
+                $table = $this->Compute_MaxSafePowerLevels();
                 $ret .= "ENTRIES=" . count($table) . "\r\n";
 
                 $entry = 0;
@@ -587,7 +588,7 @@ class WCA extends FEComponent {
         $xw->endElement();
 
         if ($powerLimit != 0) {
-            $table = $this->Compute_MaxSafePowerLevels(TRUE);
+            $table = $this->Compute_MaxSafePowerLevels();
             foreach ($table as $row) {
                 $xw->startElement("PowerAmpLimit");
                 $xw->writeAttribute("count", $row['YTO']);
@@ -698,44 +699,9 @@ class WCA extends FEComponent {
         }
         return $output;
     }
-    private function GetTestDataHeaders($testDataType) {
-        $SN = $this->GetValue('SN');
-        $Band = $this->GetValue('Band');
-        $compType = $this->GetValue('fkFE_ComponentType');
-
-        $q = "SELECT TestData_header.keyId
-        FROM TestData_header, TestData_Types, FE_Components
-        WHERE TestData_header.fkFE_Components = FE_Components.keyId
-        AND FE_Components.SN LIKE '$SN'
-        AND FE_Components.Band LIKE '$Band'
-        AND TestData_header.fkTestData_Type = '$testDataType'
-        AND TestData_header.fkTestData_Type = TestData_Types.keyId
-        AND FE_Components.fkFE_ComponentType = '$compType'
-        AND TestData_header.fkFE_Config < 1;";
-
-        $output = array ();
-
-        $r = $this->db_pull->run_query($q);
-        while ($row = mysqli_fetch_array($r))
-            $output [] = $row [0];
-
-        return $output;
-    }
-    private function FormatTDHList($tdhArray) {
-        $output = "(";
-        $index = 0;
-        while ($index < count($tdhArray)) {
-            $output .= "'$tdhArray[$index]'";
-            $index++;
-            if ($index < (count($tdhArray) - 1))
-                $output .= ",";
-        }
-        $output .= ")";
-        return $output;
-    }
-    private function loadPowerData($pol, $tdhArray) {
+    private function loadPowerData($pol) {
         // Load the output power data for one polarization, coarse and fine combined:
-        $r = $this->db_pull->q(5, NULL, $pol, $this->fc, $this->FormatTDHList($tdhArray));
+        $r = $this->db_pull->q(5, NULL, $pol, $this->fc, $this->tdh_outputpower->keyId);
 
         $allRows = array ();
 
@@ -744,15 +710,15 @@ class WCA extends FEComponent {
 
         return $allRows;
     }
-    private function loadMaxDrainVoltages($tdhArray) {
+    private function loadMaxDrainVoltages() {
         $ret = array();
-        $tdhList = $this->FormatTDHList($tdhArray);
+        $tdh = $this->tdh_outputpower->keyId;
 
         // Load and return an array having the maximum drain voltages
         // found for Pol0 and Pol1 in the fine output power data.
         $q = "SELECT MAX(VD0) FROM WCA_OutputPower WHERE
               Pol = 0 AND keyDataSet=2
-              AND fkHeader in $tdhList";
+              AND fkHeader = $tdh";
 
         $r = mysqli_query($this->dbconnection, $q);
         $row = mysqli_fetch_array($r);
@@ -760,7 +726,7 @@ class WCA extends FEComponent {
 
         $q = "SELECT MAX(VD1) FROM WCA_OutputPower WHERE
               Pol = 1 AND keyDataSet=2
-              AND fkHeader in $tdhList";
+              AND fkHeader = $tdh";
 
         $r = mysqli_query($this->dbconnection, $q);
         $row = mysqli_fetch_array($r);
@@ -768,7 +734,7 @@ class WCA extends FEComponent {
 
         return $ret;
     }
-    public function Compute_MaxSafePowerLevels($allHistory) {
+    public function Compute_MaxSafePowerLevels() {
         $eof = array (
                 'FreqLO' => 'EOF',
                 'VD' => 0,
@@ -777,31 +743,21 @@ class WCA extends FEComponent {
 
         $this->maxSafePowerTable = array ();
 
-        // allHistory means find prev test data from previous configs
-        if (!isset($allHistory))
-            $allHistory = FALSE;
-
-        $tdhArray = array ();
-        if ($allHistory)
-            $tdhArray = $this->GetTestDataHeaders('46');
-        else
-            $tdhArray [] = $this->tdh_outputpower->keyId;
-
-            // load pol0 power data:
-        $allRows = $this->loadPowerData(0, $tdhArray);
+        // load pol0 power data:
+        $allRows = $this->loadPowerData(0);
 
         // quit now if there's no data:
         if (!$allRows || count($allRows) == 0)
             return $this->maxSafePowerTable;
 
-            // append dummy EOF record:
+        // append dummy EOF record:
         $allRows [] = $eof;
 
         // compute the max safe power table:
         $pol0table = $this->findMaxSafeRows($allRows);
 
         // load pol1 power data:
-        $allRows = $this->loadPowerData(1, $tdhArray);
+        $allRows = $this->loadPowerData(1);
 
         // append dummy EOF record:
         $allRows [] = $eof;
@@ -810,7 +766,7 @@ class WCA extends FEComponent {
         $pol1table = $this->findMaxSafeRows($allRows);
 
         // compute scaling factors to convert drain voltages into control values:
-        $vdMax = $this->loadMaxDrainVoltages($tdhArray);
+        $vdMax = $this->loadMaxDrainVoltages();
         $pol0scale = 2.5 / $vdMax [0];
         $pol1scale = 2.5 / $vdMax [1];
 
@@ -1981,14 +1937,14 @@ class WCA extends FEComponent {
         $this->_WCAs->SetValue('op_vs_freq_url', $image_url);
         $this->_WCAs->Update();
         $imagepath = $imagedirectory . $imagename;
+        $data_file = array();
 
         for($pol = 0; $pol <= 1; $pol++) {
-
-            $data_file [$pol] = $this->writedirectory . "wca_opvsfreq_data$pol.txt";
-            if (file_exists($data_file [$pol])) {
-                unlink($data_file [$pol]);
+            $data_file[$pol] = $this->writedirectory . "wca_opvsfreq_data$pol.txt";
+            if (file_exists($data_file[$pol])) {
+                unlink($data_file[$pol]);
             }
-            $fh = fopen($data_file [$pol], 'w');
+            $fh = fopen($data_file[$pol], 'w');
             $rOP = $this->db_pull->q_other('OP', $this->tdh_outputpower->keyId, $this->fc, $pol);
             while ($row = mysqli_fetch_array($rOP)) {
                 $stringData = "$row[0]\t$row[1]\r\n";
@@ -2043,7 +1999,8 @@ class WCA extends FEComponent {
         }
 
         $plot_string .= ", '$data_file[0]' using 1:2 title 'Pol 0' with lines ";
-        $plot_string .= ", '$data_file[1]' using 1:2 title 'Pol 1' with lines \r\n";
+        $plot_string .= ", '$data_file[1]' using 1:2 title 'Pol 1' with lines ";
+        $plot_string .= "\r\n";
 
         fwrite($fh, $plot_string);
         fclose($fh);
@@ -2075,7 +2032,7 @@ class WCA extends FEComponent {
         $vg = -1.0;
         $TS = false;
 
-        $data_file = array ();
+        $data_file = array();
 
         if ($rFindLO) {
             while ($rowLO = mysqli_fetch_array($rFindLO)) {
