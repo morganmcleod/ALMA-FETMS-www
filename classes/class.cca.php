@@ -75,9 +75,10 @@ class CCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.15";
+        $this->swversion = "1.0.16";
 
         /*
+         * 1.0.16 UploadPreampParams supports different format for band 1.
          * 1.0.15 Fix display/edit operating params for band 1.  Code formatting.
          * 1.0.14 Move export_to_ini_cca code into class; delete dead code; make things private!
          * 1.0.13 Fixed UploadPreampParams to filter for temps < 20K, ignore MIXERPARAMS if not provided.
@@ -486,14 +487,18 @@ class CCA extends FEComponent {
     }
 
     public function Display_PreampParams() {
-        $maxSb = ($this->hasSB2()) ? 2 : 1;
-        $found = 0;
-
         // get the band number:
         $band = $this->GetValue('Band');
 
+        // displaying SB2 params?
+        $maxSb = ($this->hasSB2()) ? 2 : 1;
+        // Override for band 1 because we map VD4, VD5, ID4, ID5 to a fake SB2:
+        if ($band == 1)
+            $maxSb = 2;
+
         // loop on PreampParams records:
         $numParams = count($this->PreampParams);
+        $found = 0;
 
         // flags to help decide whent to show table header:
         $lastPol = -1;
@@ -1128,14 +1133,14 @@ class CCA extends FEComponent {
                     $TempSensor->dbconnection = $this->dbconnection;
 
                     $TempSensor->NewRecord('CCA_TempSensorConfig', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
-                      $TempSensor->SetValue('fkComponent',$this->keyId);
-                      $TempSensor->SetValue('Location'   ,$tempArray[4]);
+                    $TempSensor->SetValue('fkComponent',$this->keyId);
+                    $TempSensor->SetValue('Location'   ,$tempArray[4]);
                     $TempSensor->SetValue('Model'      ,$tempArray[5]);
                     $TempSensor->SetValue('SN'         ,$tempArray[6]);
                     $TempSensor->SetValue('OffsetK'    ,$tempArray[7]);
                     $TempSensor->SetValue('Notes'      ,$tempArray[8]);
-                      $TempSensor->Update();
-                      unset($TempSensor);
+                    $TempSensor->Update();
+                    unset($TempSensor);
                 }
             }
 
@@ -1200,7 +1205,7 @@ class CCA extends FEComponent {
             }
     }
 
-    public function UploadPreampParams() {
+    private function UploadPreampParams() {
         $qdelete = "DELETE FROM CCA_PreampParams WHERE fkComponent = $this->keyId
                     AND fkFacility = " . $this->GetValue('keyFacility').";";
         $rdelete = mysqli_query($this->dbconnection, $qdelete);
@@ -1208,76 +1213,129 @@ class CCA extends FEComponent {
         if (!isset($this->file_PREAMPPARAMS))
             return;
 
+        $band = $this->GetValue('Band');
+
         $filecontents = file($this->file_PREAMPPARAMS);
 
-        for($i=0; $i<sizeof($filecontents); $i++) {
-            $line_data = trim($filecontents[$i]);
-            $tempArray   = explode(",", $line_data);
+        foreach ($filecontents as $row) {
+            $line_data = trim($row);
+            $tempArray = explode(",", $line_data);
             if (count($tempArray) < 2) {
-                $tempArray   = explode("\t", $line_data);
+                $tempArray = explode("\t", $line_data);
             }
-            if (is_numeric(substr($tempArray[0],0,1)) == true) {
-                //Don't import if temp> 20k
-                if ($tempArray[3] < 20) {
-                    $fkPreamps    = $tempArray[2];
-                    $ImportPA = 0;
+            // Check for header row:
+            if (is_numeric(substr($tempArray[0], 0, 1))) {
 
-                    switch ($fkPreamps) {
-                        case $this->fkPreamp01:
-                            $ImportPA = 1;
-                        case $this->fkPreamp02:
-                            $ImportPA = 1;
-                        case $this->fkPreamp11:
-                            $ImportPA = 1;
-                        case $this->fkPreamp12:
-                            $ImportPA = 1;
-                    }
+                // Check for import only cryogenic temps:
+                if ($tempArray[3] <= 15) {
 
-                    if ($ImportPA == 1) {
-                        $PreampParam = new GenericTable();
-                        $PreampParam->dbconnection = $this->dbconnection;
-                        $PreampParam->keyId_name = "keyId";
-                        $PreampParam->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
-                        $PreampParam->SetValue('fkComponent',$this->keyId);
-                        $PreampParam->SetValue('Temperature', $tempArray[3]);
-                        $PreampParam->SetValue('FreqLO'     , $tempArray[4]);
-                        $PreampParam->SetValue('VD1'        , $tempArray[6]);
-                        $PreampParam->SetValue('VD2'        , $tempArray[7]);
-                        $PreampParam->SetValue('VD3'        , $tempArray[8]);
-                        $PreampParam->SetValue('ID1'        , $tempArray[9]);
-                        $PreampParam->SetValue('ID2'        , $tempArray[10]);
-                        $PreampParam->SetValue('ID3'        , $tempArray[11]);
-                        $PreampParam->SetValue('VG1'        , $tempArray[12]);
-                        $PreampParam->SetValue('VG2'        , $tempArray[13]);
-                        $PreampParam->SetValue('VG3'        , $tempArray[14]);
-
-                        switch ($fkPreamps) {
-                            case $this->fkPreamp01:
-                                $PreampParam->SetValue('Pol',0);
-                                $PreampParam->SetValue('SB',1);
-                                $PreampParam->Update();
-                                break;
-                            case $this->fkPreamp02:
-                                $PreampParam->SetValue('Pol',0);
-                                $PreampParam->SetValue('SB',2);
-                                $PreampParam->Update();
-                                break;
-                            case $this->fkPreamp11:
-                                $PreampParam->SetValue('Pol',1);
-                                $PreampParam->SetValue('SB',1);
-                                $PreampParam->Update();
-                                break;
-                            case $this->fkPreamp12:
-                                $PreampParam->SetValue('Pol',1);
-                                $PreampParam->SetValue('SB',2);
-                                $PreampParam->Update();
-                                break;
-                        }
-                        unset($PreampParam);
-                    } //end if ImportPA == 1
-                } // end if temp < 20k
-            }//end i
+                    // Upload row implementation varies by band:
+                    if ($band == 1)
+                        $this->UploadPreampParamsB1($tempArray);
+                    else if ($band >= 3 && $band <= 10)
+                        $this->UploadPreampParamsB3to10($tempArray);
+                }
+            }
         }
+    }
+
+    private function UploadPreampParamsB1($tempArray) {
+        // private helper method for UploadPreampParams()
+        // For band 1 we map VD4, VD5, ID4, ID5, VG4, VG5 onto a fake SB2 record
+        //   since those are the bias module circuits which controls them:
+        for ($sb = 1; $sb <= 2; $sb++) {
+            $PreampParam = new GenericTable();
+            $PreampParam->dbconnection = $this->dbconnection;
+            $PreampParam->keyId_name = "keyId";
+            $PreampParam->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
+            $PreampParam->SetValue('fkComponent', $this->keyId);
+            $PreampParam->SetValue('Temperature', $tempArray[3]);
+            $PreampParam->SetValue('FreqLO'     , $tempArray[4]);
+
+            $fkPreamps = $tempArray[2];
+
+            switch ($fkPreamps) {
+                case $this->fkPreamp01:
+                    $PreampParam->SetValue('Pol', 0);
+                    $PreampParam->SetValue('SB', $sb);
+                    break;
+                case $this->fkPreamp11:
+                    $PreampParam->SetValue('Pol', 1);
+                    $PreampParam->SetValue('SB', $sb);
+                    break;
+            }
+
+            // Column order for band 1:
+            // keyBand, keyPreampParams, fkPreamps, Temperature, FreqLO, TS, VD1, VD2, VD3, VD4, VD5, ID1, ID2, ID3, ID4, ID5, VG1, VG2, VG3, VG4, VG5
+            if ($sb == 1) {
+                $PreampParam->SetValue('VD1', $tempArray[6]);
+                $PreampParam->SetValue('VD2', $tempArray[7]);
+                $PreampParam->SetValue('VD3', $tempArray[8]);
+                $PreampParam->SetValue('ID1', $tempArray[11]);
+                $PreampParam->SetValue('ID2', $tempArray[12]);
+                $PreampParam->SetValue('ID3', $tempArray[13]);
+                $PreampParam->SetValue('VG1', $tempArray[16]);
+                $PreampParam->SetValue('VG2', $tempArray[17]);
+                $PreampParam->SetValue('VG3', $tempArray[18]);
+            } else {
+                $PreampParam->SetValue('VD1', $tempArray[9]);
+                $PreampParam->SetValue('VD2', $tempArray[10]);
+                $PreampParam->SetValue('VD3', 0);
+                $PreampParam->SetValue('ID1', $tempArray[14]);
+                $PreampParam->SetValue('ID2', $tempArray[15]);
+                $PreampParam->SetValue('ID3', 0);
+                $PreampParam->SetValue('VG1', $tempArray[19]);
+                $PreampParam->SetValue('VG2', $tempArray[20]);
+                $PreampParam->SetValue('VG3', 0);
+            }
+            $PreampParam->Update();
+            unset($PreampParam);
+        }
+    }
+
+    private function UploadPreampParamsB3to10($tempArray) {
+        // private helper method for UploadPreampParams()
+        $PreampParam = new GenericTable();
+        $PreampParam->dbconnection = $this->dbconnection;
+        $PreampParam->keyId_name = "keyId";
+        $PreampParam->NewRecord('CCA_PreampParams', 'keyId', $this->GetValue('keyFacility'), 'fkFacility');
+        $PreampParam->SetValue('fkComponent', $this->keyId);
+        $PreampParam->SetValue('Temperature', $tempArray[3]);
+        $PreampParam->SetValue('FreqLO'     , $tempArray[4]);
+
+        $fkPreamps = $tempArray[2];
+
+        switch ($fkPreamps) {
+            case $this->fkPreamp01:
+                $PreampParam->SetValue('Pol',0);
+                $PreampParam->SetValue('SB',1);
+                break;
+            case $this->fkPreamp02:
+                $PreampParam->SetValue('Pol',0);
+                $PreampParam->SetValue('SB',2);
+                break;
+            case $this->fkPreamp11:
+                $PreampParam->SetValue('Pol',1);
+                $PreampParam->SetValue('SB',1);
+                break;
+            case $this->fkPreamp12:
+                $PreampParam->SetValue('Pol',1);
+                $PreampParam->SetValue('SB',2);
+                break;
+        }
+        // Column order for bands 3-10:
+        // keyBand, keyPreampParams, fkPreamps, Temperature, FreqLO, TS, VD1, VD2, VD3, ID1, ID2, ID3, VG1, VG2, VG3
+        $PreampParam->SetValue('VD1', $tempArray[6]);
+        $PreampParam->SetValue('VD2', $tempArray[7]);
+        $PreampParam->SetValue('VD3', $tempArray[8]);
+        $PreampParam->SetValue('ID1', $tempArray[9]);
+        $PreampParam->SetValue('ID2', $tempArray[10]);
+        $PreampParam->SetValue('ID3', $tempArray[11]);
+        $PreampParam->SetValue('VG1', $tempArray[12]);
+        $PreampParam->SetValue('VG2', $tempArray[13]);
+        $PreampParam->SetValue('VG3', $tempArray[14]);
+        $PreampParam->Update();
+        unset($PreampParam);
     }
 
     public function Upload_AmplitudeStability() {
