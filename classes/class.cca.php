@@ -959,8 +959,11 @@ class CCA extends FEComponent {
                 $this->UploadMixerParams();
                 $this->UploadPreampParams();
 
-                $dbopszip->UpdateStatusLocationAndNotes_FE($this->FEfc, '', '',$updatestring,$feconfig, $feconfig, ' ','');
-                $dbopszip->UpdateStatusLocationAndNotes_Component('', '', '',$updatestring,$this->keyId, ' ','');
+                // Update the SLN for the front end this is installed in, if any:
+                if ($feconfig)
+                    $dbopszip->UpdateStatusLocationAndNotes_FE($this->FEfc, '', '',$updatestring,$feconfig, $feconfig, ' ','');
+                // Update SLN for this component:
+                $dbopszip->UpdateStatusLocationAndNotes_Component($this->fc, '', '',$updatestring,$this->keyId, ' ','');
                 $this->sln->SetValue('Notes',$updatestring);
                 $this->sln->Update();
             }
