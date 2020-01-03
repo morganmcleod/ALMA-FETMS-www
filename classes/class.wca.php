@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.2.1";
-        /* 1.2.1 Fix how Max Safe Power table computed.  Was using all history for (Band, SN).
+        $this->swversion = "1.2.2";
+        /* 1.2.2 Add writing WCA XML file including cold and warm mults.  Guards on database ops.
+         * 1.2.1 Fix how Max Safe Power table computed.  Was using all history for (Band, SN).
          * 1.2.0 Added new-style ouput power plot and isolation plot for band 1.
          * 1.1.5 Plots guard against empty keyId
          * 1.1.4 Added GetXmlFileContent() and calls to download 'XML Data 2019'
@@ -539,11 +540,51 @@ class WCA extends FEComponent {
         $band = $this->GetValue('Band');
         $sn   = ltrim($this->GetValue('SN'),'0');
         $esn  = $this->GetValue('ESN1');
+        $esnDec = hexdec($esn);
         $description = "WCA$band-$sn";
         $FLOYIG = $this->_WCAs->GetValue('FloYIG') . "E9"; // Hz
         $FHIYIG = $this->_WCAs->GetValue('FhiYIG') . "E9";
         $powerLimit = $this->maxSafePowerForBand($band);
         $lowlo = $this->GetLowLOForBand($band) . "E9"; //Hz
+
+        // get warmMultiplier from WCA specs:
+        $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
+        $warmMultiplier = $spec['warmMult'];
+
+        // compute coldMultiplier from CCA band:
+        // TODO:  move into specs class.
+        $coldMultiplier = 1;
+        switch($band) {
+            case 1:
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            case 4:
+                $coldMultiplier = 2;
+                break;
+            case 5:
+                $coldMultiplier = 2;
+                break;
+            case 6:
+                $coldMultiplier = 3;
+                break;
+            case 7:
+                $coldMultiplier = 3;
+                break;
+            case 8:
+                $coldMultiplier = 6;
+                break;
+            case 9:
+                $coldMultiplier = 9;
+                break;
+            case 10:
+                $coldMultiplier = 9;
+                break;
+            default:
+                break;
+        }
 
         $xw = new XMLWriter();
         $xw->openMemory();
@@ -551,11 +592,19 @@ class WCA extends FEComponent {
         $xw->setIndentString('    ');
         $xw->startDocument('1.0', 'ISO-8859-1');
         $xw->startElement("ConfigData");
-        $xw->writeAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-        $xw->writeAttribute("xsi:noNamespaceSchemaLocation", "membuffer.xsd");
+//         $xw->writeAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+//         $xw->writeAttribute("xsi:noNamespaceSchemaLocation", "membuffer.xsd");
 
         $xw->startElement("ASSEMBLY");
         $xw->writeAttribute("value", "WCA$band");
+        $xw->endElement();
+
+        $xw->startElement("ColdMultiplier");
+        $xw->writeAttribute("value", $coldMultiplier);
+        $xw->endElement();
+
+        $xw->startElement("PLLLoopBwMultiplier");
+        $xw->writeAttribute("value", $warmMultiplier);
         $xw->endElement();
 
         $xw->startElement("WCAConfig");
@@ -564,7 +613,8 @@ class WCA extends FEComponent {
         $xw->endElement();
 
         $xw->startElement("ESN");
-        $xw->writeAttribute("value", $esn);
+        $xw->writeAttribute("hex", $esn);
+        $xw->writeAttribute("dec", $esnDec);
         $xw->endElement();
 
         $xw->startElement("SN");
@@ -587,15 +637,13 @@ class WCA extends FEComponent {
         $xw->writeAttribute("VG1", number_format(floatval($this->_WCAs->GetValue('VG1')),2));
         $xw->endElement();
 
-        if ($powerLimit != 0) {
-            $table = $this->Compute_MaxSafePowerLevels();
-            foreach ($table as $row) {
-                $xw->startElement("PowerAmpLimit");
-                $xw->writeAttribute("count", $row['YTO']);
-                $xw->writeAttribute("VD0", number_format(floatval($row['VD0']), 3));
-                $xw->writeAttribute("VD1", number_format(floatval($row['VD1']), 3));
-                $xw->endElement();
-            }
+        $table = $this->Compute_MaxSafePowerLevels();
+        foreach ($table as $row) {
+            $xw->startElement("PowerAmpLimit");
+            $xw->writeAttribute("count", $row['YTO']);
+            $xw->writeAttribute("VD0", number_format(floatval($row['VD0']), 3));
+            $xw->writeAttribute("VD1", number_format(floatval($row['VD1']), 3));
+            $xw->endElement();
         }
 
         $xw->startElement("OptimizationTargets");
@@ -705,9 +753,10 @@ class WCA extends FEComponent {
 
         $allRows = array ();
 
-        while ($row = mysqli_fetch_array($r))
-            $allRows [] = $row; // append row to allRows.
-
+        if ($r) {
+            while ($row = mysqli_fetch_array($r))
+                $allRows [] = $row; // append row to allRows.
+        }
         return $allRows;
     }
     private function loadMaxDrainVoltages() {
@@ -771,7 +820,6 @@ class WCA extends FEComponent {
         $pol1scale = 2.5 / $vdMax [1];
 
         // define warm multiplication factor per band.
-        // TODO: move into specs class
         $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
         $warmMult = $spec ['warmMult'];
 
@@ -812,20 +860,17 @@ class WCA extends FEComponent {
 
         // Remove redundant rows:
         for($index = 0; $index < $tableSize; $index++) {
-            // Always output first and last rows:
-            if ($index == 0 || $index == $tableSize - 1) {
+            // Always output first row:
+            if ($index == 0) {
                 $this->maxSafePowerTable [] = $tableWithDups [$index];
 
-            // Output any row which differs from previous or next row in VD0 or VD1:
+            // Output any row which differs from previous row in VD0 or VD1:
             } else if ($tableWithDups [$index] ['VD0'] != $tableWithDups [$index - 1] ['VD0'] ||
-                       $tableWithDups [$index] ['VD1'] != $tableWithDups [$index - 1] ['VD1'] ||
-                       $tableWithDups [$index] ['VD0'] != $tableWithDups [$index + 1] ['VD0'] ||
-                       $tableWithDups [$index] ['VD1'] != $tableWithDups [$index + 1] ['VD1']) {
+                       $tableWithDups [$index] ['VD1'] != $tableWithDups [$index - 1] ['VD1']) {
 
                 $this->maxSafePowerTable [] = $tableWithDups [$index];
             }
         }
-
         return $this->maxSafePowerTable;
     }
     public function Display_MaxSafePowerLevels() {
