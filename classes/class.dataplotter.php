@@ -1152,7 +1152,7 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set y2label 'Tilt Angle (deg)'\r\n");
         fwrite($fh, "set y2tics\r\n");
         if ($fifteenKStage)
-            fwrite($fh, "set yrange[14:22]\r\n");
+            fwrite($fh, "set yrange[12:22]\r\n");
         else
             fwrite($fh, "set yrange[2.5:5.5]\r\n");
         fwrite($fh, "set ytics\r\n");
