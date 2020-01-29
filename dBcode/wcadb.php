@@ -5,6 +5,7 @@ require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.dboperations.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.frontend.php');
+require_once($site_dbConnect);
 
 class WCAdb { //extends DBRetrieval {
 	var $dbconnection;
@@ -14,9 +15,8 @@ class WCAdb { //extends DBRetrieval {
 	 *
 	 * @param $db- existing database connection
 	 */
-	public function WCAdb($db) {
-		require(site_get_config_main());
-		$this->dbconnection = $db;
+	public function __construct($db) {
+		$this->dbconnection = site_getDbConnection();
 	}
 
 	/**
@@ -25,7 +25,7 @@ class WCAdb { //extends DBRetrieval {
 	 * @return Resource ID- results from query
 	 */
 	public function run_query($query) {
-		return @mysql_query($query, $this->dbconnection);
+	    return mysqli_query($this->dbconnection, $query);
 	}
 
 	/**
@@ -80,7 +80,7 @@ class WCAdb { //extends DBRetrieval {
 		} elseif($request == 'MS') {
 			$q = "SELECT * FROM WCA_MaxSafePower WHERE fkFE_Component = ".$keys['old']." ORDER BY FreqLO ASC;";
 			$rMS = $this->run_query($q);
-			while ($rowMS = @mysql_fetch_array($rMS)){
+			while ($rowMS = mysqli_fetch_array($rMS)){
 				$qMSnew  = "INSERT INTO WCA_MaxSafePower(fkFacility,FreqLO,VD0_setting,VD1_setting,VD0,VD1,fkFE_Component) ";
 				$qMSnew .= "VALUES('". $rowMS['fkFacility'] . "','" . $rowMS['FreqLO'] . "','" . $rowMS['VD0_setting'];
 				$qMSnew .= "','". $rowMS['VD1_setting'] ."','". $rowMS['VD0'] ."','". $rowMS['VD1'] ."','".$keys['new']."')";
@@ -113,12 +113,12 @@ class WCAdb { //extends DBRetrieval {
 	 * @param integer $keyId (default = NULL)
 	 * @param integer $pol (default = NULL)
 	 * @param integer $fc (default = NULL)
-	 * @param integer $FormatTDHListArr- tdhArray value from FormatTDHList (default = NULL)
+	 * @param integer $tdh (default = NULL)
 	 * @param integer $CurrentLO (default = NULL)
 	 * @param integer $LOfreq (default = NULL)
 	 *
 	 */
-	public function q($occur, $keyId=NULL, $pol=NULL, $fc=NULL, $FormatTDHListArr=NULL, $CurrentLO=NULL, $LOfreq=NULL) {
+	public function q($occur, $keyId=NULL, $pol=NULL, $fc=NULL, $tdh=NULL, $CurrentLO=NULL, $LOfreq=NULL) {
 		if($occur == 1) {
 			$q = "SELECT keyId FROM LOParams WHERE fkComponent = $keyId ORDER BY FreqLO ASC;";
 		} elseif($occur == 2) {
@@ -128,9 +128,9 @@ class WCAdb { //extends DBRetrieval {
 		} elseif($occur == 4) {
 			$q = "SELECT * FROM WCA_LOParams WHERE fkComponent = $keyId ORDER BY FreqLO ASC;";
 		} elseif($occur == 5) {
-			$q = "SELECT FreqLO, VD$pol as VD, Power FROM WCA_OutputPower WHERE fkHeader IN $FormatTDHListArr AND fkFacility = $fc AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol ORDER BY FreqLO, VD ASC";
+		    $q = "SELECT FreqLO, VD$pol as VD, Power FROM WCA_OutputPower WHERE fkHeader = $tdh AND fkFacility = $fc AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol ORDER BY FreqLO, VD ASC";
 		} elseif($occur == 6) {
-			$q = "SELECT MAX(VD0), MAX(VD1) FROM WCA_OutputPower WHERE fkHeader in $FormatTDHListArr AND fkFacility = $fc AND keyDataSet=2";
+		    $q = "SELECT MAX(VD0), MAX(VD1) FROM WCA_OutputPower WHERE fkHeader = $tdh AND fkFacility = $fc AND keyDataSet=2";
 		} elseif($occur == 7) {
 			$q = "DELETE FROM WCA_LOParams WHERE fkComponent = $keyId;";
 		} elseif($occur == 8) {
@@ -146,9 +146,11 @@ class WCAdb { //extends DBRetrieval {
 		} elseif($occur == 13) {
 			$q = "SELECT VD$pol,Power FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet = 2 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY VD$pol ASC;";
 		} elseif($occur == 14) {
-			$q = "SELECT VD$pol,Power FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet <> 1 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY VD$pol ASC;";
+			$q = "SELECT VD$pol,Power,VG$pol,TS FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet <> 1 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY VD$pol ASC;";
 		} elseif($occur == 15) {
 			$q = "SELECT VD$pol,Power FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet = 3 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY Power ASC, VD$pol ASC;";
+		} elseif($occur == 16) {
+		    $q = "SELECT TS, FreqLO, S21AmpdB, S12AmpdB FROM WCA_Isolation WHERE fkHeader = $keyId ORDER BY FreqLO ASC;";
 		} else {
 			$q = '';
 		}
@@ -238,7 +240,7 @@ class WCAdb { //extends DBRetrieval {
 	 * @param integer $fc (default = NULL)
 	 * @param TestData_header $other_object- if additional tdh desired (default = NULL)
 	 */
-	public function del_ins($request, $filecontents, $object, $fc=NULL, $other_object=NULL) {
+	public function del_ins($request, $filecontents, $object, $fc=NULL, $other_object=NULL, $delim = ",") {
 		switch ($request) {
 		    case 'WCA_MaxSafePower':
 		        $colNames = array('TS', 'FreqLO', 'VD0_setting', 'VD1_setting', 'VD0', 'VD1', 'fkFE_Component', 'fkFacility');
@@ -255,6 +257,9 @@ class WCAdb { //extends DBRetrieval {
 			case 'WCA_PhaseNoise':
 			    $colNames = array('fkHeader', 'FreqLO', 'Pol', 'CarrierOffset', 'Lf');
 		        break;
+			case 'WCA_Isolation':
+			    $colNames = array('fkHeader', 'FreqLO', 'S11AmpdB', 'S11PhaseDeg', 'S21AmpdB', 'S21PhaseDeg', 'S12AmpdB', 'S12PhaseDeg', 'S22AmpdB', 'S22PhaseDeg', 'TS');
+			    break;
 			default:
 			    return;
 		}
@@ -280,19 +285,34 @@ class WCAdb { //extends DBRetrieval {
 		}
 		$qins .= ") VALUES ";
 
+		$TS = false;
 		$first = true;
 		foreach ($filecontents as $line) {
 		    $line_data = trim($line);
-		    $tempArray = explode(",", $line_data);
-		    // skip header line:
-		    if (is_numeric(substr($tempArray[0],0,1))) {
+		    // skip header lines but look for date:
+		    if (!is_numeric(substr($line_data, 0, 1))) {
+		        if (!$TS) {
+    		        $pos = stripos($line_data, "date");
+    		        if ($pos) {
+    		            $TS = date_parse(substr($line_data, $pos + 5));
+    		            if ($TS) {
+    		                $t = sprintf("%d-%02d-%02d %02d-%02d-%02d",
+    		                        $TS['year'], $TS['month'], $TS['hour'], $TS['hour'], $TS['minute'], $TS['second']);
+    		                $TS = "'$t'";
+    		            }
+    		        }
+		        }
+		    } else {
+		        $tempArray = explode($delim, $line_data);
 		        if (!$first)
 		            // prepend a comma if not the first set of values:
 		            $qins .= ",";
 		        else {
-		            // update the TDH time stamp with the data from the first row:
-		            $object->SetValue('TS', $tempArray[3]);
-		            $object->Update();
+		            if ($request != 'WCA_Isolation') {
+    		            // update the TDH time stamp with the data from the first row:
+    		            $object->SetValue('TS', $tempArray[3]);
+    		            $object->Update();
+		            }
 		            // TODO:  what is other_object used for?
 		            if(!is_null($other_object)){
 		                $other_object->SetValue('TS', $tempArray[3]);
@@ -361,6 +381,20 @@ class WCAdb { //extends DBRetrieval {
 		                                $tempArray[7]  //Lf
 		                );
 		                break;
+		            case 'WCA_Isolation':
+		                $values = array($object->keyId, //fkHeader
+                		                floatval($tempArray[0]) / 1.0e9 , //FreqLO
+                		                $tempArray[1], //S11AmpdB
+                		                $tempArray[2], //S11PhaseDeg
+                		                $tempArray[3], //S21AmpdB
+                		                $tempArray[4], //S21PhaseDeg
+                		                $tempArray[5], //S12AmpdB
+                		                $tempArray[6], //S12PhaseDeg
+                		                $tempArray[7], //S22AmpdB
+                		                $tempArray[8]  //S22PhaseDeg
+		                );
+		                $values[]= ($TS) ? $TS : 'NULL';
+		                break;
 		        }
 		        $qins .= "(";
 		        $first = true;
@@ -405,6 +439,8 @@ class WCAdb { //extends DBRetrieval {
 			$q .= "48";
 		} elseif($test_type == 'WCA_AMNoise') {
 			$q .= "44";
+		} elseif($test_type == 'WCA_Isolation') {
+		    $q .= "61";
 		} else {
 			$q .= "0";
 		}

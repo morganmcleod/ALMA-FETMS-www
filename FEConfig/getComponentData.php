@@ -25,7 +25,7 @@ if ($tabtype == "testdata") {
     // General configuration tab
     $getQuery=new dbGetQueries;
     $getCompConfig_query=$getQuery->getSelectedCompConfig($selected_key);
-    while ($getFEComp=mysql_fetch_array($getCompConfig_query)) {
+    while ($getFEComp=mysqli_fetch_array($getCompConfig_query)) {
         $fecomponent->DisplayTable_ComponentInformation();
         $fecomponent->Display_Table_PreviousConfigurations();
     }
@@ -74,7 +74,7 @@ if ($tabtype == "testdata") {
             break;
 
         case 3:
-            $wca->Compute_MaxSafePowerLevels(TRUE);
+            $wca->Compute_MaxSafePowerLevels();
             $wca->Display_MaxSafePowerLevels();
             break;
 

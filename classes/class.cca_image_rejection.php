@@ -4,6 +4,10 @@ require_once($site_classes . '/class.testdata_header.php');
 
 class cca_image_rejection extends TestData_header{
 
+    public function __construct() {
+        parent::__construct();
+    }    
+    
     public function Initialize_cca_image_rejection($in_keyId, $in_fc){
         parent::Initialize_TestData_header($in_keyId, $in_fc);
     }
@@ -24,9 +28,9 @@ class cca_image_rejection extends TestData_header{
     //Get CCA Serial Number
         $q = "SELECT SN FROM FE_Components
             WHERE keyID=" .$this->GetValue('fkFE_Components'). "";
-            $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($this->dbconnection, $q);
         $l->WriteLogFile("CCA SN Query: $q");
-        $CCA_SN = @mysql_result($r,0,0);
+        $CCA_SN = ADAPT_mysqli_result($r,0,0);
         $l->WriteLogFile("CCA SN: $CCA_SN");
 
     // start plotting code
@@ -146,11 +150,11 @@ class cca_image_rejection extends TestData_header{
          WHERE fkFacility = " .$this->GetValue('keyFacility') . "
          AND fkHeader = ".$this->GetValue('keyId') . "
          ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($this->dbconnection, $q);
         $l->WriteLogFile("CCA Image Rejection Data Query: $q");
 
         $last_freq = '';
-        while ($row = @mysql_fetch_array($r)){
+        while ($row = mysqli_fetch_array($r)){
             // pol 1 SB2
             if ($row[2] == 1 && $row[3] == 2){
                 $IR_LSB_Pol1_Sb2 = $row[0] - $row[1];

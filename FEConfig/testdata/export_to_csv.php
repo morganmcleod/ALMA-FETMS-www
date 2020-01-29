@@ -4,6 +4,7 @@ require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 $fc = $_REQUEST['fc'];
 
@@ -21,8 +22,8 @@ if (!isset($_REQUEST['ifsub'])) {
         if ($testDataType == 29) {
             //Workmanship Amplitude:  get the LO frequency to include in the filename.
             $q1 = "SELECT lo from TEST_Workmanship_Amplitude_SubHeader WHERE fkHeader = $td->keyId;";
-            $r1 = @mysql_query($q1,$db);
-            $LO = @mysql_result($r1,0,0);
+            $r1 = mysqli_query($dbconnection, $q1);
+            $LO = ADAPT_mysqli_result($r1,0,0);
 
             $csv_filename .= "_LO$LO";
         }
@@ -38,8 +39,8 @@ if (!isset($_REQUEST['ifsub'])) {
 
             case 57: //LO Lock Test
                 $q1 = "SELECT keyId FROM TEST_LOLockTest_SubHeader WHERE fkHeader = $td->keyId;";
-                $r1 = @mysql_query($q1,$db);
-                $subh_id = @mysql_result($r1,0,0);
+                $r1 = mysqli_query($dbconnection, $q1);
+                $subh_id = ADAPT_mysqli_result($r1,0,0);
                 $qdata = "SELECT DT.*
                          FROM TEST_LOLockTest as DT, TEST_LOLockTest_SubHeader as SH, TestData_header as TDH
                          WHERE DT.fkHeader = SH.keyId AND DT.fkFacility = SH.keyFacility
@@ -59,8 +60,8 @@ if (!isset($_REQUEST['ifsub'])) {
                 $q = "SELECT keyId FROM Noise_Temp_SubHeader
                       WHERE fkHeader = $td->keyId
                       AND keyFacility = " . $td->GetValue('keyFacility');
-                $r = @mysql_query($q,$db);
-                $subid = @mysql_result($r,0,0);
+                $r = mysqli_query($dbconnection, $q);
+                $subid = ADAPT_mysqli_result($r,0,0);
                 $qdata = "SELECT * FROM Noise_Temp WHERE fkSub_Header = $subid AND keyFacility = "
                         . $td->GetValue('keyFacility') . " ORDER BY FreqLO, CenterIF;";
                 $td->TestDataTableName = 'Noise_Temp';
@@ -87,8 +88,8 @@ if (!isset($_REQUEST['ifsub'])) {
                 //Cryostat
                 $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
                       WHERE fkHeader = $td->keyId;";
-                $r = @mysql_query($q,$td->dbconnection);
-                $fkHeader = @mysql_result($r,0,0);
+                $r = mysqli_query($dbconnection, $q);
+                $fkHeader = ADAPT_mysqli_result($r,0,0);
                 $qdata = "SELECT * FROM $td->TestDataTableName WHERE
                 fkSubHeader = $fkHeader AND fkFacility = ".$td->GetValue('keyFacility').";";
                 break;
@@ -99,14 +100,14 @@ if (!isset($_REQUEST['ifsub'])) {
 
         $qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
 
-        $rcols = @mysql_query ($qcols, $db);
-        while($rowcols = mysql_fetch_array($rcols)) {
+        $rcols = mysqli_query($dbconnection, $qcols);
+        while($rowcols = mysqli_fetch_array($rcols)) {
             echo $rowcols[0] . ",";
         }
         echo "\r\n";
 
-        $rdata = @mysql_query ($qdata, $db);
-        while($rowdata = mysql_fetch_array($rdata)) {
+        $rdata = mysqli_query($dbconnection, $qdata);
+        while($rowdata = mysqli_fetch_array($rdata)) {
             for ($i=0; $i<count($rowdata); $i++) {
                 if (isset($rowdata[$i]))
                     echo "$rowdata[$i],";
@@ -148,15 +149,15 @@ if (isset($_REQUEST['ifsub'])) {
 
 
     $q = "SHOW COLUMNS FROM IFSpectrum;";
-    $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)) {
+    $r = mysqli_query($dbconnection, $q);
+    while($row = mysqli_fetch_array($r)) {
         echo $row[0] . ",";
     }
     echo "\r\n";
 
     $q = "SELECT * FROM IFSpectrum WHERE fkSubHeader = $ifsub_id AND fkFacility = $fc;";
-    $r = @mysql_query ($q, $db);
-    while($row = mysql_fetch_array($r)) {
+    $r = mysqli_query($dbconnection, $q);
+    while($row = mysqli_fetch_array($r)) {
         for ($i=0;$i<count($row);$i++) {
             echo "$row[$i],";
         }

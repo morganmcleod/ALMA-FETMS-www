@@ -8,17 +8,21 @@ require_once($site_classes . '/class.spec_functions.php');
 class FineLOSweep extends TestData_header {
     private $FLOSweepSubHeader; // array for subheader objects from TEST_FineLOSweep_SubHeader (class.generictable.php)
 
+    public function __construct() {
+        parent::__construct();
+    }  
+    
     public function Initialize_FineLOSweep($in_keyId, $in_fc){
         parent::Initialize_TestData_header($in_keyId, $in_fc);
 
         $q = "SELECT keyId, keyFacility FROM TEST_FineLOSweep_SubHeader
               WHERE fkHeader = $in_keyId AND keyFacility = $in_fc
               order by keyId ASC;" ;
-        $r = @mysql_query($q, $this->dbconnection);
+        $r = mysqli_query($this->dbconnection, $q);
 
         // create tables for FineLOSweep SubHeaders for both polarization states
         $cnt = 0;
-        while ($row = @mysql_fetch_array($r)){
+        while ($row = mysqli_fetch_array($r)){
             $keyID = $row[0];
             $facility = $row[1];
             $this->FLOSweepSubHeader[$cnt] = new GenericTable();
@@ -62,9 +66,9 @@ class FineLOSweep extends TestData_header {
              AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') ."
              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
              GROUP BY Band ASC;";
-            $r = @mysql_query($q,$this->dbconnection);
+            $r = mysqli_query($this->dbconnection, $q);
         $l->WriteLogFile("CCA SN Query: $q");
-        $CCA_SN = @mysql_result($r,0,0);
+        $CCA_SN = ADAPT_mysqli_result($r,0,0);
         $l->WriteLogFile("CCA SN: $CCA_SN");
 
     //Get WCA Serial Number
@@ -76,9 +80,9 @@ class FineLOSweep extends TestData_header {
              AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') ."
              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
              GROUP BY Band ASC;";
-            $r = @mysql_query($q,$this->dbconnection);
+            $r = mysqli_query($this->dbconnection, $q);
         $l->WriteLogFile("WCA SN Query: $q");
-        $WCA_SN = @mysql_result($r,0,0);
+        $WCA_SN = ADAPT_mysqli_result($r,0,0);
         $l->WriteLogFile("WCA SN: $WCA_SN");
 
     // start loop to plot graphs for all tests
@@ -106,7 +110,7 @@ class FineLOSweep extends TestData_header {
          FROM TEST_FineLOSweep
          WHERE fkFacility = " .$this->GetValue('keyFacility') . "
          AND fkSubHeader = ".$this->FLOSweepSubHeader[$cnt]->GetValue('keyId') . "";
-        $r = @mysql_query($q,$this->dbconnection);
+        $r = mysqli_query($this->dbconnection, $q);
         $l->WriteLogFile("FineLOSweep get Data query: $q");
 
         $max_freq = 0;
@@ -115,7 +119,7 @@ class FineLOSweep extends TestData_header {
 
         unset($LO_freq);
         unset($PA_set);
-        while ($row = @mysql_fetch_array($r)) {
+        while ($row = mysqli_fetch_array($r)) {
             $LO_freq[] = $row[0]; // save frequencies for processing
             $PA_set[] = $row[3];    // save PA_sets for processing
             if ($row[0] > $max_freq) {

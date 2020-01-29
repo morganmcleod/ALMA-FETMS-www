@@ -24,8 +24,8 @@ $BandView = "All";
 
  // Count the number of records:
 $q = "SELECT COUNT(keyId) FROM Shipments";	
-$r = @mysql_query ($q, $dbc);
-$row = @mysql_fetch_array ($r, MYSQL_NUM);
+$r = mysql_query ($q, $dbc);
+$row = mysqli_fetch_array ($r, MYSQL_NUM);
 $records = $row[0];
 // Calculate the number of pages...
 if ($records > $display) { // More than 1 page.
@@ -60,7 +60,7 @@ switch ($sort) {
 
 //$q = "SELECT keyId, ShipToLocation, Notes, TS FROM Shipments ORDER BY keyId ASC LIMIT $start, $display";
 $q = "SELECT keyId, ShipToLocation, Notes, ShipDate FROM Shipments ORDER BY keyId ASC";
-$r = @mysql_query ($q, $dbc);
+$r = mysql_query ($q, $dbc);
 
 
 // Table header:
@@ -80,7 +80,7 @@ echo '<b><br><br>
 
 // Fetch and print all the records....
 $bg = '#eeeeee'; 
-while ($row = mysql_fetch_array($r)) {
+while ($row = mysqli_fetch_array($r)) {
 	$bg = ($bg=='#eeeeee' ? '#ffffff' : '#eeeeee');
 		echo '<tr bgcolor="' . $bg . '">
 		<td align="center"><a href="edit_record_shipment.php?id=' . $row[0] . '">Edit</a></td>
@@ -91,7 +91,7 @@ while ($row = mysql_fetch_array($r)) {
 		$tempLoc = $row[1];
 		$qLoc = "SELECT Description, Notes FROM Locations WHERE keyId = $tempLoc";		
 		$rLoc = mysql_query ($qLoc, $dbc);
-		$rowLoc = mysql_fetch_array ($rLoc);
+		$rowLoc = mysqli_fetch_array ($rLoc);
 		$tempLoc = $rowLoc[0] . " (" . $rowLoc[1] . ")";
 		echo '<td align="center">' . $tempLoc . '</td>';
 		echo '<td align="center"><b>' . $row[2] . '</b></td>';

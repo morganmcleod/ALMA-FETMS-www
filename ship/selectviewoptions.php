@@ -19,8 +19,8 @@ if (isset($_GET['ComponentTypeView'])){
 	echo'
 	<p><font size="+1"><b>Component Type:</b></font><select name="ComponentTypeView">'; 
 	$qComponentType = "SELECT keyId AS ID, Description AS Descript FROM ComponentTypes ORDER BY Description ASC";		
-	$rComponentType = @mysql_query ($qComponentType, $dbc);
-	while ($row = mysql_fetch_array($rComponentType)) {
+	$rComponentType = mysql_query ($qComponentType, $dbc);
+	while ($row = mysqli_fetch_array($rComponentType)) {
 			$keyIdTEMP=$row['ID'];
 			$descriptionTEMP=$row['Descript'];
 			if ($keyIdTEMP == $CurrentComponentType){	
@@ -42,9 +42,9 @@ if (isset($_GET['ComponentTypeView'])){
 	//selecting a location
 	$option_blockLoc .= "<option value='All'>All</option>";
 	$qLoc = "SELECT keyId AS IDLoc, Description AS DescriptionLoc, Notes AS NotesLoc FROM Locations ORDER BY Description ASC";		
-	$rLoc = @mysql_query ($qLoc, $dbc);
+	$rLoc = mysql_query ($qLoc, $dbc);
 	//$option_blockLoc = "<option value='0'>Unknown Location</option>"; 
-	while ($rowLoc = mysql_fetch_array($rLoc)) {
+	while ($rowLoc = mysqli_fetch_array($rLoc)) {
 			$keyIdTEMPLoc=$rowLoc['IDLoc'];
 			$DescTEMPLoc=$rowLoc['DescriptionLoc'];
 			$NotesTEMPLoc=$rowLoc['NotesLoc'];

@@ -18,8 +18,8 @@ if (isset($_GET['p']) && is_numeric($_GET['p'])) { // Already been determined.
 } else { // Need to determine.
  	// Count the number of records:
 	$q = "SELECT COUNT(keyId) FROM Locations";
-	$r = @mysql_query ($q, $dbc);
-	$row = @mysql_fetch_array ($r, MYSQL_NUM);
+	$r = mysql_query ($q, $dbc);
+	$row = mysqli_fetch_array ($r, MYSQL_NUM);
 	$records = $row[0];
 	// Calculate the number of pages...
 	if ($records > $display) { // More than 1 page.
@@ -56,7 +56,7 @@ switch ($sort) {
 	
 // Make the query:
 $q = "SELECT keyId AS ID, Description AS Descript, Notes AS Nts FROM Locations ORDER BY $order_by LIMIT $start, $display";		
-$r = @mysql_query ($q, $dbc);
+$r = mysql_query ($q, $dbc);
 
 
 
@@ -74,7 +74,7 @@ echo '<table align="center" cellspacing="5" cellpadding="10" width="95%">
 
 // Fetch and print all the records....
 $bg = '#eeeeee'; 
-while ($row = mysql_fetch_array($r)) {
+while ($row = mysqli_fetch_array($r)) {
 	$bg = ($bg=='#eeeeee' ? '#ffffff' : '#eeeeee');
 		echo '<tr bgcolor="' . $bg . '">
 		<td align="left"><a href="edit_record_location.php?id=' . $row['ID'] . '">Edit</a></td>

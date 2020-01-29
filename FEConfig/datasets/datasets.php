@@ -28,6 +28,7 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.frontend.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 $TDHid	  = $_REQUEST['id'];
 $FEid     = $_REQUEST['fe'];
@@ -41,8 +42,8 @@ $q = "SELECT `Description`
 	FROM `TestData_Types`
 	WHERE `keyId` = $datatype";
 
-$r = @mysql_query($q, $db);
-$test_desc = @mysql_result($r,0,0);
+$r = mysqli_query($dbconnection, $q);
+$test_desc = ADAPT_mysqli_result($r,0,0);
 
 $title = $test_desc;
 

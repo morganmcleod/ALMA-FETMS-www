@@ -7,7 +7,7 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 class BeamEffDB { //extends DBRetrieval {
-	var $dbConnection;
+	var $dbconnection;
 
 	/**
 	 * Initializes class and creates database connection
@@ -16,7 +16,7 @@ class BeamEffDB { //extends DBRetrieval {
 	 */
 	public function BeamEffDB($db) {
 		require(site_get_config_main());
-		$this->dbConnection = $db;
+		$this->dbconnection = $db;
 	}
 	 /**
 	  * @param string $query- SQL query
@@ -24,7 +24,7 @@ class BeamEffDB { //extends DBRetrieval {
 	  * @return Resource Id for SQL query
 	  */
 	public function run_query($query) {
-		return @mysql_query($query, $this->dbConnection);
+	    return mysqli_query($this->dbconnection, $query);
 	}
 
 	/**
@@ -84,7 +84,7 @@ class BeamEffDB { //extends DBRetrieval {
 			$q = "SELECT x,y,amp,phase FROM BeamListings_farfield WHERE fkScanDetails = $scan_id;";
 		}
 		$r = $this->run_query($q);
-		while ($row = @mysql_fetch_array($r)) {
+		while ($row = mysqli_fetch_array($r)) {
 			fwrite($handle,"$row[0]\t$row[1]\t$row[2]\t$row[3]\r\n");
 		}
 		fclose($handle);
@@ -100,7 +100,7 @@ class BeamEffDB { //extends DBRetrieval {
                  WHERE fkScanDetails = ". $scansets[0]->keyId_copol_pol0_scan . ";";
 
 		$reff = $this->run_query($qeff);
-		$numrows = @mysql_numrows($reff);
+		$numrows = mysqli_num_rows($reff);
 		$processed = 0;
 		if ($numrows > 0) {
 			$processed = 1;

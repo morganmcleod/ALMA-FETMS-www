@@ -35,9 +35,9 @@ if ($datatype == "shipment"){
 	AssyPN
 	FROM ShipItems
 	WHERE fkShipment = $Shipment->keyId";
-	$r = @mysql_query ($q, $dbc);
+	$r = mysql_query ($q, $dbc);
 	//get data from table
-	while($row = mysql_fetch_array($r)){
+	while($row = mysqli_fetch_array($r)){
 		echo str_replace(",",";",$row[0]) . ',' . str_replace(",",";",$row[1]) . ',' . str_replace(",",";",$row[2]) . ',' . str_replace(",",";",$row[3]) . ',' .
 		str_replace(",",";",$row[4]) . ',' . str_replace(",",";",$row[5]) . ',' . str_replace(",",";",$row[6]) .  ',' . "\r\n";
 	}
@@ -48,14 +48,14 @@ if ($datatype == "shipment"){
 if ($datatype == "shipitems_sort"){
 	$qArray = explode("LIMIT",$_REQUEST['qShipItems']);
 	$q = $qArray[0] . ";";
-	$r = @mysql_query ($q, $dbc);
+	$r = mysql_query ($q, $dbc);
 
 
 	
 	echo "Selected Ship Items\r\n\r\n\r\n";
 	echo "Item,Vendor,PN,Shipment Title,Ship Location,Date\r\n";
 	
-	while ($row = mysql_fetch_array($r)) {
+	while ($row = mysqli_fetch_array($r)) {
 
 		$Title = str_replace(",",";",$row[0]);
 		$Vendor = str_replace(",",";",$row[1]);
@@ -74,7 +74,7 @@ if ($datatype == "shipitems_sort"){
 		//This part retrieves the description from the Locations table
 		$qLoc = "SELECT Description, Notes  FROM Locations WHERE keyId = $ShipToLocationID";		
 		$rLoc = mysql_query ($qLoc, $dbc);
-		$rowLoc = mysql_fetch_array ($rLoc);
+		$rowLoc = mysqli_fetch_array ($rLoc);
 		$tempLoc = $rowLoc[0] . " (" . $rowLoc[1] . ")";
 
 
@@ -119,9 +119,9 @@ if ($datatype == "allrx"){
 	
 	
 	
-	$r = @mysql_query ($q, $dbc);
+	$r = mysql_query ($q, $dbc);
 	//get data from table
-	while($row = mysql_fetch_array($r)){
+	while($row = mysqli_fetch_array($r)){
 		echo str_replace(",",";",$row[0]) . ',' . str_replace(",",";",$row[1]) . 
 		',' . str_replace(",",";",$row[2]) . ',' . str_replace(",",";",$row[3]) . ',' .
 		str_replace("\n",";",str_replace("\r",";",str_replace(",",";",$row[4]))) . ',' . str_replace(",",";",$row[5]) . ',' . str_replace(",",";",$row[6]) .  ',' . 

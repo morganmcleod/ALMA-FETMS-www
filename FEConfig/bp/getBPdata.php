@@ -12,6 +12,7 @@ require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.eff.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 //Facility code
 $fc = $_REQUEST['fc'];
@@ -26,8 +27,8 @@ $tdh->Initialize_TestData_header($keyId,$fc);
 
 //Instantiate a new eff object
 $q = "SELECT keyId FROM ScanSetDetails WHERE fkHeader = " . $keyId . ";";
-$r = @mysql_query($q,$db);
-$ssid = @mysql_result($r,0,0);
+$r = mysqli_query($dbconnection, $q);
+$ssid = ADAPT_mysqli_result($r,0,0);
 $eff = new eff();
 $eff->Initialize_eff_SingleScanSet($ssid,$fc);
 

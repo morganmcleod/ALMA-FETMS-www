@@ -5,7 +5,11 @@ require_once($site_classes . '/class.generictable.php');
 require_once($site_dbConnect);
 
 class Cryostat_tempsensor extends GenericTable{
-
+    
+    public function __construct() {
+        parent::__construct();
+    }
+    
     public function Initialize_tempsensor($fkCryostat,$sensor_number,$in_fc){
         $this->dbconnection = site_getDbConnection();
         $q= "SELECT keyId FROM Cryostat_tempsensors
@@ -13,8 +17,8 @@ class Cryostat_tempsensor extends GenericTable{
             AND sensor_number = $sensor_number
             AND fkFacility = $in_fc;";
 
-        $r=@mysql_query($q,$this->dbconnection);
-        $tempsensor_keyId=@mysql_result($r,0);
+        $r=mysqli_query($this->dbconnection, $q);
+        $tempsensor_keyId=ADAPT_mysqli_result($r,0);
         parent::Initialize("Cryostat_tempsensors",$tempsensor_keyId,"keyId",$in_fc,'fkFacility');
     }
 

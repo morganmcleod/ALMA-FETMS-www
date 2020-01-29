@@ -30,9 +30,9 @@ switch ($site_hostname){
         $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff_64";
         break;
 
-    case "webtest2.cv.nrao.edu":
+    case "webtest.cv.nrao.edu":
 //         $FETMS_CCA_MODE = true;
-        $rootdir_url = "https://webtest2.cv.nrao.edu/php/ntc/ws-mtm/ALMA-FETMS-www/";
+        $rootdir_url = "/php/ntc/ws-mtm/ALMA-FETMS-www/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         break;
 
@@ -59,11 +59,11 @@ switch ($site_hostname){
         break;
 }
 
-//echo '$site_root=' . $site_root . '<br><br>';
-//echo '$rootdir_data=' . $rootdir_data . '<br><br>';
-//echo '$rootdir_url=' . $rootdir_url . '<br><br>';
-//echo '$beameff_64=' . $beameff_64 . '<br><br>';
-//echo '$GNUplot=' . $GNUplot . '<br><br>';
+// echo '$site_root=' . $site_root . '<br><br>';
+// echo '$rootdir_data=' . $rootdir_data . '<br><br>';
+// echo '$rootdir_url=' . $rootdir_url . '<br><br>';
+// echo '$beameff_64=' . $beameff_64 . '<br><br>';
+// echo '$GNUplot=' . $GNUplot . '<br><br>';
 
 // set up some additional directories and URLs based on the above paths:
 $main_write_directory = $rootdir_data . "test_datafiles/";

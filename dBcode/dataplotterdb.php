@@ -10,7 +10,7 @@ require_once($site_classes . '/class.logger.php');
 require_once($site_dbConnect);
 
 class DPdb{ //extends DBRetrieval{
-	var $dbConnection;
+	var $dbconnection;
 
 	/**
 	 * Initializes class and creates database connection
@@ -19,7 +19,7 @@ class DPdb{ //extends DBRetrieval{
 	 */
 	public function DPdb($dB) {
 		require(site_get_config_main());
-		$this->dbConnection = $dB;
+		$this->dbconnection = $dB;
 	}
 
 	/**
@@ -29,7 +29,7 @@ class DPdb{ //extends DBRetrieval{
 	 * @return resource Id for SQL query
 	 */
 	public function run_query($query) {
-		return @mysql_query($query, $this->dbConnection);
+		return mysqli_query($this->dbconnection, $query);
 	}
 
 
@@ -60,7 +60,7 @@ class DPdb{ //extends DBRetrieval{
         ORDER BY Band ASC;";
 
 		$r = $this->run_query($q);
-		return @mysql_result($r, 0, 0);
+		return ADAPT_mysqli_result($r, 0, 0);
 	}
 
 	/**
@@ -78,20 +78,20 @@ class DPdb{ //extends DBRetrieval{
 			FROM TEST_Workmanship_Phase_SubHeader
 			WHERE fkHeader = $TestData_Id;";
 			$r = $this->run_query($q);
-			return @mysql_result($r, 0, 0);
+			return ADAPT_mysqli_result($r, 0, 0);
 		} elseif ($request == 'wkamp_sh') {
 			$q = "SELECT keyTEST_Workmanship_Amplitude_SubHeader
 			FROM TEST_Workmanship_Amplitude_SubHeader
 			WHERE fkHeader = $TestData_Id;";
 			$r = $this->run_query($q);
-			return @mysql_result($r, 0, 0);
+			return ADAPT_mysqli_result($r, 0, 0);
 		} elseif ($request == 'sub') {
 			$q = "SELECT MAX(keyId) FROM TEST_LOLockTest_SubHeader
 					WHERE fkHeader = ".$TestDataHeader->keyId."
 					AND TEST_LOLockTest_SubHeader.keyFacility = " . $TestDataHeader->getValue('keyFacility') . ";";
 			$r = $this->run_query($q);
 			$t->WriteLogFile($q);
-			return @mysql_result($r, 0, 0);
+			return ADAPT_mysqli_result($r, 0, 0);
 		} elseif ($request == 'URL') {
 			$q = "UPDATE TestData_header SET PlotURL = '$image_url' WHERE keyId = $td_header;";
 			$r = $this->run_query($q);

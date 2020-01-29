@@ -20,8 +20,8 @@ $shipID = 0;
 if (isset($_REQUEST['id'])){
 	$shipID = $_REQUEST['id'];
 	$qSICL = "SELECT Title, SICL, Notes FROM Shipments WHERE keyId = $shipID;";
-	$rSICL = @mysql_query($qSICL,$dbc);
-	$rowSICL = @mysql_fetch_array($rSICL);
+	$rSICL = mysqli_query($link, $qSICL,$dbc);
+	$rowSICL = mysqli_fetch_array($rSICL);
 	$title1 = $rowSICL[1];
 	$docnotes = $rowSICL[2];
 	$heading1 = $rowSICL[0];

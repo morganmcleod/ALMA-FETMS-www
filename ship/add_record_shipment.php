@@ -47,18 +47,18 @@ if (isset($_REQUEST['submitted']))
 	    //Add new record to ComponentTypes table, if there is not one
 	    //already for this ProductTreeNumber (AssyPN)
 		$qDescr = "SELECT keyId FROM ComponentTypes WHERE ProductTreeNumber = '$AssyPN'";		
-		$rDescr = @mysql_query ($qDescr, $dbc);
-		//echo "NumRows: " . @mysql_num_rows($rDescr);
-		if (@mysql_num_rows($rDescr) < 1){
+		$rDescr = mysql_query ($qDescr, $dbc);
+		//echo "NumRows: " . mysqli_num_rows($rDescr);
+		if (mysqli_num_rows($rDescr) < 1){
 			//echo $tempPTN . ", " . $Description . "<br>";
 			$qInsert = $q = "INSERT INTO ComponentTypes (ProductTreeNumber, Description) 
 			VALUES ('$AssyPN', '$Title')";	
-			$rInsert = @mysql_query ($qInsert, $dbc);
-			$rDescr = @mysql_query ($qDescr, $dbc); 
+			$rInsert = mysql_query ($qInsert, $dbc);
+			$rDescr = mysql_query ($qDescr, $dbc); 
 		}
 	   
 		//keyId of ComponentType is also fkComponentType for new record
-		$row_fkCtype = mysql_fetch_array($rDescr);
+		$row_fkCtype = mysqli_fetch_array($rDescr);
 		$fkComponentType = $row_fkCtype[0];	
 
 		
@@ -66,14 +66,14 @@ if (isset($_REQUEST['submitted']))
 			 DrawingNumber,StorageLocation,AssyPN,ProductTreeNumber, fkComponentType) VALUES 
 			('$Shipment->keyId', '$NetKitQty','$Stock','$Unit','$PN','$Title','$Vendor','$VendorPN',
 			 '$DrawingNumber','$StorageLocation','$AssyPN','$PTN','$fkComponentType')";		
-			$r = @mysql_query ($q, $dbc); // Run the query. 
+			$r = mysql_query ($q, $dbc); // Run the query. 
 		}//end if isnumeric PN
 		}//end for loop
 		
 		
 		$qGetLatestRecord = "SELECT keyId FROM Shipments ORDER BY keyId DESC LIMIT 1";		
-		$rGetLatestRecord = @mysql_query ($qGetLatestRecord, $dbc);
-		$rowGetLatestRecord = mysql_fetch_array($rGetLatestRecord);
+		$rGetLatestRecord = mysql_query ($qGetLatestRecord, $dbc);
+		$rowGetLatestRecord = mysqli_fetch_array($rGetLatestRecord);
 		$keyIdJustCreated = $rowGetLatestRecord[0];	
 
 

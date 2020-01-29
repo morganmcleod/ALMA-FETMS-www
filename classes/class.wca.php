@@ -22,23 +22,28 @@ class WCA extends FEComponent {
     var $GNUplot; // GNUPlot location
     var $logfile;
     var $logfile_fh;
-    var $tdh_amnoise; // TestData_header record object for AM Noise
-    var $tdh_ampstab; // TestData_header record object for Amplitude Stability
-    var $tdh_outputpower; // TestData_header record object for Output Power
-    var $tdh_phasenoise; // TestData_header record object for Phase Noise
-    var $tdh_phasejitter; // TestData_header record object for Phase Jitter
+    private $tdh_amnoise; // TestData_header record object for AM Noise
+    private $tdh_ampstab; // TestData_header record object for Amplitude Stability
+    private $tdh_outputpower; // TestData_header record object for Output Power
+    private $tdh_phasenoise; // TestData_header record object for Phase Noise
+    private $tdh_phasejitter; // TestData_header record object for Phase Jitter
+    private $tdh_isolation; // TDH record for Isolation
     var $db_pull;
     var $new_spec;
-    var $dbconnection;
-    var $maxSafePowerTable; // Array of rows for the Max Safe Operating Parameters table.
+    private $maxSafePowerTable; // Array of rows for the Max Safe Operating Parameters table.
     var $SubmittedFileExtension; // Extension of submitted file for update (csv, ini or zip)
     var $SubmittedFileName; // Uploaded file (csv, zip, ini), base name
     var $SubmittedFileTmp; // Uploaded file (csv, zip, ini), actual path
     var $ErrorArray; // Array of errors
     function __construct() {
+        parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.1.3";
-        /*
+        $this->swversion = "1.2.2";
+        /* 1.2.2 Add writing WCA XML file including cold and warm mults.  Guards on database ops.
+         * 1.2.1 Fix how Max Safe Power table computed.  Was using all history for (Band, SN).
+         * 1.2.0 Added new-style ouput power plot and isolation plot for band 1.
+         * 1.1.5 Plots guard against empty keyId
+         * 1.1.4 Added GetXmlFileContent() and calls to download 'XML Data 2019'
          * 1.1.3 Deleted 2nd Max Safe Power table.  Added WCA SN and TS to Max Safe table.
          * 1.1.2 Display "Date Added" instead of "In Front End"
          * 1.1.1 Moved ini format code into this->GetIniFileContent().
@@ -54,7 +59,6 @@ class WCA extends FEComponent {
 
         require (site_get_config_main());
         $this->writedirectory = $wca_write_directory;
-        $this->dbconnection = site_getDbConnection();
         $this->db_pull = new WCAdb($this->dbconnection);
         $this->new_spec = new Specifications();
         $this->url_directory = $wca_url_directory;
@@ -79,32 +83,34 @@ class WCA extends FEComponent {
 
         // Get WCA record:
         $rWCA = $this->db_pull->q_other('WCA', $this->keyId);
-        $WCAs_id = @mysql_result($rWCA, 0);
+        $WCAs_id = ADAPT_mysqli_result($rWCA, 0);
         $this->_WCAs = new GenericTable();
         $this->_WCAs->Initialize("WCAs", $WCAs_id, "keyId", $this->fc, 'fkFacility');
 
         // Get FE_Config information
         $rcfg = $this->db_pull->q_other('cfg', $this->keyId, $this->fc);
-        $this->ConfigId = @mysql_result($rcfg, 0, 0);
-        $this->ConfigLinkId = @mysql_result($rcfg, 0, 1);
-        $this->FEId = @mysql_result($rcfg, 0, 2);
-        $this->FESN = @mysql_result($rcfg, 0, 3);
+        $this->ConfigId = ADAPT_mysqli_result($rcfg, 0, 0);
+        $this->ConfigLinkId = ADAPT_mysqli_result($rcfg, 0, 1);
+        $this->FEId = ADAPT_mysqli_result($rcfg, 0, 2);
+        $this->FESN = ADAPT_mysqli_result($rcfg, 0, 3);
 
         if ($INIT_Options & self::INIT_SLN) {
             // Status location and notes
             $rsln = $this->db_pull->q_other('sln', $this->keyId);
-            $slnid = @mysql_result($rsln, 0, 0);
+            $slnid = ADAPT_mysqli_result($rsln, 0, 0);
             $this->sln = new GenericTable();
             $this->sln->Initialize("FE_StatusLocationAndNotes", $slnid, "keyId");
         }
 
         if ($INIT_Options & self::INIT_LOPARAMS) {
             $r = $this->db_pull->q(1, $this->keyId);
-            $lopcount = 1;
-            while ($row = @mysql_fetch_array($r)) {
-                $this->LOParams [$lopcount] = new GenericTable();
-                $this->LOParams [$lopcount]->Initialize('WCA_LOParams', $row [0], 'keyId', $this->fc, 'fkFacility');
-                $lopcount += 1;
+            $lopcount = 0;
+            if ($r) {
+                while ($row = mysqli_fetch_array($r)) {
+                    $this->LOParams [$lopcount] = new GenericTable();
+                    $this->LOParams [$lopcount]->Initialize('WCA_LOParams', $row [0], 'keyId', $this->fc, 'fkFacility');
+                    $lopcount += 1;
+                }
             }
         }
 
@@ -112,23 +118,28 @@ class WCA extends FEComponent {
             // Test data header objects
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseJitter');
             $this->tdh_phasejitter = new TestData_header();
-            $this->tdh_phasejitter->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_phasejitter->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
 
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AmplitudeStability');
             $this->tdh_ampstab = new TestData_header();
-            $this->tdh_ampstab->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_ampstab->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
 
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_OutputPower');
             $this->tdh_outputpower = new TestData_header();
-            $this->tdh_outputpower->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_outputpower->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
 
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_PhaseNoise');
             $this->tdh_phasenoise = new TestData_header();
-            $this->tdh_phasenoise->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_phasenoise->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
 
             $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_AMNoise');
             $this->tdh_amnoise = new TestData_header();
-            $this->tdh_amnoise->Initialize_TestData_header(@mysql_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+            $this->tdh_amnoise->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+
+            $rtdh = $this->db_pull->qtdh('select', $this->keyId, 'WCA_Isolation');
+            $this->tdh_isolation = new TestData_header();
+            $this->tdh_isolation->Initialize_TestData_header(ADAPT_mysqli_result($rtdh, 0, 0), $this->GetValue('keyFacility'));
+
             /*
              * echo "ids...<br>";
              * echo "amnoise= " . $this->tdh_amnoise->keyId . "<br>";
@@ -161,12 +172,14 @@ class WCA extends FEComponent {
         }
 
         $r = $this->db_pull->q(2, $this->keyId);
-        $numrows = @mysql_num_rows($r);
-        if ($numrows < 1) {
-            $values = array ();
-            $values [] = $this->_WCAs->GetValue('VG0');
-            $values [] = $this->_WCAs->GetValue('VG1');
-            $rn = $this->db_pull->q_other('n', $this->keyId, NULL, NULL, $FreqLO, NULL, NULL, $values);
+        if ($r) {
+            $numrows = mysqli_num_rows($r);
+            if ($numrows < 1) {
+                $values = array ();
+                $values [] = $this->_WCAs->GetValue('VG0');
+                $values [] = $this->_WCAs->GetValue('VG1');
+                $rn = $this->db_pull->q_other('n', $this->keyId, NULL, NULL, $FreqLO, NULL, NULL, $values);
+            }
         }
     }
     public function Update_WCA() {
@@ -198,10 +211,12 @@ class WCA extends FEComponent {
 
         echo "<div style ='width:100%;height:50%;margin-top:20px;margin-left:30px;'>";
 
+        $band = $this->GetValue('Band');
+
         if ($this->keyId != "") {
             echo "<table>";
             echo "<tr><td>";
-            $this->Compute_MaxSafePowerLevels(FALSE);
+            $this->Compute_MaxSafePowerLevels();
             $this->Display_MaxSafePowerLevels();
             echo "</td></tr>";
             echo "<tr><td><br>";
@@ -217,19 +232,19 @@ class WCA extends FEComponent {
             echo "</div>";
             // echo "<br><input type='submit' name = 'exportcsv_amplitudestability' value='EXPORT TO CSV'>";
         }
-        if ($this->_WCAs->GetValue('amnz_avgdsb_url') != "") {
+        if ($band != 1 && $this->_WCAs->GetValue('amnz_avgdsb_url') != "") {
             echo "<div style='margin-top:20px;margin-bottom:20px;'>";
             echo "<img src='" . $this->_WCAs->GetValue('amnz_avgdsb_url') . "'>";
             echo "</div>";
             // echo "<br><input type='submit' name = 'exportcsv_amnz_dsb' value='EXPORT TO CSV'>";
         }
-        if ($this->_WCAs->GetValue('amnz_pol0_url') != "") {
+        if ($band != 1 && $this->_WCAs->GetValue('amnz_pol0_url') != "") {
             echo "<div style='margin-left:20px;margin-top:20px;margin-bottom:20px;'>";
             echo "<img src='" . $this->_WCAs->GetValue('amnz_pol0_url') . "'>";
             echo "</div>";
             // echo "<br><input type='submit' name = 'exportcsv_amnz_pol0' value='EXPORT TO CSV'>";
         }
-        if ($this->_WCAs->GetValue('amnz_pol1_url') != "") {
+        if ($band != 1 && $this->_WCAs->GetValue('amnz_pol1_url') != "") {
             echo "<div style='margin-left:20px;margin-top:20px;margin-bottom:20px;'>";
             echo "<img src='" . $this->_WCAs->GetValue('amnz_pol1_url') . "'>";
             echo "</div>";
@@ -240,7 +255,7 @@ class WCA extends FEComponent {
         $this->Display_PhaseNoise();
         echo "</div>";
 
-        if ($this->_WCAs->GetValue('op_vs_freq_url') != "") {
+        if ($band != 1 && $this->_WCAs->GetValue('op_vs_freq_url') != "") {
             echo "<div style='margin-top:20px;margin-bottom:20px;'>";
             echo "<img src='" . $this->_WCAs->GetValue('op_vs_freq_url') . "'>";
             echo "</div>";
@@ -256,14 +271,19 @@ class WCA extends FEComponent {
             echo "<img src='" . $this->_WCAs->GetValue('op_vs_dv_pol1_url') . "'>";
             echo "</div>";
         }
-        if ($this->_WCAs->GetValue('op_vs_ss_pol0_url') != "") {
+        if ($band != 1 && $this->_WCAs->GetValue('op_vs_ss_pol0_url') != "") {
             echo "<div style='margin-top:20px;margin-bottom:20px;'>";
             echo "<img src='" . $this->_WCAs->GetValue('op_vs_ss_pol0_url') . "'>";
             echo "</div>";
         }
-        if ($this->_WCAs->GetValue('op_vs_ss_pol1_url') != "") {
+        if ($band != 1 && $this->_WCAs->GetValue('op_vs_ss_pol1_url') != "") {
             echo "<div style='margin-top:20px;margin-bottom:20px;'>";
             echo "<img src='" . $this->_WCAs->GetValue('op_vs_ss_pol1_url') . "'>";
+            echo "</div>";
+        }
+        if ($band == 1 && $this->_WCAs->GetValue('isolation_url') != "") {
+            echo "<div style='margin-top:20px;margin-bottom:20px;'>";
+            echo "<img src='" . $this->_WCAs->GetValue('isolation_url') . "'>";
             echo "</div>";
         }
         echo "</form>";
@@ -300,17 +320,18 @@ class WCA extends FEComponent {
                     </tr>";
 
         $rpj = $this->db_pull->qpj('select', $this->tdh_phasejitter->keyId);
+        if ($rpj) {
+            while ($rowpj = mysqli_fetch_array($rpj)) {
+                $lo = $rowpj [0];
+                $jitter = $rowpj [1];
+                $pol = $rowpj [2];
 
-        while ($rowpj = @mysql_fetch_array($rpj)) {
-            $lo = $rowpj [0];
-            $jitter = $rowpj [1];
-            $pol = $rowpj [2];
-
-            echo   "<tr>
-                        <td>" . round($lo, 0) . "</td>
-                        <td>$pol</td>
-                        <td>" . round($jitter, 1) . "</td>
-                    </tr>";
+                echo   "<tr>
+                            <td>" . round($lo, 0) . "</td>
+                            <td>$pol</td>
+                            <td>" . round($jitter, 1) . "</td>
+                        </tr>";
+            }
         }
         echo "</td></table></div>";
     }
@@ -358,9 +379,16 @@ class WCA extends FEComponent {
         echo "<tr>";
         echo "<th>INI file downloads</th>";
         echo "<td>";
-        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&wca=1'>FrontEndControl.ini</a><br>";
-        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&wca=1&type=wca'>FEMC WCA.ini</a>";
 
+        $xmlname = hexdec($this->GetValue('ESN1'));
+        if ($xmlname)
+            $xmlname = "&xmlname=$xmlname";
+        else
+            $xmlname = "";
+
+        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=xml$xmlname'>XML Data (2019)</a><br>";
+        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=fec'>FrontEndControl.ini</a><br>";
+        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=wca'>FEMC WCA.ini</a>";
         echo "</td>";
         echo "</tr>";
 
@@ -404,6 +432,46 @@ class WCA extends FEComponent {
 
         echo "</table></div>";
     }
+
+    private function GetLowLOForBand($band) {
+        //Get lowest LO
+        //TODO: move into specs class
+        $lowlo = "0.000";
+        switch ($band){
+            case 1:
+                $lowlo = "35.000";
+                break;
+            case 2:
+                $lowlo = "67.000";
+                break;
+            case 3:
+                $lowlo = "92.000";
+                break;
+            case 4:
+                $lowlo = "133.000";
+                break;
+            case 5:
+                $lowlo = "171.000";
+                break;
+            case 6:
+                $lowlo = "221.000";
+                break;
+            case 7:
+                $lowlo = "283.000";
+                break;
+            case 8:
+                $lowlo = "393.000";
+                break;
+            case 9:
+                $lowlo = "614.000";
+                break;
+            case 10:
+                $lowlo = "795.000";
+                break;
+        }
+        return $lowlo;
+    }
+
     public function GetIniFileContent($type) {
         // type is either 'fec' or 'wca'.
 
@@ -411,6 +479,7 @@ class WCA extends FEComponent {
         $sn   = ltrim($this->GetValue('SN'),'0');
         $esn  = $this->GetValue('ESN1');
         $description = "Description=WCA$band-$sn";
+        $lowlo = $this->GetLowLOForBand($band);
 
         $ret = "";
         if ($type == 'fec') {
@@ -421,42 +490,6 @@ class WCA extends FEComponent {
             $ret .= "ESN=$esn\r\n";
             $ret .= "FLOYIG=" . $this->_WCAs->GetValue('FloYIG') . "\r\n";
             $ret .= "FHIYIG=" . $this->_WCAs->GetValue('FhiYIG') . "\r\n";
-
-            //Get lowest LO
-            //TODO: move into specs class
-            $lowlo = "0.000";
-            switch ($band){
-                case 1:
-                    $lowlo = "35.00";
-                    break;
-                case 2:
-                    $lowlo = "67.00";
-                    break;
-                case 3:
-                    $lowlo = "92.00";
-                    break;
-                case 4:
-                    $lowlo = "133.00";
-                    break;
-                case 5:
-                    $lowlo = "171.00";
-                    break;
-                case 6:
-                    $lowlo = "221.00";
-                    break;
-                case 7:
-                    $lowlo = "283.00";
-                    break;
-                case 8:
-                    $lowlo = "393.00";
-                    break;
-                case 9:
-                    $lowlo = "614.00";
-                    break;
-                case 10:
-                    $lowlo = "795.00";
-                    break;
-            }
 
             $ret .= "LOParams=1\r\n";
             $mstring = "LOParam01=$lowlo";
@@ -488,7 +521,7 @@ class WCA extends FEComponent {
             if ($powerLimit == 0)
                 $ret .= "ENTRIES=0\r\n";
             else {
-                $table = $this->Compute_MaxSafePowerLevels(TRUE);
+                $table = $this->Compute_MaxSafePowerLevels();
                 $ret .= "ENTRIES=" . count($table) . "\r\n";
 
                 $entry = 0;
@@ -502,20 +535,134 @@ class WCA extends FEComponent {
         }
         return $ret;
     }
+
+    public function GetXmlFileContent() {
+        $band = $this->GetValue('Band');
+        $sn   = ltrim($this->GetValue('SN'),'0');
+        $esn  = $this->GetValue('ESN1');
+        $esnDec = hexdec($esn);
+        $description = "WCA$band-$sn";
+        $FLOYIG = $this->_WCAs->GetValue('FloYIG') . "E9"; // Hz
+        $FHIYIG = $this->_WCAs->GetValue('FhiYIG') . "E9";
+        $powerLimit = $this->maxSafePowerForBand($band);
+        $lowlo = $this->GetLowLOForBand($band) . "E9"; //Hz
+
+        // get warmMultiplier from WCA specs:
+        $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
+        $warmMultiplier = $spec['warmMult'];
+
+        // compute coldMultiplier from CCA band:
+        // TODO:  move into specs class.
+        $coldMultiplier = 1;
+        switch($band) {
+            case 1:
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            case 4:
+                $coldMultiplier = 2;
+                break;
+            case 5:
+                $coldMultiplier = 2;
+                break;
+            case 6:
+                $coldMultiplier = 3;
+                break;
+            case 7:
+                $coldMultiplier = 3;
+                break;
+            case 8:
+                $coldMultiplier = 6;
+                break;
+            case 9:
+                $coldMultiplier = 9;
+                break;
+            case 10:
+                $coldMultiplier = 9;
+                break;
+            default:
+                break;
+        }
+
+        $xw = new XMLWriter();
+        $xw->openMemory();
+        $xw->setIndent(true);
+        $xw->setIndentString('    ');
+        $xw->startDocument('1.0', 'ISO-8859-1');
+        $xw->startElement("ConfigData");
+//         $xw->writeAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+//         $xw->writeAttribute("xsi:noNamespaceSchemaLocation", "membuffer.xsd");
+
+        $xw->startElement("ASSEMBLY");
+        $xw->writeAttribute("value", "WCA$band");
+        $xw->endElement();
+
+        $xw->startElement("ColdMultiplier");
+        $xw->writeAttribute("value", $coldMultiplier);
+        $xw->endElement();
+
+        $xw->startElement("PLLLoopBwMultiplier");
+        $xw->writeAttribute("value", $warmMultiplier);
+        $xw->endElement();
+
+        $xw->startElement("WCAConfig");
+        $xw->writeAttribute("value", $this->GetValue('keyId'));
+        $xw->writeAttribute("TS", $this->GetValue('TS'));
+        $xw->endElement();
+
+        $xw->startElement("ESN");
+        $xw->writeAttribute("hex", $esn);
+        $xw->writeAttribute("dec", $esnDec);
+        $xw->endElement();
+
+        $xw->startElement("SN");
+        $xw->writeAttribute("value", $description);
+        $xw->endElement();
+
+        $xw->startElement("FLOYIG");
+        $xw->writeAttribute("value", $FLOYIG);
+        $xw->endElement();
+
+        $xw->startElement("FHIYIG");
+        $xw->writeAttribute("value", $FHIYIG);
+        $xw->endElement();
+
+        $xw->startElement("PowerAmp");
+        $xw->writeAttribute("FreqLO", $lowlo);
+        $xw->writeAttribute("VD0", "0.00");
+        $xw->writeAttribute("VD1", "0.00");
+        $xw->writeAttribute("VG0", number_format(floatval($this->_WCAs->GetValue('VG0')),2));
+        $xw->writeAttribute("VG1", number_format(floatval($this->_WCAs->GetValue('VG1')),2));
+        $xw->endElement();
+
+        $table = $this->Compute_MaxSafePowerLevels();
+        foreach ($table as $row) {
+            $xw->startElement("PowerAmpLimit");
+            $xw->writeAttribute("count", $row['YTO']);
+            $xw->writeAttribute("VD0", number_format(floatval($row['VD0']), 3));
+            $xw->writeAttribute("VD1", number_format(floatval($row['VD1']), 3));
+            $xw->endElement();
+        }
+
+        $xw->startElement("OptimizationTargets");
+        $xw->writeAttribute("FreqLO", $lowlo);
+        $xw->writeAttribute("PhotoMixerCurrent", "0");
+        $xw->endElement();
+
+        $xw->endElement(); // ConfigData
+        $xw->endDocument();
+        $ret = $xw->outputMemory();
+        return $ret;
+    }
+
     public function Display_LOParams() {
-        /*
-         * $q = "SELECT TS FROM WCA_LOParams
-         * WHERE fkComponent = $this->keyId
-         * ORDER BY FreqLO ASC
-         * LIMIT 1;";
-         * $r = @mysql_query($q,$this->dbconnection); //
-         */
         $r = $this->db_pull->q(3, $this->keyId);
-        $ts = @mysql_result($r, 0, 0);
+        $ts = ADAPT_mysqli_result($r, 0, 0);
         $band = $this->GetValue('Band');
         $sn = $this->GetValue('SN');
 
-        $r = @mysql_query($q, $this->dbconnection);
         echo "<div style= 'width: 500px'>
             <table id = 'table1' border = '1'>";
         echo "<tr class='alt'><th colspan = '5'>
@@ -528,15 +675,9 @@ class WCA extends FEComponent {
                 <th>VGP1</th>
             </tr>";
 
-        /*
-         * $q = "SELECT * FROM WCA_LOParams
-         * WHERE fkComponent = $this->keyId
-         * ORDER BY FreqLO ASC;";
-         * $r = @mysql_query($q,$this->dbconnection);//
-         */
         $r = $this->db_pull->q(4, $this->keyId);
         $count = 0;
-        while ($row = @mysql_fetch_array($r)) {
+        while ($row = mysqli_fetch_array($r)) {
             if ($count % 2 == 0) {
                 echo "<tr>";
             } else {
@@ -606,88 +747,43 @@ class WCA extends FEComponent {
         }
         return $output;
     }
-    private function GetTestDataHeaders($testDataType) {
-        $SN = $this->GetValue('SN');
-        $Band = $this->GetValue('Band');
-        $compType = $this->GetValue('fkFE_ComponentType');
-
-        $q = "SELECT TestData_header.keyId
-        FROM TestData_header, TestData_Types, FE_Components
-        WHERE TestData_header.fkFE_Components = FE_Components.keyId
-        AND FE_Components.SN LIKE '$SN'
-        AND FE_Components.Band LIKE '$Band'
-        AND TestData_header.fkTestData_Type = '$testDataType'
-        AND TestData_header.fkTestData_Type = TestData_Types.keyId
-        AND FE_Components.fkFE_ComponentType = '$compType'
-        AND TestData_header.fkFE_Config < 1;";
-
-        $output = array ();
-
-        /* $r = @mysql_query($q,$this->dbconnection);// */
-        $r = $this->db_pull->run_query($q);
-        while ($row = @mysql_fetch_array($r))
-            $output [] = $row [0];
-
-        return $output;
-    }
-    private function FormatTDHList($tdhArray) {
-        $output = "(";
-        $index = 0;
-        while ($index < count($tdhArray)) {
-            $output .= "'$tdhArray[$index]'";
-            $index++;
-            if ($index < (count($tdhArray) - 1))
-                $output .= ",";
-        }
-        $output .= ")";
-        return $output;
-    }
-    private function loadPowerData($pol, $tdhArray) {
+    private function loadPowerData($pol) {
         // Load the output power data for one polarization, coarse and fine combined:
-        /*
-         * $q = "SELECT FreqLO, VD$pol as VD, Power FROM WCA_OutputPower WHERE
-         * fkHeader IN " . $this->FormatTDHList($tdhArray);
-         *
-         * $q .= " AND fkFacility = $this->fc
-         * AND (keyDataSet=2 or keyDataSet=3) and Pol=$pol
-         * ORDER BY FreqLO, VD ASC";
-         *
-         * $r = @mysql_query($q, $this->dbconnection);//
-         */
-        $r = $this->db_pull->q(5, NULL, $pol, $this->fc, $this->FormatTDHList($tdhArray));
+        $r = $this->db_pull->q(5, NULL, $pol, $this->fc, $this->tdh_outputpower->keyId);
 
         $allRows = array ();
 
-        while ($row = @mysql_fetch_array($r))
-            $allRows [] = $row; // append row to allRows.
-
+        if ($r) {
+            while ($row = mysqli_fetch_array($r))
+                $allRows [] = $row; // append row to allRows.
+        }
         return $allRows;
     }
-    private function loadMaxDrainVoltages($tdhArray) {
+    private function loadMaxDrainVoltages() {
         $ret = array();
-        $tdhList = $this->FormatTDHList($tdhArray);
+        $tdh = $this->tdh_outputpower->keyId;
 
         // Load and return an array having the maximum drain voltages
         // found for Pol0 and Pol1 in the fine output power data.
         $q = "SELECT MAX(VD0) FROM WCA_OutputPower WHERE
               Pol = 0 AND keyDataSet=2
-              AND fkHeader in $tdhList";
+              AND fkHeader = $tdh";
 
-        $r = @mysql_query($q, $this->dbconnection);
-        $row = @mysql_fetch_array($r);
+        $r = mysqli_query($this->dbconnection, $q);
+        $row = mysqli_fetch_array($r);
         $ret[0] = $row[0];
 
         $q = "SELECT MAX(VD1) FROM WCA_OutputPower WHERE
               Pol = 1 AND keyDataSet=2
-              AND fkHeader in $tdhList";
+              AND fkHeader = $tdh";
 
-        $r = @mysql_query($q, $this->dbconnection);
-        $row = @mysql_fetch_array($r);
+        $r = mysqli_query($this->dbconnection, $q);
+        $row = mysqli_fetch_array($r);
         $ret[1] = $row[0];
 
         return $ret;
     }
-    public function Compute_MaxSafePowerLevels($allHistory) {
+    public function Compute_MaxSafePowerLevels() {
         $eof = array (
                 'FreqLO' => 'EOF',
                 'VD' => 0,
@@ -696,31 +792,21 @@ class WCA extends FEComponent {
 
         $this->maxSafePowerTable = array ();
 
-        // allHistory means find prev test data from previous configs
-        if (!isset($allHistory))
-            $allHistory = FALSE;
-
-        $tdhArray = array ();
-        if ($allHistory)
-            $tdhArray = $this->GetTestDataHeaders('46');
-        else
-            $tdhArray [] = $this->tdh_outputpower->keyId;
-
-            // load pol0 power data:
-        $allRows = $this->loadPowerData(0, $tdhArray);
+        // load pol0 power data:
+        $allRows = $this->loadPowerData(0);
 
         // quit now if there's no data:
         if (!$allRows || count($allRows) == 0)
             return $this->maxSafePowerTable;
 
-            // append dummy EOF record:
+        // append dummy EOF record:
         $allRows [] = $eof;
 
         // compute the max safe power table:
         $pol0table = $this->findMaxSafeRows($allRows);
 
         // load pol1 power data:
-        $allRows = $this->loadPowerData(1, $tdhArray);
+        $allRows = $this->loadPowerData(1);
 
         // append dummy EOF record:
         $allRows [] = $eof;
@@ -729,12 +815,11 @@ class WCA extends FEComponent {
         $pol1table = $this->findMaxSafeRows($allRows);
 
         // compute scaling factors to convert drain voltages into control values:
-        $vdMax = $this->loadMaxDrainVoltages($tdhArray);
+        $vdMax = $this->loadMaxDrainVoltages();
         $pol0scale = 2.5 / $vdMax [0];
         $pol1scale = 2.5 / $vdMax [1];
 
         // define warm multiplication factor per band.
-        // TODO: move into specs class
         $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
         $warmMult = $spec ['warmMult'];
 
@@ -775,66 +860,66 @@ class WCA extends FEComponent {
 
         // Remove redundant rows:
         for($index = 0; $index < $tableSize; $index++) {
-            // Always output first and last rows:
-            if ($index == 0 || $index == $tableSize - 1) {
+            // Always output first row:
+            if ($index == 0) {
                 $this->maxSafePowerTable [] = $tableWithDups [$index];
 
-            // Output any row which differs from previous or next row in VD0 or VD1:
+            // Output any row which differs from previous row in VD0 or VD1:
             } else if ($tableWithDups [$index] ['VD0'] != $tableWithDups [$index - 1] ['VD0'] ||
-                       $tableWithDups [$index] ['VD1'] != $tableWithDups [$index - 1] ['VD1'] ||
-                       $tableWithDups [$index] ['VD0'] != $tableWithDups [$index + 1] ['VD0'] ||
-                       $tableWithDups [$index] ['VD1'] != $tableWithDups [$index + 1] ['VD1']) {
+                       $tableWithDups [$index] ['VD1'] != $tableWithDups [$index - 1] ['VD1']) {
 
                 $this->maxSafePowerTable [] = $tableWithDups [$index];
             }
         }
-
         return $this->maxSafePowerTable;
     }
     public function Display_MaxSafePowerLevels() {
-        $powerLimit = $this->maxSafePowerForBand($this->GetValue('Band'));
         $band = $this->GetValue('Band');
+        $powerLimit = $this->maxSafePowerForBand($band);
         $sn = $this->GetValue('SN');
         $ts = $this->GetValue('TS');
 
-        echo '
-        <div style= "width:400px">
-          <table id = "table1" align="left" cellspacing="1" cellpadding="1" width="60%">
-            <tr class="alt">
-              <th align = "center" colspan = "6"><font size="+1">';
+        if ($band != 1) {
+            echo '
+            <div style= "width:400px">
+              <table id = "table1" align="left" cellspacing="1" cellpadding="1" width="60%">
+                <tr class="alt">
+                  <th align = "center" colspan = "6"><font size="+1">';
 
-        echo "WCA $band-$sn &nbsp;&nbsp;&nbsp; $ts<br><b>MAX SAFE OPERATING PARAMETERS";
+            echo "WCA $band-$sn &nbsp;&nbsp;&nbsp; $ts<br><b>MAX SAFE OPERATING PARAMETERS";
 
-        if ($powerLimit > 0)
-            echo '<br>limit=' . $powerLimit . ' mW';
+            if ($powerLimit > 0)
+                echo '<br>limit=' . $powerLimit . ' mW';
 
-        echo '<b></th></tr>';
-        echo '
-            <tr>
-              <th><b>FreqLO (GHz)</b></th>
-              <th><b>YTO Tuning Word</b></th>
-              <th><b>Digital Setting VD0</b></th>
-              <th><b>Digital Setting VD1</b></th>
-              <th><b>Power Pol0 (mW)</b></th>
-              <th><b>Power Pol1 (mW)</b></th>
-            </tr>';
+            echo '<b></th></tr>';
+            echo '
+                <tr>
+                  <th><b>FreqLO (GHz)</b></th>
+                  <th><b>YTO Tuning Word</b></th>
+                  <th><b>Digital Setting VD0</b></th>
+                  <th><b>Digital Setting VD1</b></th>
+                  <th><b>Power Pol0 (mW)</b></th>
+                  <th><b>Power Pol1 (mW)</b></th>
+                </tr>';
 
-        if (count($this->maxSafePowerTable) > 0) {
-            $bg_color = FALSE;
-            foreach ($this->maxSafePowerTable as $row) {
-                $bg_color = ($bg_color == "#ffffff" ? '#dddddd' : "#ffffff");
-                echo "<tr bgcolor='$bg_color'>";
-                echo "<td>" . $row ['FreqLO'] . "</td>";
-                echo "<td>" . $row ['YTO'] . "</td>";
-                echo "<td>" . $row ['VD0'] . "</td>";
-                echo "<td>" . $row ['VD1'] . "</td>";
-                echo "<td>" . $row ['Pwr0'] . "</td>";
-                echo "<td>" . $row ['Pwr1'] . "</td></tr>";
+            if (count($this->maxSafePowerTable) > 0) {
+                $bg_color = FALSE;
+                foreach ($this->maxSafePowerTable as $row) {
+                    $bg_color = ($bg_color == "#ffffff" ? '#dddddd' : "#ffffff");
+                    echo "<tr bgcolor='$bg_color'>";
+                    echo "<td>" . $row ['FreqLO'] . "</td>";
+                    echo "<td>" . $row ['YTO'] . "</td>";
+                    echo "<td>" . $row ['VD0'] . "</td>";
+                    echo "<td>" . $row ['VD1'] . "</td>";
+                    echo "<td>" . $row ['Pwr0'] . "</td>";
+                    echo "<td>" . $row ['Pwr1'] . "</td></tr>";
+                }
             }
+            echo "</table></div>";
         }
-        echo "</table></div>";
     }
     public function Display_uploadform() {
+        $band = $this->GetValue('Band');
         $where = $_SERVER ['PHP_SELF'];
         $where = '';
         echo '
@@ -845,19 +930,27 @@ class WCA extends FEComponent {
             <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
             <!-- Name of input element determines name in $_FILES array -->
             <table id="table1"><tr class="alt"><th>Upload CSV Data files</th><th>Draw Plots</th></tr>
-                <tr><td align = "right">WCAs file:           </b><input name="file_wcas" type="file" /></td><td></td></tr>
-                <tr><td align = "right">Max Safe Power:      </b><input name="file_maxsafepower" type="file" /><td></td></tr>
-                <tr><td align = "right">Amplitude Stability: </b><input name="file_amplitudestability" type="file" /></td>
-                    <td align = "center"><input type="submit" name="draw_amplitudestability" value="Redraw Amp. Stability"></td></tr>
-                <tr><td align = "right">AM Noise:            </b><input name="file_amnoise" type="file" /></td>
-                    <td align = "center"><input type="submit" name="draw_amnoise" value="Redraw AM Noise"></td></tr>
-                <tr><td align = "right">Output Power:        </b><input name="file_outputpower" type="file" /></td>
+                <tr><td align = "right">WCAs file:           </b><input name="file_wcas" type="file" /></td><td></td></tr>';
+        if ($band != 1) {
+            echo'<tr><td align = "right">Max Safe Power:      </b><input name="file_maxsafepower" type="file" /><td></td></tr>';
+        }
+            echo '<tr><td align = "right">Amplitude Stability: </b><input name="file_amplitudestability" type="file" /></td>
+                    <td align = "center"><input type="submit" name="draw_amplitudestability" value="Redraw Amp. Stability"></td></tr>';
+        if ($band != 1) {
+            echo '<tr><td align = "right">AM Noise:            </b><input name="file_amnoise" type="file" /></td>
+                    <td align = "center"><input type="submit" name="draw_amnoise" value="Redraw AM Noise"></td></tr>';
+        }
+            echo '<tr><td align = "right">Output Power:        </b><input name="file_outputpower" type="file" /></td>
                     <td align = "center"><input type="submit" name="draw_outputpower" value="Redraw Output Power"></td></tr>
                 <tr><td align = "right">Phase Noise:         </b><input name="file_phasenoise" type="file" /></td>
-                    <td align = "center"><input type="submit" name="draw_phasenoise" value="Redraw Phase Noise"></td></tr>
-                <tr><td align = "right">';
-        echo "<input type='hidden' name= 'fc' value='$this->fc' />";
-        echo '<input type="submit" name= "submit_datafile" value="Upload All" /></td>
+                    <td align = "center"><input type="submit" name="draw_phasenoise" value="Redraw Phase Noise"></td></tr>';
+        if ($band == 1) {
+            echo '<tr><td align = "right">Isolation:           </b><input name="file_isolation" type="file" /></td>
+                    <td align = "center"><input type="submit" name="draw_isolation" value="Redraw Isolation"></td></tr>';
+        }
+            echo '<tr><td align = "right">';
+            echo "<input type='hidden' name= 'fc' value='$this->fc' />";
+            echo '<input type="submit" name= "submit_datafile" value="Upload All" /></td>
                     <td align = "center"><input type="submit" name="draw_all" value="REDRAW ALL PLOTS"></td></tr>
             </table>
         </form>
@@ -925,6 +1018,11 @@ class WCA extends FEComponent {
                     $this->Upload_MaxSafePower_file($_FILES ['file_maxsafepower'] ['tmp_name']);
                 }
             }
+            if (isset($_FILES ['file_isolation'] ['name'])) {
+                if ($_FILES ['file_isolation'] ['name'] != "") {
+                    $this->Upload_Isolation_file($_FILES ['file_isolation'] ['tmp_name']);
+                }
+            }
         }
         if (isset($_REQUEST ['draw_all'])) {
             $this->RedrawAllPlots();
@@ -941,6 +1039,9 @@ class WCA extends FEComponent {
             if (isset($_REQUEST ['draw_phasenoise'])) {
                 $this->Plot_PhaseNoise();
             }
+            if (isset($_REQUEST ['draw_isolation'])) {
+                $this->Plot_Isolation();
+            }
         }
 
         $this->Update_WCA();
@@ -949,7 +1050,7 @@ class WCA extends FEComponent {
             $this->ExportCSV("amplitudestability");
         }
     }
-    public function DeleteRecord_WCA() {
+    private function DeleteRecord_WCA() {
         $this->db_pull->qDel($this->keyId, 'WCAs', TRUE);
         $this->db_pull->qDel($this->tdh_amnoise->keyId, 'WCA_AMNoise');
         $this->db_pull->qDel($this->keyId, 'WCA_MaxSafePower', TRUE);
@@ -958,11 +1059,12 @@ class WCA extends FEComponent {
         $this->db_pull->qDel($this->tdh_phasenoise->keyId, 'WCA_PhaseNoise');
         $this->db_pull->qDel($this->tdh_phasejitter->keyId, 'WCA_PhaseJitter');
         $this->db_pull->qDel($this->tdh_ampstab->keyId, 'WCA_AmplitudeStability');
+        $this->db_pull->qDel($this->tdh_isolation->keyId, 'WCA_Isolation');
         $this->db_pull->qDel($this->keyId, 'FE_ConfigLink', TRUE);
         parent::Delete_record();
         echo '<meta http-equiv="Refresh" content="1;url=wca_main.php">';
     }
-    public function Upload_WCAs_file($datafile_name) {
+    private function Upload_WCAs_file($datafile_name) {
         $filecontents = file($datafile_name);
 
         for($i = 0; $i < sizeof($filecontents); $i++) {
@@ -1083,7 +1185,7 @@ class WCA extends FEComponent {
 
             // Copy Yig settings
             $rYIG = $this->db_pull->q_other('YIG', $this->keyId);
-            $YIGnumrows = @mysql_num_rowS($rYIG);
+            $YIGnumrows = mysqli_num_rows($rYIG);
 
             if ($YIGnumrows > 0) {
                 $this->_WCAs->SetValue('FloYIG', $FLOYIG);
@@ -1179,7 +1281,7 @@ class WCA extends FEComponent {
 
             // Copy Yig settings
             $rYIG = $this->db_pull->q_other('YIG', $this->keyId);
-            $YIGnumrows = @mysql_num_rowS($rYIG);
+            $YIGnumrows = mysqli_num_rows($rYIG);
 
             if ($YIGnumrows > 0) {
                 $this->_WCAs->SetValue('FloYIG', $FLOYIG);
@@ -1219,14 +1321,12 @@ class WCA extends FEComponent {
             $this->_WCAs->DuplicateRecord();
         }
     }
-    public function Upload_MaxSafePower_file($datafile_name) {
+    private function Upload_MaxSafePower_file($datafile_name) {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_MaxSafePower', $filecontents, $this, $this->fc);
         unlink($datafile_name);
-        unset($tdh);
-        // fclose($filecontents);
     }
-    public function Upload_AmplitudeStability_file($datafile_name) {
+    private function Upload_AmplitudeStability_file($datafile_name) {
         // Test Data Header object
         // Delete any existing header records
         $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_AmplitudeStability');
@@ -1240,112 +1340,112 @@ class WCA extends FEComponent {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_AmplitudeStability', $filecontents, $this->tdh_ampstab);
         unlink($datafile_name);
-        unset($tdh);
-        // fclose($filecontents);
     }
     public function Plot_AmplitudeStability() {
         if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);
         }
 
-        $TS = $this->tdh_ampstab->GetValue('TS');
-
-        // $TS = $tdh->GetValue('TS');
+        if (!$this->tdh_ampstab->keyId)
+            return;
 
         // write data file from database
         $rFindLO = $this->db_pull->qFindLO('WCA_AmplitudeStability', $this->tdh_ampstab->keyId);
-        $rowLO = @mysql_fetch_array($rFindLO);
+        if (!$rFindLO)
+            $image_url = "";
 
-        $datafile_count = 0;
-        $spec_value = 0.0000001;
+        else {
+            $rowLO = mysqli_fetch_array($rFindLO);
 
-        for($j = 0; $j <= 1; $j++) {
-            for($i = 0; $i <= sizeof($rowLO); $i++) {
-                $CurrentLO = @mysql_result($rFindLO, $i);
-                $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
+            $datafile_count = 0;
+            $spec_value = 0.0000001;
 
-                $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $j, NULL, NULL, $CurrentLO);
+            for($j = 0; $j <= 1; $j++) {
+                for($i = 0; $i <= sizeof($rowLO); $i++) {
+                    $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
+                    $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
-                if (@mysql_num_rows($r) > 1) {
-                    $plottitle [$datafile_count] = "Pol $j, $CurrentLO GHz";
-                    $data_file [$datafile_count] = $this->writedirectory . "wca_as_data_" . $i . "_" . $j . ".txt";
-                    if (file_exists($data_file [$datafile_count])) {
-                        unlink($data_file [$datafile_count]);
+                    $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $j, NULL, NULL, $CurrentLO);
+
+                    if (mysqli_num_rows($r) > 1) {
+                        $plottitle [$datafile_count] = "Pol $j, $CurrentLO GHz";
+                        $data_file [$datafile_count] = $this->writedirectory . "wca_as_data_" . $i . "_" . $j . ".txt";
+                        if (file_exists($data_file [$datafile_count])) {
+                            unlink($data_file [$datafile_count]);
+                        }
+                        $fh = fopen($data_file [$datafile_count], 'w');
+                        $row = mysqli_fetch_array($r);
+                        $TimeVal = $row [0];
+
+                        if ($TimeVal > 500) {
+                            fwrite($fh, "$row[0]\t0.00000009\r\n");
+                        }
+                        while ($row = mysqli_fetch_array($r)) {
+                            $stringData = "$row[0]\t$row[1]\r\n";
+                            fwrite($fh, $stringData);
+                        }
+                        // }
+
+                        fclose($fh);
+                        $datafile_count++;
                     }
-                    $fh = fopen($data_file [$datafile_count], 'w');
-                    $row = @mysql_fetch_array($r);
-                    $TimeVal = $row [0];
+                } // end for i
+            } // end for j
 
-                    if ($TimeVal > 500) {
-                        fwrite($fh, "$row[0]\t0.00000009\r\n");
-                    }
-                    while ($row = @mysql_fetch_array($r)) {
-                        $stringData = "$row[0]\t$row[1]\r\n";
-                        fwrite($fh, $stringData);
-                    }
-                    // }
+            // Write command file for gnuplot
+            $TS = $this->tdh_ampstab->GetValue('TS');
 
-                    fclose($fh);
-                    $datafile_count++;
-                }
-            } // end for i
-        } // end for j
+            $plot_command_file = $this->writedirectory . "wca_as_command.txt";
+            if (file_exists($plot_command_file)) {
+                unlink($plot_command_file);
+            }
+            $imagedirectory = $this->writedirectory . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
+            if (!file_exists($imagedirectory)) {
+                mkdir($imagedirectory);
+            }
+            $imagename = "WCA_AmplitudeStability_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
+            $image_url = $this->url_directory . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/$imagename";
 
-        // Create data file for spec
+            $plot_title = "WCA Band" . $this->GetValue('Band') . " SN" . $this->GetValue('SN') . " Amplitude Stability ($TS)";
+            $this->_WCAs->SetValue('amp_stability_url', $image_url);
+            $this->_WCAs->Update();
+            $imagepath = $imagedirectory . $imagename;
 
-        // Write command file for gnuplot
-        $plot_command_file = $this->writedirectory . "wca_as_command.txt";
-        if (file_exists($plot_command_file)) {
-            unlink($plot_command_file);
+            $fh = fopen($plot_command_file, 'w');
+            fwrite($fh, "set terminal png size 900,500\r\n");
+            fwrite($fh, "set output '$imagepath'\r\n");
+            fwrite($fh, "set title '$plot_title'\r\n");
+            fwrite($fh, "set grid\r\n");
+            fwrite($fh, "set log xy\r\n");
+            fwrite($fh, "set key outside\r\n");
+            fwrite($fh, "set ylabel 'Allan Variance'\r\n");
+            fwrite($fh, "set xlabel 'Allan Time, T (=Integration, Tau)'\r\n");
+
+            $ymax = pow(10, -5);
+            fwrite($fh, "set yrange [:$ymax]\r\n");
+
+            fwrite($fh, "f1(x)=((x>500) && (x<100000)) ? 0.00000009 : 1/0\r\n");
+            fwrite($fh, "f2(x)=((x>290000) && (x<350000)) ? 0.000001 : 1/0\r\n");
+            $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
+            $plot_string .= ", f2(x) title 'Spec' with points pt 5 pointsize 1";
+            $plot_string .= ", '$data_file[0]' using 1:2 title '$plottitle[0]' with lines";
+            for($i = 1; $i < sizeof($data_file); $i++) {
+                $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
+            }
+            $plot_string .= "\r\n";
+            fwrite($fh, $plot_string);
+
+            fclose($fh);
+
+            // Make the plot
+            $GNUPLOT = '/usr/bin/gnuplot';
+            $CommandString = "$GNUPLOT $plot_command_file";
+            system($CommandString);
         }
-        $imagedirectory = $this->writedirectory . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)) {
-            mkdir($imagedirectory);
-        }
-        $imagename = "WCA_AmplitudeStability_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $this->GetValue('Band') . "_" . $this->GetValue('SN') . "/$imagename";
-
         $this->tdh_ampstab->SetValue('PlotURL', "$image_url");
         $this->tdh_ampstab->Update();
-        unset($tdh);
-
-        $plot_title = "WCA Band" . $this->GetValue('Band') . " SN" . $this->GetValue('SN') . " Amplitude Stability ($TS)";
-        $this->_WCAs->SetValue('amp_stability_url', $image_url);
-        $this->_WCAs->Update();
-        $imagepath = $imagedirectory . $imagename;
-
-        $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set output '$imagepath'\r\n");
-        fwrite($fh, "set title '$plot_title'\r\n");
-        fwrite($fh, "set grid\r\n");
-        fwrite($fh, "set log xy\r\n");
-        fwrite($fh, "set key outside\r\n");
-        fwrite($fh, "set ylabel 'Allan Variance'\r\n");
-        fwrite($fh, "set xlabel 'Allan Time, T (=Integration, Tau)'\r\n");
-
-        $ymax = pow(10, -5);
-        fwrite($fh, "set yrange [:$ymax]\r\n");
-
-        fwrite($fh, "f1(x)=((x>500) && (x<100000)) ? 0.00000009 : 1/0\r\n");
-        fwrite($fh, "f2(x)=((x>290000) && (x<350000)) ? 0.000001 : 1/0\r\n");
-        $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
-        $plot_string .= ", f2(x) title 'Spec' with points pt 5 pointsize 1";
-        $plot_string .= ", '$data_file[0]' using 1:2 title '$plottitle[0]' with lines";
-        for($i = 1; $i < sizeof($data_file); $i++) {
-            $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
-        }
-        $plot_string .= "\r\n";
-        fwrite($fh, $plot_string);
-
-        fclose($fh);
-
-        // Make the plot
-        $GNUPLOT = '/usr/bin/gnuplot';
-        $CommandString = "$GNUPLOT $plot_command_file";
-        system($CommandString);
     }
-    public function Upload_AMNoise_file($datafile_name) {
+    private function Upload_AMNoise_file($datafile_name) {
         // Test Data Header object
         // Delete any existing header records
         $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_AMNoise');
@@ -1359,7 +1459,6 @@ class WCA extends FEComponent {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_AMNoise', $filecontents, $this->tdh_amnoise);
         unlink($datafile_name);
-        unset($tdh);
     }
     public function Plot_AMNoise() {
         if (!file_exists($this->writedirectory)) {
@@ -1368,7 +1467,10 @@ class WCA extends FEComponent {
         $this->Plot_AMNoise_DSB();
         $this->Plot_AMNoise_Pol0_1();
     }
-    public function Plot_AMNoise_DSB() {
+    private function Plot_AMNoise_DSB() {
+        if (!$this->tdh_amnoise->keyId)
+            return;
+
         $TS = $this->tdh_amnoise->GetValue('TS');
         $Band = $this->GetValue('Band');
         $spec_value = 10;
@@ -1407,7 +1509,7 @@ class WCA extends FEComponent {
             $arrct = 0;
             // Get X axis values
             $rFreqLO = $this->db_pull->q_other('FreqLO', $this->tdh_amnoise->keyId, $this->fc, $pol, $FreqLOW, $FreqHI);
-            while ($row = @mysql_fetch_array($rFreqLO)) {
+            while ($row = mysqli_fetch_array($rFreqLO)) {
                 $amnzarr [0] [$arrct] = $row [0];
                 $amnzarr [1] [$arrct] = $row [1];
                 $arrct += 1;
@@ -1415,7 +1517,7 @@ class WCA extends FEComponent {
 
             $arrct = 0;
             $rlo = $this->db_pull->qlo('WCA_AMNoise', $this->tdh_amnoise->keyId, $this->fc, FALSE, $FreqLOW, $FreqHI, $pol);
-            while ($rowlo = @mysql_fetch_array($rlo)) {
+            while ($rowlo = mysqli_fetch_array($rlo)) {
                 $freqarr [$arrct] = $rowlo [0];
                 $arrct += 1;
             }
@@ -1468,7 +1570,7 @@ class WCA extends FEComponent {
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    public function GetAvgAMNoise($amnzarr, $freqlo) {
+    private function GetAvgAMNoise($amnzarr, $freqlo) {
         $sum = 0;
         $count = 0;
         for($i = 0; $i < count($amnzarr [0]); $i++) {
@@ -1480,7 +1582,10 @@ class WCA extends FEComponent {
         $avg = $sum / $count;
         return $avg;
     }
-    public function Plot_AMNoise_Pol0_1() {
+    private function Plot_AMNoise_Pol0_1() {
+        if (!$this->tdh_amnoise->keyId)
+            return;
+
         $TS = $this->tdh_amnoise->GetValue('TS');
         for($pol = 0; $pol <= 1; $pol++) {
 
@@ -1497,7 +1602,7 @@ class WCA extends FEComponent {
             $imagepath = $imagedirectory . $imagename;
 
             $rNumIF = $this->db_pull->q_other('NumIF', $this->tdh_amnoise->keyId, $this->fc, $pol);
-            $NumIF = @mysql_num_rows($rNumIF);
+            $NumIF = mysqli_num_rows($rNumIF);
 
             $data_file [$pol] = $this->writedirectory . "wca_amnoise_data_pol$pol.txt";
             if (file_exists($data_file [$pol])) {
@@ -1507,7 +1612,7 @@ class WCA extends FEComponent {
 
             $IFcount = 0;
             $r = $this->db_pull->q(10, $this->tdh_amnoise->keyId, $pol, $this->fc);
-            while ($row = @mysql_fetch_array($r)) {
+            while ($row = mysqli_fetch_array($r)) {
                 $stringData = "$row[0]\t$row[1]\t$row[2]\r\n";
                 fwrite($fh, $stringData);
                 $IFcount += 1;
@@ -1548,7 +1653,7 @@ class WCA extends FEComponent {
             system($CommandString);
         } // end for loop pol
     }
-    public function Upload_PhaseNoise_file($datafile_name) {
+    private function Upload_PhaseNoise_file($datafile_name) {
         // Test Data Header object
         // Delete any existing header records
         $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_PhaseJitter', $this->fc);
@@ -1569,10 +1674,11 @@ class WCA extends FEComponent {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_PhaseNoise', $filecontents, $this->tdh_phasenoise, $this->fc, $this->tdh_phasejitter);
         unlink($datafile_name);
-        unset($tdh);
-        // fclose($filecontents);
     }
     public function Plot_PhaseNoise() {
+        if (!$this->tdh_phasenoise->keyId)
+            return;
+
         if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);
         }
@@ -1584,7 +1690,7 @@ class WCA extends FEComponent {
 
         $rlo = $this->db_pull->qlo('WCA_PhaseNoise', $this->tdh_phasenoise->keyId, $this->fc);
 
-        while ($rowlo = @mysql_fetch_array($rlo)) {
+        while ($rowlo = mysqli_fetch_array($rlo)) {
             $lo = $rowlo [0];
             $pol = $rowlo [1];
             $jitterarray [$loindex] = $this->GetPhaseJitter($lo, $pol);
@@ -1600,26 +1706,26 @@ class WCA extends FEComponent {
 
         // write data file from database
         $rFindLO = $this->db_pull->qFindLO('WCA_PhaseNoise', $this->tdh_phasenoise->keyId, $this->fc);
-        $rowLO = @mysql_fetch_array($rFindLO);
+        $rowLO = mysqli_fetch_array($rFindLO);
 
         $datafile_count = 0;
         for($j = 0; $j <= 1; $j++) {
             for($i = 0; $i <= sizeof($rowLO); $i++) {
-                $CurrentLO = @mysql_result($rFindLO, $i);
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
                 $r = $this->db_pull->q(11, $this->tdh_phasenoise->keyId, $j, $this->fc, NULL, $CurrentLO);
 
-                if (@mysql_num_rows($r) > 1) {
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle [$datafile_count] = "Pol $j, $CurrentLO GHz";
                     $data_file [$datafile_count] = $this->writedirectory . "wca_phasenz_" . $i . "_" . $j . ".txt";
                     if (file_exists($data_file [$datafile_count])) {
                         unlink($data_file [$datafile_count]);
                     }
                     $fh = fopen($data_file [$datafile_count], 'w');
-                    $row = @mysql_fetch_array($r);
+                    $row = mysqli_fetch_array($r);
 
-                    while ($row = @mysql_fetch_array($r)) {
+                    while ($row = mysqli_fetch_array($r)) {
                         $stringData = "$row[0]\t$row[1]\r\n";
                         fwrite($fh, $stringData);
                     }
@@ -1671,9 +1777,99 @@ class WCA extends FEComponent {
         $GNUPLOT = $this->GNUplot;
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
-        unset($tdh);
     }
-    public function GetPhaseJitter($LOfreq, $pol) {
+    private function Upload_Isolation_file($datafile_name) {
+        // Delete any existing header records
+        $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_Isolation', $this->fc);
+
+        $this->tdh_isolation = new GenericTable();
+        $this->tdh_isolation->NewRecord("TestData_header", 'keyId', $this->GetValue('keyFacility'), 'keyFacility');
+        $this->tdh_isolation->SetValue('fkTestData_Type', 61);
+        $this->tdh_isolation->SetValue('fkDataStatus', $this->fkDataStatus);
+        $this->tdh_isolation->SetValue('fkFE_Components', $this->keyId);
+        $this->tdh_isolation->Update();
+        $fileContents = file($datafile_name);
+
+        $this->db_pull->del_ins('WCA_Isolation', $fileContents, $this->tdh_isolation, NULL, NULL, " ");
+        unlink($datafile_name);
+    }
+
+    private function Plot_Isolation() {
+        if (!$this->tdh_isolation->keyId)
+            return;
+        if (!file_exists($this->writedirectory))
+            mkdir($this->writedirectory);
+
+        $r = $this->db_pull->q(16, $this->tdh_isolation->keyId);
+        if (!$r)
+            return;
+
+        $band = $this->GetValue('Band');
+        $specs = $this->new_spec->getSpecs('wca', $band);
+        $specIsolation = $specs['specIsolation'];
+
+        $data_file = $this->writedirectory . "wca_isolation.txt";
+        if (file_exists($data_file))
+            unlink($data_file);
+
+        $fMin = 999.0;
+        $fMax = 0.0;
+        $TS = false;
+        $fh = fopen($data_file, 'w');
+        while ($row = mysqli_fetch_array($r)) {
+            $LO = floatval($row[1]);
+            fwrite($fh, "$LO\t$row[2]\t$row[3]\r\n");
+            if ($LO < $fMin)
+                $fMin = $LO;
+            if ($LO > $fMax)
+                $fMax = $LO;
+            if (!$TS)
+                $TS = $row[0];
+        }
+        fclose($fh);
+
+        // Create command file for GnuPlot:
+        $imagedirectory = $this->writedirectory;
+        if (!file_exists($imagedirectory)) {
+            mkdir($imagedirectory);
+        }
+        $imagename = "WCA_Isolation_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $imagename;
+
+        $plot_title = "LO$band-" . $this->GetValue('SN') . " Isolation  $TS";
+        $this->_WCAs->SetValue('isolation_url', $image_url);
+        $this->_WCAs->Update();
+        $imagepath = $imagedirectory . $imagename;
+
+        // Write command file for gnuplot
+        $plot_command_file = $this->writedirectory . "wca_iso_command.txt";
+        if (file_exists($plot_command_file)) {
+            unlink($plot_command_file);
+        }
+        $fh = fopen($plot_command_file, 'w');
+        fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set output '$imagepath'\r\n");
+        fwrite($fh, "set title '$plot_title'\r\n");
+        fwrite($fh, "set grid\r\n");
+        fwrite($fh, "set xrange [$fMin:$fMax]\r\n");
+
+        fwrite($fh, "set xlabel 'LO (GHz)'\r\n");
+        fwrite($fh, "set ylabel 'Isolation (dB)'\r\n");
+        fwrite($fh, "set key outside\r\n");
+        $plot_string = "plot $specIsolation title 'spec' with lines lw 4 lt 1 ";
+        $plot_string .= ", '$data_file' using 1:2 title 'S12' with lines";
+        $plot_string .= ", '$data_file' using 1:3 title 'S21' with lines";
+        $plot_string .= "\r\n";
+        fwrite($fh, $plot_string);
+        fclose($fh);
+
+        // Make the plot
+        $GNUPLOT = $this->GNUplot;
+        $CommandString = "$GNUPLOT $plot_command_file";
+        system($CommandString);
+    }
+
+    private function GetPhaseJitter($LOfreq, $pol) {
         $counter = 0;
 
         $sumraw = 0;
@@ -1691,7 +1887,7 @@ class WCA extends FEComponent {
 
         $RawData = -1234;
 
-        while ($row = @mysql_fetch_array($r)) {
+        while ($row = mysqli_fetch_array($r)) {
             $RawData_temp = $row [2];
             $OffsetFrequency_temp = $row [0];
             $AntiLog_temp = pow(10.0, $RawData_temp / 10.0);
@@ -1730,7 +1926,7 @@ class WCA extends FEComponent {
         $PhaseJitter *= pow(10, 15);
         return $PhaseJitter;
     }
-    public function Upload_OutputPower_file($datafile_name) {
+    private function Upload_OutputPower_file($datafile_name) {
         // Test Data Header object
         // Delete any existing header records
         $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_OutputPower');
@@ -1744,23 +1940,29 @@ class WCA extends FEComponent {
         $filecontents = file($datafile_name);
         $this->db_pull->del_ins('WCA_OutputPower', $filecontents, $this->tdh_outputpower, $this->fc);
         unlink($datafile_name);
-        unset($tdh);
-        // fclose($filecontents);
     }
     public function Plot_OutputPower() {
         if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);
         }
         $this->Plot_OutputPower_vs_frequency();
-        $this->Plot_OutputPower_vs_Vd(0);
-        $this->Plot_OutputPower_vs_Vd(1);
-        $this->Plot_OutputPower_vs_stepsize(0);
-        $this->Plot_OutputPower_vs_stepsize(1);
+        if ($this->GetValue('Band') == 1) {
+            $this->Plot_OutputPower_vs_Vd_B1(0);
+            $this->Plot_OutputPower_vs_Vd_B1(1);
+        } else {
+            $this->Plot_OutputPower_vs_Vd(0);
+            $this->Plot_OutputPower_vs_Vd(1);
+            $this->Plot_OutputPower_vs_stepsize(0);
+            $this->Plot_OutputPower_vs_stepsize(1);
+        }
     }
-    public function Plot_OutputPower_vs_frequency() {
+    private function Plot_OutputPower_vs_frequency() {
+        if (!$this->tdh_outputpower->keyId)
+            return;
+
         $Band = $this->GetValue('Band');
         $rTS = $this->db_pull->q_other('TS', $this->tdh_outputpower->keyId, $this->fc);
-        $rowTS = @mysql_fetch_array($rTS);
+        $rowTS = mysqli_fetch_array($rTS);
         $VD0 = $rowTS [0];
         $VD1 = $rowTS [1];
 
@@ -1780,16 +1982,16 @@ class WCA extends FEComponent {
         $this->_WCAs->SetValue('op_vs_freq_url', $image_url);
         $this->_WCAs->Update();
         $imagepath = $imagedirectory . $imagename;
+        $data_file = array();
 
         for($pol = 0; $pol <= 1; $pol++) {
-
-            $data_file [$pol] = $this->writedirectory . "wca_opvsfreq_data$pol.txt";
-            if (file_exists($data_file [$pol])) {
-                unlink($data_file [$pol]);
+            $data_file[$pol] = $this->writedirectory . "wca_opvsfreq_data$pol.txt";
+            if (file_exists($data_file[$pol])) {
+                unlink($data_file[$pol]);
             }
-            $fh = fopen($data_file [$pol], 'w');
+            $fh = fopen($data_file[$pol], 'w');
             $rOP = $this->db_pull->q_other('OP', $this->tdh_outputpower->keyId, $this->fc, $pol);
-            while ($row = @mysql_fetch_array($rOP)) {
+            while ($row = mysqli_fetch_array($rOP)) {
                 $stringData = "$row[0]\t$row[1]\r\n";
                 fwrite($fh, $stringData);
             }
@@ -1811,7 +2013,7 @@ class WCA extends FEComponent {
 
         // set xrange
         $rx = $this->db_pull->q_other('x', $this->tdh_outputpower->keyId, $this->fc);
-        $xMAX = @mysql_result($rx, 0) + 1;
+        $xMAX = ADAPT_mysqli_result($rx, 0) + 1;
         fwrite($fh, "set xrange[:$xMAX]\r\n");
 
         fwrite($fh, "set xlabel 'LO Frequency (GHz)'\r\n");
@@ -1842,7 +2044,8 @@ class WCA extends FEComponent {
         }
 
         $plot_string .= ", '$data_file[0]' using 1:2 title 'Pol 0' with lines ";
-        $plot_string .= ", '$data_file[1]' using 1:2 title 'Pol 1' with lines \r\n";
+        $plot_string .= ", '$data_file[1]' using 1:2 title 'Pol 1' with lines ";
+        $plot_string .= "\r\n";
 
         fwrite($fh, $plot_string);
         fclose($fh);
@@ -1852,7 +2055,119 @@ class WCA extends FEComponent {
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    public function Plot_OutputPower_vs_Vd($pol) {
+
+    private function Plot_OutputPower_vs_Vd_B1($pol) {
+        // Plot output power vs drain voltage, formatted for band 1 reports.
+        if (!$this->tdh_outputpower->keyId)
+            return;
+
+        // Get the spec line level and description:
+        $band = $this->GetValue('Band');
+        $specs = $this->new_spec->getSpecs('wca', $band);
+        $spec_value_1 = $specs ['spec_value_1'];
+        $spec_description_1 = $specs ['spec_description_1'];
+
+        // Find the LO frequencies present in the raw data:
+        $datafile_count = 0;
+        $rFindLO = $this->db_pull->qFindLO('WCA_OutputPower', $this->tdh_outputpower->keyId, $this->fc, $pol, '<> 1');
+        $rowLO = mysqli_fetch_array($rFindLO);
+        $i = 0;
+        $minVd = 99.0;
+        $maxVd = 0.0;
+        $vg = -1.0;
+        $TS = false;
+
+        $data_file = array();
+
+        if ($rFindLO) {
+            while ($rowLO = mysqli_fetch_array($rFindLO)) {
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
+
+                $r = $this->db_pull->q(14, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
+
+                if (mysqli_num_rows($r) > 1) {
+                    $plottitle [$datafile_count] = "$CurrentLO GHz";
+                    $data_file [$datafile_count] = $this->writedirectory . "wca_op_vs_dv_" . $i . "_" . $pol . ".txt";
+                    if (file_exists($data_file [$datafile_count])) {
+                        unlink($data_file [$datafile_count]);
+                    }
+
+                    $fh = fopen($data_file [$datafile_count], 'w');
+                    $row = mysqli_fetch_array($r);
+                    while ($row = mysqli_fetch_array($r)) {
+                        $vd = $row[0];
+                        $powerdBm = 10 * log($row[1] * 1000, 10);
+                        $stringData = "$vd\t$powerdBm\r\n";
+                        fwrite($fh, $stringData);
+                        if ($vd < $minVd)
+                            $minVd = $vd;
+                        if ($vd > $maxVd)
+                            $maxVd = $vd;
+                        if ($row[2] > $vg)
+                            $vg = $row[2];
+                        if (!$TS)
+                            $TS = $row[3];
+                    }
+                    fclose($fh);
+                    $datafile_count++;
+                }
+                $i++;
+            }
+        }
+
+        $imagedirectory = $this->writedirectory;
+        if (!file_exists($imagedirectory)) {
+            mkdir($imagedirectory);
+        }
+        $imagename = "WCA_OPvsVd_SN" . $this->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $imagename;
+        sleep(1);
+
+        $this->_WCAs->SetValue("op_vs_dv_pol$pol" . "_url", $image_url);
+        $this->_WCAs->Update();
+        $imagepath = $imagedirectory . $imagename;
+
+        // Write command file for gnuplot
+        $plot_title = "LO$band-" . $this->GetValue('SN') . " Pol $pol Output Power $TS";
+        $plot_command_file = $this->writedirectory . "wca_op_vd_command.txt";
+        if (file_exists($plot_command_file)) {
+            unlink($plot_command_file);
+        }
+        $fh = fopen($plot_command_file, 'w');
+        fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set output '$imagepath'\r\n");
+        fwrite($fh, "set title '$plot_title'\r\n");
+        fwrite($fh, "set grid\r\n");
+        $vg = number_format($vg, 2);
+        fwrite($fh, "set xlabel 'VD$pol (Volts) VG=$vg'\r\n");
+        fwrite($fh, "set ylabel 'Output Power (dBm)'\r\n");
+        $minVd = round($minVd - 0.1, 1);
+        $maxVd = round($maxVd + 0.1, 1);
+        fwrite($fh, "set xrange [$minVd:$maxVd]\r\n");
+        fwrite($fh, "set key outside\r\n");
+
+        // plot the spec lines:
+        $plot_string = "plot $spec_value_1 title '$spec_description_1' with lines lw 4 lt 1 ";
+
+        // plot each trace:
+        for($i = 0; $i < sizeof($data_file); $i++) {
+            $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with linespoints";
+        }
+        $plot_string .= "\r\n";
+        fwrite($fh, $plot_string);
+
+        fclose($fh);
+
+        // Make the plot
+        $GNUPLOT = $this->GNUplot;
+        $CommandString = "$GNUPLOT $plot_command_file";
+        system($CommandString);
+    }
+
+    private function Plot_OutputPower_vs_Vd($pol) {
+        if (!$this->tdh_outputpower->keyId)
+            return;
+
         $TS = $this->tdh_outputpower->GetValue('TS');
 
         // write data files from database
@@ -1867,17 +2182,17 @@ class WCA extends FEComponent {
 
         $datafile_count = 0;
         $rFindLO = $this->db_pull->qFindLO('WCA_OutputPower', $this->tdh_outputpower->keyId, $this->fc, $pol, '<> 1');
-        $rowLO = @mysql_fetch_array($rFindLO);
+        $rowLO = mysqli_fetch_array($rFindLO);
         $i = 0;
         $data_file = array ();
 
         if ($rFindLO) {
-            while ($rowLO = mysql_fetch_array($rFindLO)) {
-                $CurrentLO = @mysql_result($rFindLO, $i);
+            while ($rowLO = mysqli_fetch_array($rFindLO)) {
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
 
                 $r = $this->db_pull->q(14, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
 
-                if (@mysql_num_rows($r) > 1) {
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle [$datafile_count] = "$CurrentLO GHz";
                     $data_file [$datafile_count] = $this->writedirectory . "wca_op_vs_dv_" . $i . "_" . $pol . ".txt";
                     if (file_exists($data_file [$datafile_count])) {
@@ -1885,8 +2200,8 @@ class WCA extends FEComponent {
                     }
 
                     $fh = fopen($data_file [$datafile_count], 'w');
-                    $row = @mysql_fetch_array($r);
-                    while ($row = @mysql_fetch_array($r)) {
+                    $row = mysqli_fetch_array($r);
+                    while ($row = mysqli_fetch_array($r)) {
                         $stringData = "$row[0]\t$row[1]\r\n";
                         fwrite($fh, $stringData);
                     }
@@ -1949,7 +2264,10 @@ class WCA extends FEComponent {
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    public function Plot_OutputPower_vs_stepsize($pol) {
+    private function Plot_OutputPower_vs_stepsize($pol) {
+        if (!$this->tdh_outputpower->keyId)
+            return;
+
         // Get timestamp
         $TS = $this->tdh_outputpower->GetValue('TS');
 
@@ -1961,21 +2279,21 @@ class WCA extends FEComponent {
         $data_file = array ();
 
         if ($rFindLO) {
-            while ($rowLO = mysql_fetch_array($rFindLO)) {
-                $CurrentLO = @mysql_result($rFindLO, $i);
+            while ($rowLO = mysqli_fetch_array($rFindLO)) {
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
                 $r = $this->db_pull->q(15, $this->tdh_outputpower->keyId, $pol, $this->fc, NULL, $CurrentLO);
 
-                if (@mysql_num_rows($r) > 1) {
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle [$datafile_count] = "$CurrentLO GHz";
                     $data_file [$datafile_count] = $this->writedirectory . "wca_op_vs_ss_" . $i . "_" . $pol . ".txt";
                     if (file_exists($data_file [$datafile_count])) {
                         unlink($data_file [$datafile_count]);
                     }
                     $fh = fopen($data_file [$datafile_count], 'w');
-                    $row = @mysql_fetch_array($r);
+                    $row = mysqli_fetch_array($r);
 
                     $k = 0;
-                    while ($rowSS = @mysql_fetch_array($r)) {
+                    while ($rowSS = mysqli_fetch_array($r)) {
                         $VD_pwr_array [$k] = "$rowSS[0],$rowSS[1]";
                         $VDarray_unsorted [$k] = $rowSS [0];
                         $Pwrarray_unsorted [$k] = $rowSS [1];
@@ -2085,36 +2403,12 @@ class WCA extends FEComponent {
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    public function DrawPlotsIfNecessary() {
-        if ($this->IsPlotNeeded('WCA_AmplitudeStability', $this->_WCAs->GetValue('amp_stability_url'))) {
-            $this->Plot_AmplitudeStability();
-        }
-        if ($this->IsPlotNeeded('WCA_AMNoise', $this->_WCAs->GetValue('amnz_pol0_url'))) {
-            $this->Plot_AMNoise();
-        }
-        if ($this->IsPlotNeeded('WCA_OutputPower', $this->_WCAs->GetValue('op_vs_freq_url'))) {
-            $this->Plot_OutputPower();
-        }
-        if ($this->IsPlotNeeded('WCA_PhaseNoise', $this->_WCAs->GetValue('phasenoise_url'))) {
-            $this->Plot_PhaseNoise();
-        }
-    }
-    public function RedrawAllPlots() {
+    private function RedrawAllPlots() {
         $this->Plot_AmplitudeStability();
         $this->Plot_AMNoise();
         $this->Plot_OutputPower();
         $this->Plot_PhaseNoise();
-    }
-    public function IsPlotNeeded($tableName, $ImageURL) {
-        $PlotNeeded = false;
-
-        if ($ImageURL == "") {
-            $rCheck = $this->db_pull->q_other('Check', $this->keyId, $this->fc, NULL, NULL, NULL, NULL, $tableName);
-            if (@mysql_num_rows($rCheck) > 0) {
-                $PlotNeeded = true;
-            }
-        }
-        return $PlotNeeded;
+        $this->Plot_Isolation();
     }
     public function convert_charset($item) {
         if ($unserialize = unserialize($item)) {

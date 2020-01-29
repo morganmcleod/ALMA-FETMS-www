@@ -28,12 +28,12 @@ include ('mysql_connect.php');
 
 // Retrieve the user's information:
 $q = "SELECT ProductTreeNumber, Description, Docs FROM ComponentTypes WHERE keyId=$id";		
-$r = @mysql_query ($q, $dbc);
+$r = mysql_query ($q, $dbc);
 
-if (mysql_num_rows($r) == 1) { // Valid user ID, show the form.
+if (mysqli_num_rows($r) == 1) { // Valid user ID, show the form.
 
 	// Get the user's information:
-	$row = mysql_fetch_array ($r, MYSQL_NUM);
+	$row = mysqli_fetch_array ($r, MYSQL_NUM);
 
 	
 	// Create the form:

@@ -63,8 +63,8 @@ class ReceivedItem_class{
 		
 		
 		
-		$rInit = @mysql_query($qInit,$dbc);
-		$rowInit = @mysql_fetch_array($rInit);
+		$rInit = mysqli_query($link, $qInit,$dbc);
+		$rowInit = mysqli_fetch_array($rInit);
 		$this->keyId = $in_keyId;
 		$this->LogNumber = $rowInit[0];
 		$this->TS = $rowInit[1];
@@ -149,7 +149,7 @@ class ReceivedItem_class{
 		//echo $q;
 		//echo "<br>";
 		
-		$r = @mysql_query ($q, $dbc);
+		$r = mysql_query ($q, $dbc);
 	}
 	
 	function GetMaxNumber($FirstLetter){
@@ -158,8 +158,8 @@ class ReceivedItem_class{
 		WHERE LogNumber LIKE '$FirstLetter-%'
 		AND LogNumber <> '';";
 	
-		$rfl = @mysql_query($qfl,$dbc);
-		$tempResult = @mysql_result($rfl,0);
+		$rfl = mysqli_query($link, $qfl,$dbc);
+		$tempResult = ADAPT_mysqli_result($rfl,0);
 		$tempNum = split("-",$tempResult);
 		$newNum = substr("0000" . strval($tempNum[1]+1),-4,4);
 		$tempResult = "$FirstLetter-$newNum";
@@ -622,7 +622,7 @@ class ReceivedItem_class{
 		//echo "Current requestor= $this->Requestor<br>";
 		echo "<br><br><b>Requestor:</b><select name='reqselect' onChange='submit()'>"; 
 		$q_req = 'select distinct(Requestor) from ReceivedItems where Requestor <> "" ORDER BY Requestor ASC';
-		$r_req  = mysql_query($q_req,$dbc);
+		$r_req  = mysqli_query($link, $q_req,$dbc);
 		
 		
 		if ($this->Requestor == ""){
@@ -631,7 +631,7 @@ class ReceivedItem_class{
 		else{
 			$option_block_req  .= "<option value='Other'>Other</option>";
 		}
-		while ($options = @mysql_fetch_array($r_req )){
+		while ($options = mysqli_fetch_array($r_req )){
 				
 			if (($options[0]!=$this->reqselect) && ($options[0]!=$this->Requestor)) {
 				//if ($options[0]!=$this->reqselect) {	
@@ -668,7 +668,7 @@ class ReceivedItem_class{
 		
 		echo "<br><br><b>Received From:</b><select name='rxfromselect' onChange='submit()'>"; 
 		$q_rx = 'select distinct(RxFrom) from ReceivedItems where RxFrom <> "" ORDER BY RxFrom ASC';
-		$r_rx  = mysql_query($q_rx,$dbc);
+		$r_rx  = mysqli_query($link, $q_rx,$dbc);
 		
 		
 		if ($this->RxFrom == ""){
@@ -677,7 +677,7 @@ class ReceivedItem_class{
 		else{
 			$option_block_rx  .= "<option value='Other'>Other</option>";
 		}
-		while ($optionsrx = @mysql_fetch_array($r_rx )){
+		while ($optionsrx = mysqli_fetch_array($r_rx )){
 				
 			if (($optionsrx[0]!=$this->RxFrom) && ($optionsrx[0]!=$this->rxfromselect)) {
 				$option_block_rx .= "<option value='$optionsrx[0]'>$optionsrx[0]</option>";
@@ -877,7 +877,7 @@ class ReceivedItem_class{
 		$this->PO = $_REQUEST['PO'];	
 		}
 		if (isset($_REQUEST['ContentDescription'])){
-		$this->ContentDescription = mysql_real_escape_string($_REQUEST['ContentDescription']);
+		$this->ContentDescription = mysqli_real_escape_string($link, $_REQUEST['ContentDescription']);
 		}
 		if (isset($_REQUEST['Qty'])){
 		$this->Qty = $_REQUEST['Qty'];	
@@ -950,7 +950,7 @@ class ReceivedItem_class{
 		$this->Discrepancy_NR = $_REQUEST['Discrepancy_NR'];
 		}
 		if (isset($_REQUEST['PAS_url'])){
-		$this->PAS_url = mysql_real_escape_string($_REQUEST['PAS_url']);	
+		$this->PAS_url = mysqli_real_escape_string($link, $_REQUEST['PAS_url']);	
 		}	
 		
 	    $this->Status_description = "NOT Received";
@@ -968,10 +968,10 @@ class ReceivedItem_class{
 	public function NewRecord(){
 		include('mysql_connect.php');
 		$qNew = "INSERT INTO ReceivedItems() VALUES();";
-		$rNew = @mysql_query($qNew,$dbc);
+		$rNew = mysqli_query($link, $qNew,$dbc);
 		$qNew = "SELECT keyId FROM ReceivedItems ORDER BY keyId DESC LIMIT 1;";
-		$rNew = @mysql_query($qNew,$dbc);
-		$rowNew = @mysql_fetch_array($rNew);
+		$rNew = mysqli_query($link, $qNew,$dbc);
+		$rowNew = mysqli_fetch_array($rNew);
 		$this->keyId = $rowNew[0];
 	}
 	
@@ -996,7 +996,7 @@ class ReceivedItem_class{
 	public function Delete_record(){
 		include('mysql_connect.php');
 		$q = "DELETE FROM ReceivedItems WHERE keyId=$this->keyId";		
-		$r = @mysql_query ($q, $dbc);
+		$r = mysql_query ($q, $dbc);
 		echo '<p>The record has been deleted.</p>';	
 		echo '<meta http-equiv="Refresh" content="1;url=view_rx_records.php">';
 	}
@@ -1089,8 +1089,8 @@ class RecordsTable_class {
 	public function Initialize($In_ResultsPerPage=200){
 		include('mysql_connect.php');
 		$q = "SELECT keyId FROM ReceivedItems;";
-		$r = @mysql_query($q,$dbc);
-		$this->NumberOfRecords = mysql_num_rows($r);
+		$r = mysqli_query($link, $q,$dbc);
+		$this->NumberOfRecords = mysqli_num_rows($r);
 		
 		$this->Color1 = "#98c4f0"; //blue
 		$this->Color1_2 = "#D9EEFF"; //light blue
@@ -1553,9 +1553,9 @@ class RecordsTable_class {
 	
 
 	
-		$r = @mysql_query($q,$dbc);
+		$r = mysqli_query($link, $q,$dbc);
 
-		while ($row = mysql_fetch_array($r)) {
+		while ($row = mysqli_fetch_array($r)) {
 			$bg1 = ($bg1==$this->Color1_2 ? '#ffffff' : $this->Color1_2);
 			$bg2 = ($bg2==$this->Color2_2 ? '#ffffff' : $this->Color2_2);
 			$bg3 = ($bg3==$this->Color3_2 ? '#ffffff' : $this->Color3_2);
@@ -1769,9 +1769,9 @@ class DamagesTable_class {
 		WHERE Damage = 'YES'
 		ORDER BY keyId ASC;";
 		
-		$r = @mysql_query($q,$dbc);
+		$r = mysqli_query($link, $q,$dbc);
 
-		while ($row = mysql_fetch_array($r)) {
+		while ($row = mysqli_fetch_array($r)) {
 				echo '
 				<tr>
 					<td align="center" bgcolor="#ffffff"><font size="0.5" color = "#000000">' . $row[1] . '</td>
@@ -1866,9 +1866,9 @@ var $Color1;
 		WHERE Discrepancy = 'YES'
 		ORDER BY keyId ASC;";
 		
-		$r = @mysql_query($q,$dbc);
+		$r = mysqli_query($link, $q,$dbc);
 
-		while ($row = mysql_fetch_array($r)) {
+		while ($row = mysqli_fetch_array($r)) {
 				echo '
 				<tr>
 					<td align="center" bgcolor="#ffffff"><font size="0.5" color = "#000000">' . $row[1] . '</td>
@@ -1960,10 +1960,10 @@ class ExcelReader_class {
 				$LogNo = $data->sheets[0]['cells'][$i][1];
 				$qLog = "SELECT keyId FROM ReceivedItems WHERE
 						LogNumber = '$LogNo';";
-				$rLog = @mysql_query($qLog,$dbc);
+				$rLog = mysqli_query($link, $qLog,$dbc);
 				
 				
-				if ((@mysql_num_rows($rLog) < 1) && ($LogNo != "")){
+				if ((mysqli_num_rows($rLog) < 1) && ($LogNo != "")){
 					//import record if not found
 					$RxItem = new ReceivedItem_class();
 					$RxItem->NewRecord();
@@ -2063,7 +2063,7 @@ class ExcelReader_class {
 
 					$RxItem->UpdateRecord();
 				
-				}//end if mysql_num_rows != 0
+				}//end if mysqli_num_rows != 0
 		}
 		
 		
@@ -2102,8 +2102,8 @@ class StorageLocation_class {
 		FROM StorageLocations 
 		WHERE keyId = $In_keyId;";
 		
-		$rInit = @mysql_query($qInit,$dbc);
-		$rowInit = @mysql_fetch_array($rInit);
+		$rInit = mysqli_query($link, $qInit,$dbc);
+		$rowInit = mysqli_fetch_array($rInit);
 		$this->keyId = $in_keyId;
 		$this->LocationName = $rowInit[0];
 	}
@@ -2124,8 +2124,8 @@ class StorageLocation_selector_class {
 		
 		$q = "SELECT keyId FROM StorageLocations;";
 		echo $q . "<br>";
-		$r = @mysql_query($q,$dbc);
-		while($row = @mysql_fetch_array($r)){
+		$r = mysqli_query($link, $q,$dbc);
+		while($row = mysqli_fetch_array($r)){
 			$tempLocation = new StorageLocation_class();
 			$tempLocation->Initialize($row[0]);
 			
@@ -2157,8 +2157,8 @@ class Staging_class {
 		FROM Staging
 		WHERE keyId = $In_keyId;";
 		echo $qInit;
-		$rInit = @mysql_query($qInit,$dbc);
-		$rowInit = @mysql_fetch_array($rInit);
+		$rInit = mysqli_query($link, $qInit,$dbc);
+		$rowInit = mysqli_fetch_array($rInit);
 		$this->keyId = $in_keyId;
 		$this->StagingName = $rowInit[0];
 	}
@@ -2177,8 +2177,8 @@ class Staging_selector_class {
 		}
 		
 		$q = "SELECT keyId FROM Staging;";
-		$r = @mysql_query($q,$dbc);
-		while($row = @mysql_fetch_array($r)){
+		$r = mysqli_query($link, $q,$dbc);
+		while($row = mysqli_fetch_array($r)){
 			$tempStaging = new Staging_class();
 			$tempStaging->Initialize($row[0]);
 			

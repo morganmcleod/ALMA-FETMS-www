@@ -26,9 +26,9 @@ if ( (isset($_GET['id'])) && (is_numeric($_GET['id'])) ) { // From view_users.ph
 if (isset($_POST['submitted'])) {
   
 		$errors = array();
-		$DescriptionEdit = mysql_real_escape_string($_POST['Description']);
-		$NotesEdit = mysql_real_escape_string($_POST['Notes']);
-		$tempPassword = mysql_real_escape_string($_POST['Password']);
+		$DescriptionEdit = mysqli_real_escape_string($link, $_POST['Description']);
+		$NotesEdit = mysqli_real_escape_string($link, $_POST['Notes']);
+		$tempPassword = mysqli_real_escape_string($link, $_POST['Password']);
 	
 if ($tempPassword == "nrao")
 {		
@@ -38,7 +38,7 @@ if ($tempPassword == "nrao")
 			// Make the query:
 			include ('mysql_connect.php');
 			$q = "UPDATE Locations SET Description='$DescriptionEdit', Notes='$NotesEdit' WHERE keyId=$id LIMIT 1";
-			$r = @mysql_query ($q, $dbc);
+			$r = mysql_query ($q, $dbc);
 			if (mysql_affected_rows($dbc) == 1) 
 			{ // If it ran OK.
 				// Print a message:
@@ -72,11 +72,11 @@ if ($tempPassword == "nrao")
 
 // Retrieve the selected record information:
 $qLoc = "SELECT Description, Notes FROM Locations WHERE keyId=$id";	
-$rLoc = @mysql_query ($qLoc, $dbc);
+$rLoc = mysql_query ($qLoc, $dbc);
 
-if (mysql_num_rows($rLoc) == 1) { // Valid ID, show the form.
+if (mysqli_num_rows($rLoc) == 1) { // Valid ID, show the form.
 	// Get the information:
-	$rowLoc = mysql_fetch_array ($rLoc, MYSQL_NUM);
+	$rowLoc = mysqli_fetch_array ($rLoc, MYSQL_NUM);
 	$tempDescription = $rowLoc[0];
 	$tempNotes = $rowLoc[1];
 	

@@ -4,14 +4,18 @@ require_once($site_classes . '/class.generictable.php');
 
 class TestData_Component extends GenericTable{
     var $ComponentType;
-
-    public function Initialize_TestData_Component($in_keyId,$in_dbconnection){
-        parent::Initialize('FE_Components',$in_keyId,'keyId',$in_dbconnection);
+    
+    public function __construct() {
+        parent::__construct();
+    }
+    
+    public function Initialize_TestData_Component($in_keyId){
+        parent::Initialize('FE_Components',$in_keyId,'keyId');
 
         $q = "SELECT Description FROM ComponentTypes
               WHERE keyId = " . $this->GetValue('fkFE_ComponentType');
-        $r = @mysql_query($q,$this->dbconnection);
-        $this->ComponentType = @mysql_result($r,0);
+        $r = mysqli_query($this->dbconnection, $q);
+        $this->ComponentType = ADAPT_mysqli_result($r,0);
     }
 
     public function DisplayMainData(){

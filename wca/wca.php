@@ -20,7 +20,7 @@ if ((isset($_REQUEST['submit_datafile'])) || (isset($_REQUEST['submitted']))){
 
     $wca->Update_WCA();
     echo "<font size = '+10'>Record Updated</font><br><br>";
-    echo '<meta http-equiv="Refresh" content="1;url=wca.php?fc='.$wca->fc.'&keyId='.$wca->keyId.'">';
+//     echo '<meta http-equiv="Refresh" content="1;url=wca.php?fc='.$wca->fc.'&keyId='.$wca->keyId.'">';
 }
 
 $wca->DisplayData_WCA();

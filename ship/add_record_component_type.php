@@ -17,7 +17,7 @@ if (isset($_POST['submitted']))
 	$ProductTreeNumber = trim($_POST['ProductTreeNumber']);
 	$Description = trim($_POST['Description']);
 	$Docs = trim($_POST['Docs']);
-	$tempPassword = mysql_real_escape_string($dbc, trim($_POST['Password']));
+	$tempPassword = mysqli_real_escape_string($link, $dbc, trim($_POST['Password']));
 
 
 	if ($tempPassword == "nrao")
@@ -25,7 +25,7 @@ if (isset($_POST['submitted']))
 
 	// Make the query:
 	$q = "INSERT INTO ComponentTypes (ProductTreeNumber, Description, Docs) VALUES ('$ProductTreeNumber', '$Description', '$Docs')";		
-	$r = @mysql_query ($q, $dbc); // Run the query.
+	$r = mysql_query ($q, $dbc); // Run the query.
 
 	// Print a message:
 	echo '<h1>Thank you!</h1>

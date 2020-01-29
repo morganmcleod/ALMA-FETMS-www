@@ -31,7 +31,7 @@ if (isset($_POST['submitted']))
 		{ // Delete the record.
 			// Make the query:
 			$q = "DELETE FROM Locations WHERE keyId=$id LIMIT 1";		
-			$r = @mysql_query ($q, $dbc);
+			$r = mysql_query ($q, $dbc);
 				if (mysql_affected_rows($dbc) == 1) 
 				{ // If it ran OK.
 					echo '<p>The record has been deleted.</p>';	
@@ -61,12 +61,12 @@ if (isset($_POST['submitted']))
 
 	// Retrieve the user's information:
 	$q = "SELECT Description FROM Locations WHERE keyId=$id";
-	$r = @mysql_query ($q, $dbc);
+	$r = mysql_query ($q, $dbc);
 	
-	if (mysql_num_rows($r) == 1) { // Valid keyId, show the form.
+	if (mysqli_num_rows($r) == 1) { // Valid keyId, show the form.
 
 		// Get the user's information:
-		$row = mysql_fetch_array ($r, MYSQL_NUM);
+		$row = mysqli_fetch_array ($r, MYSQL_NUM);
 		
 		// Create the form:
 		echo '<form action="delete_record_location.php" method="post">

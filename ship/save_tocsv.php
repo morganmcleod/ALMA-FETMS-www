@@ -6,12 +6,12 @@ $id = $_REQUEST['id'];
 
 
 $q = "Select x, y, XYval from test WHERE keyDataSet = $id";
-$r = @mysql_query ($q, $dbc);
+$r = mysql_query ($q, $dbc);
 
 $count = 0;
 
 //get data from table
-while($row = mysql_fetch_array($r)){
+while($row = mysqli_fetch_array($r)){
 	$xarray[$count] = $row[0];
 	$yarray[$count] = $row[1];
 	$XYarray[$count] = $row[2];
@@ -51,8 +51,8 @@ for ($j=0;$j<sizeof($Yvals);$j++){
 	//Go through and write XYvals for this X,Y index
 	for ($i=0;$i<sizeof($Xvals);$i++){
 	$qXY = "Select XYval from test WHERE keyDataSet = 1 AND x = $Xvals[$i] AND y = $Yvals[$j]";
-	$rXY = @mysql_query ($qXY, $dbc);
-	$rowXY = mysql_fetch_array($rXY);
+	$rXY = mysql_query ($qXY, $dbc);
+	$rowXY = mysqli_fetch_array($rXY);
 	$tempXYval = $rowXY[0];
 	echo $tempXYval . ",";
 	}

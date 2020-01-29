@@ -3,10 +3,10 @@ include('mysql_connect.php');
 
 
 $q = "SELECT AssyPN, Title FROM ShipItems";
-$r = @mysql_query ($q, $dbc);
+$r = mysql_query ($q, $dbc);
 
 
-while ($row = mysql_fetch_array($r)) {
+while ($row = mysqli_fetch_array($r)) {
 	$tempPTN = $row[0];
 	$Description = $row[1];
 	
@@ -14,13 +14,13 @@ while ($row = mysql_fetch_array($r)) {
 			WHERE ProductTreeNumber = '$tempPTN'";
 	echo  $qDesc . "<br>";
 			
-	$rDesc = @mysql_query ($qDesc, $dbc);
-	echo "NumRows: " . @mysql_num_rows($rDesc);
-	if (@mysql_num_rows($rDesc) < 1){
+	$rDesc = mysql_query ($qDesc, $dbc);
+	echo "NumRows: " . mysqli_num_rows($rDesc);
+	if (mysqli_num_rows($rDesc) < 1){
 		echo $tempPTN . ", " . $Description . "<br>";
 		$qInsert = $q = "INSERT INTO ComponentTypes (ProductTreeNumber, Description) 
 		VALUES ('$tempPTN', '$Description')";	
-		$rInsert = @mysql_query ($qInsert, $dbc);
+		$rInsert = mysql_query ($qInsert, $dbc);
 		
 	}
 }

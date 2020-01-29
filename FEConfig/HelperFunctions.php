@@ -1,6 +1,7 @@
 <?php
 
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
+require_once($site_dbConnect);
 
 function FixHyperlink($doclink){
     /*
@@ -36,12 +37,13 @@ function FixHyperlink($doclink){
 }
 
 function FixHyperlinkForMySQL($doclink){
+    $dbconnection = site_getDbConnection();
     /*
      * This will preserve a UNC path when inserted in a MySQL query.
      */
     $newdoclink = trim($doclink);
     if (substr($doclink,0,1) == "\\"){
-        $newdoclink = @mysql_real_escape_string($doclink);
+        $newdoclink = mysqli_real_escape_string($dbconnection, $doclink);
     }
     return trim($newdoclink);
 }

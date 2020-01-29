@@ -32,7 +32,7 @@ if (isset($_POST['submitted']))
 
 		// Make the query:
 		$q = "DELETE FROM ComponentTypes WHERE keyId=$id LIMIT 1";		
-		$r = @mysql_query ($q, $dbc);
+		$r = mysql_query ($q, $dbc);
 		if (mysql_affected_rows($dbc) == 1) { // If it ran OK.
 		
 			// Print a message:
@@ -56,12 +56,12 @@ if (isset($_POST['submitted']))
 
 	// Retrieve the user's information:
 	$q = "SELECT ProductTreeNumber FROM ComponentTypes WHERE keyId=$id";
-	$r = @mysql_query ($q, $dbc);
+	$r = mysql_query ($q, $dbc);
 	
-	if (mysql_num_rows($r) == 1) { // Valid user ID, show the form.
+	if (mysqli_num_rows($r) == 1) { // Valid user ID, show the form.
 
 		// Get the user's information:
-		$row = mysql_fetch_array ($r, MYSQL_NUM);
+		$row = mysqli_fetch_array ($r, MYSQL_NUM);
 		
 		// Create the form:
 		echo '<form action="delete_record_component_type.php" method="post">

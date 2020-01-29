@@ -14,6 +14,8 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.dboperations.php');
 require_once($site_classes . '/class.fecomponent.php');
 require_once($site_classes . '/class.logger.php');
+require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 // $l = new Logger('SLNBROKEN.txt');
 // $l->WritELogFile('test');
@@ -75,7 +77,7 @@ if (isset($_REQUEST['Updated_By'])){
         }
 
         if ($_REQUEST['Notes'] != ''){
-            $ChangedNotes = @mysql_real_escape_string($_REQUEST['Notes']) . "\r\n" . $ChangedNotes;
+            $ChangedNotes = mysqli_real_escape_string($dbconnection, $_REQUEST['Notes']) . "\r\n" . $ChangedNotes;
         }
 
 
@@ -145,8 +147,8 @@ echo "
                     echo "<option value='' selected = 'selected'></option>";
                         $q = "SELECT Initials FROM Users
                               ORDER BY Initials ASC;";
-                        $r = @mysql_query($q,$db);
-                        while($row = @mysql_fetch_Array($r)){
+                        $r = mysqli_query($dbconnection, $q);
+                        while($row = mysqli_fetch_array($r)){
 
                                 echo "<option value='$row[0]'>$row[0]</option>";
 
@@ -166,8 +168,8 @@ echo "
                     <select name='fkStatusType' id='fkStatusType'>";
                         $q = "SELECT keyStatusType,Status FROM StatusTypes
                               ORDER BY keyStatusType ASC;";
-                        $r = @mysql_query($q,$db);
-                        while($row = @mysql_fetch_Array($r)){
+                        $r = mysqli_query($dbconnection, $q);
+                        while($row = mysqli_fetch_array($r)){
 
 //                             $l->WriteLogFile("Status Option: $row[0]");
 //                             $l->WriteLogFile("Current status= " . $fe->fesln->keyId);
@@ -197,8 +199,8 @@ echo "
                     <select name='fkLocationNames' id='fkLocationNames'>";
                         $q = "SELECT keyId,Description FROM Locations
                               ORDER BY Description ASC;";
-                        $r = @mysql_query($q,$db);
-                        while($row = @mysql_fetch_Array($r)){
+                        $r = mysqli_query($dbconnection, $q);
+                        while($row = mysqli_fetch_array($r)){
                             if ($row[0] == $fe->fesln->GetValue('fkLocationNames')){
                                 echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";
                             }

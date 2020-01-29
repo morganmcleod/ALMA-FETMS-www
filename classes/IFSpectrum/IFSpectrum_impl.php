@@ -75,6 +75,7 @@ class IFSpectrum_impl extends TestData_header {
     const EXPANDED_SPACING = 2.5; // dB  spacing between traces in expanded plot
 
     public function __construct() {
+        parent::__construct();
         $this->swVersion = "1.4.5";
         // 1.4.5  Move sizing the <div> for the info page out to the loader page
         //        Added GetTDHkeyString()

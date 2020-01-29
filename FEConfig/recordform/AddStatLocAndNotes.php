@@ -5,6 +5,7 @@ require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.dboperations.php');
 require_once($site_classes . '/class.fecomponent.php');
 require_once($site_dbConnect);
+$dbconnection = site_getDbConnection();
 
 //Since new components are being created, the facility code ($fc)
 //is not being passed in. It is defined in config_main.php.
@@ -17,30 +18,30 @@ $fekey=$_POST['fe'];
 
 //Get facility code to use for lookup:
 $q = "SELECT DefaultFacility FROM DatabaseDefaults";
-$r = @mysql_query($q,$db);
-$fc = @mysql_result($r,0,0);
+$r = mysqli_query($dbconnection, $q);
+$fc = ADAPT_mysqli_result($r,0,0);
 
 //get front end config value
-$get_feConfig_query=@mysql_query("SELECT max(keyFEConfig) as MaxFEConfig FROM FE_Config
-								 WHERE fkFront_Ends='$fekey' AND keyFacility='$fc'",$db);
-$feconfig=@mysql_result($get_feConfig_query,0,0);
+$get_feConfig_query=mysqli_query($dbconnection, "SELECT max(keyFEConfig) as MaxFEConfig FROM FE_Config
+								 WHERE fkFront_Ends='$fekey' AND keyFacility='$fc'");
+$feconfig=ADAPT_mysqli_result($get_feConfig_query,0,0);
 
 
 //if config does not exist create one.
 if (($feconfig=="") && ($fekey != ''))
 {
-	$fesn_query=mysql_query("SELECT SN FROM Front_Ends WHERE keyFrontEnds='$fekey'
+	$fesn_query=mysqli_query($dbconnection, "SELECT SN FROM Front_Ends WHERE keyFrontEnds='$fekey'
 	                          AND keyFacility='$fc'");
-	$fesn=mysql_result($fesn_query,0,"SN");
+	$fesn=ADAPT_mysqli_result($fesn_query,0,"SN");
 
-	mysql_query("INSERT INTO FE_Config(fkFront_Ends,Description,keyFacility)
+	mysqli_query($dbconnection, "INSERT INTO FE_Config(fkFront_Ends,Description,keyFacility)
 							 VALUES('$fekey','Cold PAS Config for SN $fesn','$fc'")
 
-	or die("Could not create frontend config" .mysql_query());
+	or die("Could not create frontend config" .mysqli_query($dbconnection, ));
 
-	$get_feConfig_query=mysql_query("SELECT max(keyFEConfig) as MaxFEConfig FROM FE_Config
+	$get_feConfig_query=mysqli_query($dbconnection, "SELECT max(keyFEConfig) as MaxFEConfig FROM FE_Config
 							WHERE fkFront_Ends='$fekey' AND keyFacility='$fc'");
-	$feconfig=mysql_result($get_feConfig_query,0,"MaxFEConfig");
+	$feconfig=ADAPT_mysqli_result($get_feConfig_query,0,"MaxFEConfig");
 
 }
 
@@ -56,22 +57,22 @@ if(isset($_COOKIE['compcookie']))
 
     foreach ($_COOKIE['compcookie'] as $name => $value)
     {
-		mysql_query("INSERT INTO FE_StatusLocationAndNotes
+		mysqli_query($dbconnection, "INSERT INTO FE_StatusLocationAndNotes
 				(fkFEComponents,fkLocationNames,fkStatusType,Notes,Updated_By,keyFacility)
 				Values('$value','$locval','$statval','$notes','$updatedby','$fc')")
-		or die("Could not insert into StatusLocationAndNotes" .mysql_error());
+		or die("Could not insert into StatusLocationAndNotes" . mysqli_error($dbconnection));
 
 
 		if (($fekey != '')){
 			//Only insert new FE_ConfigLink record if the user has specified a front end
-			$feconfig_facility_query=mysql_query("SELECT keyFacility FROM FE_Config
+			$feconfig_facility_query=mysqli_query($dbconnection, "SELECT keyFacility FROM FE_Config
 									WHERE keyFEConfig='$feconfig'");
-			$config_facility=mysql_result($feconfig_facility_query,0,"keyFacility");
+			$config_facility=ADAPT_mysqli_result($feconfig_facility_query,0,"keyFacility");
 
-			mysql_query("INSERT INTO FE_ConfigLink(fkFE_Components,fkFE_Config,fkFE_ComponentFacility,
+			mysqli_query($dbconnection, "INSERT INTO FE_ConfigLink(fkFE_Components,fkFE_Config,fkFE_ComponentFacility,
 						fkFE_ConfigFacility)
 						VALUES('$value','$feconfig','$fc','$config_facility')")
-			or die("Could not insert into FE_ConfigLink" .mysql_error());
+			or die("Could not insert into FE_ConfigLink" . mysqli_error($dbconnection));
 
 			$component = new FEComponent();
 			$component->Initialize_FEComponent($value,$fc);

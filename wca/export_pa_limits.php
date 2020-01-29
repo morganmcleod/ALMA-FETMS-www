@@ -1,6 +1,7 @@
 <?php
 
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
+require_once($site_dbConnect);
 require_once($site_classes . '/class.wca.php');
 
 function deleteDir($dirPath) {
@@ -45,10 +46,10 @@ and WCAs.TS >= '2017-02-21'
 and fkFE_ComponentType = 11 and Band >= 7 and Band <= 9
 group by Band, SN;";
 
-$r = @mysql_query($q, site_getDbConnection());
+$r = mysqli_query(site_getDbConnection(), $q);
 $lastBand = false;
 
-while ($row = @mysql_fetch_array($r)) {
+while ($row = mysqli_fetch_array($r)) {
     $band = $row[0];
     $sn = $row[1];
     $id = $row[2];
