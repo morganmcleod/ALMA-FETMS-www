@@ -27,7 +27,7 @@ switch ($site_hostname){
     case "fetms.osf.alma.cl":
         $rootdir_url = "http://fetms.osf.alma.cl/fetms/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
-        $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff_64";
+        $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff2_64";
         break;
 
     case "webtest.cv.nrao.edu":
