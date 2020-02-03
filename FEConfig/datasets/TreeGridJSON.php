@@ -24,7 +24,7 @@ if ($action == 'read') {
             AND TestData_header.Band = $Band
             AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
             AND FE_Config.fkFront_Ends = $FEid";
-    
+
     } else if ($compId) {
         //Get all TestData_header.keyId values for this component configuration and test datatype
         $q = "SELECT DISTINCT(TestData_header.keyId), TestData_header.fkFE_Components
@@ -40,7 +40,7 @@ if ($action == 'read') {
 
         //Empty out subheader records. This is an array to store each of the Test Data SubHeader child objects
         //for a TestData_header record.
-        $sub_records = '';
+        $sub_records = array();
 
         $tdheader = new GenericTable();
         $tdheader->Initialize('TestData_header',$row['keyId'],'keyId');
@@ -57,20 +57,19 @@ if ($action == 'read') {
             $rif = mysqli_query($dbconnection, $qif);
             $num_children = 0;
 
-            $numrowsif = mysqli_num_rows($rif);
-
-            while ($rowif = mysqli_fetch_array($rif)){
+            while ($rowif = mysqli_fetch_array($rif)) {
                 $subId = $rowif['keyId'];
                 $ifsub = new GenericTable();
                 $ifsub->Initialize('IFSpectrum_SubHeader', $subId, 'keyId');
-                $ifchannel = $ifsub->GetValue('IFChannel');
                 $text = $ifsub->GetValue('FreqLO') . " GHz (IF" . $ifsub->GetValue('IFChannel') . ")";
-                $checked = false;
-                if ($ifsub->GetValue('IsIncluded') == '1'){
-                    $checked = true;
-                }
-                $sub_records[$num_children] = array('text'=>$text, 'leaf'=>true, 'checked'=>$checked, 'id'=>$subId);
-
+                $checked = ($ifsub->GetValue('IsIncluded') == '1') ? true : false;
+                // Append to sub_records:
+                $sub_records[] = array(
+                        'text' => $text,
+                        'leaf' => true,
+                        'checked' => $checked,
+                        'id' => $subId
+                );
                 $num_children += 1;
                 unset($ifsub);
             }
@@ -89,23 +88,24 @@ if ($action == 'read') {
                     ORDER BY LOFreq ASC";
 
             $rlo = mysqli_query($dbconnection, $qlo);
-            $num_children = mysqli_num_rows($rlo);
-
-            $count_losub = 0;
-            while ($rowlo = mysqli_fetch_array($rlo)){
-                $checked = false;
-                if ($rowlo['IsIncluded'] == '1'){
-                    $checked = true;
+            if($rlo) {
+                $num_children = 0;
+                while ($rowlo = mysqli_fetch_array($rlo)) {
+                    //$subId is an id value for a specific LO frequency corresponding to an LOLockTest_SubHeader.keyId
+                    //An example $subId would be 2314_221
+                    $subId = $losubId . "_" . $rowlo['LOFreq'];
+                    $text = $rowlo['LOFreq'] . " GHz";
+                    $checked = ($rowlo['IsIncluded'] == '1') ? true : false;
+                    // Append to sub_records:
+                    $sub_records[] = array(
+                            'text' => $text,
+                            'leaf' => true,
+                            'checked' => $checked,
+                            'id' => $subId
+                    );
+                    $num_children += 1;
+                    unset($losub);
                 }
-                $text = $rowlo['LOFreq'] . " GHz";
-
-                //RecordID is an id value for a specific LO frequency corresponding to an LOLockTest_SubHeader.keyId
-                //An example RecordID would be 2314_221
-                $RecordID = $losubId . "_" . $rowlo['LOFreq'];
-                $sub_records[$count_losub] = array('text'=>$text,'leaf'=>true,'checked'=>$checked, 'id'=>$RecordID);
-
-                $count_losub++;
-                unset($losub);
             }
 
             break;
@@ -122,29 +122,29 @@ if ($action == 'read') {
                     ORDER BY FreqLO ASC";
 
             $rnt = mysqli_query($dbconnection, $qnt);
-            $num_children = mysqli_num_rows($rnt);
-
-            $count_ntsub = 0;
+            $num_children = 0;
             $prev_FreqLO = 0;
-            while ($rownt = mysqli_fetch_array($rnt)){
-                // only display one entry per LO Frequency
-                if ($prev_FreqLO != $rownt['FreqLO']){
-
-                    $checked = false;
-                    if ($rownt['IsIncluded'] == '1'){
-                        $checked = true;
+            if ($rnt) {
+                while ($rownt = mysqli_fetch_array($rnt)) {
+                    // only display one entry per LO Frequency
+                    if ($prev_FreqLO != $rownt['FreqLO']) {
+                        //$subId is an id value for a specific LO frequency corresponding to an LOLockTest_SubHeader.keyId
+                        //An example $subId would be 2314_221
+                        $subId = $ntsubId . "_" . $rownt['FreqLO'];
+                        $text = $rownt['FreqLO'] . " GHz";
+                        $checked = ($rownt['IsIncluded'] == '1') ? true : false;
+                        // Append to sub_records:
+                        $sub_records[] = array(
+                                'text' => $text,
+                                'leaf' => true,
+                                'checked' => $checked,
+                                'id' => $subId
+                        );
+                        $num_children += 1;
+                        unset($ntsub);
                     }
-                    $text = $rownt['FreqLO'] . " GHz";
-
-                    //RecordID is an id value for a specific LO frequency corresponding to an LOLockTest_SubHeader.keyId
-                    //An example RecordID would be 2314_221
-                    $RecordID = $ntsubId . "_" . $rownt['FreqLO'];
-                    $sub_records[$count_ntsub] = array('text'=>$text,'leaf'=>true,'checked'=>$checked, 'id'=>$RecordID);
-
-                    $count_ntsub += 1;
-                    unset($ntsub);
+                    $prev_FreqLO = $rownt['FreqLO'];
                 }
-                $prev_FreqLO = $rownt['FreqLO'];
             }
             break;
 
@@ -154,19 +154,25 @@ if ($action == 'read') {
         // but as a work around, just substitue a dummy record.  This may be better anyway
         // because it gives you a solid indication that there is no subheader data for a test
         // data record
-        if ($num_children == 0){
-            $sub_records[0] = array('text'=>"No Data Found",'leaf'=>true, 'id'=>$count);
+        if (!$num_children) {
+            $sub_records[0] = array(
+                    'text' => "No Data Found",
+                    'leaf' => true,
+                    'checked' => false,
+                    'id' => $count
+            );
         }
-        $tdh[$count] = '';
-        $tdh[$count]['text'] = 'TestData_header ' . $tdheader->keyId;
-        $tdh[$count]['config'] = ($FEid) ? $row['keyFEConfig'] : $row['fkFE_Components'];
-        $tdh[$count]['ts'] = $tdheader->GetValue('TS');
-        $tdh[$count]['notes'] = mysqli_real_escape_string($dbconnection, $tdheader->GetValue('Notes'));
-        $tdh[$count]['cls'] = 'folder';
-        $tdh[$count]['expanded'] = false;
-        $tdh[$count]['id'] = $tdheader->keyId;
-        $tdh[$count]['groupnumber'] = $tdheader->GetValue('DataSetGroup');
-        $tdh[$count]['children'] = $sub_records;
+        $tdh[$count] = array(
+                'text' => 'TestData_header ' . $tdheader->keyId,
+                'config' => ($FEid) ? $row['keyFEConfig'] : $row['fkFE_Components'],
+                'ts' => $tdheader->GetValue('TS'),
+                'notes' => mysqli_real_escape_string($dbconnection, $tdheader->GetValue('Notes')),
+                'cls' => 'folder',
+                'expanded' => false,
+                'id' => $tdheader->keyId,
+                'groupnumber' => $tdheader->GetValue('DataSetGroup'),
+                'children' => $sub_records
+        );
 
         $count += 1;
         unset($tdheader);
@@ -248,7 +254,7 @@ if ($action == 'update'){
 
     $oneRec = isset($array['id']);
     // True if only on TDH record.  False if more than one.
-    
+
     if ($oneRec) {
         //Update TestData_header record
         $TestData_header = new GenericTable();
@@ -257,7 +263,7 @@ if ($action == 'update'){
         $TestData_header->SetValue('Notes',$array['notes']);
         $TestData_header->Update();
         unset($TestData_header);
-    
+
     } else {
         //2d array: more than one TDH record
         $rows = count($array, 0);
