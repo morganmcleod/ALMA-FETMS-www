@@ -1111,13 +1111,11 @@ class DataPlotter extends GenericTable{
         //Get the measurement LO frequency:
         $fLO = $wsub->GetValue('lo');
 
-
         $imagename = "WorkAmpTemperatures_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
         if ($fifteenKStage)
             $image_url = $this->url_directory . "15K_$imagename";
         else
             $image_url = $this->url_directory . "$imagename";
-
         $plot_title = "Workmanship Temperatures, FE" . $this->TestDataHeader->Component->GetValue('SN');
         if ($band)
             $plot_title .= " Band $band, LO $fLO GHz";
@@ -1163,7 +1161,6 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n");
 
         $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
-
         if ($fifteenKStage) {
             $plot_string .= ", '$data_file'  using 1:11 title 'Cryo 15K stage' with lines axis x1y1";
             $plot_string .= ", '$data_file'  using 1:12 title 'Cryo 15K plate near link' with lines axis x1y1";
