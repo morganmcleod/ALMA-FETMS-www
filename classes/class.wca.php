@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.2.2";
-        /* 1.2.2 Add writing WCA XML file including cold and warm mults.  Guards on database ops.
+        $this->swversion = "1.2.3";
+        /* 1.2.3 Deleted Max Safe Power upload function and button.
+         * 1.2.2 Add writing WCA XML file including cold and warm mults.  Guards on database ops.
          * 1.2.1 Fix how Max Safe Power table computed.  Was using all history for (Band, SN).
          * 1.2.0 Added new-style ouput power plot and isolation plot for band 1.
          * 1.1.5 Plots guard against empty keyId
@@ -931,9 +932,6 @@ class WCA extends FEComponent {
             <!-- Name of input element determines name in $_FILES array -->
             <table id="table1"><tr class="alt"><th>Upload CSV Data files</th><th>Draw Plots</th></tr>
                 <tr><td align = "right">WCAs file:           </b><input name="file_wcas" type="file" /></td><td></td></tr>';
-        if ($band != 1) {
-            echo'<tr><td align = "right">Max Safe Power:      </b><input name="file_maxsafepower" type="file" /><td></td></tr>';
-        }
             echo '<tr><td align = "right">Amplitude Stability: </b><input name="file_amplitudestability" type="file" /></td>
                     <td align = "center"><input type="submit" name="draw_amplitudestability" value="Redraw Amp. Stability"></td></tr>';
         if ($band != 1) {
@@ -1011,11 +1009,6 @@ class WCA extends FEComponent {
                 if ($_FILES ['file_outputpower'] ['name'] != "") {
                     $this->Upload_OutputPower_file($_FILES ['file_outputpower'] ['tmp_name']);
                     $this->Plot_OutputPower();
-                }
-            }
-            if (isset($_FILES ['file_maxsafepower'] ['name'])) {
-                if ($_FILES ['file_maxsafepower'] ['name'] != "") {
-                    $this->Upload_MaxSafePower_file($_FILES ['file_maxsafepower'] ['tmp_name']);
                 }
             }
             if (isset($_FILES ['file_isolation'] ['name'])) {
@@ -1320,11 +1313,6 @@ class WCA extends FEComponent {
         if ($this->_WCAs->keyId > 0) {
             $this->_WCAs->DuplicateRecord();
         }
-    }
-    private function Upload_MaxSafePower_file($datafile_name) {
-        $filecontents = file($datafile_name);
-        $this->db_pull->del_ins('WCA_MaxSafePower', $filecontents, $this, $this->fc);
-        unlink($datafile_name);
     }
     private function Upload_AmplitudeStability_file($datafile_name) {
         // Test Data Header object
