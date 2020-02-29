@@ -49,6 +49,8 @@ if (isset($_REQUEST['Updated_By'])){
         $Updater = $_REQUEST['Updated_By'];
 
         $HasChanged = 0;
+        $ChangedNotes = "";
+        
         if (strlen($_REQUEST['Notes']) > 1){
             $HasChanged = 1;
         }
