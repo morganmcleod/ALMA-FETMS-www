@@ -37,7 +37,7 @@ class DataPlotter extends GenericTable{
         $this->swversion = "1.2.10";
 
         /*
-         * 1.2.10: If no data for WorkAmp, set plotURL to ""
+         * 1.2.10: If no data for WorkAmp, set plotURL to "_" broken link.
          * 1.2.9:  Added 15K stage plots to WorkAmp
          * 1.2.8:  Fix WorkAmp to exclude IF2 IF3 for bands 1, 9, 10
          * 1.2.7:  Include FETMS_Description in plot footers.
@@ -923,7 +923,7 @@ class DataPlotter extends GenericTable{
         if (!mysqli_num_rows($r)) {
             // No data.  Write blank URL:
             if (!$appendURL) {
-                $this->TestDataHeader->SetValue('PlotURL', "");
+                $this->TestDataHeader->SetValue('PlotURL', "_");
                 $this->TestDataHeader->Update();
             }
             return;
@@ -1065,7 +1065,7 @@ class DataPlotter extends GenericTable{
         if (!mysqli_num_rows($r)) {
             // No data.  Write blank URL:
             if (!$appendURL) {
-                $this->TestDataHeader->SetValue('PlotURL', "");
+                $this->TestDataHeader->SetValue('PlotURL', "_");
                 $this->TestDataHeader->Update();
             }
             return;
