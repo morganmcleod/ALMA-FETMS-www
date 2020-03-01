@@ -10,17 +10,17 @@ class GitInfo {
     private $masterHash;    // the hash of the master branch
 
     public function __construct() {
-        global $site_root;
+        global $files_root;
         // get the first line in the .git/HEAD file, typically like "ref: refs/heads/master":
-        $this->head = file($site_root . "/.git/HEAD", FILE_USE_INCLUDE_PATH);
+        $this->head = file($files_root . "/.git/HEAD", FILE_USE_INCLUDE_PATH);
         $this->head = trim($this->head[0]);
         // get the current branch, the third part of the head:
         $this->branch = explode("/", $this->head, 3);
         $this->branch = trim($this->branch[2]);
         // get the hash of the current branch:
-        $this->hash = file_get_contents(sprintf("$site_root/.git/refs/heads/%s", $this->branch));
+        $this->hash = file_get_contents(sprintf("$files_root/.git/refs/heads/%s", $this->branch));
         // get the hash of the master branch:
-        $this->masterHash = file_get_contents("$site_root/.git/refs/heads/master");
+        $this->masterHash = file_get_contents("$files_root/.git/refs/heads/master");
     }
     public function getHeadString() {
         return $this->head;

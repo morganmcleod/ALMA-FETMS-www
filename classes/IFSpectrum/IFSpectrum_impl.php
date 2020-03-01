@@ -76,7 +76,8 @@ class IFSpectrum_impl extends TestData_header {
 
     public function __construct() {
         parent::__construct();
-        $this->swVersion = "1.4.5";
+        $this->swVersion = "1.4.6";
+        // 1.4.6  Changed tables from 'table7' to 'table1' style for grid lines.
         // 1.4.5  Move sizing the <div> for the info page out to the loader page
         //        Added GetTDHkeyString()
         // 1.4.4  Display FETMS_Description in info table.
@@ -222,7 +223,7 @@ class IFSpectrum_impl extends TestData_header {
             $testmessage .= " FE-" . $this->FrontEnd->GetValue('SN');
         $testmessage .= " Band " . $this->band;
 
-        $url = '"' . $rootdir_url . 'FEConfig/ifspectrum/ifspectrumplots.php?fc='
+        $url = '"' . $url_root . 'FEConfig/ifspectrum/ifspectrumplots.php?fc='
             . $this->facilityCode . '&fe=' . $this->FEid . '&b=' . $this->band
             . '&id=' . $this->TDHid . '"';
         $this->progressfile = CreateProgressFile($testmessage, '', $url);
@@ -294,7 +295,7 @@ class IFSpectrum_impl extends TestData_header {
         if ($data) {
             // TODO: add back in borders/shading.
             echo "<div style = 'width:600px'>";
-            echo "<table id = 'table7' border = '1'>";
+            echo "<table id = 'table1' border = '1'>";
             echo "<tr><th colspan = '5'>Band $this->band Total and In-Band Power</th></tr>";
             echo "<tr><th colspan = '5'><b>IF Channel $ifChannel</b></th></tr>";
             echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
@@ -380,9 +381,9 @@ class IFSpectrum_impl extends TestData_header {
 
             // TODO: add back in borders/shading.
             echo "<div style='width:400px' border='1'>";
-            echo "<table id = 'table7' border='1'>";
+            echo "<table id = 'table1' border='1'>";
             echo "<tr class='alt'><th colspan = '$colSpan'>$plotTitle</th></tr>";
-            echo "<tr class='alt3'><td style='border-right:solid 1px #000000;'><b>LO (GHz)</td>";
+            echo "<tr class='alt2'><td style='border-right:solid 1px #000000;'><b>LO (GHz)</td>";
             echo "<td><b>IF0</b></td>";
             echo "<td><b>IF1</b></td>";
             if (!$noLSB) {

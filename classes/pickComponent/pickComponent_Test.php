@@ -18,7 +18,7 @@ echo "<div id='here'></div>";
 echo "<script type='text/javascript'>
         function callback(obj) { alert(obj['name'] + ' : ' + obj['id']); }
         Ext.onReady(function() {
-            popupMoveToOtherFE('100', \"$rootdir_url\", 0, 0);
+            popupMoveToOtherFE('100', \"$url_root\", 0, 0);
         });</script>";
 
 // pickComponent(ComponentTypes.FE, 'here', 'Select Front End', callback);
