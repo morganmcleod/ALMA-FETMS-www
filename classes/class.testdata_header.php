@@ -107,8 +107,8 @@ class TestData_header extends GenericTable {
         $exportcsvurl = "export_to_csv.php?keyheader=$this->keyId&fc=$this->fc";
         if ($this->FrontEnd) {
             $fesn = $this->FrontEnd->GetValue('SN');
-            require(site_get_config_main());  // for $rootdir_url
-            $popupScript = "javascript:popupMoveToOtherFE(\"FE-$fesn\", \"$rootdir_url\", [$this->keyId]);";
+            require(site_get_config_main());  // for $url_root
+            $popupScript = "javascript:popupMoveToOtherFE(\"FE-$fesn\", \"$url_root\", [$this->keyId]);";
         }
         echo "<table>";
         switch ($this->GetValue('fkTestData_Type')) {

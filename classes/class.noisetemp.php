@@ -77,8 +77,9 @@ class NoiseTemperature extends TestData_header {
     public function Initialize_NoiseTemperature($in_keyId, $in_fc) {
         parent::Initialize_TestData_header($in_keyId, $in_fc);
 
-        $this->SWVersion = "1.3.1";
+        $this->SWVersion = "1.3.2";
         /*
+         * 1.3.2 Don't show secondary Y axis when no CCA data available
          * 1.3.1 Include FETMS_Description in plot footers.
          * 1.3.0 Added Export()
          * 1.2.8 Fix no err if FE not defined.
@@ -868,38 +869,6 @@ class NoiseTemperature extends TestData_header {
     private function LoadAndWriteCCANoiseTempData() {
         $this->foundCCAData = false;
 
-        $this->datafile_cart_0_1 = $this->plotDir . "NoiseTemp_Cart_pol0_SB1.txt";
-        $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB1: $this->datafile_cart_0_1");
-        $fc01 = fopen($this->datafile_cart_0_1, 'w');
-
-        $this->datafile_cart_0_2 = $this->plotDir . "NoiseTemp_Cart_pol0_SB2.txt";
-        $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB2: $this->datafile_cart_0_2");
-        $fc02 = fopen($this->datafile_cart_0_2, 'w');
-
-        $this->datafile_cart_1_1 = $this->plotDir . "NoiseTemp_Cart_pol1_SB1.txt";
-        $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB1: $this->datafile_cart_1_1");
-        $fc11 = fopen($this->datafile_cart_1_1, 'w');
-
-        $this->datafile_cart_1_2 = $this->plotDir . "NoiseTemp_Cart_pol1_SB2.txt";
-        $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB2: $this->datafile_cart_1_2");
-        $fc12 = fopen($this->datafile_cart_1_2, 'w');
-
-        $this->datafile_diff_0_1 = $this->plotDir . "NoiseTemp_Diff_pol0_SB1.txt";
-        $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB1: $this->datafile_diff_0_1");
-        $fdiff01 = fopen($this->datafile_diff_0_1, 'w');
-
-        $this->datafile_diff_0_2 = $this->plotDir . "NoiseTemp_Diff_pol0_SB2.txt";
-        $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB2: $this->datafile_diff_0_2");
-        $fdiff02 = fopen($this->datafile_diff_0_2, 'w');
-
-        $this->datafile_diff_1_1 = $this->plotDir . "NoiseTemp_Diff_pol1_SB1.txt";
-        $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB1: $this->datafile_diff_1_1");
-        $fdiff11 = fopen($this->datafile_diff_1_1, 'w');
-
-        $this->datafile_diff_1_2 = $this->plotDir . "NoiseTemp_Diff_pol1_SB2.txt";
-        $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB2: $this->datafile_diff_1_2");
-        $fdiff12 = fopen($this->datafile_diff_1_2, 'w');
-
         $cnt = 0;  // initialize counter for do-while loop
         $compKey = '';
         do {    // check all CCA configurations for NT data
@@ -924,6 +893,38 @@ class NoiseTemperature extends TestData_header {
 
         } else {
             $this->foundCCAData = true;
+            
+            $this->datafile_cart_0_1 = $this->plotDir . "NoiseTemp_Cart_pol0_SB1.txt";
+            $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB1: $this->datafile_cart_0_1");
+            $fc01 = fopen($this->datafile_cart_0_1, 'w');
+            
+            $this->datafile_cart_0_2 = $this->plotDir . "NoiseTemp_Cart_pol0_SB2.txt";
+            $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB2: $this->datafile_cart_0_2");
+            $fc02 = fopen($this->datafile_cart_0_2, 'w');
+            
+            $this->datafile_cart_1_1 = $this->plotDir . "NoiseTemp_Cart_pol1_SB1.txt";
+            $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB1: $this->datafile_cart_1_1");
+            $fc11 = fopen($this->datafile_cart_1_1, 'w');
+            
+            $this->datafile_cart_1_2 = $this->plotDir . "NoiseTemp_Cart_pol1_SB2.txt";
+            $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB2: $this->datafile_cart_1_2");
+            $fc12 = fopen($this->datafile_cart_1_2, 'w');
+            
+            $this->datafile_diff_0_1 = $this->plotDir . "NoiseTemp_Diff_pol0_SB1.txt";
+            $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB1: $this->datafile_diff_0_1");
+            $fdiff01 = fopen($this->datafile_diff_0_1, 'w');
+            
+            $this->datafile_diff_0_2 = $this->plotDir . "NoiseTemp_Diff_pol0_SB2.txt";
+            $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB2: $this->datafile_diff_0_2");
+            $fdiff02 = fopen($this->datafile_diff_0_2, 'w');
+            
+            $this->datafile_diff_1_1 = $this->plotDir . "NoiseTemp_Diff_pol1_SB1.txt";
+            $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB1: $this->datafile_diff_1_1");
+            $fdiff11 = fopen($this->datafile_diff_1_1, 'w');
+            
+            $this->datafile_diff_1_2 = $this->plotDir . "NoiseTemp_Diff_pol1_SB2.txt";
+            $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB2: $this->datafile_diff_1_2");
+            $fdiff12 = fopen($this->datafile_diff_1_2, 'w');
 
             // find the max keyDataSet for CCA noise temp:
             $q ="SELECT MAX(keyDataSet) FROM CCA_TEST_NoiseTemperature WHERE fkheader = $CCA_NT_key";
@@ -1143,15 +1144,15 @@ class NoiseTemperature extends TestData_header {
                     $FEIC_cnt++; // increment index
                 }
             }
+            fclose($fc01);
+            fclose($fc02);
+            fclose($fc11);
+            fclose($fc12);
+            fclose($fdiff01);
+            fclose($fdiff02);
+            fclose($fdiff11);
+            fclose($fdiff12);
         }
-        fclose($fc01);
-        fclose($fc02);
-        fclose($fc11);
-        fclose($fc12);
-        fclose($fdiff01);
-        fclose($fdiff02);
-        fclose($fdiff11);
-        fclose($fdiff12);
     }
 
     private function MakePlotFooterLabels() {
@@ -1420,9 +1421,11 @@ class NoiseTemperature extends TestData_header {
                     fwrite($f,  " ".'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .9'."\r\n");
                 }
             }
-            fwrite($f, "set y2label 'Difference from Spec(%)'\r\n");
-            fwrite($f, "set y2tics\r\n");
-            fwrite($f, "set y2range [0:120]\r\n");
+            if ($this->foundCCAData) {
+                fwrite($f, "set y2label 'Difference from Spec(%)'\r\n");
+                fwrite($f, "set y2tics\r\n");
+                fwrite($f, "set y2range [0:120]\r\n");
+            }
             fwrite($f, "set key outside\r\n");
             fwrite($f, "set bmargin 6\r\n");
             fwrite($f, $this->plot_label_1);

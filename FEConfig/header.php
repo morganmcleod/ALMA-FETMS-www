@@ -3,9 +3,9 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require(site_get_config_main());
 require_once($site_dbConnect);
 if (!isset($home))
-    $home = $rootdir_url . "FEConfig/FEHome.php";
+    $home = $url_root . "FEConfig/FEHome.php";
 if (!isset($showConfig))
-    $showConfig = $rootdir_url . "FEConfig/ShowFEConfig.php";
+    $showConfig = $url_root . "FEConfig/ShowFEConfig.php";
 
 // URL for bug reporting:
 $bugsTo = "http://jira.alma.cl/browse/FETMS/";

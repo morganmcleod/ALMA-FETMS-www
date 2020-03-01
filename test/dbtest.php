@@ -6,7 +6,7 @@ require_once($site_dbConnect);
 $dbconnection = site_getDbConnection();
 
 echo "DB Test<br><br>";
-echo "site_root=$site_root<br>";
+echo "files_root=$files_root<br>";
 echo "site_hostname=$site_hostname<br>";
 echo "dbserver=$dbserver<br>";
 echo "dbname=$dbname<br><br>";
