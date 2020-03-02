@@ -35,11 +35,12 @@ class eff {
     private $specsProvider;     //class Specifications
 
     public function __construct() {
-        $this->software_version_class_eff = "1.3.0";
+        $this->software_version_class_eff = "1.3.1";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
 
         /* Version history:
+         * 1.3.1  Display defocus efficiency with 3 decimal places
          * 1.3.0  Add Export(), made most vars private and deleted unused vars.
          * 1.2.4  Remove dubious secondary defocus calculation.
          * 1.2.3  Display defocus effs as percent
@@ -911,19 +912,13 @@ class eff {
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-//             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('shift_from_focus_mm'), 2) . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('defocus_efficiency'), 2) . "</td>";
-//             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('subreflector_shift_mm'), 2) . "</td>";
-//             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('defocus_efficiency_due_to_moving_the_subreflector'), 2) . "</td>";
+            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('defocus_efficiency'), 3) . "</td>";
 
             echo "<tr>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
             echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-//             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('shift_from_focus_mm'), 2) . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('defocus_efficiency'), 2) . "</td>";
-//             echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('subreflector_shift_mm'), 2) . "</td>";
-//             echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('defocus_efficiency_due_to_moving_the_subreflector'), 2) . "</td>";
+            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('defocus_efficiency'), 3) . "</td>";
         }
         //Meas SW Ver
         echo "<tr><td colspan='7'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
