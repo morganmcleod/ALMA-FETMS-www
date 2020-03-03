@@ -76,7 +76,7 @@ $rLoc = mysql_query ($qLoc, $dbc);
 
 if (mysqli_num_rows($rLoc) == 1) { // Valid ID, show the form.
 	// Get the information:
-	$rowLoc = mysqli_fetch_array ($rLoc, MYSQL_NUM);
+    $rowLoc = mysqli_fetch_array ($rLoc, MYSQLI_NUM);
 	$tempDescription = $rowLoc[0];
 	$tempNotes = $rowLoc[1];
 	
