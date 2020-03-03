@@ -74,7 +74,7 @@ if ($keyScanDet) {
         $q = "SELECT * FROM BeamListings_farfield WHERE fkScanDetails = $keyScanDet;";
     
     $r = mysqli_query(site_getDbConnection(), $q);
-    while($row = mysqli_fetch_array($r, MYSQL_NUM)) {
+    while($row = mysqli_fetch_array($r, MYSQLI_NUM)) {
         $first = true;
         foreach($row as $cell) {
             if ($first)

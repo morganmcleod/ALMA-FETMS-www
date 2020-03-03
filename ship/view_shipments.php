@@ -25,7 +25,7 @@ $BandView = "All";
  // Count the number of records:
 $q = "SELECT COUNT(keyId) FROM Shipments";	
 $r = mysql_query ($q, $dbc);
-$row = mysqli_fetch_array ($r, MYSQL_NUM);
+$row = mysqli_fetch_array ($r, MYSQLI_NUM);
 $records = $row[0];
 // Calculate the number of pages...
 if ($records > $display) { // More than 1 page.

@@ -61,7 +61,7 @@ if (isset($_POST['submitted']))
 	if (mysqli_num_rows($r) == 1) { // Valid user ID, show the form.
 
 		// Get the user's information:
-		$row = mysqli_fetch_array ($r, MYSQL_NUM);
+	    $row = mysqli_fetch_array ($r, MYSQLI_NUM);
 		
 		// Create the form:
 		echo '<form action="delete_record_component_type.php" method="post">
