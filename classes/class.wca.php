@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.2.3";
-        /* 1.2.3 Deleted Max Safe Power upload function and button.
+        $this->swversion = "1.2.4";
+        /* 1.2.4 Plot Output Power vs Drain Voltage specified X-axis ranges per-band.
+         * 1.2.3 Deleted Max Safe Power upload function and button.
          * 1.2.2 Add writing WCA XML file including cold and warm mults.  Guards on database ops.
          * 1.2.1 Fix how Max Safe Power table computed.  Was using all history for (Band, SN).
          * 1.2.0 Added new-style ouput power plot and isolation plot for band 1.
@@ -2168,6 +2169,8 @@ class WCA extends FEComponent {
         $spec_description_2 = $specs ['spec_description_2'];
         $enable_spec_2 = $specs ['enable_spec_2'];
 
+        $plotXMax = $specs['OPvsVD_XMax'];
+        
         $datafile_count = 0;
         $rFindLO = $this->db_pull->qFindLO('WCA_OutputPower', $this->tdh_outputpower->keyId, $this->fc, $pol, '<> 1');
         $rowLO = mysqli_fetch_array($rFindLO);
@@ -2226,6 +2229,9 @@ class WCA extends FEComponent {
         fwrite($fh, "set xlabel 'VD$pol (V)'\r\n");
         fwrite($fh, "set ylabel 'Output Power (mW)'\r\n");
         fwrite($fh, "set key outside\r\n");
+        
+        if ($plotXMax)
+            fwrite($fh, "set xrange[0:$plotXMax]\r\n");
 
         // plot the spec lines:
         $plot_string = "plot $spec_value_1 title '$spec_description_1' with lines lw 4 lt 1 ";
