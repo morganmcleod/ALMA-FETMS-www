@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.2.4";
-        /* 1.2.4 Plot Output Power vs Drain Voltage specified X-axis ranges per-band.
+        $this->swversion = "1.2.5";
+        /* 1.2.5 Plot Output Power vs Drain Voltage use max(VD0, VD1) rouned up to nearest 0.5
+         * 1.2.4 Plot Output Power vs Drain Voltage specified X-axis ranges per-band.
          * 1.2.3 Deleted Max Safe Power upload function and button.
          * 1.2.2 Add writing WCA XML file including cold and warm mults.  Guards on database ops.
          * 1.2.1 Fix how Max Safe Power table computed.  Was using all history for (Band, SN).
@@ -2055,7 +2056,7 @@ class WCA extends FEComponent {
         $specs = $this->new_spec->getSpecs('wca', $band);
         $spec_value_1 = $specs ['spec_value_1'];
         $spec_description_1 = $specs ['spec_description_1'];
-
+        
         // Find the LO frequencies present in the raw data:
         $datafile_count = 0;
         $rFindLO = $this->db_pull->qFindLO('WCA_OutputPower', $this->tdh_outputpower->keyId, $this->fc, $pol, '<> 1');
@@ -2169,7 +2170,14 @@ class WCA extends FEComponent {
         $spec_description_2 = $specs ['spec_description_2'];
         $enable_spec_2 = $specs ['enable_spec_2'];
 
-        $plotXMax = $specs['OPvsVD_XMax'];
+        // Find X-axis max:
+        //$plotXMax = $specs['OPvsVD_XMax'];   Getting from data instead of specs now...
+        $r = $this->db_pull->q(17, $this->tdh_outputpower->keyId);
+        $row = mysqli_fetch_array($r);
+        $maxVD0 = ADAPT_mysqli_result($r, 0);
+        $maxVD1 = ADAPT_mysqli_result($r, 1);
+        // Ceil to nearest 0.5:
+        $plotXMax = ceil(max($maxVD0, $maxVD1) * 2) / 2;
         
         $datafile_count = 0;
         $rFindLO = $this->db_pull->qFindLO('WCA_OutputPower', $this->tdh_outputpower->keyId, $this->fc, $pol, '<> 1');
