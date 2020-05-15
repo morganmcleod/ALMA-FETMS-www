@@ -151,6 +151,8 @@ class WCAdb { //extends DBRetrieval {
 			$q = "SELECT VD$pol,Power FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet = 3 AND FreqLO = $CurrentLO AND fkFacility = $fc ORDER BY Power ASC, VD$pol ASC;";
 		} elseif($occur == 16) {
 		    $q = "SELECT TS, FreqLO, S21AmpdB, S12AmpdB FROM WCA_Isolation WHERE fkHeader = $keyId ORDER BY FreqLO ASC;";
+		} elseif($occur == 17) {
+		    $q = "SELECT MAX(VD0), MAX(VD1) FROM WCA_OutputPower WHERE fkHeader = $keyId AND keyDataSet <> 1;";
 		} else {
 			$q = '';
 		}

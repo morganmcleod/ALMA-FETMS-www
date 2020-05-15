@@ -54,7 +54,7 @@ if ($drawPlots) {
 
     /* close out the server process, release to the client */
     header ('Content-Length: 0');
-    header("location: $rootdir_url/FEConfig/pbar/status.php?lf=" . $ifspec -> getProgressFile());
+    header("location: $url_root/FEConfig/pbar/status.php?lf=" . $ifspec -> getProgressFile());
     ob_end_flush();
     flush();
 
@@ -82,7 +82,7 @@ include "header_ifspectrum.php";
 echo "<script type='text/javascript'>
 		Ext.onReady(function() {
 		    function popupCallback() {
-		        popupMoveToOtherFE('FE-$fesn', \"$rootdir_url\", [$tdhIdArray]);
+		        popupMoveToOtherFE('FE-$fesn', \"$url_root\", [$tdhIdArray]);
 		    }
 		    createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band, popupCallback);
         });</script>";

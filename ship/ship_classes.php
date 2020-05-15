@@ -99,7 +99,7 @@ class Shipment_class{
 		$LocationNumber = $this->ShipToLocation;
 		$qLocation = "SELECT Description, Notes FROM Locations WHERE keyId=$LocationNumber";		
 		$rLocation = mysql_query ($qLocation, $dbc);
-		$rowLocation = mysqli_fetch_array ($rLocation, MYSQL_NUM);
+		$rowLocation = mysqli_fetch_array ($rLocation, MYSQLI_NUM);
 		$ShipToLocation = $rowLocation[0] . ' (' . $rowLocation[1] . ')';
 		
 	

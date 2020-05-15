@@ -115,7 +115,7 @@ if (isset($_REQUEST['drawplot'])) {
 echo "<script type='text/javascript'>
 		Ext.onReady(function() {
 		    function popupCallback() {
-		        popupMoveToOtherFE('FE-$fesn', \"$rootdir_url\", [$tdh->keyId]);
+		        popupMoveToOtherFE('FE-$fesn', \"$url_root\", [$tdh->keyId]);
 		    }
 		    createBPTabs($fc, $tdh_key, $band, $bpstatus, popupCallback)
         });</script>";
