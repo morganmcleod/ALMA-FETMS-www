@@ -13,14 +13,25 @@ $wca->RequestValues_WCA();
 
 if ((isset($_REQUEST['submit_datafile'])) || (isset($_REQUEST['submitted']))){
 
+    $ret = false;
+    
     if ($wca->keyId == ''){
         $wca->NewRecord_WCA();
-        $wca->RequestValues_WCA();
+        $ret = $wca->RequestValues_WCA();
     }
-
+    
     $wca->Update_WCA();
-    echo "<font size = '+10'>Record Updated</font><br><br>";
-//     echo '<meta http-equiv="Refresh" content="1;url=wca.php?fc='.$wca->fc.'&keyId='.$wca->keyId.'">';
+    if ($ret)
+        echo "<font size = '+10'>Record Updated</font><br><br>";
+    else {
+        $errorstring = "";
+        if (count($wca->ErrorArray) > 0){
+            for ($i = 0; $i < count($wca->ErrorArray); $i++){
+                $errorstring .= $wca->ErrorArray[$i] . '<br><br>';
+            }
+        }
+        echo "<font size = '+3'>$errorstring</font><br><br>";
+    }
 }
 
 $wca->DisplayData_WCA();

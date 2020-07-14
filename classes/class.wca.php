@@ -989,9 +989,11 @@ class WCA extends FEComponent {
                     $this->NewRecord_WCA();
                 }
                 if ($_FILES ['file_wcas'] ['name'] != "") {
-                    $this->Upload_WCAs_file($_FILES ['file_wcas'] ['tmp_name']);
+                    if ($this->Upload_WCAs_file($_FILES ['file_wcas'] ['tmp_name']))
+                        $this->Update_WCA();
+                    else
+                        return false;
                 }
-                $this->Update_WCA();
             }
             if (isset($_FILES ['file_amplitudestability'] ['name'])) {
                 if ($_FILES ['file_amplitudestability'] ['name'] != "") {
@@ -1048,6 +1050,7 @@ class WCA extends FEComponent {
         if (isset($_REQUEST ['exportcsv_amplitudestability'])) {
             $this->ExportCSV("amplitudestability");
         }
+        return true;
     }
     private function DeleteRecord_WCA() {
         $this->db_pull->qDel($this->keyId, 'WCAs', TRUE);
@@ -1064,25 +1067,36 @@ class WCA extends FEComponent {
         echo '<meta http-equiv="Refresh" content="1;url=wca_main.php">';
     }
     private function Upload_WCAs_file($datafile_name) {
+        $ret = false;
         $filecontents = file($datafile_name);
-
+       
         for($i = 0; $i < sizeof($filecontents); $i++) {
             $line_data = trim($filecontents [$i]);
             $tempArray = explode(",", $line_data);
             $quotes = '"\'';
             $band = trim($tempArray[0], $quotes);
+            $newSN = trim($tempArray[1], $quotes);
+            $oldSN = trim($this -> GetValue('SN'), $quotes);
             if (is_numeric(substr($band, 0, 1))) {
-                $this->SetValue('Band', $band);
-                $this->SetValue('SN', trim($tempArray[1], $quotes));
-                $this->SetValue('TS', trim($tempArray[2], $quotes));
-                $this->SetValue('ESN1', trim($tempArray[3], $quotes));
-                $this->_WCAs->SetValue('FhiYIG', trim($tempArray[4], $quotes));
-                $this->_WCAs->SetValue('FloYIG', trim($tempArray[5], $quotes));
-                $this->_WCAs->SetValue('VG0', trim($tempArray[6], $quotes));
-                $this->_WCAs->SetValue('VG1', trim($tempArray[7], $quotes));
+                if ($oldSN != "" && $newSN != $oldSN) {
+                    $this->AddError("Upload blocked:");
+                    $this->AddError("Serial number '$newSN' doesn't match '$oldSN'.");
+                    $ret = false;
+                } else {
+                    $this->SetValue('Band', $band);
+                    $this->SetValue('SN', $newSN);
+                    $this->SetValue('TS', date("Y-m-d H:i:s"));
+                    $this->SetValue('ESN1', trim($tempArray[3], $quotes));
+                    $this->_WCAs->SetValue('FhiYIG', trim($tempArray[4], $quotes));
+                    $this->_WCAs->SetValue('FloYIG', trim($tempArray[5], $quotes));
+                    $this->_WCAs->SetValue('VG0', trim($tempArray[6], $quotes));
+                    $this->_WCAs->SetValue('VG1', trim($tempArray[7], $quotes));
+                    $ret = true;
+                }
             }
         }
         unlink($datafile_name);
+        return $ret;
     }
     public function UploadConfiguration($datafile_name, $datafile_tmpname) {
         $this->SubmittedFileName = $datafile_name;
