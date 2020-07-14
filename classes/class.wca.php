@@ -38,8 +38,10 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.2.5";
-        /* 1.2.5 Plot Output Power vs Drain Voltage use max(VD0, VD1) rouned up to nearest 0.5
+        $this->swversion = "1.3.0";
+        /* 1.3.0 Changed format of WCAs.CSV file to "band, serial, CreatedDate, ESN, YIGHigh, YIGLow, VGA, VGB"
+         *       Removed SAVE CHANGES.  Upload is the only way to update these things now.
+         * 1.2.5 Plot Output Power vs Drain Voltage use max(VD0, VD1) rouned up to nearest 0.5
          * 1.2.4 Plot Output Power vs Drain Voltage specified X-axis ranges per-band.
          * 1.2.3 Deleted Max Safe Power upload function and button.
          * 1.2.2 Add writing WCA XML file including cold and warm mults.  Guards on database ops.
@@ -207,7 +209,9 @@ class WCA extends FEComponent {
         else
             echo "<input type='hidden' name='fc' value='$this->fc'>";
 
-        echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>";
+// Removed for 1.3.0 by request:
+//         echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>";
+
         echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'><br>";
 
         echo "</div>";
@@ -1065,17 +1069,17 @@ class WCA extends FEComponent {
         for($i = 0; $i < sizeof($filecontents); $i++) {
             $line_data = trim($filecontents [$i]);
             $tempArray = explode(",", $line_data);
-
-            if (is_numeric(substr($tempArray [0], 0, 1)) == true) {
-                $this->SetValue('Band', $tempArray [0]);
-                // $this->SetValue('TS',$tempArray[2]);
-                $this->SetValue('SN', $tempArray [1]);
-                $ESN = str_replace('"', '', $tempArray [5]);
-                $this->SetValue('ESN1', $ESN);
-                $this->_WCAs->SetValue('FloYIG', $tempArray [6]);
-                $this->_WCAs->SetValue('FhiYIG', $tempArray [7]);
-                $this->_WCAs->SetValue('VG0', str_replace('"', '', $tempArray [13]));
-                $this->_WCAs->SetValue('VG1', str_replace('"', '', $tempArray [14]));
+            $quotes = '"\'';
+            $band = trim($tempArray[0], $quotes);
+            if (is_numeric(substr($band, 0, 1))) {
+                $this->SetValue('Band', $band);
+                $this->SetValue('SN', trim($tempArray[1], $quotes));
+                $this->SetValue('TS', trim($tempArray[2], $quotes));
+                $this->SetValue('ESN1', trim($tempArray[3], $quotes));
+                $this->_WCAs->SetValue('FhiYIG', trim($tempArray[4], $quotes));
+                $this->_WCAs->SetValue('FloYIG', trim($tempArray[5], $quotes));
+                $this->_WCAs->SetValue('VG0', trim($tempArray[6], $quotes));
+                $this->_WCAs->SetValue('VG1', trim($tempArray[7], $quotes));
             }
         }
         unlink($datafile_name);
