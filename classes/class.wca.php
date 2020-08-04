@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.1";
-        /* 1.3.1 Made import and plot amplitude stability slightly more robust to data errors
+        $this->swversion = "1.3.2";
+        /* 1.3.2 Amplitude stability X axis is labeled [ms].  Removed dubous code from writing data files loop.
+         * 1.3.1 Made import and plot amplitude stability slightly more robust to data errors
          * 1.3.0 Changed format of WCAs.CSV file to "band, serial, CreatedDate, ESN, YIGHigh, YIGLow, VGA, VGB"
          *       Removed SAVE CHANGES.  Upload is the only way to update these things now.
          * 1.2.5 Plot Output Power vs Drain Voltage use max(VD0, VD1) rouned up to nearest 0.5
@@ -1386,11 +1387,6 @@ class WCA extends FEComponent {
                             }
                             $fh = fopen($data_file [$datafile_count], 'w');
                             $row = mysqli_fetch_array($r);
-                            $TimeVal = $row[0];
-    
-                            if ($TimeVal > 500) {
-                                fwrite($fh, "$row[0]\t0.00000009\r\n");
-                            }
                             while ($row = mysqli_fetch_array($r)) {
                                 $stringData = "$row[0]\t$row[1]\r\n";
                                 fwrite($fh, $stringData);
@@ -1428,7 +1424,7 @@ class WCA extends FEComponent {
                 fwrite($fh, "set log xy\r\n");
                 fwrite($fh, "set key outside\r\n");
                 fwrite($fh, "set ylabel 'Allan Variance'\r\n");
-                fwrite($fh, "set xlabel 'Allan Time, T (=Integration, Tau)'\r\n");
+                fwrite($fh, "set xlabel 'Allan Time, T (=Integration, Tau) [ms]'\r\n");
     
                 $ymax = pow(10, -5);
                 fwrite($fh, "set yrange [:$ymax]\r\n");
