@@ -1364,32 +1364,29 @@ class WCA extends FEComponent {
             $image_url = "";
 
         else {
-            $rowLO = mysqli_fetch_array($rFindLO);
+            $LOArray = mysqli_fetch_all($rFindLO);
             
-            if (!$rowLO)
+            if (!$LOArray)
                 $image_url = "";
             
             else {
                 $datafile_count = 0;
-                $spec_value = 0.0000001;
-                $numLOs = sizeof($rowLO);
-                
-                for($j = 0; $j <= 1; $j++) {
-                    for($i = 0; $i < $numLOs; $i++) {
-                        $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
-                        $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
+                foreach($LOArray as $LORow) {
+                    $LO = $LORow[0];
+                    for($pol = 0; $pol <= 1; $pol++) {
+                        $DataSeriesName = "LO $LO GHz, Pol $pol";
     
-                        $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $j, NULL, NULL, $CurrentLO);
+                        $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $pol, NULL, NULL, $LO);
     
                         if ($r && mysqli_num_rows($r) > 1) {
-                            $plottitle [$datafile_count] = "Pol $j, $CurrentLO GHz";
-                            $data_file [$datafile_count] = $this->writedirectory . "wca_as_data_" . $i . "_" . $j . ".txt";
+                            $plottitle [$datafile_count] = "Pol $pol, $LO GHz";
+                            $data_file [$datafile_count] = $this->writedirectory . "wca_as_data_" . $LO . "_" . $pol . ".txt";
                             if (file_exists($data_file [$datafile_count])) {
                                 unlink($data_file [$datafile_count]);
                             }
                             $fh = fopen($data_file [$datafile_count], 'w');
                             $row = mysqli_fetch_array($r);
-                            $TimeVal = $row [0];
+                            $TimeVal = $row[0];
     
                             if ($TimeVal > 500) {
                                 fwrite($fh, "$row[0]\t0.00000009\r\n");
@@ -1398,13 +1395,11 @@ class WCA extends FEComponent {
                                 $stringData = "$row[0]\t$row[1]\r\n";
                                 fwrite($fh, $stringData);
                             }
-                            // }
-    
                             fclose($fh);
                             $datafile_count++;
                         }
-                    } // end for i
-                } // end for j
+                    }
+                }
     
                 // Write command file for gnuplot
                 $TS = $this->tdh_ampstab->GetValue('TS');
