@@ -10,7 +10,7 @@
  * @param bpstatus
  * @returns
  */
-function createBPTabs(fc, id, band, bpstatus, popupCallback = false) {
+function createBPTabs(fc, id, band, bpstatus, popupCallback) {
     var buttontext = '';
     var pointingOption = 'nominal';
     
