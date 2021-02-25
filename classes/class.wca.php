@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.2";
-        /* 1.3.2 Amplitude stability X axis is labeled [ms].  Removed dubous code from writing data files loop.
+        $this->swversion = "1.3.3";
+        /* 1.3.3 Updated XML to 2021 format 2020-10-22_FEND.40.00.00.00-1614-A-CRE, FECRE-87
+         * 1.3.2 Amplitude stability X axis is labeled [ms].  Removed dubous code from writing data files loop.
          * 1.3.1 Made import and plot amplitude stability slightly more robust to data errors
          * 1.3.0 Changed format of WCAs.CSV file to "band, serial, CreatedDate, ESN, YIGHigh, YIGLow, VGA, VGB"
          *       Removed SAVE CHANGES.  Upload is the only way to update these things now.
@@ -395,7 +396,7 @@ class WCA extends FEComponent {
         else
             $xmlname = "";
 
-        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=xml$xmlname'>XML Data (2019)</a><br>";
+        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=xml$xmlname'>XML Data (2021)</a><br>";
         echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=fec'>FrontEndControl.ini</a><br>";
         echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=wca'>FEMC WCA.ini</a>";
         echo "</td>";
@@ -551,50 +552,11 @@ class WCA extends FEComponent {
         $esn  = $this->GetValue('ESN1');
         $esnDec = hexdec($esn);
         $description = "WCA$band-$sn";
-        $FLOYIG = $this->_WCAs->GetValue('FloYIG') . "E9"; // Hz
-        $FHIYIG = $this->_WCAs->GetValue('FhiYIG') . "E9";
+        $FLOYIG = $this->_WCAs->GetValue('FloYIG') . "0E9"; // Hz
+        $FHIYIG = $this->_WCAs->GetValue('FhiYIG') . "0E9";
         $powerLimit = $this->maxSafePowerForBand($band);
         $lowlo = $this->GetLowLOForBand($band) . "E9"; //Hz
-
-        // get warmMultiplier from WCA specs:
-        $spec = $this->new_spec->getSpecs('wca', $this->GetValue('Band'));
-        $warmMultiplier = $spec['warmMult'];
-
-        // compute coldMultiplier from CCA band:
-        // TODO:  move into specs class.
-        $coldMultiplier = 1;
-        switch($band) {
-            case 1:
-                break;
-            case 2:
-                break;
-            case 3:
-                break;
-            case 4:
-                $coldMultiplier = 2;
-                break;
-            case 5:
-                $coldMultiplier = 2;
-                break;
-            case 6:
-                $coldMultiplier = 3;
-                break;
-            case 7:
-                $coldMultiplier = 3;
-                break;
-            case 8:
-                $coldMultiplier = 6;
-                break;
-            case 9:
-                $coldMultiplier = 9;
-                break;
-            case 10:
-                $coldMultiplier = 9;
-                break;
-            default:
-                break;
-        }
-
+        
         $xw = new XMLWriter();
         $xw->openMemory();
         $xw->setIndent(true);
@@ -608,22 +570,14 @@ class WCA extends FEComponent {
         $xw->writeAttribute("value", "WCA$band");
         $xw->endElement();
 
-        $xw->startElement("ColdMultiplier");
-        $xw->writeAttribute("value", $coldMultiplier);
-        $xw->endElement();
-
-        $xw->startElement("PLLLoopBwMultiplier");
-        $xw->writeAttribute("value", $warmMultiplier);
-        $xw->endElement();
-
         $xw->startElement("WCAConfig");
         $xw->writeAttribute("value", $this->GetValue('keyId'));
-        $xw->writeAttribute("TS", $this->GetValue('TS'));
+        // make the MySQL timestamp into an ISO 8601 standard timestamp:
+        $xw->writeAttribute("timestamp", strtr($this->GetValue('TS'), ' ', 'T'));
         $xw->endElement();
 
         $xw->startElement("ESN");
-        $xw->writeAttribute("hex", $esn);
-        $xw->writeAttribute("dec", $esnDec);
+        $xw->writeAttribute("value", $esn);
         $xw->endElement();
 
         $xw->startElement("SN");
@@ -650,15 +604,10 @@ class WCA extends FEComponent {
         foreach ($table as $row) {
             $xw->startElement("PowerAmpLimit");
             $xw->writeAttribute("count", $row['YTO']);
-            $xw->writeAttribute("VD0", number_format(floatval($row['VD0']), 3));
-            $xw->writeAttribute("VD1", number_format(floatval($row['VD1']), 3));
+            $xw->writeAttribute("VD0", $row['VD0']);
+            $xw->writeAttribute("VD1", $row['VD1']);
             $xw->endElement();
         }
-
-        $xw->startElement("OptimizationTargets");
-        $xw->writeAttribute("FreqLO", $lowlo);
-        $xw->writeAttribute("PhotoMixerCurrent", "0");
-        $xw->endElement();
 
         $xw->endElement(); // ConfigData
         $xw->endDocument();
@@ -869,8 +818,8 @@ class WCA extends FEComponent {
 
         // Remove redundant rows:
         for($index = 0; $index < $tableSize; $index++) {
-            // Always output first row:
-            if ($index == 0) {
+            // Always output first and last row:
+            if ($index == 0 || $index == $tableSize - 1) {
                 $this->maxSafePowerTable [] = $tableWithDups [$index];
 
             // Output any row which differs from previous row in VD0 or VD1:
