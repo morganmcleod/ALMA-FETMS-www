@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.10";
+        $this->swversion = "1.2.11";
 
         /*
+         * 1.2.11: 'SIS' in I-V curve legend instead of 'SB'
          * 1.2.10: If no data for WorkAmp, set plotURL to "_" broken link.
          * 1.2.9:  Added 15K stage plots to WorkAmp
          * 1.2.8:  Fix WorkAmp to exclude IF2 IF3 for bands 1, 9, 10
@@ -783,7 +784,7 @@ class DataPlotter extends GenericTable{
             for ($pol=0;$pol<=1;$pol++){
                 for ($sb=1;$sb<=2;$sb++){
 
-                    $DataSeriesName = "Pol $pol SB $sb IJ";
+                    $DataSeriesName = "Pol $pol SIS $sb IJ";
 
                     $q = "SELECT VJ,IJ FROM CCA_TEST_IVCurve
                         WHERE FreqLO = $CurrentLO
