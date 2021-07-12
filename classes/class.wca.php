@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.3";
-        /* 1.3.3 Updated XML to 2021 format 2020-10-22_FEND.40.00.00.00-1614-A-CRE, FECRE-87
+        $this->swversion = "1.3.4";
+        /* 1.3.4 Amplitude stability: force Y-axis to scientific notation.
+         * 1.3.3 Updated XML to 2021 format 2020-10-22_FEND.40.00.00.00-1614-A-CRE, FECRE-87
          * 1.3.2 Amplitude stability X axis is labeled [ms].  Removed dubous code from writing data files loop.
          * 1.3.1 Made import and plot amplitude stability slightly more robust to data errors
          * 1.3.0 Changed format of WCAs.CSV file to "band, serial, CreatedDate, ESN, YIGHigh, YIGLow, VGA, VGB"
@@ -1377,6 +1378,7 @@ class WCA extends FEComponent {
     
                 $ymax = pow(10, -5);
                 fwrite($fh, "set yrange [:$ymax]\r\n");
+                fwrite($fh, "set format y \"%.2e\"\r\n");
     
                 fwrite($fh, "f1(x)=((x>500) && (x<100000)) ? 0.00000009 : 1/0\r\n");
                 fwrite($fh, "f2(x)=((x>290000) && (x<350000)) ? 0.000001 : 1/0\r\n");
