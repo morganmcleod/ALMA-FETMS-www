@@ -2,7 +2,7 @@
 //============================================================+
 // File name   : example_010.php
 // Begin       : 2008-03-04
-// Last Update : 2011-04-26
+// Last Update : 2013-05-14
 //
 // Description : Example 010 for TCPDF class
 //               Text on multiple columns
@@ -11,10 +11,7 @@
 //
 // (c) Copyright:
 //               Nicola Asuni
-//               Tecnick.com s.r.l.
-//               Via Della Pace, 11
-//               09044 Quartucciu (CA)
-//               ITALY
+//               Tecnick.com LTD
 //               www.tecnick.com
 //               info@tecnick.com
 //============================================================+
@@ -27,8 +24,8 @@
  * @since 2008-03-04
  */
 
-require_once('../config/lang/eng.php');
-require_once('../tcpdf.php');
+// Include the main TCPDF library (search for installation path).
+require_once('tcpdf_include.php');
 
 
 /**
@@ -38,10 +35,10 @@ class MC_TCPDF extends TCPDF {
 
 	/**
 	 * Print chapter
-	 * @param $num (int) chapter number
-	 * @param $title (string) chapter title
-	 * @param $file (string) name of the file containing the chapter body
-	 * @param $mode (boolean) if true the chapter body is in HTML, otherwise in simple text.
+	 * @param int $num chapter number
+	 * @param string $title chapter title
+	 * @param string $file name of the file containing the chapter body
+	 * @param boolean $mode if true the chapter body is in HTML, otherwise in simple text.
 	 * @public
 	 */
 	public function PrintChapter($num, $title, $file, $mode=false) {
@@ -59,8 +56,8 @@ class MC_TCPDF extends TCPDF {
 
 	/**
 	 * Set chapter title
-	 * @param $num (int) chapter number
-	 * @param $title (string) chapter title
+	 * @param int $num chapter number
+	 * @param string $title chapter title
 	 * @public
 	 */
 	public function ChapterTitle($num, $title) {
@@ -72,8 +69,8 @@ class MC_TCPDF extends TCPDF {
 
 	/**
 	 * Print chapter body
-	 * @param $file (string) name of the file containing the chapter body
-	 * @param $mode (boolean) if true the chapter body is in HTML, otherwise in simple text.
+	 * @param string $file name of the file containing the chapter body
+	 * @param boolean $mode if true the chapter body is in HTML, otherwise in simple text.
 	 * @public
 	 */
 	public function ChapterBody($file, $mode=false) {
@@ -118,27 +115,30 @@ $pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
 // set default monospaced font
 $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
 
-//set margins
+// set margins
 $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
 $pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
 $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
 
-//set auto page breaks
+// set auto page breaks
 $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
 
-//set image scale factor
+// set image scale factor
 $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
 
-//set some language-dependent strings
-$pdf->setLanguageArray($l);
+// set some language-dependent strings (optional)
+if (@file_exists(dirname(__FILE__).'/lang/eng.php')) {
+	require_once(dirname(__FILE__).'/lang/eng.php');
+	$pdf->setLanguageArray($l);
+}
 
 // ---------------------------------------------------------
 
 // print TEXT
-$pdf->PrintChapter(1, 'LOREM IPSUM [TEXT]', '../cache/chapter_demo_1.txt', false);
+$pdf->PrintChapter(1, 'LOREM IPSUM [TEXT]', 'data/chapter_demo_1.txt', false);
 
 // print HTML
-$pdf->PrintChapter(2, 'LOREM IPSUM [HTML]', '../cache/chapter_demo_2.txt', true);
+$pdf->PrintChapter(2, 'LOREM IPSUM [HTML]', 'data/chapter_demo_2.txt', true);
 
 // ---------------------------------------------------------
 

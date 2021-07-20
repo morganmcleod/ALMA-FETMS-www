@@ -72,8 +72,8 @@ class NoiseTemperature extends TestData_header {
 
     public function __construct() {
         parent::__construct();
-    }  
-    
+    }
+
     public function Initialize_NoiseTemperature($in_keyId, $in_fc) {
         parent::Initialize_TestData_header($in_keyId, $in_fc);
 
@@ -893,35 +893,35 @@ class NoiseTemperature extends TestData_header {
 
         } else {
             $this->foundCCAData = true;
-            
+
             $this->datafile_cart_0_1 = $this->plotDir . "NoiseTemp_Cart_pol0_SB1.txt";
             $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB1: $this->datafile_cart_0_1");
             $fc01 = fopen($this->datafile_cart_0_1, 'w');
-            
+
             $this->datafile_cart_0_2 = $this->plotDir . "NoiseTemp_Cart_pol0_SB2.txt";
             $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB2: $this->datafile_cart_0_2");
             $fc02 = fopen($this->datafile_cart_0_2, 'w');
-            
+
             $this->datafile_cart_1_1 = $this->plotDir . "NoiseTemp_Cart_pol1_SB1.txt";
             $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB1: $this->datafile_cart_1_1");
             $fc11 = fopen($this->datafile_cart_1_1, 'w');
-            
+
             $this->datafile_cart_1_2 = $this->plotDir . "NoiseTemp_Cart_pol1_SB2.txt";
             $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB2: $this->datafile_cart_1_2");
             $fc12 = fopen($this->datafile_cart_1_2, 'w');
-            
+
             $this->datafile_diff_0_1 = $this->plotDir . "NoiseTemp_Diff_pol0_SB1.txt";
             $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB1: $this->datafile_diff_0_1");
             $fdiff01 = fopen($this->datafile_diff_0_1, 'w');
-            
+
             $this->datafile_diff_0_2 = $this->plotDir . "NoiseTemp_Diff_pol0_SB2.txt";
             $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB2: $this->datafile_diff_0_2");
             $fdiff02 = fopen($this->datafile_diff_0_2, 'w');
-            
+
             $this->datafile_diff_1_1 = $this->plotDir . "NoiseTemp_Diff_pol1_SB1.txt";
             $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB1: $this->datafile_diff_1_1");
             $fdiff11 = fopen($this->datafile_diff_1_1, 'w');
-            
+
             $this->datafile_diff_1_2 = $this->plotDir . "NoiseTemp_Diff_pol1_SB2.txt";
             $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB2: $this->datafile_diff_1_2");
             $fdiff12 = fopen($this->datafile_diff_1_2, 'w');
@@ -1569,4 +1569,3 @@ class NoiseTemperature extends TestData_header {
         return $destFile;
     }
 }
-?>

@@ -15,15 +15,15 @@ if (!isset($_REQUEST['ifsub'])) {
     if (isset($_REQUEST['keyheader'])) {
         $TestData_header_keyId = $_REQUEST['keyheader'];
         $td = new TestData_header();
-        $td->Initialize_TestData_header($TestData_header_keyId,$fc);
+        $td->Initialize_TestData_header($TestData_header_keyId, $fc);
         $testDataType = $td->GetValue('fkTestData_Type');
-        $csv_filename = str_replace(" ", "_", $td->TestDataType) . "_Band". $td->GetValue('Band');
+        $csv_filename = str_replace(" ", "_", $td->TestDataType) . "_Band" . $td->GetValue('Band');
 
         if ($testDataType == 29) {
             //Workmanship Amplitude:  get the LO frequency to include in the filename.
             $q1 = "SELECT lo from TEST_Workmanship_Amplitude_SubHeader WHERE fkHeader = $td->keyId;";
             $r1 = mysqli_query($dbconnection, $q1);
-            $LO = ADAPT_mysqli_result($r1,0,0);
+            $LO = ADAPT_mysqli_result($r1, 0, 0);
 
             $csv_filename .= "_LO$LO";
         }
@@ -35,21 +35,21 @@ if (!isset($_REQUEST['ifsub'])) {
         header("Pragma: no-cache");
         header("Expires: 0");
 
-        switch($td->GetValue('fkTestData_Type')) {
+        switch ($td->GetValue('fkTestData_Type')) {
 
             case 57: //LO Lock Test
                 $q1 = "SELECT keyId FROM TEST_LOLockTest_SubHeader WHERE fkHeader = $td->keyId;";
                 $r1 = mysqli_query($dbconnection, $q1);
-                $subh_id = ADAPT_mysqli_result($r1,0,0);
+                $subh_id = ADAPT_mysqli_result($r1, 0, 0);
                 $qdata = "SELECT DT.*
                          FROM TEST_LOLockTest as DT, TEST_LOLockTest_SubHeader as SH, TestData_header as TDH
                          WHERE DT.fkHeader = SH.keyId AND DT.fkFacility = SH.keyFacility
                          AND SH.fkHeader = TDH.keyId AND SH.keyFacility = TDH.keyFacility"
-                       . " AND TDH.keyId = " . $TestData_header_keyId
-                       . " AND TDH.Band = " . $td->GetValue('Band')
-                       . " AND TDH.DataSetGroup = " . $td->GetValue('DataSetGroup')
-                       . " AND TDH.fkFE_Config = " . $td->GetValue('fkFE_Config')
-                       . " AND DT.IsIncluded = 1
+                    . " AND TDH.keyId = " . $TestData_header_keyId
+                    . " AND TDH.Band = " . $td->GetValue('Band')
+                    . " AND TDH.DataSetGroup = " . $td->GetValue('DataSetGroup')
+                    . " AND TDH.fkFE_Config = " . $td->GetValue('fkFE_Config')
+                    . " AND DT.IsIncluded = 1
                          ORDER BY DT.LOFreq ASC;";
 
                 $td->TestDataTableName = 'TEST_LOLockTest';
@@ -61,9 +61,9 @@ if (!isset($_REQUEST['ifsub'])) {
                       WHERE fkHeader = $td->keyId
                       AND keyFacility = " . $td->GetValue('keyFacility');
                 $r = mysqli_query($dbconnection, $q);
-                $subid = ADAPT_mysqli_result($r,0,0);
+                $subid = ADAPT_mysqli_result($r, 0, 0);
                 $qdata = "SELECT * FROM Noise_Temp WHERE fkSub_Header = $subid AND keyFacility = "
-                        . $td->GetValue('keyFacility') . " ORDER BY FreqLO, CenterIF;";
+                    . $td->GetValue('keyFacility') . " ORDER BY FreqLO, CenterIF;";
                 $td->TestDataTableName = 'Noise_Temp';
                 break;
 
@@ -83,15 +83,15 @@ if (!isset($_REQUEST['ifsub'])) {
                 break;
         }
 
-        switch($td->Component->GetValue('fkFE_ComponentType')) {
+        switch ($td->Component->GetValue('fkFE_ComponentType')) {
             case 6:
                 //Cryostat
                 $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
                       WHERE fkHeader = $td->keyId;";
                 $r = mysqli_query($dbconnection, $q);
-                $fkHeader = ADAPT_mysqli_result($r,0,0);
+                $fkHeader = ADAPT_mysqli_result($r, 0, 0);
                 $qdata = "SELECT * FROM $td->TestDataTableName WHERE
-                fkSubHeader = $fkHeader AND fkFacility = ".$td->GetValue('keyFacility').";";
+                fkSubHeader = $fkHeader AND fkFacility = " . $td->GetValue('keyFacility') . ";";
                 break;
         }
 
@@ -101,14 +101,14 @@ if (!isset($_REQUEST['ifsub'])) {
         $qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
 
         $rcols = mysqli_query($dbconnection, $qcols);
-        while($rowcols = mysqli_fetch_array($rcols)) {
+        while ($rowcols = mysqli_fetch_array($rcols)) {
             echo $rowcols[0] . ",";
         }
         echo "\r\n";
 
         $rdata = mysqli_query($dbconnection, $qdata);
-        while($rowdata = mysqli_fetch_array($rdata)) {
-            for ($i=0; $i<count($rowdata); $i++) {
+        while ($rowdata = mysqli_fetch_array($rdata)) {
+            for ($i = 0; $i < count($rowdata); $i++) {
                 if (isset($rowdata[$i]))
                     echo "$rowdata[$i],";
                 else
@@ -126,7 +126,7 @@ if (isset($_REQUEST['ifsub'])) {
     $fc = $_REQUEST['fc'];
 
     $ifsub = new GenericTable();
-    $ifsub->Initialize('IFSpectrum_SubHeader',$ifsub_id,'keyId',$fc,'keyFacility');
+    $ifsub->Initialize('IFSpectrum_SubHeader', $ifsub_id, 'keyId', $fc, 'keyFacility');
 
 
     header("Content-type: text/csv");
@@ -150,15 +150,15 @@ if (isset($_REQUEST['ifsub'])) {
 
     $q = "SHOW COLUMNS FROM IFSpectrum;";
     $r = mysqli_query($dbconnection, $q);
-    while($row = mysqli_fetch_array($r)) {
+    while ($row = mysqli_fetch_array($r)) {
         echo $row[0] . ",";
     }
     echo "\r\n";
 
     $q = "SELECT * FROM IFSpectrum WHERE fkSubHeader = $ifsub_id AND fkFacility = $fc;";
     $r = mysqli_query($dbconnection, $q);
-    while($row = mysqli_fetch_array($r)) {
-        for ($i=0;$i<count($row);$i++) {
+    while ($row = mysqli_fetch_array($r)) {
+        for ($i = 0; $i < count($row); $i++) {
             echo "$row[$i],";
         }
         echo "\r\n";

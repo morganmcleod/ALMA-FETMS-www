@@ -14,17 +14,15 @@ $urls=$_POST['url'];
 $facility=$_POST['facility'];
 
 if(strpos($urls,"http") === false){
-	$urls = "http://$urls";
+    $urls = "http://$urls";
 }
 
 //insert record into StatusLocationAndNotes table
 
 mysqli_query($dbconnection, "INSERT INTO FE_StatusLocationAndNotes(fkFEConfig,keyFacility,fkLocationNames,
- 			  fkStatusType,Notes,Updated_By,lnk_Data)
-			  Values('$keyFE','$facility','$locval','$statval','$notes','$updatedby','$urls')")
-			  or die("Could not insert into StatusLocationAndNotes" . mysqli_error($dbconnection));
+               fkStatusType,Notes,Updated_By,lnk_Data)
+              Values('$keyFE','$facility','$locval','$statval','$notes','$updatedby','$urls')")
+              or die("Could not insert into StatusLocationAndNotes" . mysqli_error($dbconnection));
 
 echo "{success:true}"
-
 ?>
-

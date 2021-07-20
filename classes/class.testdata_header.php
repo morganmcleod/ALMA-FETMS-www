@@ -25,7 +25,7 @@ class TestData_header extends GenericTable {
     public function __construct() {
         parent::__construct();
     }
-    
+
     public function Initialize_TestData_header($in_keyId, $in_fc, $in_feconfig = '') {
         $this->swversion = "1.2.0";
         // 1.2.0 refactored to move into the class stuff that was on the calling page
@@ -44,19 +44,19 @@ class TestData_header extends GenericTable {
         // version 1.0.5 MM code formatting fixes, fix Display_RawTestData() for LO Lock test.
 
         $this->fc = $in_fc;
-        parent::Initialize("TestData_header",$in_keyId,"keyId",$in_fc,'keyFacility');
+        parent::Initialize("TestData_header", $in_keyId, "keyId", $in_fc, 'keyFacility');
         $this->TestDataHeader = $in_keyId;
 
         $q = "SELECT Description, TestData_TableName FROM TestData_Types
               WHERE keyId = " . $this->GetValue('fkTestData_Type') . ";";
         $r = mysqli_query($this->dbconnection, $q);
-        $this->TestDataType      = ADAPT_mysqli_result($r,0);
-        $this->TestDataTableName = ADAPT_mysqli_result($r,0,1);
+        $this->TestDataType      = ADAPT_mysqli_result($r, 0);
+        $this->TestDataTableName = ADAPT_mysqli_result($r, 0, 1);
 
         $q = "SELECT Description FROM DataStatus
               WHERE keyId = " . $this->GetValue('fkDataStatus') . ";";
         $r = mysqli_query($this->dbconnection, $q);
-        $this->DataStatus        = ADAPT_mysqli_result($r,0);
+        $this->DataStatus        = ADAPT_mysqli_result($r, 0);
 
         $this->Component = new FEComponent();
 
@@ -64,14 +64,14 @@ class TestData_header extends GenericTable {
             $this->Component->Initialize_FEComponent($this->GetValue('fkFE_Components'), $this->fc);
             $q = "SELECT Description FROM ComponentTypes WHERE keyId = " . $this->Component->GetValue('fkFE_ComponentType') . ";";
             $r = mysqli_query($this->dbconnection, $q);
-            $this->Component->ComponentType = ADAPT_mysqli_result($r,0);
+            $this->Component->ComponentType = ADAPT_mysqli_result($r, 0);
         }
 
         if ($this->GetValue('fkFE_Config')) {
             $qfe = "SELECT fkFront_Ends from FE_Config
                     WHERE keyFEConfig = " . $this->GetValue('fkFE_Config') . ";";
             $rfe = mysqli_query($this->dbconnection, $qfe);
-            $feConfigId = ADAPT_mysqli_result($rfe,0);
+            $feConfigId = ADAPT_mysqli_result($rfe, 0);
             $this->fe_keyId = $feConfigId;
             $this->FrontEnd = new FrontEnd();
             $this->FrontEnd->Initialize_FrontEnd($feConfigId, $this->fc, FrontEnd::INIT_SLN | FrontEnd::INIT_CONFIGS);
@@ -87,7 +87,7 @@ class TestData_header extends GenericTable {
             $this->Update();
         }
         if (isset($_REQUEST['Notes'])) {
-            $this->SetValue('Notes',$_REQUEST['Notes']);
+            $this->SetValue('Notes', $_REQUEST['Notes']);
             parent::Update();
         }
     }
@@ -133,7 +133,7 @@ class TestData_header extends GenericTable {
 
                 if (isset($this->FrontEnd)) {
                     $gridurl = "../datasets/datasets.php?id=$this->keyId&fc=$this->fc";
-                    $gridurl .= "&fe=". $this->FrontEnd->keyId . "&b=". $this->GetValue('Band') . "&d=".$this->GetValue('fkTestData_Type');
+                    $gridurl .= "&fe=" . $this->FrontEnd->keyId . "&b=" . $this->GetValue('Band') . "&d=" . $this->GetValue('fkTestData_Type');
                     echo "
                         <tr><td>
                             <a style='width:100px' href='$popupScript' class='button blue2 biground'>
@@ -150,11 +150,11 @@ class TestData_header extends GenericTable {
                 //cryo pas
                 echo "
                     <tr><td>
-                        <a style='width:100px' href='$showrawurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$showrawurl' class='button blue2 bigrounded'
                         <span style='width:90px'>Show Raw Data</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:100px' href='$exportcsvurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$exportcsvurl' class='button blue2 bigrounded'
                         <span style='width:90px'>Export CSV</span></a>
                     </tr></td>";
                 break;
@@ -163,11 +163,11 @@ class TestData_header extends GenericTable {
                 //cryo first cooldown
                 echo "
                     <tr><td>
-                        <a style='width:100px' href='$showrawurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$showrawurl' class='button blue2 bigrounded'
                         <span style='width:90px'>Show Raw Data</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:100px' href='$exportcsvurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$exportcsvurl' class='button blue2 bigrounded'
                         <span style='width:90px'>Export CSV</span></a>
                     </tr></td>";
                 break;
@@ -176,11 +176,11 @@ class TestData_header extends GenericTable {
                 //cryo first warmup
                 echo "
                     <tr><td>
-                        <a style='width:100px' href='$showrawurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$showrawurl' class='button blue2 bigrounded'
                         <span style='width:130px'>Show Raw Data</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:100px' href='$exportcsvurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$exportcsvurl' class='button blue2 bigrounded'
                         <span style='width:90px'>Export CSV</span></a>
                     </tr></td>";
                 break;
@@ -188,25 +188,26 @@ class TestData_header extends GenericTable {
             default:
                 echo "
                     <tr><td>
-                        <a style='width:100px' href='$showrawurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$showrawurl' class='button blue2 bigrounded'
                         <span style='width:90px'>Show Raw Data</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:100px' href='$exportcsvurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$exportcsvurl' class='button blue2 bigrounded'
                         <span style='width:90px'>Export CSV</span></a>
                     </tr></td>
                     <tr><td>
-                        <a style='width:100px' href='$drawurl' class='button blue2 biground'>
+                        <a style='width:100px' href='$drawurl' class='button blue2 bigrounded'
                         <span style='width:90px'>Generate Plot</span></a>
                     </tr></td>";
 
                 if (isset($this->FrontEnd)) {
                     echo "
                         <tr><td>
-                            <a style='width:100px' href='$popupScript' class='button blue2 biground'>
+                            <a style='width:100px' href='$popupScript' class='button blue2 bigrounded'
                             <span style='width:90px'>Move to\nOther FE</span></a>
                         </td></tr>";
-                }break;
+                }
+                break;
         }
         echo "</table>";
     }
@@ -241,146 +242,146 @@ class TestData_header extends GenericTable {
         $showPlots = false;
 
         switch ($this->GetValue('fkTestData_Type')) {
-    		case 7:
-    			//IF Spectrum not handled by this class.
-    			// See /FEConfig/ifspectrum/ifspectrumplots.php and class IFSpectrum_impl
-    			break;
+            case 7:
+                //IF Spectrum not handled by this class.
+                // See /FEConfig/ifspectrum/ifspectrumplots.php and class IFSpectrum_impl
+                break;
 
-    		case 56:
-    			//Pol Angles
-    			$this->Display_DataForm();
-    			echo "<br>";
-    			$this->Display_Data_PolAngles();
-    			$showPlots = true;
-    			break;
+            case 56:
+                //Pol Angles
+                $this->Display_DataForm();
+                echo "<br>";
+                $this->Display_Data_PolAngles();
+                $showPlots = true;
+                break;
 
-    		case 57:
-    			//LO Lock Test
-    			$this->Display_DataSetNotes();
-    			echo "<br>";
-    			$showPlots = true;
-    			break;
+            case 57:
+                //LO Lock Test
+                $this->Display_DataSetNotes();
+                echo "<br>";
+                $showPlots = true;
+                break;
 
-    		case 58:
-    			//Noise Temperature
-    			$this->Display_DataSetNotes();
-    			$nztemp = new NoiseTemperature();
-    			$nztemp->Initialize_NoiseTemperature($this->keyId, $this->fc);
-    			$nztemp->DisplayPlots();
-    			unset($nztemp);
-    			break;
+            case 58:
+                //Noise Temperature
+                $this->Display_DataSetNotes();
+                $nztemp = new NoiseTemperature();
+                $nztemp->Initialize_NoiseTemperature($this->keyId, $this->fc);
+                $nztemp->DisplayPlots();
+                unset($nztemp);
+                break;
 
-    		case 59:
-    		    //Fine LO Sweep
-    		    $this->Display_DataSetNotes();
-    		    $finelosweep = new FineLOSweep();
-    		    $finelosweep->Initialize_FineLOSweep($this->keyId, $this->fc);
-    		    $finelosweep->DisplayPlots();
-    		    unset($finelosweep);
-    		    break;
+            case 59:
+                //Fine LO Sweep
+                $this->Display_DataSetNotes();
+                $finelosweep = new FineLOSweep();
+                $finelosweep->Initialize_FineLOSweep($this->keyId, $this->fc);
+                $finelosweep->DisplayPlots();
+                unset($finelosweep);
+                break;
 
-    		case 50:
-    		    //Cryostat First Rate of Rise
-    			$this->Display_DataForm();
-    			echo "<br>";
-    			$this->Display_Data_Cryostat(1);
-    			$showPlots = true;
-    			break;
-    		case 52:
-    		    //Cryostat First Cooldown
-    		    $this->Display_DataForm();
-    			echo "<br>";
-    			$this->Display_Data_Cryostat(3);
-    			$showPlots = true;
-    			break;
-    		case 53:
-    		    //Cryostat First Warmup
-    		    $this->Display_DataForm();
-    			echo "<br>";
-    			$this->Display_Data_Cryostat(2);
-    			$showPlots = true;
-    			break;
-    		case 54:
-    		    //Cryostat Final Rate of Rise
-    		    $this->Display_DataForm();
-    			echo "<br>";
-    			$this->Display_Data_Cryostat(4);
-    			$showPlots = true;
-    			break;
-    		case 25:
-    		    //Cryostat Rate of Rise After adding Vacuum Equipment
-    			$this->Display_DataForm();
-    			echo "<br>";
-    			$this->Display_Data_Cryostat(5);
-    			$showPlots = true;
-    			break;
-    		case 45:
-    		    //WCA Amplitude Stability
-    			$this->Display_DataForm();
-    			echo "<br>";
-    			$wca = new WCA();
-    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->fc, WCA::INIT_ALL);
-    			$wca->Display_AmplitudeStability();
-    			unset($wca);
-    			break;
-    		case 44:
-    		    //WCA AM Noise
-    			$this->Display_DataForm();
-    			echo "<br>";
-    			$wca = new WCA();
-    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->fc, WCA::INIT_ALL);
-    			$wca->Display_AMNoise();
-    			unset($wca);
-    			break;
-    		case 46:
-    		    //WCA Output Power
-    			$this->Display_DataForm();
-    			echo "<br>";
-    			$wca = new WCA();
-    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->fc, WCA::INIT_ALL);
-    			$wca->Display_OutputPower();
-    			unset($wca);
-    			break;
-    		case 47:
-    		    //WCA Phase Jitter
-    			$this->Display_DataForm();
-    			echo "<br>";
-    			$wca = new WCA();
-    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->fc, WCA::INIT_ALL);
-    			$wca->Display_PhaseNoise();
-    			unset($wca);
-    			break;
-    		case 48:
-    		    //WCA Phase Noise
-    			$this->Display_DataForm();
-    			echo "<br>";
-    			$wca = new WCA();
-    			$wca->Initialize_WCA($this->GetValue('fkFE_Components'),$this->fc, WCA::INIT_ALL);
-    			$wca->Display_PhaseNoise();
-    			unset($wca);
-    			break;
+            case 50:
+                //Cryostat First Rate of Rise
+                $this->Display_DataForm();
+                echo "<br>";
+                $this->Display_Data_Cryostat(1);
+                $showPlots = true;
+                break;
+            case 52:
+                //Cryostat First Cooldown
+                $this->Display_DataForm();
+                echo "<br>";
+                $this->Display_Data_Cryostat(3);
+                $showPlots = true;
+                break;
+            case 53:
+                //Cryostat First Warmup
+                $this->Display_DataForm();
+                echo "<br>";
+                $this->Display_Data_Cryostat(2);
+                $showPlots = true;
+                break;
+            case 54:
+                //Cryostat Final Rate of Rise
+                $this->Display_DataForm();
+                echo "<br>";
+                $this->Display_Data_Cryostat(4);
+                $showPlots = true;
+                break;
+            case 25:
+                //Cryostat Rate of Rise After adding Vacuum Equipment
+                $this->Display_DataForm();
+                echo "<br>";
+                $this->Display_Data_Cryostat(5);
+                $showPlots = true;
+                break;
+            case 45:
+                //WCA Amplitude Stability
+                $this->Display_DataForm();
+                echo "<br>";
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $wca->Display_AmplitudeStability();
+                unset($wca);
+                break;
+            case 44:
+                //WCA AM Noise
+                $this->Display_DataForm();
+                echo "<br>";
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $wca->Display_AMNoise();
+                unset($wca);
+                break;
+            case 46:
+                //WCA Output Power
+                $this->Display_DataForm();
+                echo "<br>";
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $wca->Display_OutputPower();
+                unset($wca);
+                break;
+            case 47:
+                //WCA Phase Jitter
+                $this->Display_DataForm();
+                echo "<br>";
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $wca->Display_PhaseNoise();
+                unset($wca);
+                break;
+            case 48:
+                //WCA Phase Noise
+                $this->Display_DataForm();
+                echo "<br>";
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $wca->Display_PhaseNoise();
+                unset($wca);
+                break;
 
-    		case 38:
-    		    //CCA Image Rejection
-    		    $this->Display_DataForm();
-    		    $ccair = new cca_image_rejection();
-    		    $ccair->Initialize_cca_image_rejection($this->keyId, $this->fc);
-    		    $ccair->DisplayPlots();
-    		    unset($ccair);
-    		    break;
+            case 38:
+                //CCA Image Rejection
+                $this->Display_DataForm();
+                $ccair = new cca_image_rejection();
+                $ccair->Initialize_cca_image_rejection($this->keyId, $this->fc);
+                $ccair->DisplayPlots();
+                unset($ccair);
+                break;
 
-    		default:
-    		    $this->Display_DataForm();
-    		    $showPlots = true;
-    			break;
-    	}
-    	if ($showPlots) {
-        	$urlarray = explode(",",$this->GetValue('PlotURL'));
-        	for ($i=0;$i<count($urlarray);$i++) {
-        	    if ($urlarray[$i])
-        	        echo "<img src='" . $urlarray[$i] . "'><br><br>";
-        	}
-    	}
+            default:
+                $this->Display_DataForm();
+                $showPlots = true;
+                break;
+        }
+        if ($showPlots) {
+            $urlarray = explode(",", $this->GetValue('PlotURL'));
+            for ($i = 0; $i < count($urlarray); $i++) {
+                if ($urlarray[$i])
+                    echo "<img src='" . $urlarray[$i] . "'><br><br>";
+            }
+        }
     }
 
     public function Display_DataForm() {
@@ -394,7 +395,7 @@ class TestData_header extends GenericTable {
             echo "<tr><th>$fetms</th></tr>";
         echo "<tr><th>Notes</th></tr>";
         echo "<tr><td><textarea rows='6' cols='90' name = 'Notes'>" . stripcslashes($this->GetValue('Notes')) . "</textarea>";
-        echo "<input type='hidden' name='fc' value='".$this->fc."'>";
+        echo "<input type='hidden' name='fc' value='" . $this->fc . "'>";
         echo "<input type='hidden' name='keyheader' value='$this->keyId'>";
         echo "<br><input type='submit' name = 'submitted' value='SAVE'></td></tr>";
         echo "</form></table></div>";
@@ -402,13 +403,13 @@ class TestData_header extends GenericTable {
 
     public function Display_DataSetNotes() {
         //Display information for all TestData_header records
-        if ( $this->GetValue('DataSetGroup') !=0 ) {
+        if ($this->GetValue('DataSetGroup') != 0) {
 
             echo "<br><br>
             <div style='width:900px'>
             <table id = 'table1' border = '1'>";
 
-            echo "<tr class = 'alt'><th colspan='3'>".$this->TestDataType ." data sets for TestData_header.DataSetGroup ".$this->GetValue('DataSetGroup')."</th></tr>";
+            echo "<tr class = 'alt'><th colspan='3'>" . $this->TestDataType . " data sets for TestData_header.DataSetGroup " . $this->GetValue('DataSetGroup') . "</th></tr>";
             echo "<tr>
                     <th width='60px'>Key</th>
                     <th width='140px'>Timestamp</th>
@@ -419,17 +420,17 @@ class TestData_header extends GenericTable {
                 WHERE `TestData_header`.Band = " . $this->GetValue('Band') .
                 " AND `TestData_header`.DataSetGroup = " . $this->GetValue('DataSetGroup') .
                 " AND `FE_Config`.fkFront_Ends = $this->fe_keyId
-                AND `TestData_header`.`fkTestData_Type` = ". $this->GetValue('fkTestData_Type');
+                AND `TestData_header`.`fkTestData_Type` = " . $this->GetValue('fkTestData_Type');
 
             $rkeys = mysqli_query($this->dbconnection, $qkeys);
 
-            $i=0;
+            $i = 0;
             while ($rowkeys = mysqli_fetch_array($rkeys)) {
                 if ($i % 2 == 0) {
                     $trclass = "alt";
                 }
                 if ($i % 2 != 0) {
-                   $trclass = "";
+                    $trclass = "";
                 }
                 $t = new TestData_header();
                 $t->Initialize_TestData_header($rowkeys['keyId'], $this->fc, 0);
@@ -438,7 +439,7 @@ class TestData_header extends GenericTable {
                 echo "<td>" . $t->GetValue('TS') . "</td>";
                 echo "<td style='text-align:left !important;'>" . $t->GetValue('Notes') . "</td>";
                 echo "</tr>";
-                $i+=1;
+                $i += 1;
             }
 
             echo "</table></div>";
@@ -450,34 +451,34 @@ class TestData_header extends GenericTable {
     public function Display_RawTestData() {
         $fkHeader = $this->keyId;
         $qgetdata = "SELECT * FROM $this->TestDataTableName WHERE
-        fkHeader = $fkHeader AND fkFacility = ".$this->fc.";";
+        fkHeader = $fkHeader AND fkFacility = " . $this->fc . ";";
 
         $preCols = "";
 
-        switch($this->Component->GetValue('fkFE_ComponentType')) {
+        switch ($this->Component->GetValue('fkFE_ComponentType')) {
             case 6:
                 //Cryostat
                 $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
                       WHERE fkHeader = $this->keyId;";
                 $r = mysqli_query($this->dbconnection, $q);
-                $fkHeader = ADAPT_mysqli_result($r,0,0);
+                $fkHeader = ADAPT_mysqli_result($r, 0, 0);
                 $qgetdata = "SELECT * FROM $this->TestDataTableName WHERE
-                fkSubHeader = $fkHeader AND fkFacility = ".$this->fc.";";
+                fkSubHeader = $fkHeader AND fkFacility = " . $this->fc . ";";
                 break;
         }
 
-        switch($this->GetValue('fkTestData_Type')) {
+        switch ($this->GetValue('fkTestData_Type')) {
             case 57:
                 //LO Lock test
                 $qgetdata = "SELECT DT.*
                             FROM TEST_LOLockTest as DT, TEST_LOLockTest_SubHeader as SH, TestData_header as TDH
                             WHERE DT.fkHeader = SH.keyId AND DT.fkFacility = SH.keyFacility
                             AND SH.fkHeader = TDH.keyId AND SH.keyFacility = TDH.keyFacility"
-                          . " AND TDH.keyId = " . $fkHeader
-                          . " AND TDH.Band = " . $this->GetValue('Band')
-                          . " AND TDH.DataSetGroup = " . $this->GetValue('DataSetGroup')
-                          . " AND TDH.fkFE_Config = " . $this->GetValue('fkFE_Config')
-                          . " AND DT.IsIncluded = 1
+                    . " AND TDH.keyId = " . $fkHeader
+                    . " AND TDH.Band = " . $this->GetValue('Band')
+                    . " AND TDH.DataSetGroup = " . $this->GetValue('DataSetGroup')
+                    . " AND TDH.fkFE_Config = " . $this->GetValue('fkFE_Config')
+                    . " AND DT.IsIncluded = 1
                             ORDER BY DT.LOFreq ASC;";
 
                 $this->TestDataTableName = 'TEST_LOLockTest';
@@ -489,9 +490,9 @@ class TestData_header extends GenericTable {
                       WHERE fkHeader = $this->keyId
                       AND keyFacility = " . $this->fc;
                 $r = mysqli_query($this->dbconnection, $q);
-                $subid = ADAPT_mysqli_result($r,0,0);
+                $subid = ADAPT_mysqli_result($r, 0, 0);
                 $qgetdata = "SELECT * FROM Noise_Temp WHERE fkSub_Header = $subid AND keyFacility = "
-                        . $this->fc . " ORDER BY FreqLO, CenterIF;";
+                    . $this->fc . " ORDER BY FreqLO, CenterIF;";
                 $this->TestDataTableName = 'Noise_Temp';
                 break;
 
@@ -524,12 +525,12 @@ class TestData_header extends GenericTable {
 
 
         $r = mysqli_query($this->dbconnection, $qgetdata);
-        while($row = mysqli_fetch_array($r)) {
+        while ($row = mysqli_fetch_array($r)) {
             echo "<tr>";
-            for ($i=0;$i<count($row)/2;$i++) {
+            for ($i = 0; $i < count($row) / 2; $i++) {
                 echo "<td>$row[$i]</td>";
             }
-            echo"</tr>";
+            echo "</tr>";
         }
 
         echo "</table>";
@@ -538,46 +539,46 @@ class TestData_header extends GenericTable {
     }
 
     public function AutoDrawThis() {
-    	// return true if this plot type should be automatically drawn on page load.
-    	switch($this->GetValue('fkTestData_Type')) {
-    		case 1:		// health check tabular data
-    		case 2:
-    		case 3:
-    		case 4:
-    		case 5:
-    		case 6:
-    		case 8:
-    		case 9:
-    		case 10:
-    		case 12:
-    		case 13:
-    		case 14:
-    		case 15:
+        // return true if this plot type should be automatically drawn on page load.
+        switch ($this->GetValue('fkTestData_Type')) {
+            case 1:        // health check tabular data
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 8:
+            case 9:
+            case 10:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
             case 25:
-    		case 44:	// WCA cartridge PAI plots
-    		case 45:
-    		case 46:
-    		case 47:
-    		case 48:
-    		case 50:
+            case 44:    // WCA cartridge PAI plots
+            case 45:
+            case 46:
+            case 47:
+            case 48:
+            case 50:
             case 51:
             case 52:
             case 53:
             case 54:
-            case 58: 	// Noise temperature
-    		case 59:	// fine LO sweep
-    		case 42:	//CCA cartridge PAI plots
-    			return false;
+            case 58:     // Noise temperature
+            case 59:    // fine LO sweep
+            case 42:    //CCA cartridge PAI plots
+                return false;
 
-    		case 39:    // I-V Curve
-    		case 57: 	// LO lock test
-    		default:
-    			return true;
-    	}
+            case 39:    // I-V Curve
+            case 57:     // LO lock test
+            default:
+                return true;
+        }
     }
 
     public function AutoShowRawDataThis() {
-        switch($this->GetValue('fkTestData_Type')) {
+        switch ($this->GetValue('fkTestData_Type')) {
             case 1:
             case 2:
             case 3:
@@ -637,10 +638,10 @@ class TestData_header extends GenericTable {
             fwrite($handle, "FEid=" . $this->fe_keyId . "\n");
             fwrite($handle, "WCAid=" . $this->GetValue('fkFE_Components') . "\n");
             fwrite($handle, "TDHid=" . $this->TestDataHeader . "\n");
-            $urlarray = explode(",",$this->GetValue('PlotURL'));
-            for ($i=0; $i<count($urlarray); $i++) {
+            $urlarray = explode(",", $this->GetValue('PlotURL'));
+            for ($i = 0; $i < count($urlarray); $i++) {
                 if ($urlarray[$i])
-                    fwrite($handle, "plot" . $i+1 . "=" . $urlarray[$i] . "\n");
+                    fwrite($handle, "plot" . $i + 1 . "=" . $urlarray[$i] . "\n");
             }
             fclose($handle);
             echo "Exported '$destFile'.<br>";
@@ -654,97 +655,97 @@ class TestData_header extends GenericTable {
 
         //Determine which type of plot to draw...
         switch ($this->GetValue('fkTestData_Type')) {
-        case "43":
-            $plt->Plot_CCA_AmplitudeStability();
-            break;
+            case "43":
+                $plt->Plot_CCA_AmplitudeStability();
+                break;
 
-        case "29":
-            $plt->Plot_WorkmanshipAmplitude(false);
-            $plt->Plot_WorkAmpTemperatures(true);
-            break;
-        case "30":
-            $plt->Plot_WorkmanshipPhase();
-            break;
-        case "31":
-            //Plot_Repeatability(); obsolete
-            break;
-        case "33":
-            $plt->Plot_CCA_PhaseDrift();
-            break;
-        case "36":
-            $plt->Plot_CCA_InBandPower();
-            break;
-        case "37":
-            $plt->Plot_CCA_TotalPower();
-            break;
-        case "34":
-            $plt->Plot_CCA_GainCompression();
-            break;
-        case "41":
-            $plt->Plot_CCA_IFSpectrum();
-            break;
-        case "42":
-            // TODO: $plt->Plot_CCA_NoiseTemp is not implemented!
-            break;
-        case "35":
-            $plt->Plot_CCA_PolAccuracy();
-            break;
-        case "39":
-            $plt->Plot_CCA_IVCurve();
-            break;
-        case "7":
-            break;
-        case "56":
-            $plt->Plot_PolAngles();
-            break;
-        case "57":
-            $plt->Plot_LOLockTest();
-            break;
+            case "29":
+                $plt->Plot_WorkmanshipAmplitude(false);
+                $plt->Plot_WorkAmpTemperatures(true);
+                break;
+            case "30":
+                $plt->Plot_WorkmanshipPhase();
+                break;
+            case "31":
+                //Plot_Repeatability(); obsolete
+                break;
+            case "33":
+                $plt->Plot_CCA_PhaseDrift();
+                break;
+            case "36":
+                $plt->Plot_CCA_InBandPower();
+                break;
+            case "37":
+                $plt->Plot_CCA_TotalPower();
+                break;
+            case "34":
+                $plt->Plot_CCA_GainCompression();
+                break;
+            case "41":
+                $plt->Plot_CCA_IFSpectrum();
+                break;
+            case "42":
+                // TODO: $plt->Plot_CCA_NoiseTemp is not implemented!
+                break;
+            case "35":
+                $plt->Plot_CCA_PolAccuracy();
+                break;
+            case "39":
+                $plt->Plot_CCA_IVCurve();
+                break;
+            case "7":
+                break;
+            case "56":
+                $plt->Plot_PolAngles();
+                break;
+            case "57":
+                $plt->Plot_LOLockTest();
+                break;
 
-        case "44":
-            //AM Noise
-            $this->Plot_WCA(45);
-            break;
-        case "45":
-            //Amplitude Stability
-            $this->Plot_WCA(45);
-            break;
-        case "46":
-            //Output Power
-            $this->Plot_WCA(46);
-            break;
-        case "47":
-            //Phase Jitter
-            $this->Plot_WCA(47);
-            break;
-        case "48":
-            //Phase Noise
-            $this->Plot_WCA(48);
-            break;
+            case "44":
+                //AM Noise
+                $this->Plot_WCA(45);
+                break;
+            case "45":
+                //Amplitude Stability
+                $this->Plot_WCA(45);
+                break;
+            case "46":
+                //Output Power
+                $this->Plot_WCA(46);
+                break;
+            case "47":
+                //Phase Jitter
+                $this->Plot_WCA(47);
+                break;
+            case "48":
+                //Phase Noise
+                $this->Plot_WCA(48);
+                break;
 
-        case "58":
-            //FEIC Noise Temperature
-            $nztemp = new NoiseTemperature();
-            $nztemp->Initialize_NoiseTemperature($this->keyId,$this->fc);
-            $nztemp->DrawPlot();
-            unset($nztemp);
-            break;
+            case "58":
+                //FEIC Noise Temperature
+                $nztemp = new NoiseTemperature();
+                $nztemp->Initialize_NoiseTemperature($this->keyId, $this->fc);
+                $nztemp->DrawPlot();
+                unset($nztemp);
+                break;
 
-        case "59":
-            //Fine LO Sweep
-            $finelosweep = new FineLOSweep();
-            $finelosweep->Initialize_FineLOSweep($this->keyId,$this->fc);
-            $finelosweep->DrawPlot();
-            unset($finelosweep);
-            break;
+            case "59":
+                //Fine LO Sweep
+                $finelosweep = new FineLOSweep();
+                $finelosweep->Initialize_FineLOSweep($this->keyId, $this->fc);
+                $finelosweep->DrawPlot();
+                unset($finelosweep);
+                break;
 
-        case "38":
-            //CCA Image Rejection (Sideband Ratio)
-            $ccair = new cca_image_rejection();
-            $ccair->Initialize_cca_image_rejection($this->keyId,$this->fc);
-            $ccair->DrawPlot();
-            unset($ccair);
-            break;
+            case "38":
+                //CCA Image Rejection (Sideband Ratio)
+                $ccair = new cca_image_rejection();
+                $ccair->Initialize_cca_image_rejection($this->keyId, $this->fc);
+                $ccair->DrawPlot();
+                unset($ccair);
+                break;
         }
     }
 
@@ -752,7 +753,7 @@ class TestData_header extends GenericTable {
         $wca = new WCA();
         $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
 
-        switch($datatype) {
+        switch ($datatype) {
             case 44:
                 $wca->Plot_AMNoise();
                 break;
@@ -787,92 +788,92 @@ class TestData_header extends GenericTable {
         //Pol 0, first minimum
         $qpa = "SELECT MIN(amp_pol0)
                 FROM TEST_PolAngles
-                WHERE fkFacility = ".$this->fc."
+                WHERE fkFacility = " . $this->fc . "
                         AND
                         fkHeader = $this->keyId
                         and angle < ($nom_0_m90 + 10)
                         and angle > ($nom_0_m90 - 10);";
         $rpa = mysqli_query($this->dbconnection, $qpa);
 
-        $pol0_min1 = ADAPT_mysqli_result($rpa,0);
+        $pol0_min1 = ADAPT_mysqli_result($rpa, 0);
 
         $qpa = "SELECT angle
         FROM TEST_PolAngles
         WHERE fkHeader = $this->keyId
-        and fkFacility = ".$this->fc."
+        and fkFacility = " . $this->fc . "
                 and ROUND(amp_pol0,5) = " . round($pol0_min1, 5) . "
                         and angle < ($nom_0_m90 + 10)
                         and angle > ($nom_0_m90 - 10);";
         $rpa = mysqli_query($this->dbconnection, $qpa);
 
-        $angle_min0_1 = ADAPT_mysqli_result($rpa,0);
+        $angle_min0_1 = ADAPT_mysqli_result($rpa, 0);
 
         //Pol 0, 2nd minimum
         $qpa = "SELECT MIN(amp_pol0)
         FROM TEST_PolAngles
         WHERE fkHeader = $this->keyId
-        AND fkFacility = ".$this->fc."
+        AND fkFacility = " . $this->fc . "
         and angle < ($nom_0_p90 + 10)
         and angle > ($nom_0_p90 - 10);";
         $rpa = mysqli_query($this->dbconnection, $qpa);
 
-        $pol0_min2 = ADAPT_mysqli_result($rpa,0);
+        $pol0_min2 = ADAPT_mysqli_result($rpa, 0);
 
         $qpa = "SELECT angle
         FROM TEST_PolAngles
         WHERE fkHeader = $this->keyId
-        AND fkFacility = ".$this->fc."
+        AND fkFacility = " . $this->fc . "
                 and ROUND(amp_pol0,5) = " . round($pol0_min2, 5) . "
                         and angle < ($nom_0_p90 + 10)
                         and angle > ($nom_0_p90 - 10);";
         $rpa = mysqli_query($this->dbconnection, $qpa);
 
-        $angle_min0_2 = ADAPT_mysqli_result($rpa,0);
+        $angle_min0_2 = ADAPT_mysqli_result($rpa, 0);
 
 
         //Pol 1, first minimum
         $qpa = "SELECT MIN(amp_pol1)
         FROM TEST_PolAngles
         WHERE fkHeader = $this->keyId
-        AND fkFacility = ".$this->fc."
+        AND fkFacility = " . $this->fc . "
         and angle < ($nom_1_m90 + 10)
         and angle > ($nom_1_m90 - 10);";
         $rpa = mysqli_query($this->dbconnection, $qpa);
 
-        $pol1_min1 = ADAPT_mysqli_result($rpa,0);
+        $pol1_min1 = ADAPT_mysqli_result($rpa, 0);
 
         $qpa = "SELECT angle
         FROM TEST_PolAngles
         WHERE fkHeader = $this->keyId
-        AND fkFacility = ".$this->fc."
+        AND fkFacility = " . $this->fc . "
                 and ROUND(amp_pol1,5) = " . round($pol1_min1, 5) . "
                         and angle < ($nom_1_m90 + 10)
                         and angle > ($nom_1_m90 - 10);";
         $rpa = mysqli_query($this->dbconnection, $qpa);
 
-        $angle_min1_1 = ADAPT_mysqli_result($rpa,0);
+        $angle_min1_1 = ADAPT_mysqli_result($rpa, 0);
 
         //Pol 1, 2nd minimum
         $qpa = "SELECT MIN(amp_pol1)
         FROM TEST_PolAngles
         WHERE fkHeader = $this->keyId
-        AND fkFacility = ".$this->fc."
+        AND fkFacility = " . $this->fc . "
         and angle < ($nom_1_p90 + 10)
         and angle > ($nom_1_p90 - 10);";
         $rpa = mysqli_query($this->dbconnection, $qpa);
 
-        $pol1_min2 = ADAPT_mysqli_result($rpa,0);
+        $pol1_min2 = ADAPT_mysqli_result($rpa, 0);
 
         $qpa = "SELECT angle
         FROM TEST_PolAngles
         WHERE fkHeader = $this->keyId
-        AND fkFacility = ".$this->fc."
+        AND fkFacility = " . $this->fc . "
                 and ROUND(amp_pol1,5) = " . round($pol1_min2, 5) . "
                         and angle < ($nom_1_p90 + 10)
                         and angle > ($nom_1_p90 - 10);";
         $rpa = mysqli_query($this->dbconnection, $qpa);
 
-        $angle_min1_2 = ADAPT_mysqli_result($rpa,0);
+        $angle_min1_2 = ADAPT_mysqli_result($rpa, 0);
 
         function makeRow($pol, $actual, $nom) {
             if ($actual && abs($nom) < 181) {
@@ -889,16 +890,16 @@ class TestData_header extends GenericTable {
         $output = array();
         $row = makeRow(0, $angle_min0_1, $nom_0_m90);
         if ($row)
-            $output []= $row;
+            $output[] = $row;
         $row = makeRow(1, $angle_min1_1, $nom_1_m90);
         if ($row)
-            $output []= $row;
+            $output[] = $row;
         $row = makeRow(0, $angle_min0_2, $nom_0_p90);
         if ($row)
-            $output []= $row;
+            $output[] = $row;
         $row = makeRow(1, $angle_min1_2, $nom_1_p90);
         if ($row)
-            $output []= $row;
+            $output[] = $row;
 
         return $output;
     }
@@ -932,4 +933,3 @@ class TestData_header extends GenericTable {
         echo "</table></div><br>";
     }
 }
-?>

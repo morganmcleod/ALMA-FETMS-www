@@ -1,0 +1,202 @@
+.header {
+    background-color: black;
+    color: white;
+    margin-left: -20px;
+    margin-right: -20px;
+    border-bottom: 1px solid white;
+}
+
+body {
+    background-color: #19475E;
+}
+
+.header-inner {
+    font-family: Ubuntu;
+    float: left;
+    vertical-align: middle;
+    padding: 3px 5px;
+    margin: 0 0;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.header-logo {
+    float: left;
+    width: 20%;
+    vertical-align: middle;
+    padding: 3px 5px;
+    padding-left: 100px;
+    margin: 0 0;
+}
+
+.header {
+    vertical-align: middle;
+    align-items: center;
+}
+
+table {
+    font-family: Ubuntu;
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+table.layout {
+    border: 0mm solid black;
+    border-collapse: collapse;
+}
+
+td.layout {
+    text-align: center;
+    border: 0mm solid black;
+}
+
+td {
+    font-size: 9px;
+    font-weight: normal;
+    font-family: Ubuntu;
+    padding: 0mm;
+    border: 1px solid black;
+    vertical-align: middle;
+    text-align: center;
+    background-color: white;
+}
+
+th {
+    font-size: 8px;
+    font-family: Ubuntu;
+    font-weight: normal;
+    border: 1px solid black;
+    vertical-align: middle;
+    background-color: #95b9c7;
+}
+
+tr {
+    height: 200px;
+}
+
+.table-name {
+    font-weight: bold;
+    font-size: 10px;
+}
+
+.table-scan {
+    font-weight: bold;
+    width: 100%;
+    height: 100%;
+}
+
+.table-equations {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.aperture-eff {
+    width: 50%;
+    float: left;
+}
+
+.taper-eff {
+    width: 50%;
+    float: right;
+}
+
+.phase-eff {
+    width: 50%;
+    float: left;
+}
+
+.spillover-eff {
+    width: 50%;
+    float: right;
+}
+
+.pol-eff {
+    width: 50%;
+    float: left;
+}
+
+.defocus-eff {
+    width: 50%;
+    float: right;
+}
+
+.phase-center-offset {
+    width: 50%;
+    float: left;
+}
+
+.squint {
+    width: 50%;
+    float: right;
+}
+
+.equations {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.pointing-angles {
+    width: 50%;
+    float: left;
+}
+
+.pointing-angle-diff {
+    width: 50%;
+    float: right;
+}
+
+.pointing-plot {
+    width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+.ploturlunique {
+    width: 99.2%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid black;
+}
+
+.ploturl1 {
+    width: 49.6%;
+    float: left;
+    border: 1px solid black;
+}
+
+.ploturl2 {
+    width: 49.6%;
+    float: right;
+    border: 1px solid black;
+}
+
+.ploturl3 {
+    width: 49.6%;
+    float: left;
+    border: 1px solid black;
+}
+
+.ploturl4 {
+    width: 49.6%;
+    float: right;
+    border: 1px solid black;
+}
+
+.ploturl5 {
+    width: 49.6%;
+    float: left;
+    border: 1px solid black;
+}
+
+.ploturl6 {
+    width: 49.6%;
+    float: right;
+    border: 1px solid black;
+}
+
+.form {
+    width: 100%;
+}

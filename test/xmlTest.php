@@ -1,5 +1,5 @@
 <?php
-date_default_timezone_set ('America/New_York');
+date_default_timezone_set('America/New_York');
 ini_set('display_errors', '1');
 $errorReportSettingsNo_E_NOTICE = E_ERROR | E_WARNING | E_PARSE;
 $errorReportSettingsNormal = $errorReportSettingsNo_E_NOTICE | E_NOTICE;
@@ -49,12 +49,12 @@ var_dump($assy);
 list($band) = sscanf($assy, "ColdCart%d");
 var_dump($band);
 $magnetParams = $ConfigData->MagnetParams;
-foreach($magnetParams as $param) {
+foreach ($magnetParams as $param) {
     $FreqLO = (float) $param['FreqLO'] / 1E9;
     var_dump($FreqLO);
 }
 $preampParams = $ConfigData->PreampParamsPol0Sb1;
-foreach($preampParams as $param)
+foreach ($preampParams as $param)
     var_dump($param);
 
 echo "<br><br>-----<br><br>";

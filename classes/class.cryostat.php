@@ -279,9 +279,9 @@ class Cryostat extends GenericTable {
             echo "<br><br><input type='hidden' name = 'keyId' value='$this->keyId'>";
 
             echo "<br><br>
-            <input type='submit' name = 'submitted_ror' class = 'button blue2 biground' value='REDRAW RATE OF RISE'>";
+            <input type='submit' name = 'submitted_ror' class = 'button blue2 bigrounded value='REDRAW RATE OF RISE'>";
             $exportcsvurl = "export_to_csv.php?keyheader=".$this->tdheaders[1]->keyId."&fc=".$this->GetValue('keyFacility');
-            echo "<br><br><a style='width:130px' href='$exportcsvurl' class='button blue2 biground'>
+            echo "<br><br><a style='width:130px' href='$exportcsvurl' class='button blue2 bigrounded'
                         <span style='width:130px'>Export CSV</span></a></table>";
             echo "
             </th></tr>
@@ -302,9 +302,9 @@ class Cryostat extends GenericTable {
             echo "<br><br>";
             $this->Display_RORselector('ror_stop_aftercca', 'Stop Time', 'ror_stoptime',$o2,5);
 
-            echo "<br><br><input type='submit' name = 'submitted_ror_aftercca' class = 'button blue2 biground' value='REDRAW RATE OF RISE'>";
+            echo "<br><br><input type='submit' name = 'submitted_ror_aftercca' class = 'button blue2 bigrounded value='REDRAW RATE OF RISE'>";
             $exportcsvurl = "export_to_csv.php?keyheader=".$this->tdheaders[5]->keyId."&fc=".$this->GetValue('keyFacility');
-            echo "<br><br><a style='width:130px' href='$exportcsvurl' class='button blue2 biground'>
+            echo "<br><br><a style='width:130px' href='$exportcsvurl' class='button blue2 bigrounded'
                         <span style='width:130px'>Export CSV</span></a>";
             echo "
             </th></tr>
@@ -325,9 +325,9 @@ class Cryostat extends GenericTable {
             echo "<br><br>";
             $this->Display_RORselector('ror_stop_final', 'Stop Time', 'ror_stoptime',$o3,4);
 
-            echo "<br><br><input type='submit' name = 'submitted_ror_final' class = 'button blue2 biground' value='REDRAW RATE OF RISE'>";
+            echo "<br><br><input type='submit' name = 'submitted_ror_final' class = 'button blue2 bigrounded value='REDRAW RATE OF RISE'>";
             $exportcsvurl = "export_to_csv.php?keyheader=".$this->tdheaders[4]->keyId."&fc=".$this->GetValue('keyFacility');
-            echo "<br><br><a style='width:130px' href='$exportcsvurl' class='button blue2 biground'>
+            echo "<br><br><a style='width:130px' href='$exportcsvurl' class='button blue2 bigrounded'
                         <span style='width:130px'>Export CSV</span></a>";
             echo "
             </th></tr>
