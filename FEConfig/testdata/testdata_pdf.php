@@ -49,7 +49,7 @@ switch ($fkTestData_Type) {
 $stylesheet = file_get_contents('pdf.css');
 $mpdf = new \Mpdf\Mpdf(
     [
-        'tempDir' => $files_root . '/mpdf',
+        'tempDir' => '/var/www/html/fetms/test_datafiles',
         'margin_left' => 5,
         'margin_right' => 5,
         'margin_header' => 0,
@@ -76,7 +76,7 @@ $mpdf = new \Mpdf\Mpdf(
 $mpdf->SetTitle('Front End SN ' . $fesn . ' Band ' . $band . ' ' . $file_type);
 $mpdf->setAutoTopMargin = 'stretch';
 $html = '<div class="header">';
-$html .= '<div class="header-logo"><img src="/nrao_logo.png" width="100px" height="100px"/></div>';
+$html .= '<div class="header-logo"><img src="/cmunoz/fetms/nrao_logo.png" width="100px" height="100px"/></div>';
 $html .= '<div class="header-inner">';
 $html .= 'Front End SN ' . $fesn . '<br>';
 $html .= 'Band ' . $band . ' ' . $file_type;
