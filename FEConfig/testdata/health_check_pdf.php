@@ -29,7 +29,7 @@ $fesn = ADAPT_mysqli_result($r, 0, 0);
 $stylesheet = file_get_contents('pdf.css');
 $mpdf = new \Mpdf\Mpdf(
     [
-        'tempDir' => $files_root . '/mpdf',
+        'tempDir' => '/var/www/html/fetms/test_datafiles',
         'margin_left' => 5,
         'margin_right' => 5,
         'margin_header' => 0,
@@ -56,7 +56,7 @@ $mpdf = new \Mpdf\Mpdf(
 $mpdf->SetTitle('Front End SN ' . $fesn . ' Band ' . $band . ' Health Check');
 $mpdf->setAutoTopMargin = 'stretch';
 $html = '<div class="header">';
-$html .= '<div class="header-logo"><img src="/nrao_logo.png" width="100px" height="100px"/></div>';
+$html .= '<div class="header-logo"><img src="/cmunoz/fetms/nrao_logo.png" width="100px" height="100px"/></div>';
 $html .= '<div class="header-inner">';
 $html .= 'Front End SN ' . $fesn . '<br>';
 $html .= 'Band ' . $band . ' Health Check';
@@ -85,10 +85,14 @@ if (!is_null($html)) {
     $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 }
 
-$mpdf->AddPage();
 
 $html = band_results_table($feconfig, $band, $Data_Status, 39, $filterChecked);
-$mpdf->WriteHTML($html[0], \Mpdf\HTMLParserMode::HTML_BODY);
-$mpdf->AddPage();
-$mpdf->WriteHTML($html[1], \Mpdf\HTMLParserMode::HTML_BODY);
+if ($html[0] != ""){
+    $mpdf->AddPage();
+    $mpdf->WriteHTML($html[0], \Mpdf\HTMLParserMode::HTML_BODY);
+}
+if ($html[1] != ""){
+    $mpdf->AddPage();
+    $mpdf->WriteHTML($html[1], \Mpdf\HTMLParserMode::HTML_BODY);
+}
 $mpdf->Output('FE_SN_' . $fesn . '_Band_' . $band . '_Health_Check.pdf', 'I');
