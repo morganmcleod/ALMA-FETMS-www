@@ -101,21 +101,28 @@ if (!isset($_REQUEST['ifsub'])) {
         $qcols = "SHOW COLUMNS FROM $td->TestDataTableName;";
 
         $rcols = mysqli_query($dbconnection, $qcols);
+        $count = $rcols->num_rows;
         while ($rowcols = mysqli_fetch_array($rcols)) {
-            echo $rowcols[0] . ",";
+            echo $rowcols[0];
+            if (--$count <= 0) {
+                break;
+            }
+            echo ",";
         }
         echo "\r\n";
 
         $rdata = mysqli_query($dbconnection, $qdata);
-        while ($rowdata = mysqli_fetch_array($rdata)) {
-            for ($i = 0; $i < count($rowdata); $i++) {
-                if (isset($rowdata[$i]))
-                    echo "$rowdata[$i],";
-                else
-                    echo ",";
+        foreach($rdata as $rowdata) {
+            $count = count($rowdata);
+            foreach ($rowdata as $key => $value) {
+                echo "$value";
+                if (--$count <= 0) {
+                    break;
+                }
+                echo ",";
             }
             echo "\r\n";
-        }
+        };
     }
 }
 
