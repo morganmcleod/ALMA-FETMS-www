@@ -1,6 +1,5 @@
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
-require_once($site_classes . '/tcpdf/tcpdf.php');
 require_once($files_root . '/vendor/autoload.php');
 require_once($site_classes . '/class.eff_html.php');
 require_once($site_classes . '/class.frontend.php');
@@ -59,7 +58,7 @@ $fontData = $defaultFontConfig['fontdata'];
 $stylesheet = file_get_contents('pdf.css');
 $mpdf = new \Mpdf\Mpdf(
     [
-        'tempDir' => '/var/www/html/fetms/test_datafiles',
+        'tempDir' => $main_write_directory,
         'margin_left' => 5,
         'margin_right' => 5,
         'margin_header' => 0,
@@ -86,7 +85,7 @@ $mpdf = new \Mpdf\Mpdf(
 $mpdf->SetTitle('Front End SN ' . $fesn . ' Band ' . $band . ' Beam Pattern');
 $mpdf->setAutoTopMargin = 'stretch';
 $html = '<div class="header">';
-$html .= '<div class="header-logo"><img src="/cmunoz/fetms/nrao_logo.png" width="100px" height="100px"/></div>';
+$html .= '<div class="header-logo"><img src="' . $files_root . '/nrao_logo.png" width="100px" height="100px"/></div>';
 $html .= '<div class="header-inner">';
 $html .= 'Front End SN ' . $fesn . '<br>';
 $html .= 'Band ' . $band . ' Beam Pattern';
