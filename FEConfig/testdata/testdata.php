@@ -26,7 +26,6 @@
     $drawplot = isset($_REQUEST['drawplot']) ? $_REQUEST['drawplot'] : false;
     $keyHeader = isset($_REQUEST['keyheader']) ? $_REQUEST['keyheader'] : false;
     $showrawdata = isset($_REQUEST['showrawdata']) ? $_REQUEST['showrawdata'] : false;
-
     if (!$keyHeader)
         exit();        // nothing to do.
 

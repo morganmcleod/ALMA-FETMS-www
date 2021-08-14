@@ -384,6 +384,149 @@ class TestData_header extends GenericTable {
         }
     }
 
+    public function Display_TestDataMain_html() {
+        // Display the notes form and plots:
+        $showPlots = false;
+        $html = ["", ""];
+
+        switch ($this->GetValue('fkTestData_Type')) {
+            case 7:
+                //IF Spectrum not handled by this class.
+                // See /FEConfig/ifspectrum/ifspectrumplots.php and class IFSpectrum_impl
+                break;
+
+            case 56:
+                //Pol Angles
+                $html[0] = $this->Display_DataForm_html();
+                $this->Display_Data_PolAngles();
+                $showPlots = true;
+                break;
+
+            case 57:
+                //LO Lock Test
+                $html[0] = $this->Display_DataSetNotes_html();
+                $showPlots = true;
+                break;
+
+            case 58:
+                //Noise Temperature
+                $html[0] = $this->Display_DataSetNotes_html();
+                $nztemp = new NoiseTemperature();
+                $nztemp->Initialize_NoiseTemperature($this->keyId, $this->fc);
+                $temp_html = $nztemp->DisplayPlots_html();
+                $html[0] .= $temp_html[0];
+                $html[1] .= $temp_html[1];
+                unset($nztemp);
+                break;
+
+            case 59:
+                //Fine LO Sweep
+                $html[0] = $this->Display_DataSetNotes_html();
+                $finelosweep = new FineLOSweep();
+                $finelosweep->Initialize_FineLOSweep($this->keyId, $this->fc);
+                $html[0] .= $finelosweep->DisplayPlots_html();
+                unset($finelosweep);
+                break;
+
+            case 50:
+                //Cryostat First Rate of Rise
+                $html[0] = $this->Display_DataForm_html();
+                $this->Display_Data_Cryostat(1);
+                $showPlots = true;
+                break;
+            case 52:
+                //Cryostat First Cooldown
+                $html[0] = $this->Display_DataForm_html();
+                $this->Display_Data_Cryostat(3);
+                $showPlots = true;
+                break;
+            case 53:
+                //Cryostat First Warmup
+                $html[0] = $this->Display_DataForm_html();
+                $html[0] = $this->Display_Data_Cryostat(2);
+                $showPlots = true;
+                break;
+            case 54:
+                //Cryostat Final Rate of Rise
+                $html[0] = $this->Display_DataForm_html();
+                $this->Display_Data_Cryostat(4);
+                $showPlots = true;
+                break;
+            case 25:
+                //Cryostat Rate of Rise After adding Vacuum Equipment
+                $html[0] = $this->Display_DataForm_html();
+                $this->Display_Data_Cryostat(5);
+                $showPlots = true;
+                break;
+            case 45:
+                //WCA Amplitude Stability
+                $html[0] = $this->Display_DataForm_html();
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $html[0] .= $wca->Display_AmplitudeStability_html();
+                unset($wca);
+                break;
+            case 44:
+                //WCA AM Noise
+                $html[0] = $this->Display_DataForm_html();
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $wca->Display_AMNoise();
+                unset($wca);
+                break;
+            case 46:
+                //WCA Output Power
+                $html[0] = $this->Display_DataForm_html();
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $wca->Display_OutputPower();
+                unset($wca);
+                break;
+            case 47:
+                //WCA Phase Jitter
+                $html[0] = $this->Display_DataForm_html();
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $wca->Display_PhaseNoise();
+                unset($wca);
+                break;
+            case 48:
+                //WCA Phase Noise
+                $html[0] = $this->Display_DataForm_html();
+                $wca = new WCA();
+                $wca->Initialize_WCA($this->GetValue('fkFE_Components'), $this->fc, WCA::INIT_ALL);
+                $wca->Display_PhaseNoise();
+                unset($wca);
+                break;
+
+            case 38:
+                //CCA Image Rejection
+                $html[0] = $this->Display_DataForm_html();
+                $ccair = new cca_image_rejection();
+                $ccair->Initialize_cca_image_rejection($this->keyId, $this->fc);
+                $ccair->DisplayPlots();
+                unset($ccair);
+                break;
+
+            default:
+                $html[0] = $this->Display_DataForm_html();
+                $showPlots = true;
+                break;
+        }
+        if ($showPlots) {
+            $urlarray = explode(",", $this->GetValue('PlotURL'));
+            for ($i = 0; $i < count($urlarray); $i++) {
+                if ($urlarray[$i]) {
+                    if (count($urlarray) == 1)
+                        $html[0] .= "<div class='ploturlunique'><img src='" . $urlarray[$i] . "'></div>";
+                    else
+                        $html[0] .= "<div class='ploturl" . ($i + 1) . "'><img src='" . $urlarray[$i] . "'></div>";
+                }
+            }
+        }
+        return $html;
+    }
+
     public function Display_DataForm() {
         //Get FETMS description:
         $fetms = $this->GetFetmsDescription("Measured at: ");
@@ -399,6 +542,23 @@ class TestData_header extends GenericTable {
         echo "<input type='hidden' name='keyheader' value='$this->keyId'>";
         echo "<br><input type='submit' name = 'submitted' value='SAVE'></td></tr>";
         echo "</form></table></div>";
+    }
+
+    public function Display_DataForm_html() {
+        //Get FETMS description:
+        $fetms = $this->GetFetmsDescription("Measured at: ");
+        $html = "";
+        $html .= "<div class='form'>";
+        $html .= "<table class='table-health'>";
+        if ($fetms)
+            $html .= "<tr><th colspan='1'>$fetms</th></tr>";
+        $html .= "<tr><th colspan='1'>Notes</th></tr>";
+        $notes = stripcslashes($this->GetValue('Notes'));
+        if ($notes == "") $notes = "-";
+        $html .= "<tr><td colspan='1'><textarea rows='6' width='100%' name = 'Notes'>" . $notes . "</textarea>";
+        $html .= "</td></tr>";
+        $html .= "</table></div>";
+        return $html;
     }
 
     public function Display_DataSetNotes() {
@@ -446,6 +606,55 @@ class TestData_header extends GenericTable {
         } else {
             $this->Display_DataForm();
         }
+    }
+
+    public function Display_DataSetNotes_html() {
+        //Display information for all TestData_header records
+        $html = "";
+        if ($this->GetValue('DataSetGroup') != 0) {
+
+            $html .= "<br><br>
+            <div style='width:900px'>
+            <table id = 'table1' border = '1'>";
+
+            $html .= "<tr class = 'alt'><th colspan='3'>" . $this->TestDataType . " data sets for TestData_header.DataSetGroup " . $this->GetValue('DataSetGroup') . "</th></tr>";
+            $html .= "<tr>
+                    <th width='60px'>Key</th>
+                    <th width='140px'>Timestamp</th>
+                    <th>Notes</th></tr>";
+
+            $qkeys = "SELECT keyId FROM `TestData_header`
+                LEFT JOIN `FE_Config` ON `FE_Config`.keyFEConfig = `TestData_header`.fkFE_Config
+                WHERE `TestData_header`.Band = " . $this->GetValue('Band') .
+                " AND `TestData_header`.DataSetGroup = " . $this->GetValue('DataSetGroup') .
+                " AND `FE_Config`.fkFront_Ends = $this->fe_keyId
+                AND `TestData_header`.`fkTestData_Type` = " . $this->GetValue('fkTestData_Type');
+
+            $rkeys = mysqli_query($this->dbconnection, $qkeys);
+
+            $i = 0;
+            while ($rowkeys = mysqli_fetch_array($rkeys)) {
+                if ($i % 2 == 0) {
+                    $trclass = "alt";
+                }
+                if ($i % 2 != 0) {
+                    $trclass = "";
+                }
+                $t = new TestData_header();
+                $t->Initialize_TestData_header($rowkeys['keyId'], $this->fc, 0);
+                $html .= "<tr class = $trclass>";
+                $html .= "<td>" . $t->keyId . "</td>";
+                $html .= "<td>" . $t->GetValue('TS') . "</td>";
+                $html .= "<td style='text-align:left !important;'>" . $t->GetValue('Notes') . "</td>";
+                $html .= "</tr>";
+                $i += 1;
+            }
+
+            $html .= "</table></div>";
+        } else {
+            $html .= $this->Display_DataForm_html();
+        }
+        return $html;
     }
 
     public function Display_RawTestData() {

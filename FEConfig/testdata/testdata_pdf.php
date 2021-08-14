@@ -1,9 +1,9 @@
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($files_root . '/vendor/autoload.php');
-require_once($site_classes . '/class.testdata_header_html.php');
-require_once($site_classes . '/class.noisetemp_html.php');
-require_once($site_classes . '/class.finelosweep_html.php');
+require_once($site_classes . '/class.testdata_header.php');
+require_once($site_classes . '/class.noisetemp.php');
+require_once($site_classes . '/class.finelosweep.php');
 require_once($site_dbConnect);
 require_once('pdf_tables.php');
 
@@ -21,7 +21,7 @@ $keyHeader = isset($_REQUEST['keyheader']) ? $_REQUEST['keyheader'] : false;
 if (!$keyHeader)
     exit();
 
-$td = new TestData_header_html();
+$td = new TestData_header();
 $td->Initialize_TestData_header($keyHeader, $fc);
 $fesn = $td->FrontEnd->GetValue('SN');
 $band = $td->GetValue('Band');
@@ -35,7 +35,7 @@ switch ($fkTestData_Type) {
         $file_type = "LO Lock Test";
         break;
     case 58:
-        $file_type = "Noise Temp";
+        $file_type = "Noise Temperature";
         break;
     case 59:
         $file_type = "Fine LO Sweep";
@@ -84,7 +84,7 @@ $html .= '</div>';
 $mpdf->SetHTMLHeader($html, '', true);
 $mpdf->WriteHTML($stylesheet, \Mpdf\HTMLParserMode::HEADER_CSS);
 
-$html = $td->Display_TestDataMain();
+$html = $td->Display_TestDataMain_html();
 $mpdf->WriteHTML($html[0], \Mpdf\HTMLParserMode::HTML_BODY);
 if ($html[1] != "") {
     $mpdf->AddPage();

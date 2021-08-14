@@ -1,10 +1,10 @@
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($files_root . '/vendor/autoload.php');
-require_once($site_classes . '/class.eff_html.php');
+require_once($site_classes . '/class.eff.php');
 require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.scansetdetails.php');
-require_once($site_classes . '/class.testdata_header_html.php');
+require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
 
 $dbconnection = site_getDbConnection();
@@ -108,47 +108,47 @@ $html .= "</table>";
 $html .= "</div>";
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
-$html = $eff->Display_ScanInformation();
+$html = $eff->Display_ScanInformation_html();
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-$html = $eff->Display_SetupParameters();
+$html = $eff->Display_SetupParameters_html();
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-$html = $eff->Display_ApertureEff();
-$html .= $eff->Display_TaperEff();
+$html = $eff->Display_ApertureEff_html();
+$html .= $eff->Display_TaperEff_html();
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-$html = $eff->Display_PhaseEff();
-$html .= $eff->Display_SpilloverEff();
+$html = $eff->Display_PhaseEff_html();
+$html .= $eff->Display_SpilloverEff_html();
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-$html = $eff->Display_PolEff();
-$html .= $eff->Display_DefocusEff();
+$html = $eff->Display_PolEff_html();
+$html .= $eff->Display_DefocusEff_html();
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-$html = $eff->Display_PhaseCenterOffset();
-$html .= $eff->Display_Squint();
+$html = $eff->Display_PhaseCenterOffset_html();
+$html .= $eff->Display_Squint_html();
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-$html = $eff->Display_Equations();
-$mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-
-$mpdf->AddPage();
-
-$html = $eff->Display_PointingAngles();
-$html .= $eff->Display_PointingAngleDiff();
-$mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-$html = $eff->Display_PointingAnglesPlot();
+$html = $eff->Display_Equations_html();
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
 $mpdf->AddPage();
-$html = $eff->Display_AllAmpPhasePlots(0, 'nf');
+
+$html = $eff->Display_PointingAngles_html();
+$html .= $eff->Display_PointingAngleDiff_html();
+$mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
+$html = $eff->Display_PointingAnglesPlot_html();
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
 $mpdf->AddPage();
-$html = $eff->Display_AllAmpPhasePlots(0, 'ff');
+$html = $eff->Display_AllAmpPhasePlots_html(0, 'nf');
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
 $mpdf->AddPage();
-$html = $eff->Display_AllAmpPhasePlots(1, 'nf');
+$html = $eff->Display_AllAmpPhasePlots_html(0, 'ff');
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
 $mpdf->AddPage();
-$html = $eff->Display_AllAmpPhasePlots(1, 'ff');
+$html = $eff->Display_AllAmpPhasePlots_html(1, 'nf');
+$mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
+
+$mpdf->AddPage();
+$html = $eff->Display_AllAmpPhasePlots_html(1, 'ff');
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
 $mpdf->Output('FE_SN_' . $fesn . '_Band_' . $band . '_Beam_Pattern', 'I');

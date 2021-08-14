@@ -66,26 +66,26 @@ $mpdf->WriteHTML($stylesheet, \Mpdf\HTMLParserMode::HEADER_CSS);
 $html = '<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu:regular,bold&subset=Latin">';
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HEADER_CSS);
 
-$html = band_results_table($feconfig, $band, $Data_Status, 1, $filterChecked);
-$html .= band_results_table($feconfig, $band, $Data_Status, 3, $filterChecked);
+$html = band_results_table_html($feconfig, $band, $Data_Status, 1, $filterChecked);
+$html .= band_results_table_html($feconfig, $band, $Data_Status, 3, $filterChecked);
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
-$html = band_results_table($feconfig, $band, $Data_Status, 2, $filterChecked);
-$html .= band_results_table($feconfig, $band, $Data_Status, 12, $filterChecked);
+$html = band_results_table_html($feconfig, $band, $Data_Status, 2, $filterChecked);
+$html .= band_results_table_html($feconfig, $band, $Data_Status, 12, $filterChecked);
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
-$html = band_results_table($feconfig, $band, $Data_Status, 13, $filterChecked);
-$html .= band_results_table($feconfig, $band, $Data_Status, 14, $filterChecked);
+$html = band_results_table_html($feconfig, $band, $Data_Status, 13, $filterChecked);
+$html .= band_results_table_html($feconfig, $band, $Data_Status, 14, $filterChecked);
 $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 
-$html = band_results_table($feconfig, $band, $Data_Status, 6, $filterChecked);
-$html .= band_results_table($feconfig, $band, $Data_Status, 15, $filterChecked);
+$html = band_results_table_html($feconfig, $band, $Data_Status, 6, $filterChecked);
+$html .= band_results_table_html($feconfig, $band, $Data_Status, 15, $filterChecked);
 if (!is_null($html)) {
     $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
 }
 
 
-$html = band_results_table($feconfig, $band, $Data_Status, 39, $filterChecked);
+$html = band_results_table_html($feconfig, $band, $Data_Status, 39, $filterChecked);
 if ($html[0] != ""){
     $mpdf->AddPage();
     $mpdf->WriteHTML($html[0], \Mpdf\HTMLParserMode::HTML_BODY);

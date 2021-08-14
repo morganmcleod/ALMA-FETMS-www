@@ -4,14 +4,29 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
-function results_section_header($desc) {
-    echo "<br><font size='+1' color='#f0fff0' face='sans-serif'><h><b>
+function results_section_header_html($desc) {
+    return "<br><font size='+1' color='#f0fff0' face='sans-serif'><h><b>
         $desc
         </b></h></font>";
 }
 
-function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBox = "Select", $plot = null, $plot_name = null) {
+function table_header_html($width, &$tdh, $cols = 2, $filterChecked = false, $checkBox = "Select", $plot = null, $plot_name = null) {
     $table_ver = "1.2.3";
+    /*
+     * 1.2.3 Sort each section with newest at top, large font section headers
+     * 1.2.2 Fix coloring of Y-factor results.
+     * 1.2.1 Include FETMS_Description in table headers.
+     * 1.2.0 added CCA SIS Warm Resistance table.
+     * 1.1.5 using PAIcheckBox to select TDHs for filtering.
+     * 1.1.4 Fix display bugs when using 2 GHz (or other) steps in Band3_NT_results()
+     * 1.1.3 Removed Notes from Band3_NT_results()
+     * 1.1.2 Don't show query error for CCA NT table when no data is available.
+     *       "Include in PAS Report" -> "for PAI"
+     * 1.1.1 Fix SIS buggy alignment of PAS monitor data with control data.
+     * 1.1.0 Now pulls specifications from new class that pulls from files instead of database.
+     * 1.0.6 MM fixed query fetching LNA config data for band 4.
+     * 1.0.5 MM fixed error in calculating average attenuation in IF_Power_results()
+     */
 
     $testpage = 'testdata.php';
 
@@ -59,7 +74,7 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
     return $html;
 }
 
-function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $filterChecked) {
+function band_results_table_html($FE_Config, $band, $Data_Status, $TestData_Type, $filterChecked) {
 
     $dbconnection = site_getDbConnection();
     $q = "SELECT `keyId` FROM `TestData_header`
@@ -80,47 +95,47 @@ function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $fi
     while ($row = mysqli_fetch_array($r)) {
         switch ($TestData_Type) {
             case 1:
-                $html = LNA_results($row[0], $filterChecked);
+                $html = LNA_results_html($row[0], $filterChecked);
                 return $html;
                 break;
             case 2:
-                $html = Temp_Sensor_results($row[0], $filterChecked);
+                $html = Temp_Sensor_results_html($row[0], $filterChecked);
                 return $html;
                 break;
             case 3:
-                $html = SIS_results($row[0], $filterChecked);
+                $html = SIS_results_html($row[0], $filterChecked);
                 return $html;
                 break;
             case 60:
-                $html = SIS_Resistance_results($row[0], $filterChecked);
+                $html = SIS_Resistance_results_html($row[0], $filterChecked);
                 return $html;
                 break;
             case 6:
-                $html = IF_Power_results($row[0], $filterChecked);
+                $html = IF_Power_results_html($row[0], $filterChecked);
                 return $html;
                 break;
             case 12:
-                $html = WCA_AMC_results($row[0], $filterChecked);
+                $html = WCA_AMC_results_html($row[0], $filterChecked);
                 return $html;
                 break;
             case 13:
-                $html = WCA_PA_results($row[0], $filterChecked);
+                $html = WCA_PA_results_html($row[0], $filterChecked);
                 return $html;
                 break;
             case 14:
-                $html = WCA_MISC_results($row[0], $filterChecked);
+                $html = WCA_MISC_results_html($row[0], $filterChecked);
                 return $html;
                 break;
             case 15:
-                $html = Y_factor_results($row[0], $filterChecked);
+                $html = Y_factor_results_html($row[0], $filterChecked);
                 return $html;
                 break;
             case 39:
                 ++$count_iv;
                 if ($count_iv <= 4) {
-                    $html[0] .= I_V_Curve_results($row[0], $filterChecked, $count_iv);
+                    $html[0] .= I_V_Curve_results_html($row[0], $filterChecked, $count_iv);
                 } else {
-                    $html[1] .= I_V_Curve_results($row[0], $filterChecked, $count_iv);
+                    $html[1] .= I_V_Curve_results_html($row[0], $filterChecked, $count_iv);
                 }
                 break;
         }
@@ -137,7 +152,7 @@ function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $fi
     return $html;
 }
 
-function results_table($FE_Config, $Data_Status, $TestData_Type, $filterChecked) {
+function results_table_html($FE_Config, $Data_Status, $TestData_Type, $filterChecked) {
     $dbconnection = site_getDbConnection();
     $q = "SELECT keyId FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
@@ -145,28 +160,30 @@ function results_table($FE_Config, $Data_Status, $TestData_Type, $filterChecked)
         AND fkDataStatus = $Data_Status
         ORDER BY `keyId` DESC";
     $r = mysqli_query($dbconnection, $q) or die("QUERY FAILED: $q");
+    $html = "";
     while ($row = mysqli_fetch_array($r)) {
         switch ($TestData_Type) {
             case 4:
-                Cryo_Temp_results($row[0], $filterChecked);
+                $html .= Cryo_Temp_results_html($row[0], $filterChecked);
                 break;
             case 5:
-                FLOOG_results($row[0], $filterChecked);
+                $html .= FLOOG_results_html($row[0], $filterChecked);
                 break;
             case 8:
-                LPR_results($row[0], $filterChecked);
+                $html .= LPR_results_html($row[0], $filterChecked);
                 break;
             case 9:
-                Photomixer_results($row[0], $filterChecked);
+                $html .= Photomixer_results_html($row[0], $filterChecked);
                 break;
             case 10:
-                IF_Switch_Temp_results($row[0], $filterChecked);
+                $html .= IF_Switch_Temp_results_html($row[0], $filterChecked);
                 break;
             case 24:
-                CPDS_results($row[0], $filterChecked);
+                $html .= CPDS_results_html($row[0], $filterChecked);
                 break;
         }
     }
+    return $html;
 }
 
 
@@ -176,11 +193,11 @@ function results_table($FE_Config, $Data_Status, $TestData_Type, $filterChecked)
  * @param $number (float) - number to format
  *
  */
-function mon_data($number) {
+function mon_data_html($number) {
     return number_format((float)$number, 2, '.', '');
 }
 
-function update_dataset($td_keyID, $data_set_group) {
+function update_dataset_html($td_keyID, $data_set_group) {
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
     $tdh->SetValue('DataSetGroup', $data_set_group);
@@ -195,13 +212,15 @@ function update_dataset($td_keyID, $data_set_group) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function CPDS_results($td_keyID, $filterChecked) {
+function CPDS_results_html($td_keyID, $filterChecked) {
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
     $col_name = array("Band", "+6V Voltage", "-6V Voltage", "+15V Voltage", "-15V Voltage", "+24V Voltage", "+8V Voltage", "+6V Current", "-6V Current", "+15V Current", "-15V Current", "+24V Current", "+8V Current");
 
-    if (table_header(900, $tdh, count($col_name), $filterChecked)) {
+    $html = table_header_html(900, $tdh, count($col_name), $filterChecked);
+
+    if ($html) {
 
         $q = "SELECT `Band`, `P6V_V`,`N6V_V`,`P15V_V`,`N15V_V`,`P24V_V`,`P8V_V`,`P6V_I`,`N6V_I`,`P15V_I`,`N15V_I`,`P24V_I`,`P8V_I`
                 FROM `CPDS_monitor`
@@ -210,22 +229,23 @@ function CPDS_results($td_keyID, $filterChecked) {
         $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
         // write table subheader
-        echo "</tr>";
+        $html .= "</tr>";
         foreach ($col_name  as $Col) {
-            echo "<th>" . $Col . "</th>";
+            $html .= "<th>" . $Col . "</th>";
         }
-        echo "</tr>";
+        $html .= "</tr>";
 
         // Write data to table
         while ($row = mysqli_fetch_array($r)) {
-            echo "<tr>";
+            $html .= "<tr>";
             for ($i = 0; $i < 13; $i++) {
-                echo "<td>$row[$i]</td>    ";
+                $html .= "<td>$row[$i]</td>    ";
             }
-            echo "<tr>";
+            $html .= "<tr>";
         }
-        echo "</table></div>";
+        $html .= "</table></div>";
     }
+    return $html;
 }
 
 
@@ -236,12 +256,12 @@ function CPDS_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function LNA_results($td_keyID, $filterChecked) {
+function LNA_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    $html = table_header(700, $tdh, 8, $filterChecked);
+    $html = table_header_html(700, $tdh, 8, $filterChecked);
 
     if ($html) {
 
@@ -266,9 +286,9 @@ function LNA_results($td_keyID, $filterChecked) {
             $key = 'Pol' . $row[0] . " LNA" . $row[1];
             $stageKey = 'Stage ' . $row[2];
             $stageData = array(
-                'VdRead' => mon_data($row[4]),
-                'IdRead' => mon_data($row[5]),
-                'VgRead' => mon_data($row[6])
+                'VdRead' => mon_data_html($row[4]),
+                'IdRead' => mon_data_html($row[5]),
+                'VgRead' => mon_data_html($row[6])
             );
             if (!isset($output[$key]))
                 $output[$key] = array();
@@ -393,13 +413,13 @@ function LNA_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function SIS_results($td_keyID, $filterChecked) {
+function SIS_results_html($td_keyID, $filterChecked) {
 
     //get and save Monitor Data
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    $html = table_header(700, $tdh, 8, $filterChecked);
+    $html = table_header_html(700, $tdh, 8, $filterChecked);
 
     if ($html) {
 
@@ -421,10 +441,10 @@ function SIS_results($td_keyID, $filterChecked) {
             // insert the results keyed by Pol and SIS description:
             $key = 'Pol' . $row[0] . " SIS" . $row[1];
             $output[$key] = array(
-                'VjRead' => mon_data($row[3]),
-                'IjRead' => mon_data($row[4]),
-                'VmagRead' => mon_data($row[5]),
-                'ImagRead' => mon_data($row[6])
+                'VjRead' => mon_data_html($row[3]),
+                'IjRead' => mon_data_html($row[4]),
+                'VmagRead' => mon_data_html($row[5]),
+                'ImagRead' => mon_data_html($row[6])
             );
         }
 
@@ -457,9 +477,9 @@ function SIS_results($td_keyID, $filterChecked) {
             while ($row = mysqli_fetch_array($r)) {
                 $key = 'Pol' . $row[0] . " SIS" . $row[1];
                 if (isset($output[$key])) {
-                    $output[$key]['VJ'] = mon_data($row[2]);
-                    $output[$key]['IJ'] = mon_data($row[3]);
-                    $output[$key]['IMAG'] = mon_data($row[4]);
+                    $output[$key]['VJ'] = mon_data_html($row[2]);
+                    $output[$key]['IJ'] = mon_data_html($row[3]);
+                    $output[$key]['IMAG'] = mon_data_html($row[4]);
                 }
             }
         }
@@ -565,11 +585,13 @@ COLLATE='latin1_swedish_ci'
 ENGINE=MyISAM;
  *
  */
-function SIS_Resistance_results($td_keyID, $filterChecked) {
+function SIS_Resistance_results_html($td_keyID, $filterChecked) {
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    if (table_header(475, $tdh, 2, $filterChecked)) {
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
+
+    if ($html) {
 
         $new_spec = new Specifications();
 
@@ -578,14 +600,15 @@ function SIS_Resistance_results($td_keyID, $filterChecked) {
         WHERE `fkHeader` = $td_keyID ORDER BY `Pol`ASC, `SB` ASC";
         $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
-        echo "<tr><th>Device</th><th colspan='2'>Resistance (Ohms)</th></tr>";
+        $html .= "<tr><th>Device</th><th colspan='2'>Resistance (Ohms)</th></tr>";
 
         while ($row = mysqli_fetch_array($r)) {
             $key = 'Pol' . $row[0] . " SIS" . $row[1];
-            echo "<tr><td>$key</td><td>" . $row[2] . "</td></tr>";
+            $html .= "<tr><td>$key</td><td>" . $row[2] . "</td></tr>";
         }
-        echo "</table></div>";
+        $html .= "</table></div>";
     }
+    return $html;
 }
 
 
@@ -596,11 +619,11 @@ function SIS_Resistance_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function Temp_Sensor_results($td_keyID, $filterChecked) {
+function Temp_Sensor_results_html($td_keyID, $filterChecked) {
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    $html = table_header(475, $tdh, 2, $filterChecked);
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
 
     if ($html) {
 
@@ -650,12 +673,12 @@ function Temp_Sensor_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function WCA_AMC_results($td_keyID, $filterChecked) {
+function WCA_AMC_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    $html = table_header(475, $tdh, 2, $filterChecked);
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
 
     if ($html) {
 
@@ -691,12 +714,12 @@ function WCA_AMC_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function WCA_PA_results($td_keyID, $filterChecked) {
+function WCA_PA_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    $html = table_header(475, $tdh, 2, $filterChecked);
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
 
     if ($html) {
 
@@ -732,12 +755,12 @@ function WCA_PA_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function WCA_MISC_results($td_keyID, $filterChecked) {
+function WCA_MISC_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    $html = table_header(475, $tdh, 2, $filterChecked);
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
 
     if ($html) {
 
@@ -772,26 +795,29 @@ function WCA_MISC_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function FLOOG_results($td_keyID, $filterChecked) {
+function FLOOG_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    if (table_header(475, $tdh, 2, $filterChecked)) {
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
+
+    if ($html) {
 
         $q = "SELECT `Band`, `RefTotalPower` FROM `FLOOGdist`
                 WHERE `fkHeader` = $td_keyID";
         $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
-        echo "<tr><th></th><th colspan='2'>Reference Total Power (dBm)</th><tr>";
+        $html .= "<tr><th></th><th colspan='2'>Reference Total Power (dBm)</th><tr>";
 
         while ($row = mysqli_fetch_array($r)) {
-            echo "<tr>
+            $html .= "<tr>
             <td width = '100px'>Band $row[0] WCA</td>
             <td width = '300px'>$row[1]</td></tr>";
         }
-        echo "</table></div>";
+        $html .= "</table></div>";
     }
+    return $html;
 }
 
 
@@ -802,12 +828,12 @@ function FLOOG_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function IF_Power_results($td_keyID, $filterChecked) {
+function IF_Power_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    $html = table_header(475, $tdh, 3, $filterChecked);
+    $html = table_header_html(475, $tdh, 3, $filterChecked);
 
     if ($html) {
 
@@ -831,8 +857,8 @@ function IF_Power_results($td_keyID, $filterChecked) {
             $att_sum = $att_sum + abs($row[2] - $row[1]);
             $atten_cnt++;
             // check to see if the numbers meet spec
-            $check1 = $new_spec->numInRange(($row[2] - 14), mon_data($row[1]), ($row[2] - 16));
-            $check2 = $new_spec->numInRange(($row[1] + 16), mon_data($row[2]), ($row[1] + 14));
+            $check1 = $new_spec->numInRange(($row[2] - 14), mon_data_html($row[1]), ($row[2] - 16));
+            $check2 = $new_spec->numInRange(($row[1] + 16), mon_data_html($row[2]), ($row[1] + 14));
             switch ($row[0]) {
                 case 0:
                     $html .= "<td>IF0 Pol 0 USB</td>";
@@ -856,7 +882,7 @@ function IF_Power_results($td_keyID, $filterChecked) {
                     break;
             }
         }
-        $avg_atten = ($atten_cnt) ? mon_data($att_sum / $atten_cnt) : 0;
+        $avg_atten = ($atten_cnt) ? mon_data_html($att_sum / $atten_cnt) : 0;
         //check to see if avgerage attunuation is in range
         $check3 = $new_spec->numInRange(16, $avg_atten, 14);
         $html .= "<tr><th>Average Attenutation (dB) </th>
@@ -874,12 +900,14 @@ function IF_Power_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function IF_Switch_Temp_results($td_keyID, $filterChecked) {
+function IF_Switch_Temp_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    if (table_header(475, $tdh, 2, $filterChecked)) {
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
+
+    if ($html) {
 
         $col_name = array("pol0sb1", "pol0sb2", "pol1sb1", "pol1sb2");
         $col_strg = implode(",", $col_name);
@@ -887,18 +915,19 @@ function IF_Switch_Temp_results($td_keyID, $filterChecked) {
             FROM IFSwitchTemps
             WHERE fkHeader= $td_keyID";
 
-        echo "<tr><th></th><th colspan='2'>Monitor Values (K)</th>";
+        $html .= "<tr><th></th><th colspan='2'>Monitor Values (K)</th>";
 
         $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
         $i = 0;
         foreach ($col_name  as $Col) {
-            echo "<tr>";
-            echo "<td width = '100px'>" . $Col . "</td>";
-            echo "<td width = '300px'>" . ADAPT_mysqli_result($r, 0, $i) . "</td></tr>";
+            $html .= "<tr>";
+            $html .= "<td width = '100px'>" . $Col . "</td>";
+            $html .= "<td width = '300px'>" . ADAPT_mysqli_result($r, 0, $i) . "</td></tr>";
             $i++;
         }
-        echo "</table></div>";
+        $html .= "</table></div>";
     }
+    return $html;
 }
 
 
@@ -909,12 +938,14 @@ function IF_Switch_Temp_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function LPR_results($td_keyID, $filterChecked) {
+function LPR_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    if (table_header(475, $tdh, 2, $filterChecked)) {
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
+
+    if ($html) {
 
         $col_name = array("Laser Pump Temperature (K)", "Laser Drive Current (mA)", "Laser Photodetector Current (mA)", "Photodetector Current (mA)", "Photodetector Power (mW)", "Modulation Input (V)", "TempSensor0 (K)", "TempSensor1 (K)");
         $q = "SELECT `LaserPumpTemp`, `LaserDrive`, `LaserPhotodetector`, `Photodetector_mA`, `Photodetector_mW`, `ModInput`, `TempSensor0`, `TempSensor1`
@@ -923,17 +954,18 @@ function LPR_results($td_keyID, $filterChecked) {
 
         $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
-        echo "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values </th>";
+        $html .= "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values </th>";
 
         $i = 0;
         foreach ($col_name  as $Col) {
-            echo "<tr>";
-            echo "<td width = '250px'>" . $Col . "</td>";
-            echo "<td width = '150px'>" . ADAPT_mysqli_result($r, 0, $i) . "</td></tr>";
+            $html .= "<tr>";
+            $html .= "<td width = '250px'>" . $Col . "</td>";
+            $html .= "<td width = '150px'>" . ADAPT_mysqli_result($r, 0, $i) . "</td></tr>";
             $i++;
         }
-        echo "</table></div>";
+        $html .= "</table></div>";
     }
+    return $html;
 }
 
 
@@ -944,12 +976,14 @@ function LPR_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function Photomixer_results($td_keyID, $filterChecked) {
+function Photomixer_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    if (table_header(475, $tdh, 2, $filterChecked)) {
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
+
+    if ($html) {
 
         $q = "SELECT `Band`,`Vpmx`, `Ipmx`
             FROM `Photomixer_WarmHealth`
@@ -959,10 +993,10 @@ function Photomixer_results($td_keyID, $filterChecked) {
 
         $col_name = array("Photomixer Voltage (V)", "Photomixer Current (mA)");
 
-        echo "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values </th>";
+        $html .= "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values </th>";
 
         while ($row = mysqli_fetch_array($r)) {
-            echo "<tr>
+            $html .= "<tr>
             <td width = '250px' ALIGN='LEFT'> Band $row[0]</td>
             <td width = '150px'></td></tr>
             <td width = '250px'>Photomixer Voltage (V)</td>
@@ -970,8 +1004,9 @@ function Photomixer_results($td_keyID, $filterChecked) {
             <td width = '250px'>Photomixer Current (mA)</td>
             <td width = '150px'>$row[2]</td></tr>";
         }
-        echo "</table></div>";
+        $html .= "</table></div>";
     }
+    return $html;
 }
 
 
@@ -982,12 +1017,14 @@ function Photomixer_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function Cryo_Temp_results($td_keyID, $filterChecked) {
+function Cryo_Temp_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    if (table_header(475, $tdh, 2, $filterChecked)) {
+    $html = table_header_html(475, $tdh, 2, $filterChecked);
+
+    if ($html) {
 
         $col_name = array("4k_CryoCooler", "4k_PlateLink1", "4k_PlateLink2", "4k_PlateFarSide1", "4k_PlateFarSide2", "15k_CryoCooler", "15k_PlateLink", "15k_PlateFarSide", "15k_Shield", "110k_CryoCooler", "110k_PlateLink", "110k_PlateFarSide", "110k_Shield");
         $col_strg = implode(",", $col_name);
@@ -995,18 +1032,19 @@ function Cryo_Temp_results($td_keyID, $filterChecked) {
             FROM `CryostatTemps`
             WHERE `fkHeader` = $td_keyID";
 
-        echo "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values (K)</th>";
+        $html .= "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values (K)</th>";
 
         $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
         $i = 0;
         foreach ($col_name  as $Col) {
-            echo "<tr>
+            $html .= "<tr>
             <td width = '250px'>" . $Col . "</td>
             <td width = '150px'>" . ADAPT_mysqli_result($r, 0, $i) . "</td></tr>";
             $i++;
         }
-        echo "</table></div>";
+        $html .= "</table></div>";
     }
+    return $html;
 }
 
 
@@ -1017,12 +1055,12 @@ function Cryo_Temp_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function Y_factor_results($td_keyID, $filterChecked) {
+function Y_factor_results_html($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
 
-    $html = table_header(475, $tdh, 4, $filterChecked);
+    $html = table_header_html(475, $tdh, 4, $filterChecked);
 
     if ($html) {
 
@@ -1072,14 +1110,14 @@ function Y_factor_results($td_keyID, $filterChecked) {
                     $html .= "<tr><td colspan='1'>IF3 Pol 1 LSB</td>";
                     break;
             }
-            $html .= "<td colspan='1'>" . mon_data($row[1]) . "</td>
-                <td colspan='1'>" . mon_data($row[2]) . "</td>";
+            $html .= "<td colspan='1'>" . mon_data_html($row[1]) . "</td>
+                <td colspan='1'>" . mon_data_html($row[2]) . "</td>";
 
             // check to see if Y factor is in spec
-            $Y_factor = $new_spec->chkNumAgnstSpec(mon_data($row[3]), "range", $Ymin, $Ymax);
+            $Y_factor = $new_spec->chkNumAgnstSpec(mon_data_html($row[3]), "range", $Ymin, $Ymax);
             $html .= "<td>$Y_factor</tr> ";
         }
-        $Yavg = mon_data($Ysum / $Ycnt);
+        $Yavg = mon_data_html($Ysum / $Ycnt);
         $YavgText = $new_spec->chkNumAgnstSpec($Yavg, "range", $Ymin, $Ymax);
         $html .= "<tr><th colspan='3'>Average Y factor </th><th colspan='1'>$YavgText</th></tr>";
         $html .= "</table></div>";
@@ -1094,7 +1132,7 @@ function Y_factor_results($td_keyID, $filterChecked) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function I_V_Curve_results($td_keyID, $filterChecked, $count_iv) {
+function I_V_Curve_results_html($td_keyID, $filterChecked, $count_iv) {
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
     $plot = 'iv_curve_' . $count_iv;
@@ -1143,7 +1181,7 @@ function I_V_Curve_results($td_keyID, $filterChecked, $count_iv) {
                 break;
         }
     }
-    $html = table_header(800, $tdh, 1, $filterChecked, null,  $plot, $plot_name);
+    $html = table_header_html(800, $tdh, 1, $filterChecked, null,  $plot, $plot_name);
 
     if ($html) {
         $html .= "<tr><td colspan='1'><img width='100%' src='" . $tdh->GetValue('PlotURL') . "'/></td></tr>";
@@ -1159,7 +1197,7 @@ function I_V_Curve_results($td_keyID, $filterChecked, $count_iv) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function Band3_NT_results($td_keyID) {
+function Band3_NT_results_html($td_keyID) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
@@ -1186,7 +1224,7 @@ function Band3_NT_results($td_keyID) {
         ORDER BY FreqLO;";
     $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
 
-    $html = table_header(800, $tdh, 7);
+    $html = table_header_html(800, $tdh, 7);
 
     // display data column header row
     $html .= "<tr>";
@@ -1226,7 +1264,7 @@ function Band3_NT_results($td_keyID) {
                     //average NT column
                     if (isset($specs[$freq]))
                         $spec = $specs[$freq];
-                    $num = mon_data(ADAPT_mysqli_result($r, $cnt, $i));
+                    $num = mon_data_html(ADAPT_mysqli_result($r, $cnt, $i));
                     $text = $new_spec->chkNumAgnstSpec($num, "<", $spec);
                     $html .= "<td>$text</td>";
                     break;
@@ -1236,7 +1274,7 @@ function Band3_NT_results($td_keyID) {
                     break;
                 default;
                     //only display 2 decimals on a float number
-                    $html .= "<td>" . mon_data(ADAPT_mysqli_result($r, $cnt, $i)) . "</td>";
+                    $html .= "<td>" . mon_data_html(ADAPT_mysqli_result($r, $cnt, $i)) . "</td>";
                     break;
             }
         }
@@ -1254,7 +1292,7 @@ function Band3_NT_results($td_keyID) {
  * @param $td_keyID (float) - testdata header keyID
  *
  */
-function Band3_CCA_NT_results($td_keyID) {
+function Band3_CCA_NT_results_html($td_keyID) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
@@ -1396,7 +1434,7 @@ function Band3_CCA_NT_results($td_keyID) {
             $TFETMS[$row[1]] = $row[0];
         }
 
-        $html = table_header(800, $cca_tdh, 8, false, false);
+        $html = table_header_html(800, $cca_tdh, 8, false, false);
         $col_name = array("FreqLO (Ghz)", "Pol0USB (K)", "Pol0LSB (K)", "Pol1USB (K)", "Pol1LSB (K)", "AvgNT (K)", "Spec (K)", "T(FETMS)-\nT(HIA)-\n3Kmirrors (K)");
         // display data column header row
         foreach ($col_name  as $Col) {
@@ -1413,17 +1451,17 @@ function Band3_CCA_NT_results($td_keyID) {
             $html .= "<td>$FREQ_LO</td>";
 
             //only display 2 decimals on a float number
-            $html .= "<td>" . mon_data($AVG_NT_Pol0_Sb1[$cnt]) . "</td>";
-            $html .= "<td>" . mon_data($AVG_NT_Pol0_Sb2[$cnt]) . "</td>";
-            $html .= "<td>" . mon_data($AVG_NT_Pol1_Sb1[$cnt]) . "</td>";
-            $html .= "<td>" . mon_data($AVG_NT_Pol1_Sb2[$cnt]) . "</td>";
-            $AVG =     mon_data(($AVG_NT_Pol0_Sb1[$cnt] + $AVG_NT_Pol0_Sb2[$cnt] + $AVG_NT_Pol1_Sb1[$cnt] + $AVG_NT_Pol1_Sb2[$cnt]) / 4);
+            $html .= "<td>" . mon_data_html($AVG_NT_Pol0_Sb1[$cnt]) . "</td>";
+            $html .= "<td>" . mon_data_html($AVG_NT_Pol0_Sb2[$cnt]) . "</td>";
+            $html .= "<td>" . mon_data_html($AVG_NT_Pol1_Sb1[$cnt]) . "</td>";
+            $html .= "<td>" . mon_data_html($AVG_NT_Pol1_Sb2[$cnt]) . "</td>";
+            $AVG =     mon_data_html(($AVG_NT_Pol0_Sb1[$cnt] + $AVG_NT_Pol0_Sb2[$cnt] + $AVG_NT_Pol1_Sb1[$cnt] + $AVG_NT_Pol1_Sb2[$cnt]) / 4);
             $temp_spec = $specs[$FREQ_LO] - 3;
             $text = $new_spec->chkNumAgnstSpec($AVG, "<", $temp_spec);
             $html .= "<td>$text</td>";
             $html .= "<td>less than $temp_spec</td>";
             if (isset($TFETMS[$FREQ_LO]))
-                $result = mon_data($TFETMS[$FREQ_LO] - $AVG - 3);
+                $result = mon_data_html($TFETMS[$FREQ_LO] - $AVG - 3);
             else
                 $result = "";
             $html .= "<td>$result</td>";

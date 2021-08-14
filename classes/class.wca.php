@@ -303,6 +303,9 @@ class WCA extends FEComponent {
     public function Display_AmplitudeStability() {
         echo "<img src='" . $this->_WCAs->GetValue('amp_stability_url') . "'>";
     }
+    public function Display_AmplitudeStability_html() {
+        return "<img src='" . $this->_WCAs->GetValue('amp_stability_url') . "'>";
+    }
     public function Display_AMNoise() {
         echo "<table>";
         echo "<tr><td><img src='" . $this->_WCAs->GetValue('amnz_avgdsb_url') . "'></td></tr>";
