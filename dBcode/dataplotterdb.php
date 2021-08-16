@@ -207,7 +207,7 @@ class DPdb { //extends DBRetrieval{
 		          WHERE fkHeader = $TestData_Id ORDER BY TS ASC;";
         } elseif ($occur == 9) {
             // Workmanship amplitude for CCAs having only LNA
-            $q = "SELECT tilt, CartTemp2,CartTemp4,CartTemp5,CryoTemp0,CryoTemp1,CryoTemp2,CryoTemp3,CryoTemp4,CryoTemp5,CryoTemp6,CryoTemp7,CryoTemp8,TS
+            $q = "SELECT tilt, CartTemp4,CartTemp2,CartTemp5,CryoTemp0,CryoTemp1,CryoTemp2,CryoTemp3,CryoTemp4,CryoTemp5,CryoTemp6,CryoTemp7,CryoTemp8,TS
 		          FROM TEST_Workmanship_Amplitude
 		          WHERE fkHeader = $TestData_Id ORDER BY TS ASC;";
         } else {
