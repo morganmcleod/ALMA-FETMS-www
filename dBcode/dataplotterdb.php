@@ -201,7 +201,13 @@ class DPdb { //extends DBRetrieval{
 					WHERE `keyFEConfig` = " . $TestDataHeader->GetValue('fkFE_Config') . ")
 					ORDER BY `TestData_header`.keyID DESC;";
         } elseif ($occur == 8) {
+            // Workmanship amplitude for CCAs having SIS
             $q = "SELECT tilt, CartTemp0,CartTemp2,CartTemp5,CryoTemp0,CryoTemp1,CryoTemp2,CryoTemp3,CryoTemp4,CryoTemp5,CryoTemp6,CryoTemp7,CryoTemp8,TS
+		          FROM TEST_Workmanship_Amplitude
+		          WHERE fkHeader = $TestData_Id ORDER BY TS ASC;";
+        } elseif ($occur == 9) {
+            // Workmanship amplitude for CCAs having only LNA
+            $q = "SELECT tilt, CartTemp2,CartTemp4,CartTemp5,CryoTemp0,CryoTemp1,CryoTemp2,CryoTemp3,CryoTemp4,CryoTemp5,CryoTemp6,CryoTemp7,CryoTemp8,TS
 		          FROM TEST_Workmanship_Amplitude
 		          WHERE fkHeader = $TestData_Id ORDER BY TS ASC;";
         } else {

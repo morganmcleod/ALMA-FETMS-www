@@ -34,9 +34,10 @@ class DataPlotter extends GenericTable{
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
-        $this->swversion = "1.2.11";
+        $this->swversion = "1.2.12";
 
         /*
+         * 1.2.12: Plot 15K CCA temps for workmanship amplitude
          * 1.2.11: 'SIS' in I-V curve legend instead of 'SB'
          * 1.2.10: If no data for WorkAmp, set plotURL to "_" broken link.
          * 1.2.9:  Added 15K stage plots to WorkAmp
@@ -894,9 +895,9 @@ class DataPlotter extends GenericTable{
         $plot_command_file = $imagedirectory . "wkm_amp_command_tdh$TestData_Id.txt";
         $this->url_directory = $main_url_directory . $filesDir;
 
-        // True if this receiver band has uses all four IF outputs:
+        // True if this receiver band uses all four IF outputs:
         $is2SB = !($band == 1 || $band == 9 || $band == 10);
-
+        
         if (!file_exists($imagedirectory)){
             mkdir($imagedirectory);
         }
@@ -1050,6 +1051,9 @@ class DataPlotter extends GenericTable{
 
         $TestData_Id = $this->TestDataHeader->keyId;
         $band = $this->TestDataHeader->GetValue('Band');
+        
+        // True if this receiver band has 15K LNAs and no SIS:
+        $isLNAOnly = ($band == 1 || $band == 2);
 
         $filesDir = "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
         $imagedirectory = $this->writedirectory . $filesDir;
@@ -1061,8 +1065,11 @@ class DataPlotter extends GenericTable{
             mkdir($imagedirectory);
         }
 
-        $r = $this->db_pull->q(8, $TestData_Id, $this->fc);
-
+        if ($isLNAOnly)
+            $r = $this->db_pull->q(9, $TestData_Id, $this->fc);
+        else
+            $r = $this->db_pull->q(8, $TestData_Id, $this->fc);
+            
         if (!mysqli_num_rows($r)) {
             // No data.  Write blank URL:
             if (!$appendURL) {
@@ -1104,7 +1111,8 @@ class DataPlotter extends GenericTable{
             }
         }
         fclose($fh);
-        $this->Impl_Plot_WorkAmpTemperatures($TestData_Id, $band, $imagedirectory, $plot_command_file, $data_file, $appendURL, false);
+        if (!$isLNAOnly)
+            $this->Impl_Plot_WorkAmpTemperatures($TestData_Id, $band, $imagedirectory, $plot_command_file, $data_file, $appendURL, false);
         $this->Impl_Plot_WorkAmpTemperatures($TestData_Id, $band, $imagedirectory, $plot_command_file, $data_file, $appendURL, true);
     }
 
@@ -1177,6 +1185,11 @@ class DataPlotter extends GenericTable{
 
         $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
         if ($fifteenKStage) {
+            if ($band == 1 || $band == 2) {
+                $plot_string .= ", '$data_file'  using 1:3 title 'CCA 15K stage' with lines axis x1y1";
+                $plot_string .= ", '$data_file'  using 1:4 title 'CCA pol0 LNA' with lines axis x1y1";
+                $plot_string .= ", '$data_file'  using 1:5 title 'CCA pol1 LNA' with lines axis x1y1";
+            }
             $plot_string .= ", '$data_file'  using 1:11 title 'Cryo 15K stage' with lines axis x1y1";
             $plot_string .= ", '$data_file'  using 1:12 title 'Cryo 15K plate near link' with lines axis x1y1";
             $plot_string .= ", '$data_file'  using 1:13 title 'Cryo 15K plate far side' with lines axis x1y1";
