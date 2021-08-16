@@ -9,12 +9,11 @@ require_once($site_dbConnect);
 $dbconnection = site_getDbConnection();
 require('dbGetQueries.php');
 
-$ctype=$_GET['ctype'];
+$ctype = $_GET['ctype'];
 
-$getqueries=new dbGetQueries;
+$getqueries = new dbGetQueries;
 
-if($ctype==100)
-{
+if ($ctype == 100) {
     //Front Ends
     $q = "SELECT SN, keyFrontEnds, Docs, A.keyFEConfig, A.TS
           FROM Front_Ends, FE_Config A
@@ -47,7 +46,7 @@ if($ctype==100)
           AND A.fkFEConfig IN ($configIds);";
 
     $rsl = mysqli_query($dbconnection, $q);
-    
+
     $slnRecs = array();
 
     while ($row = mysqli_fetch_array($rsl))
@@ -74,9 +73,7 @@ if($ctype==100)
     }
     $retJSON .= "]";
     echo $retJSON;
-}
-else
-{
+} else {
     //Components
     $q = "SELECT A.keyId, A.Band, A.SN, A.TS
           FROM FE_Components A

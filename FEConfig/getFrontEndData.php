@@ -6,37 +6,55 @@ require_once($site_classes . '/class.testdata_table.php');
 require_once($site_FEConfig . '/HelperFunctions.php');
 require_once($site_dbConnect);
 
-$band=$_POST['band'];
-$feConfig=$_POST['key'];
-$facility=$_REQUEST['fc'];
+$band = $_POST['band'];
+$feConfig = $_POST['key'];
+$facility = $_REQUEST['fc'];
 
 $fe = new FrontEnd();
 $fe->Initialize_FrontEnd_FromConfig($feConfig, $facility, FrontEnd::INIT_NONE);
 $fc   = $fe->GetValue('keyFacility');
 $fesn = $fe->GetValue('SN');
 
-if($band == 100) {
+if ($band == 100) {
     //Front End tab panel
 ?>
     <table>
-        <tr><td>
-            <div style = "width:280px">
-                <table id = "table5" >
-                <tr><th>SN:</th><td bgcolor='#ff0000'><?php echo $fe->GetValue('SN');?></td></tr>
-                <tr><th>TS:</td><td><?php echo $fe->GetValue('TS'); ?></td></tr>
-                <tr><th>Configuraton#:</td><td><?php echo $feConfig; ?></td></tr>
-                <tr><th>CAN SN:</td><td><?php echo $fe->GetValue('ESN'); ?></td></tr>
-<?php
-                if (strlen($fe->GetValue('Docs')) > 1) {
-                    echo "<tr><th>Docs:</td><td><a href='".FixHyperlink($fe->GetValue('Docs'))."'>Link </a></td></tr>";
-                } else {
-                    echo "<tr><th>Docs:</td><td></td></tr>";
-                }
-?>
-                <tr><th>Description:</td><td><?php echo $fe->GetValue('Description'); ?></td></tr>
-                </table>
-            </div>
-        </td></tr>
+        <tr>
+            <td>
+                <div style="width:280px">
+                    <table id="table5">
+                        <tr>
+                            <th>SN:</th>
+                            <td bgcolor='#ff0000'><?php echo $fe->GetValue('SN'); ?></td>
+                        </tr>
+                        <tr>
+                            <th>TS:
+            </td>
+            <td><?php echo $fe->GetValue('TS'); ?></td>
+        </tr>
+        <tr>
+            <th>Configuraton#:</td>
+            <td><?php echo $feConfig; ?></td>
+        </tr>
+        <tr>
+            <th>CAN SN:</td>
+            <td><?php echo $fe->GetValue('ESN'); ?></td>
+        </tr>
+        <?php
+        if (strlen($fe->GetValue('Docs')) > 1) {
+            echo "<tr><th>Docs:</td><td><a href='" . FixHyperlink($fe->GetValue('Docs')) . "'>Link </a></td></tr>";
+        } else {
+            echo "<tr><th>Docs:</td><td></td></tr>";
+        }
+        ?>
+        <tr>
+            <th>Description:</td>
+            <td><?php echo $fe->GetValue('Description'); ?></td>
+        </tr>
+    </table>
+    </div>
+    </td>
+    </tr>
     </table>
 
 <?php
@@ -64,5 +82,5 @@ if($band == 100) {
 <br><br>
 
 <?php
-    unset($fe);
+unset($fe);
 ?>

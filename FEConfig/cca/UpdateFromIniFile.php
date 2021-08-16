@@ -12,11 +12,11 @@ $cca->RequestValues_CCA($fileName, $tmpName);
 
 $errorstring = '';
 $errordetected = 0;
-if (count($cca->ErrorArray) > 0){
-	$errordetected = 1;
-	for ($i = 0; $i < count($cca->ErrorArray); $i++){
-		$errorstring .= $cca->ErrorArray[$i] . '\n';
-	}
+if (count($cca->ErrorArray) > 0) {
+    $errordetected = 1;
+    for ($i = 0; $i < count($cca->ErrorArray); $i++) {
+        $errorstring .= $cca->ErrorArray[$i] . '\n';
+    }
 }
 
 echo "{'success':'1','errordetected':'$errordetected','errors':'$errorstring','keyconfig':'$cca->keyId'}";

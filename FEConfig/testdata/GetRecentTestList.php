@@ -10,24 +10,24 @@ $SelectorType = $_REQUEST['stype'];
 
 $fkTestData_Type = "%";
 
-if ($TestStatus == 'All'){
+if ($TestStatus == 'All') {
     $TestStatus = "%";
     $fkTestData_Type = "%";
 }
 
-if ($SelectorType == 2){
+if ($SelectorType == 2) {
     $TestStatus = "%";
     $fkTestData_Type = $_REQUEST['type'];
 }
 
 // This query can take advantage of indexes on Front_Ends.keyFrontEnds and TestData_Types.keyId
 
-$q="SELECT TDH.keyId, TDH.keyFacility, TDH.Band, TDH.TS, TDH.fkTestData_Type, 
-           TDH.Notes, TDH.fkFE_Components, TDH.DataSetGroup, 
+$q = "SELECT TDH.keyId, TDH.keyFacility, TDH.Band, TDH.TS, TDH.fkTestData_Type,
+           TDH.Notes, TDH.fkFE_Components, TDH.DataSetGroup,
            Front_Ends.SN, Front_Ends.keyFrontEnds, TestData_Types.Description
-    FROM TestData_header AS TDH, 
+    FROM TestData_header AS TDH,
          FE_Config AS FCF,
-         Front_Ends, TestData_Types 
+         Front_Ends, TestData_Types
     WHERE TDH.fkDataStatus LIKE '$TestStatus'
     AND TDH.fkTestData_Type LIKE '$fkTestData_Type'
     AND TDH.fkFE_Config = FCF.keyFEConfig
@@ -40,7 +40,7 @@ $r = mysqli_query($dbconnection, $q);
 $outstring = "[";
 $rowcount = 0;
 
-while ($row= mysqli_fetch_array($r)){
+while ($row = mysqli_fetch_array($r)) {
     $keyId = $row['keyId'];
     $keyFacility = $row['keyFacility'];
     $Band = $row['Band'];
@@ -52,19 +52,19 @@ while ($row= mysqli_fetch_array($r)){
     $keyFrontEnd = $row['keyFrontEnds'];
     $TestType = $row['Description'];
 
-    if ($fesn == ''){
+    if ($fesn == '') {
         $c = new FEComponent();
-        $c->Initialize_FEComponent($row['fkFE_Components'],$keyFacility);
+        $c->Initialize_FEComponent($row['fkFE_Components'], $keyFacility);
         $Band = $c->GetValue('Band');
         $fesn = $c->FESN;
         unset($c);
     }
 
-    if ($rowcount != 0 )
+    if ($rowcount != 0)
         $outstring .= ",";
-    
+
     $outstring .= "{'SN':'$fesn',";
-    
+
     $outstring .= "'Band':'$Band',";
     $outstring .= "'TS':'$TS',";
     $outstring .= "'keyId':'$keyId',";
@@ -72,7 +72,7 @@ while ($row= mysqli_fetch_array($r)){
     $outstring .= "'fkTestData_Type':'$fkTestData_Type',";
     $outstring .= "'keyFrontEnd':'$keyFrontEnd',";
     $outstring .= "'DataSetGroup':'$DataSetGroup',";
-    $outstring .= "'Notes':'". mysqli_real_escape_string($dbconnection, stripslashes($Notes))."',";
+    $outstring .= "'Notes':'" . mysqli_real_escape_string($dbconnection, stripslashes($Notes)) . "',";
     $outstring .= "'keyFacility':'$keyFacility'}";
     $rowcount += 1;
 }
