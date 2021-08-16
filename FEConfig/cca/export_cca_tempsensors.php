@@ -7,7 +7,7 @@ $cca = new CCA();
 $id = $_REQUEST['keyId'];
 $cca->Initialize_CCA($id, $fc, CCA::INIT_TEMPSENSORS);
 $band = $cca->GetValue('Band');
-$sn   = ltrim($cca->GetValue('SN'),'0');
+$sn   = ltrim($cca->GetValue('SN'), '0');
 $esn  = $cca->GetValue('ESN1');
 
 $fname = "cart$band.ini";
@@ -18,7 +18,7 @@ header("Expires: 0");
 
 $resistor = '0.0';
 
-switch($band){
+switch ($band) {
     case 1:
         $resistor = '10.0';
         break;
@@ -67,24 +67,22 @@ echo ";  Electronic Serial Number (ESN)\r\n";
 //Insert a space between every two characters
 $esn_array = str_split($esn);
 $esnstring = strtolower($esn_array[0] . $esn_array[1]);
-for ($i=3; $i< count($esn_array); $i+=2){
-    $esnstring .= " " . strtolower($esn_array[$i-1] . $esn_array[$i]);
-
+for ($i = 3; $i < count($esn_array); $i += 2) {
+    $esnstring .= " " . strtolower($esn_array[$i - 1] . $esn_array[$i]);
 }
 echo "ESN=$esnstring\r\n";
 echo ";  Cartridge Serial Number\r\n";
-echo 'SN="'. $sn . '"';
+echo 'SN="' . $sn . '"';
 
 echo "\r\n\r\n";
 
 //The location codes are:  3=4K, 4=Pol0, 5=Pol1.
 
 //4k stage
-if ($cca->TempSensors[3]->keyId != ''){
+if ($cca->TempSensors[3]->keyId != '') {
     $av = "Y";
     $os = $cca->TempSensors[3]->GetValue('OffsetK');
-}
-else{
+} else {
     $av = "N";
     $os = "0.00";
 }
@@ -116,11 +114,10 @@ AVAILABLE=Y
 OFFSET=0.0\r\n";
 
 //Pol0 stage
-if ($cca->TempSensors[4]->keyId != ''){
+if ($cca->TempSensors[4]->keyId != '') {
     $av = "Y";
     $os = $cca->TempSensors[4]->GetValue('OffsetK');
-}
-else{
+} else {
     $av = "N";
     $os = "0.00";
 }
@@ -131,11 +128,10 @@ echo "OFFSET=$os";
 echo "\r\n\r\n";
 
 //Pol1 stage
-if ($cca->TempSensors[5]->keyId != ''){
+if ($cca->TempSensors[5]->keyId != '') {
     $av = "Y";
     $os = $cca->TempSensors[5]->GetValue('OffsetK');
-}
-else{
+} else {
     $av = "N";
     $os = "0.00";
 }

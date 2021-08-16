@@ -1,4 +1,4 @@
-Ext.onReady(function(){
+Ext.onReady(function () {
     new Ext.ToolTip({
         target: 'tip1',
         html: 'A very simple tooltip'
@@ -7,7 +7,7 @@ Ext.onReady(function(){
     new Ext.ToolTip({
         target: 'ajax-tip',
         width: 200,
-        autoLoad: {url: 'ajax-tip.html'},
+        autoLoad: { url: 'ajax-tip.html' },
         dismissDelay: 15000 // auto hide after 15 seconds
     });
 
@@ -17,18 +17,18 @@ Ext.onReady(function(){
         title: 'My Tip Title',
         autoHide: false,
         closable: true,
-        draggable:true
+        draggable: true
     });
 
     new Ext.ToolTip({
         target: 'track-tip',
         title: 'Mouse Track',
-        width:200,
+        width: 200,
         html: 'This tip will follow the mouse while it is over the element',
-        trackMouse:true
+        trackMouse: true
     });
-    
-    new Ext.ToolTip({        
+
+    new Ext.ToolTip({
         title: '<a href="#">Rich Content Tooltip</a>',
         id: 'content-anchor-tip',
         target: 'leftCallout',
@@ -39,23 +39,23 @@ Ext.onReady(function(){
         closable: true,
         contentEl: 'content-tip', // load content from the page
         listeners: {
-            'render': function(){
-                this.header.on('click', function(e){
+            'render': function () {
+                this.header.on('click', function (e) {
                     e.stopEvent();
                     Ext.Msg.alert('Link', 'Link to something interesting.');
                     Ext.getCmp('content-anchor-tip').hide();
-                }, this, {delegate:'a'});
+                }, this, { delegate: 'a' });
             }
         }
     });
-    
+
     new Ext.ToolTip({
         target: 'bottomCallout',
         anchor: 'top',
         anchorOffset: 85, // center the anchor on the tooltip
         html: 'This tip\'s anchor is centered'
     });
-    
+
     new Ext.ToolTip({
         target: 'trackCallout',
         anchor: 'right',

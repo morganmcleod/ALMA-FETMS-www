@@ -11,21 +11,19 @@ $fc = $_REQUEST['fc'];
 
 $updatequery = new dbUpdateQueries;
 
-if($_POST['submitornot'] == 1)
-{
-    $keyComp=$_POST['maxkey'];
-    $notes=$_POST['notes'];
-    $notes=addslashes($notes);
+if ($_POST['submitornot'] == 1) {
+    $keyComp = $_POST['maxkey'];
+    $notes = $_POST['notes'];
+    $notes = addslashes($notes);
     $fc = $_REQUEST['fc'];
 
-    $link=$_POST['docs'];
-    if(substr($link,0,4) != "http")
-    {
+    $link = $_POST['docs'];
+    if (substr($link, 0, 4) != "http") {
         //$link=modifyLink($link);
     }
 
     $component = new FEComponent();
-    $component->Initialize_FEComponent($keyComp,$fc);
+    $component->Initialize_FEComponent($keyComp, $fc);
     $component->SetValue('Notes', addslashes($_REQUEST['notes']));
     $component->SetValue('keyFacility', $fc);
     $component->SetValue('Description', addslashes($_REQUEST['descr']));
@@ -37,9 +35,8 @@ if($_POST['submitornot'] == 1)
     $dbop = new DBOperations();
 
 
-    $dbop->UpdateStatusLocationAndNotes_Component($fc, $_REQUEST['stat'], $_REQUEST['loc'],$_REQUEST['notes'],$component->keyId, $_REQUEST['updatedby'],$link);
+    $dbop->UpdateStatusLocationAndNotes_Component($fc, $_REQUEST['stat'], $_REQUEST['loc'], $_REQUEST['notes'], $component->keyId, $_REQUEST['updatedby'], $link);
 
     echo "<script type='text/javascript' language='JavaScript'>location.href='ShowComponents.php?conf=$keyComp&fc=$fc'</script>";
-
 }
 ?>

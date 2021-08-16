@@ -17,7 +17,7 @@ $FETMS_CCA_MODE = false;
 // set up some variables specific to particular hosts:
 $site_hostname = $_SERVER['SERVER_NAME'];
 
-switch ($site_hostname){
+switch ($site_hostname) {
     case "fetms.osf.alma.cl":
         $url_root .= "fetms/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
@@ -25,7 +25,7 @@ switch ($site_hostname){
         break;
 
     case "webtest.cv.nrao.edu":
-//         $FETMS_CCA_MODE = true;
+        // $FETMS_CCA_MODE = true;
         $url_root .= "php/ntc/ws-mtm/ALMA-FETMS-www/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         break;
@@ -33,17 +33,20 @@ switch ($site_hostname){
     case "band1-fetms":
         $FETMS_CCA_MODE = true;
         $url_root .= "ALMA-FETMS-www/";
-       	$GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
-       	$beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
-       	break;
+        $GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
+        $beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
+        break;
 
- 	case "localhost":
-   	case "junco":
-   		$FETMS_CCA_MODE = false;
-   		$url_root .= "ALMA-FETMS-www/";
-   		$GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
-   		$beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
-   		break;
+    case "localhost":
+        $url_root .= "";
+        $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
+        break;
+    case "junco":
+        $FETMS_CCA_MODE = false;
+        $url_root .= "ALMA-FETMS-www/";
+        $GNUplot = $GNUPLOT = 'C:/gnuplot/bin/gnuplot.exe';
+        $beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
+        break;
 
     default:
         echo "<font size = '+3' color = '#ff0000'><h><b>
@@ -71,5 +74,3 @@ $cca_url_directory = $url_root    . "test_datafiles/";
 
 $wca_write_directory = $rootdir_data . "test_datafiles/";
 $wca_url_directory   = $url_root  . "test_datafiles/";
-
-?>

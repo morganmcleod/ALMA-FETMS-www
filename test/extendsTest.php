@@ -1,40 +1,42 @@
 <html>
-  <head>
+
+<head>
     <title>Look Out World</title>
-  </head>
+</head>
 
-  <body>
+<body>
 
-<?php
-class B {
-    var $name = "base";
+    <?php
+    class B {
+        var $name = "base";
 
-    public function __construct() {
+        public function __construct() {
+        }
+
+        public function printName() {
+            echo "My name is ", $this->name, ".<p>";
+        }
     }
 
-    public function printName() {
-        echo "My name is ", $this->name, ".<p>";
+    class D extends B {
+        var $name = "derivedInit";
+
+        public function __construct() {
+            parent::__construct();
+            $this->name = "derivedConst";
+        }
     }
-}
 
-class D extends B {
-    var $name = "derivedInit";
+    echo "does this work at all?<p>";
 
-    public function __construct() {
-        parent::__construct();
-        $this -> name = "derivedConst";
-    }
-}
+    $b = new B();
+    $b->printName();
 
-echo "does this work at all?<p>";
+    $d = new D();
+    $d->printName();
 
-$b = new B();
-$b -> printName();
+    ?>
 
-$d = new D();
-$d -> printName();
+</body>
 
-?>
-
-  </body>
 </html>

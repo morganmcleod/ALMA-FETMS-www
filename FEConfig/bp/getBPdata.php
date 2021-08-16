@@ -23,14 +23,14 @@ $tabtype = $_REQUEST['tabtype'];
 
 //Instantiate a new TestData_header object
 $tdh = new TestData_header();
-$tdh->Initialize_TestData_header($keyId,$fc);
+$tdh->Initialize_TestData_header($keyId, $fc);
 
 //Instantiate a new eff object
 $q = "SELECT keyId FROM ScanSetDetails WHERE fkHeader = " . $keyId . ";";
 $r = mysqli_query($dbconnection, $q);
-$ssid = ADAPT_mysqli_result($r,0,0);
+$ssid = ADAPT_mysqli_result($r, 0, 0);
 $eff = new eff();
-$eff->Initialize_eff_SingleScanSet($ssid,$fc);
+$eff->Initialize_eff_SingleScanSet($ssid, $fc);
 
 echo "<div style='background-color:#6C7070;width:1000px;'>";
 
@@ -45,23 +45,23 @@ switch ($tabtype) {
 
         //If not MISE, we will wrap the test data notes in a <form>.
         //TODO:  apparently this means you can't save notes in MSIE!
-        $browserNotMSIE = (strpos(strtolower($_SERVER['HTTP_USER_AGENT']),'msie') === FALSE);
+        $browserNotMSIE = (strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'msie') === FALSE);
 
         if ($browserNotMSIE)
             echo "<form action='$posturl' method='post'>";
 
         echo "<div style='width:100px'>";
-            echo "<table id = 'table1'>";
-                if ($fetms)
-                    echo "<tr><th>$fetms</th></tr>";
-                echo "<tr><th>Notes</th></tr>";
-                echo "<tr><td>";
-                    echo "<textarea rows='20' cols='85' name = 'Notes'>".stripslashes($tdh->GetValue('Notes'))."</textarea>";
-                    echo "<input type='hidden' name='fc' value='".$tdh->GetValue('keyFacility')."'>";
-                    echo "<input type='hidden' name='keyheader' value='$tdh->keyId'>";
-                    echo "<br><input type='submit' name='submitted' value='SAVE'>";
-                echo "</td></tr>";
-            echo "</table>";
+        echo "<table id = 'table1'>";
+        if ($fetms)
+            echo "<tr><th>$fetms</th></tr>";
+        echo "<tr><th>Notes</th></tr>";
+        echo "<tr><td>";
+        echo "<textarea rows='20' cols='85' name = 'Notes'>" . stripslashes($tdh->GetValue('Notes')) . "</textarea>";
+        echo "<input type='hidden' name='fc' value='" . $tdh->GetValue('keyFacility') . "'>";
+        echo "<input type='hidden' name='keyheader' value='$tdh->keyId'>";
+        echo "<br><input type='submit' name='submitted' value='SAVE'>";
+        echo "</td></tr>";
+        echo "</table>";
         echo "</div>";
 
         if ($browserNotMSIE)
@@ -81,7 +81,7 @@ switch ($tabtype) {
         }
         $eff->Display_ApertureEff();
         $eff->Display_TaperEff();
-		$eff->Display_PhaseEff();
+        $eff->Display_PhaseEff();
         $eff->Display_SpilloverEff();
         $eff->Display_PolEff();
         $eff->Display_DefocusEff();
@@ -107,28 +107,28 @@ switch ($tabtype) {
     case 4:
         //Pol 0 Nearfield Plots tab
         echo "<div style='background-color:#6C7070;width:900px;' id = 'maincontent6'>";
-        $eff->Display_AllAmpPhasePlots(0,'nf');
+        $eff->Display_AllAmpPhasePlots(0, 'nf');
         echo "</div>";
         break;
 
     case 5:
         //Pol 0 Farfield Plots tab
         echo "<div style='background-color:#6C7070;width:900px;' id = 'maincontent6'>";
-        $eff->Display_AllAmpPhasePlots(0,'ff');
+        $eff->Display_AllAmpPhasePlots(0, 'ff');
         echo "</div>";
         break;
 
     case 6:
         //Pol 1 Nearfield Plots tab
         echo "<div style='background-color:#6C7070;width:900px;' id = 'maincontent6'>";
-        $eff->Display_AllAmpPhasePlots(1,'nf');
+        $eff->Display_AllAmpPhasePlots(1, 'nf');
         echo "</div>";
         break;
 
     case 7:
         //Pol 1 Farfield Plots tab
         echo "<div style='background-color:#6C7070;width:900px;' id = 'maincontent6'>";
-        $eff->Display_AllAmpPhasePlots(1,'ff');
+        $eff->Display_AllAmpPhasePlots(1, 'ff');
         echo "</div>";
         break;
 

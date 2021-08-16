@@ -22,6 +22,4 @@ require_once('../SiteConfig.php');
 require($site_classes . '/class.cca_image_rejection.php');
 require($site_classes . '/class.noisetemp.php');
 
-
-
 ?>
