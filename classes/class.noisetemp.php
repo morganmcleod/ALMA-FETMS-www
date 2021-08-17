@@ -1540,6 +1540,8 @@ class NoiseTemperature extends TestData_header {
                         //Call gnuplot
                         system("$GNUPLOT $commandfile");
                         $this->NT_SubHeader->SetValue('ploturl2', $image_url);
+                    } else {
+                        $this->NT_SubHeader->SetValue('ploturl2', '');
                     }
                     break;
 
@@ -1589,6 +1591,8 @@ class NoiseTemperature extends TestData_header {
                         //Call gnuplot
                         system("$GNUPLOT $commandfile");
                         $this->NT_SubHeader->SetValue('ploturl6', $image_url);
+                    } else {
+                        $this->NT_SubHeader->SetValue('ploturl6', '');
                     }
                     break;
             }
