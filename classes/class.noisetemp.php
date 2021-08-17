@@ -78,8 +78,9 @@ class NoiseTemperature extends TestData_header {
     public function Initialize_NoiseTemperature($in_keyId, $in_fc) {
         parent::Initialize_TestData_header($in_keyId, $in_fc);
 
-        $this->SWVersion = "1.3.2";
+        $this->SWVersion = "1.3.3";
         /*
+         * 1.3.3 No LSB plots vs. RF for band 1, add _html methods.
          * 1.3.2 Don't show secondary Y axis when no CCA data available
          * 1.3.1 Include FETMS_Description in plot footers.
          * 1.3.0 Added Export()
@@ -1522,7 +1523,7 @@ class NoiseTemperature extends TestData_header {
                     break;
 
                 case 1;
-                    if ($this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
+                    if ($this->GetValue('Band') != 1 && $this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
                         $plot_title = "$plot_title Pol 0 LSB";
                         fwrite($f, "set title '$plot_title'\r\n");
                         fwrite($f, "plot  '$this->rf_datafile' using 2:4 with lines lt 1 lw 3 title 'FEIC Meas Pol0 LSB'");
@@ -1571,7 +1572,7 @@ class NoiseTemperature extends TestData_header {
                     break;
 
                 case 3;
-                    if ($this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
+                    if ($this->GetValue('Band') != 1 && $this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
                         $plot_title = "$plot_title Pol 1 LSB";
                         fwrite($f, "set title '$plot_title'\r\n");
                         fwrite($f, "plot  '$this->rf_datafile' using 2:6 with lines lt 1 lw 3 title 'FEIC Meas Pol1 LSB'");
