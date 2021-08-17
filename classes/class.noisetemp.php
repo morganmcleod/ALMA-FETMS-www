@@ -80,7 +80,7 @@ class NoiseTemperature extends TestData_header {
 
         $this->SWVersion = "1.3.3";
         /*
-         * 1.3.3 No LSB plots vs. RF for band 1, add _html methods.
+         * 1.3.3 No LSB plots vs. RF for band 1, add _html methods.  Fix specs for Band3 Averages plot.
          * 1.3.2 Don't show secondary Y axis when no CCA data available
          * 1.3.1 Include FETMS_Description in plot footers.
          * 1.3.0 Added Export()
@@ -1385,6 +1385,15 @@ class NoiseTemperature extends TestData_header {
                 fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
                 fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
 
+                break;
+            case 3:
+                fwrite($f, "f(x) = (x < 103.5 || x > 104.5 ? 1/0 : $this->NT_B3Special_spec)\r\n");
+                fwrite($f, "plot '$this->avg_datafile' using 1:2 with linespoints lt 1 lw 1 title 'Pol0sb1',");
+                fwrite($f, "'$this->avg_datafile' using 1:3 with linespoints lt 2 lw 1 title 'Pol0sb2',");
+                fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1sb1',");
+                fwrite($f, "'$this->avg_datafile' using 1:5 with linespoints lt 4 lw 1 title 'Pol1sb2',");
+                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt -1 lw 3 title '$this->NT_allRF_spec K (100%)',");
+                fwrite($f, "f(x) with lines lt 1 lw 3 title '$this->NT_B3Special_spec K (104 GHz)'\r\n");
                 break;
 
             case 10:
