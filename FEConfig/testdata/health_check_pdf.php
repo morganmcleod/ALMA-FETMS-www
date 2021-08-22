@@ -55,7 +55,7 @@ $mpdf = new \Mpdf\Mpdf(
 $mpdf->SetTitle('Front End SN ' . $fesn . ' Band ' . $band . ' Health Check');
 $mpdf->setAutoTopMargin = 'stretch';
 $html = '<div class="header">';
-$html .= '<div class="header-logo"><img src="' . $files_root . '/nrao_logo.png" width="100px" height="100px"/></div>';
+$html .= '<div class="header-logo"><img src="' . $files_root . '/alma-logo.jpg" width="70.6px" height="100px"/></div>';
 $html .= '<div class="header-inner">';
 $html .= 'Front End SN ' . $fesn . '<br>';
 $html .= 'Band ' . $band . ' Health Check';
