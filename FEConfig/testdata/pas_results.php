@@ -71,6 +71,9 @@
     $buttonText = "Generate PDF";
     $buttonURL =  $relativePath . "/health_check_pdf.php?FE_Config=$feconfig&band=$band&Data_Status=$Data_Status";
 
+    if ($filterChecked)
+        $buttonURL .= "&filterChecked=1";
+
     echo "<a style='width:90px' href='$buttonURL' class='button blue2 bigrounded'>
         <span >$buttonText</span></a>";
 
