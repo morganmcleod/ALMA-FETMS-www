@@ -590,10 +590,11 @@ function Temp_Sensor_results($td_keyID, $filterChecked) {
     if (table_header(475, $tdh, 2, $filterChecked)) {
 
         $new_spec = new Specifications();
+        $band = $tdh->GetValue('Band');
 
         echo "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values (K)</th>";
-
         $col_name = array("4k", "110k", "Pol0_mixer", "Spare", "15k", "Pol1_mixer");
+        if ($band == 1) \array_splice($col_name, 0, 1);
         $col_strg = implode(",", $col_name);
         $q = "SELECT $col_strg
             FROM CCA_TempSensors
@@ -612,7 +613,8 @@ function Temp_Sensor_results($td_keyID, $filterChecked) {
                 if (in_array($Col, $cold_array)) {
                     $num = ADAPT_mysqli_result($r, 0, $i);
                     // check to see if 4k stange meets spec
-                    $num = $new_spec->chkNumAgnstSpec($num, "<", 4);
+                    if ($band == 1) $num = $new_spec->chkNumAgnstSpec($num, "<", 18);
+                    else $num = $new_spec->chkNumAgnstSpec($num, "<", 4);
                 } else {
                     $num = ADAPT_mysqli_result($r, 0, $i);
                 }
@@ -781,6 +783,7 @@ function IF_Power_results($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
+    $band = $tdh->GetValue('Band');
 
     if (table_header(475, $tdh, 3, $filterChecked)) {
 
@@ -800,6 +803,7 @@ function IF_Power_results($td_keyID, $filterChecked) {
         $new_spec = new Specifications();
 
         while ($row = mysqli_fetch_array($r)) {
+            if($band == 1 && ($row[0] == 2 || $row[0] == 3)) continue;
             echo "<tr>";
             $att_sum = $att_sum + abs($row[2] - $row[1]);
             $atten_cnt++;
@@ -997,6 +1001,7 @@ function Y_factor_results($td_keyID, $filterChecked) {
 
     $tdh = new TestData_header();
     $tdh->Initialize_TestData_header($td_keyID, "40");
+    $band = $tdh->GetValue('Band');
 
     if (table_header(475, $tdh, 4, $filterChecked)) {
 
@@ -1026,6 +1031,7 @@ function Y_factor_results($td_keyID, $filterChecked) {
         $Ymax = $spec['Ymax'];
 
         while ($row = mysqli_fetch_array($r)) {
+            if($band == 1 && ($row[0] == 2 || $row[0] == 3)) continue;
             $Ysum += $row[3];
             $Ycnt++;
 
