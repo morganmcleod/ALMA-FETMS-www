@@ -75,9 +75,10 @@ class CCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.16";
+        $this->swversion = "1.0.17";
 
         /*
+         * 1.0.17 Fix query in Upload_CCAs_file()
          * 1.0.16 UploadPreampParams supports different format for band 1.
          * 1.0.15 Fix display/edit operating params for band 1.  Code formatting.
          * 1.0.14 Move export_to_ini_cca code into class; delete dead code; make things private!
@@ -1048,7 +1049,7 @@ class CCA extends FEComponent {
                     $this->SetValue('SN',$sn);
 
                     //Check if record already exists...
-                    $qc = "SELECT keyId FROM FE_Components
+                    $qc = "SELECT MAX(keyId) FROM FE_Components
                     WHERE TRIM(LEADING 0 FROM SN) = " . $this->GetValue('SN') . "
                     AND Band = " . $this->GetValue('Band') . "
                     AND keyFacility = " . $this->GetValue('keyFacility') . "
