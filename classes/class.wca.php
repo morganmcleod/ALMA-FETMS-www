@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.4";
-        /* 1.3.4 Amplitude stability: force Y-axis to scientific notation.
+        $this->swversion = "1.3.5";
+        /* 1.3.5 includes OptimizationTargets in WCA data delivery XML
+         * 1.3.4 Amplitude stability: force Y-axis to scientific notation.
          * 1.3.3 Updated XML to 2021 format 2020-10-22_FEND.40.00.00.00-1614-A-CRE, FECRE-87
          * 1.3.2 Amplitude stability X axis is labeled [ms].  Removed dubous code from writing data files loop.
          * 1.3.1 Made import and plot amplitude stability slightly more robust to data errors
@@ -612,6 +613,11 @@ class WCA extends FEComponent {
             $xw->endElement();
         }
 
+        $xw->startElement("OptimizationTargets");
+        $xw->writeAttribute("FreqLO", $lowlo);
+        $xw->writeAttribute("PhotoMixerCurrent", "0");
+        $xw->endElement();
+        
         $xw->endElement(); // ConfigData
         $xw->endDocument();
         $ret = $xw->outputMemory();
