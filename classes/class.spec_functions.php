@@ -57,11 +57,11 @@
                 $filename = dirname(__FILE__) . "/../specs/" . $test_type[$t] . ".ini";
                 $test=parse_ini_file($filename,true);
                 for($b=0; $b<$bLen; $b++) {
-                    $band = (string)$Band[$b];
-                    $band = "Band" . $band;
+                    $band_s = (string)$Band[$b];
+                    $band_s = "Band" . $band_s;
                     $spec_names = array();
                     if(empty($spec_name)) {
-                        $temp = array_keys($test[$band]);
+                        $temp = array_keys($test[$band_s]);
                         foreach ($temp as $a) {
                             $spec_names[] = $a;
                         }
@@ -70,7 +70,7 @@
                     }
                     $sLen = count($spec_names);
                     for($s=0; $s<$sLen; $s++) {
-                        $ans = $test[$band][$spec_names[$s]];
+                        $ans = $test[$band_s][$spec_names[$s]];
                         $specs[$spec_names[$s]] = $ans;
                     }
                 }

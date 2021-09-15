@@ -806,7 +806,10 @@ class WCA extends FEComponent {
             // var_dump($values);
 
             $LO = $values[0]['FreqLO'];
-            $YIG0 = (!$hiYig) ? 0 : round(((($LO / $warmMult) - $loYig) / ($hiYig - $loYig)) * 4095);
+            if ($hiYig > $loYig)
+                $YIG0 = (!$hiYig) ? 0 : round(((($LO / $warmMult) - $loYig) / ($hiYig - $loYig)) * 4095);
+            else
+                $YIG0 = $loYig;
             $VD0 = round($values[0]['VD'] * $pol0scale, 4);
             $VD1 = round($values[1]['VD'] * $pol1scale, 4);
             $P0 = round($values[0]['Power'], 1);

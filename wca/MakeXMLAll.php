@@ -11,7 +11,13 @@ $dbconnection = site_getDbConnection();
 $fc = '40';
 $_REQUEST['fc'] = $fc;
 
-$q = "SELECT fkFE_Component FROM WCAs order by keyId";
+$q = "SELECT FEC0.keyId
+      FROM FE_Components AS FEC0 LEFT JOIN FE_Components AS FEC1
+      ON FEC0.Band = FEC1.Band AND FEC0.SN = FEC1.SN AND FEC1.keyId > FEC0.keyId
+      WHERE FEC1.keyId IS NULL
+      AND FEC0.fkFE_ComponentType = 11
+      AND FEC0.Band >= 1 AND FEC0.Band <= 10
+      ORDER BY FEC0.Band, FEC0.SN;";
 
 $r = mysqli_query($dbconnection, $q);
 
