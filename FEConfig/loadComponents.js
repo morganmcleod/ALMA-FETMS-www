@@ -106,8 +106,7 @@ function createCompTabs(band, comptype, compKey, fc, CompDescription) {
                 height: 35,
 
                 renderTo: 'toolbar',
-                items: [
-                    {
+                items: [{
                         xtype: 'tbbutton',
                         text: 'Edit ' + CompDescription,
                         style: 'margin: 1px;',
@@ -116,52 +115,49 @@ function createCompTabs(band, comptype, compKey, fc, CompDescription) {
                             window.location = 'EditComponent.php?id='
                                 + compKey + '&fc=' + fc;
                         }
-                    },
-                    {
+                    }, {
                         xtype: 'tbbutton',
-                        text: 'Edit Configuration',
+                        text: CompDescription + '.INI for FEMC',
                         style: 'margin: 1px;',
-                        icon: 'icons/cog.png',
-                        handler: function () {
-                            window.location = 'cca/EditCCAConfig.php?conf='
-                                + compKey + '&fc=' + fc;
-                        }
-                    },
-                    {
-                        xtype: 'tbbutton',
-                        text: 'Cartridge Config',
-                        style: 'margin: 1px;',
-                        icon: 'icons/application_view_list.png',
-                        handler: function () {
-                            window.location = 'cca/export_to_ini_cca.php?keyId='
-                                + compKey + '&fc=' + fc;
-                        }
-                    },
-                    {
-                        xtype: 'tbbutton',
-                        text: 'Temp Sensor Offsets',
-                        style: 'margin: 1px;',
-                        icon: 'icons/application_view_list.png',
+                        icon: 'icons/control_equalizer_blue.png',
                         handler: function () {
                             window.location = 'cca/export_cca_tempsensors.php?keyId='
                                 + compKey + '&fc=' + fc;
                         }
                     }, {
                         xtype: 'tbbutton',
-                        text: 'Update Config',
+                        text: 'Edit Op Params',
+                        style: 'margin: 1px;',
+                        icon: 'icons/cog.png',
+                        handler: function () {
+                            window.location = 'cca/EditCCAConfig.php?conf='
+                                + compKey + '&fc=' + fc;
+                        }
+                    }, {
+                        xtype: 'tbbutton',
+                        text: 'Get Config INI',
+                        style: 'margin: 1px;',
+                        icon: 'icons/script.png',
+                        handler: function () {
+                            window.location = 'cca/export_to_ini_cca.php?keyId='
+                                + compKey + '&fc=' + fc;
+                        }
+                    }, {
+                        xtype: 'tbbutton',
+                        text: 'Get Config XML',
+                        style: 'margin: 1px;',
+                        icon: 'icons/script_code_red.png',
+                        handler: function () {
+                            window.location = 'export_to_xml_2021.php?keyId='
+                                + compKey + '&fc=' + fc + '&comptype=' + comptype;
+                        }
+                    }, {
+                        xtype: 'tbbutton',
+                        text: 'Upload Config',
                         style: 'margin: 1px;',
                         icon: 'icons/application_get.png',
                         handler: function () {
                             CCAFileBrowse(compKey, fc);
-                        }
-                    }, {
-                        xtype: 'tbbutton',
-                        text: 'Export Selected',
-                        style: 'margin: 1px;',
-                        icon: 'icons/application_get.png',
-                        handler: function () {
-                            window.location = 'cca/export_selected.php?keyId='
-                                + compKey + '&fc=' + fc;
                         }
                     }
                 ]
@@ -322,7 +318,7 @@ function createCompTabs(band, comptype, compKey, fc, CompDescription) {
                             xtype: 'tbbutton',
                             text: CompDescription + '.INI for FEMC',
                             style: 'margin: 1px;',
-                            icon: 'icons/cog.png',
+                            icon: 'icons/control_equalizer_blue.png',
                             handler: function () {
                                 window.location = '../wca/export_to_ini_wca.php?keyId='
                                     + compKey
@@ -330,19 +326,27 @@ function createCompTabs(band, comptype, compKey, fc, CompDescription) {
                                     + fc
                                     + '&type=wca';
                             }
-                        },
-                        {
+                        }, {
                             xtype: 'tbbutton',
-                            text: 'Cartridge Config',
+                            text: 'Get Config INI',
                             style: 'margin: 1px;',
-                            icon: 'icons/cog.png',
+                            icon: 'icons/script.png',
                             handler: function () {
                                 window.location = '../wca/export_to_ini_wca.php?keyId='
                                     + compKey + '&fc=' + fc;
                             }
                         }, {
                             xtype: 'tbbutton',
-                            text: 'Update Config',
+                            text: 'Get Config XML',
+                            style: 'margin: 1px;',
+                            icon: 'icons/script_code_red.png',
+                            handler: function () {
+                                window.location = 'export_to_xml_2021.php?keyId='
+                                    + compKey + '&fc=' + fc + '&comptype=' + comptype;
+                            }
+                        }, {
+                            xtype: 'tbbutton',
+                            text: 'Upload Config',
                             style: 'margin: 1px;',
                             icon: 'icons/application_get.png',
                             handler: function () {

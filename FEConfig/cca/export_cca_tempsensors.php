@@ -64,13 +64,7 @@ echo "\r\n";
 echo "[INFO]\r\n";
 echo ";  Electronic Serial Number (ESN)\r\n";
 
-//Insert a space between every two characters
-$esn_array = str_split($esn);
-$esnstring = strtolower($esn_array[0] . $esn_array[1]);
-for ($i = 3; $i < count($esn_array); $i += 2) {
-    $esnstring .= " " . strtolower($esn_array[$i - 1] . $esn_array[$i]);
-}
-echo "ESN=$esnstring\r\n";
+echo "ESN=$esn\r\n";
 echo ";  Cartridge Serial Number\r\n";
 echo 'SN="' . $sn . '"';
 
