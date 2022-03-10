@@ -384,6 +384,129 @@ class CCA extends FEComponent {
         return $output;
     }
 
+    public function GetXmlFileContent() {
+        $band = $this->GetValue('Band');
+        $sn   = ltrim($this->GetValue('SN'), '0');
+        $esn  = $this->GetValue('ESN1');
+        $esnDec = hexdec($esn);
+        $description = "WCA$band-$sn";
+        
+        $xw = new XMLWriter();
+        $xw->openMemory();
+        $xw->setIndent(true);
+        $xw->setIndentString('    ');
+        $xw->startDocument('1.0', 'ISO-8859-1');
+        $xw->startElement("ConfigData");
+        //         $xw->writeAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+        //         $xw->writeAttribute("xsi:noNamespaceSchemaLocation", "membuffer.xsd");
+        
+        $xw->startElement("ASSEMBLY");
+        $xw->writeAttribute("value", "CCA$band");
+        $xw->endElement();
+        
+        $xw->startElement("CCAConfig");
+        $xw->writeAttribute("value", $this->GetValue('keyId'));
+        // make the MySQL timestamp into an ISO 8601 standard timestamp:
+        $xw->writeAttribute("timestamp", strtr($this->GetValue('TS'), ' ', 'T'));
+        $xw->endElement();
+        
+        $xw->startElement("ESN");
+        $xw->writeAttribute("value", $esn);
+        $xw->endElement();
+        
+        $xw->startElement("SN");
+        $xw->writeAttribute("value", $description);
+        $xw->endElement();
+
+        switch ($band) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:                
+                break;
+            case 6:
+            case 9:
+            case 10:
+                $xw->startElement("MagnetParams");
+                $xw->writeAttribute("FreqLO", number_format($this->MixerParams[0]->lo, 3));
+                $xw->writeAttribute("IMag01", number_format($this->MixerParams[0]->imag01, 2));
+                $xw->writeAttribute("IMag02", "0.00");
+                $xw->writeAttribute("IMag11", number_format($this->MixerParams[0]->imag11, 2));
+                $xw->writeAttribute("IMag12", "0.00");
+                $xw->endElement();
+                break;
+            default:
+                $xw->startElement("MagnetParams");
+                $xw->writeAttribute("FreqLO", number_format($this->MixerParams[0]->lo, 3));
+                $xw->writeAttribute("IMag01", number_format($this->MixerParams[0]->imag01, 2));
+                $xw->writeAttribute("IMag02", number_format($this->MixerParams[0]->imag02, 2));
+                $xw->writeAttribute("IMag11", number_format($this->MixerParams[0]->imag11, 2));
+                $xw->writeAttribute("IMag12", number_format($this->MixerParams[0]->imag12, 2));
+                $xw->endElement();
+                break;
+        }
+
+        for ($i = 0; $i  < (count($this->MixerParams)); $i++) {
+            $xw->startElement("MixerParams");
+            $xw->writeAttribute("FreqLO", number_format($this->MixerParams[$i]->lo, 3));
+            $xw->writeAttribute("VJ01", number_format($this->MixerParams[$i]->vj01, 3));
+            $xw->writeAttribute("VJ02", number_format($this->MixerParams[$i]->vj02, 3));
+            $xw->writeAttribute("VJ11", number_format($this->MixerParams[$i]->vj11, 3));
+            $xw->writeAttribute("VJ12", number_format($this->MixerParams[$i]->vj12, 3));
+            $xw->writeAttribute("IJ01", number_format($this->MixerParams[$i]->ij01, 2));
+            $xw->writeAttribute("IJ02", number_format($this->MixerParams[$i]->ij02, 2));
+            $xw->writeAttribute("IJ11", number_format($this->MixerParams[$i]->ij11, 2));
+            $xw->writeAttribute("IJ12", number_format($this->MixerParams[$i]->ij12, 2));
+            $xw->endElement();
+        }
+        
+        switch ($band) {
+            case 1:
+                $numStage = 5;
+                $numSb = 1;
+                break;
+            case 2:
+                $numStage = 6;
+                $numSb = 1;
+                break;
+            case 9:
+            case 10:
+                $numStage = 3;
+                $numSb = 1;
+                break;
+            default:
+                $numStage = 3;
+                $numSb = 2;
+                break;
+        }
+        
+        for ($i = 0; $i  < (count($this->PreampParams)); $i++) {
+            $pol = $this->PreampParams[$i]->GetValue('Pol');
+            $sb = $this->PreampParams[$i]->GetValue('SB');            
+            $xw->startElement("PreampParams$pol$sb");
+            for ($st = 1; $st <= $numStage; $st++)
+                $xw->writeAttribute("VD$st", number_format($this->PreampParams[$i]->GetValue("VD$st"), 2));
+            for ($st = 1; $st <= $numStage; $st++)
+                $xw->writeAttribute("ID$st", number_format($this->PreampParams[$i]->GetValue("ID$st"), 3));
+            for ($st = 1; $st <= $numStage; $st++)
+                $xw->writeAttribute("VG$st", number_format($this->PreampParams[$i]->GetValue("VG$st"), 2));
+            $xw->endElement();                
+        }
+        
+        $xw->startElement("TempSensorOffsets");
+        for ($i = 0; $i < 6; $i++) {
+            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != "") {
+                $xw->writeAttribute("Te$i", $this->TempSensors[$i]->GetValue('OffsetK'));
+            }
+        }
+        $xw->endElement();
+        
+        $xw->endElement(); // ConfigData
+        $xw->endDocument();
+        $ret = $xw->outputMemory();
+        return $ret;
+    }
+    
     public function Display_TempSensors() {
         $locs[0]= "Spare";
         $locs[1]= "110K Stage";
