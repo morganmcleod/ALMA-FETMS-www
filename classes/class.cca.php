@@ -391,7 +391,7 @@ class CCA extends FEComponent {
         $sn   = ltrim($this->GetValue('SN'), '0');
         $esn  = $this->GetValue('ESN1');
         $esnDec = hexdec($esn);
-        $description = "WCA$band-$sn";
+        $description = "CCA$band-$sn";
         
         $xw = new XMLWriter();
         $xw->openMemory();
