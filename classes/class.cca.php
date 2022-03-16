@@ -70,7 +70,8 @@ class CCA extends FEComponent {
 
     var $SubmittedFileName; //Uploaded file (csv, zip, ini), base name
     var $SubmittedFileTmp;  //Uploaded file (csv, zip, ini), actual path
-    var $ErrorArray; //Array of errors
+
+    var $ErrorArray; //Array of errors
 
     function __construct() {
         parent::__construct();
@@ -446,22 +447,21 @@ class CCA extends FEComponent {
                 $xw->endElement();
                 break;
         }
-
-        for ($i = 0; $i  < (count($this->MixerParams)); $i++) {
-            $xw->startElement("MixerParams");
-            $xw->writeAttribute("FreqLO", number_format($this->MixerParams[$i]->lo, 3) . "E9");
-            $xw->writeAttribute("VJ01", number_format($this->MixerParams[$i]->vj01, 3));
-            $xw->writeAttribute("VJ02", number_format($this->MixerParams[$i]->vj02, 3));
-            $xw->writeAttribute("VJ11", number_format($this->MixerParams[$i]->vj11, 3));
-            $xw->writeAttribute("VJ12", number_format($this->MixerParams[$i]->vj12, 3));
-            $xw->writeAttribute("IJ01", number_format($this->MixerParams[$i]->ij01, 2));
-            $xw->writeAttribute("IJ02", number_format($this->MixerParams[$i]->ij02, 2));
-            $xw->writeAttribute("IJ11", number_format($this->MixerParams[$i]->ij11, 2));
-            $xw->writeAttribute("IJ12", number_format($this->MixerParams[$i]->ij12, 2));
-            $xw->endElement();
-        }
         
         if ($band > 2) {
+            for ($i = 0; $i  < (count($this->MixerParams)); $i++) {
+                $xw->startElement("MixerParams");
+                $xw->writeAttribute("FreqLO", number_format($this->MixerParams[$i]->lo, 3) . "E9");
+                $xw->writeAttribute("VJ01", number_format($this->MixerParams[$i]->vj01, 3));
+                $xw->writeAttribute("VJ02", number_format($this->MixerParams[$i]->vj02, 3));
+                $xw->writeAttribute("VJ11", number_format($this->MixerParams[$i]->vj11, 3));
+                $xw->writeAttribute("VJ12", number_format($this->MixerParams[$i]->vj12, 3));
+                $xw->writeAttribute("IJ01", number_format($this->MixerParams[$i]->ij01, 2));
+                $xw->writeAttribute("IJ02", number_format($this->MixerParams[$i]->ij02, 2));
+                $xw->writeAttribute("IJ11", number_format($this->MixerParams[$i]->ij11, 2));
+                $xw->writeAttribute("IJ12", number_format($this->MixerParams[$i]->ij12, 2));
+                $xw->endElement();
+            }
             for ($i = 0; $i  < (count($this->PreampParams)); $i++) {
                 $pol = $this->PreampParams[$i]->GetValue('Pol');
                 $sb = $this->PreampParams[$i]->GetValue('SB');
