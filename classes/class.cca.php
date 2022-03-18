@@ -79,7 +79,7 @@ class CCA extends FEComponent {
         $this->swversion = "1.0.19";
 
         /*
-         * 1.0.19 Fix GetXmlFileContent() to comply with FrontEndSchemas-2021-09-21.zip from https://jira.alma.cl/browse/FECRE-87
+         * 1.0.19 Fix GetXmlFileContent() to comply with /alma/ste/config/TMCDB_DATA/ for Cycle 8
          * 1.0.18 Add GetXmlFileContent() with support for band 1 and 2.
          * 1.0.17 Fix query in Upload_CCAs_file()
          * 1.0.16 UploadPreampParams supports different format for band 1.
