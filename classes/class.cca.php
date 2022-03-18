@@ -76,9 +76,10 @@ class CCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.18";
+        $this->swversion = "1.0.19";
 
         /*
+         * 1.0.19 Fix GetXmlFileContent() to comply with FrontEndSchemas-2021-09-21.zip from https://jira.alma.cl/browse/FECRE-87
          * 1.0.18 Add GetXmlFileContent() with support for band 1 and 2.
          * 1.0.17 Fix query in Upload_CCAs_file()
          * 1.0.16 UploadPreampParams supports different format for band 1.
@@ -389,9 +390,11 @@ class CCA extends FEComponent {
     public function GetXmlFileContent() {
         $band = $this->GetValue('Band');
         $sn   = ltrim($this->GetValue('SN'), '0');
+        if (strlen($sn) == 1)
+            $sn = "0" . $sn;
         $esn  = $this->GetValue('ESN1');
         $esnDec = hexdec($esn);
-        $description = "CCA$band-$sn";
+        $longSn = "CCA$band-$sn";
         
         $xw = new XMLWriter();
         $xw->openMemory();
@@ -403,7 +406,7 @@ class CCA extends FEComponent {
         //         $xw->writeAttribute("xsi:noNamespaceSchemaLocation", "membuffer.xsd");
         
         $xw->startElement("ASSEMBLY");
-        $xw->writeAttribute("value", "CCA$band");
+        $xw->writeAttribute("value", "ColdCart$band");
         $xw->endElement();
         
         $xw->startElement("CCAConfig");
@@ -417,9 +420,35 @@ class CCA extends FEComponent {
         $xw->endElement();
         
         $xw->startElement("SN");
-        $xw->writeAttribute("value", $description);
+        $xw->writeAttribute("value", $longSn);
         $xw->endElement();
-
+        
+        $xw->startElement("TempSensorOffsets");
+        for ($i = 0; $i < 6; $i++) {
+            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != "") {
+                $xw->writeAttribute("Te$i", $this->TempSensors[$i]->GetValue('OffsetK'));
+            } else {
+                $xw->writeAttribute("Te$i", "0");
+            }
+        }
+        $xw->endElement();
+        
+        if ($band > 2) {
+            for ($i = 0; $i  < (count($this->MixerParams)); $i++) {
+                $xw->startElement("MixerParams");
+                $xw->writeAttribute("FreqLO", number_format($this->MixerParams[$i]->lo, 3) . "E9");
+                $xw->writeAttribute("VJ01", number_format($this->MixerParams[$i]->vj01, 3));
+                $xw->writeAttribute("VJ02", number_format($this->MixerParams[$i]->vj02, 3));
+                $xw->writeAttribute("VJ11", number_format($this->MixerParams[$i]->vj11, 3));
+                $xw->writeAttribute("VJ12", number_format($this->MixerParams[$i]->vj12, 3));
+                $xw->writeAttribute("IJ01", number_format($this->MixerParams[$i]->ij01, 2));
+                $xw->writeAttribute("IJ02", number_format($this->MixerParams[$i]->ij02, 2));
+                $xw->writeAttribute("IJ11", number_format($this->MixerParams[$i]->ij11, 2));
+                $xw->writeAttribute("IJ12", number_format($this->MixerParams[$i]->ij12, 2));
+                $xw->endElement();
+            }
+        }
+        
         switch ($band) {
             case 1:
             case 2:
@@ -449,23 +478,10 @@ class CCA extends FEComponent {
         }
         
         if ($band > 2) {
-            for ($i = 0; $i  < (count($this->MixerParams)); $i++) {
-                $xw->startElement("MixerParams");
-                $xw->writeAttribute("FreqLO", number_format($this->MixerParams[$i]->lo, 3) . "E9");
-                $xw->writeAttribute("VJ01", number_format($this->MixerParams[$i]->vj01, 3));
-                $xw->writeAttribute("VJ02", number_format($this->MixerParams[$i]->vj02, 3));
-                $xw->writeAttribute("VJ11", number_format($this->MixerParams[$i]->vj11, 3));
-                $xw->writeAttribute("VJ12", number_format($this->MixerParams[$i]->vj12, 3));
-                $xw->writeAttribute("IJ01", number_format($this->MixerParams[$i]->ij01, 2));
-                $xw->writeAttribute("IJ02", number_format($this->MixerParams[$i]->ij02, 2));
-                $xw->writeAttribute("IJ11", number_format($this->MixerParams[$i]->ij11, 2));
-                $xw->writeAttribute("IJ12", number_format($this->MixerParams[$i]->ij12, 2));
-                $xw->endElement();
-            }
             for ($i = 0; $i  < (count($this->PreampParams)); $i++) {
                 $pol = $this->PreampParams[$i]->GetValue('Pol');
                 $sb = $this->PreampParams[$i]->GetValue('SB');
-                $xw->startElement("PreampParams$pol$sb");
+                $xw->startElement("PreampParamsPol$pol" . "Sb$sb");
                 $xw->writeAttribute("FreqLO", number_format($this->PreampParams[$i]->GetValue('FreqLO'),3) . "E9");
                 for ($st = 1; $st <= 3; $st++)
                     $xw->writeAttribute("VD$st", number_format($this->PreampParams[$i]->GetValue("VD$st"), 2));
@@ -523,14 +539,13 @@ class CCA extends FEComponent {
                 $xw->endElement();
             }
         }
-
-        $xw->startElement("TempSensorOffsets");
-        for ($i = 0; $i < 6; $i++) {
-            if (isset($this->TempSensors[$i]) && $this->TempSensors[$i]->keyId != "") {
-                $xw->writeAttribute("Te$i", $this->TempSensors[$i]->GetValue('OffsetK'));
-            }
+        
+        if ($band > 1) {
+            $xw->startElement("PolarizationOrientation");
+            $xw->writeAttribute("PolXAngle", "0");
+            $xw->writeAttribute("PolYAngle", "0");
+            $xw->endElement();
         }
-        $xw->endElement();
         
         $xw->endElement(); // ConfigData
         $xw->endDocument();
