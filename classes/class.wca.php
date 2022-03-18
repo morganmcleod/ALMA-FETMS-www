@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.5";
-        /* 1.3.5 includes OptimizationTargets in WCA data delivery XML
+        $this->swversion = "1.3.6";
+        /* 1.3.6 Fix GetXmlFileContent() to comply with FrontEndSchemas-2021-09-21.zip from https://jira.alma.cl/browse/FECRE-87
+         * 1.3.5 includes OptimizationTargets in WCA data delivery XML
          * 1.3.4 Amplitude stability: force Y-axis to scientific notation.
          * 1.3.3 Updated XML to 2021 format 2020-10-22_FEND.40.00.00.00-1614-A-CRE, FECRE-87
          * 1.3.2 Amplitude stability X axis is labeled [ms].  Removed dubous code from writing data files loop.
@@ -553,9 +554,11 @@ class WCA extends FEComponent {
     public function GetXmlFileContent() {
         $band = $this->GetValue('Band');
         $sn   = ltrim($this->GetValue('SN'), '0');
+        if (strlen($sn) == 1)
+            $sn = "0" . $sn;
         $esn  = $this->GetValue('ESN1');
         $esnDec = hexdec($esn);
-        $description = "WCA$band-$sn";
+        $longSn = "WCA$band-$sn";
         $FLOYIG = $this->_WCAs->GetValue('FloYIG') . "0E9"; // Hz
         $FHIYIG = $this->_WCAs->GetValue('FhiYIG') . "0E9";
         $powerLimit = $this->maxSafePowerForBand($band);
@@ -585,7 +588,7 @@ class WCA extends FEComponent {
         $xw->endElement();
 
         $xw->startElement("SN");
-        $xw->writeAttribute("value", $description);
+        $xw->writeAttribute("value", $longSn);
         $xw->endElement();
 
         $xw->startElement("FLOYIG");
