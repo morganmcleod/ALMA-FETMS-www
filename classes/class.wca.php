@@ -39,7 +39,7 @@ class WCA extends FEComponent {
         parent::__construct();
         $this->fkDataStatus = '7';
         $this->swversion = "1.3.6";
-        /* 1.3.6 Fix GetXmlFileContent() to comply with FrontEndSchemas-2021-09-21.zip from https://jira.alma.cl/browse/FECRE-87
+        /* 1.3.6 Fix GetXmlFileContent() to comply with /alma/ste/config/TMCDB_DATA/ for Cycle 8
          * 1.3.5 includes OptimizationTargets in WCA data delivery XML
          * 1.3.4 Amplitude stability: force Y-axis to scientific notation.
          * 1.3.3 Updated XML to 2021 format 2020-10-22_FEND.40.00.00.00-1614-A-CRE, FECRE-87
@@ -589,6 +589,40 @@ class WCA extends FEComponent {
 
         $xw->startElement("SN");
         $xw->writeAttribute("value", $longSn);
+        $xw->endElement();
+        
+        $xw->startElement("ColdMultiplier");
+        $mults = array(
+            1,  // band 0: no multiplier
+            1,  // band 1
+            1,  // band 2
+            1,  // band 3
+            2,  // band 4
+            2,  // band 5
+            3,  // band 6
+            3,  // band 7
+            6,  // band 8
+            9,  // band 9
+            9   // band 10
+        );
+        $xw->writeAttribute("value", $mults[$band]);
+        $xw->endElement();
+        
+        $xw->startElement("PLLLoopBwMultiplier");
+        $mults = array(
+            1,  // band 0: no multiplier
+            1,  // band 1
+            4,  // band 2
+            6,  // band 3
+            3,  // band 4
+            6,  // band 5
+            6,  // band 6
+            6,  // band 7
+            3,  // band 8
+            3,  // band 9
+            6   // band 10
+        );
+        $xw->writeAttribute("value", $mults[$band]);
         $xw->endElement();
 
         $xw->startElement("FLOYIG");
