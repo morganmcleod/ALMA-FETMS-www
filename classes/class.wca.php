@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.6";
-        /* 1.3.6 Fix GetXmlFileContent() to comply with /alma/ste/config/TMCDB_DATA/ for Cycle 8
+        $this->swversion = "1.3.7";
+        /* 1.3.7 Fix bug in Update_Configuration_From_INI
+         * 1.3.6 Fix GetXmlFileContent() to comply with /alma/ste/config/TMCDB_DATA/ for Cycle 8
          * 1.3.5 includes OptimizationTargets in WCA data delivery XML
          * 1.3.4 Amplitude stability: force Y-axis to scientific notation.
          * 1.3.3 Updated XML to 2021 format 2020-10-22_FEND.40.00.00.00-1614-A-CRE, FECRE-87
@@ -1125,8 +1126,7 @@ class WCA extends FEComponent {
         if ($CheckBand == $this->GetValue('Band')) {
             $wcafound = true;
         }
-
-        if ($wcafound) {
+        if (!$wcafound) {
             // Warn the user that WCA not found in file:
             $this->AddError("WCA " . $this->GetValue('SN') . " not found in this file!  Upload aborted.");
         } else {
