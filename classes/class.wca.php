@@ -1325,9 +1325,11 @@ class WCA extends FEComponent {
     private function DuplicateRecord_WCA() {
         parent::DuplicateRecord();
         // Copy the records for LO Params
-        for ($i = 0; $i < count($this->LOParams); $i++) {
-            if ($this->LOParams[$i]->keyId > 0) {
-                $this->LOParams[$i]->DuplicateRecord();
+        if ($this->LOParams) {
+            for ($i = 0; $i < count($this->LOParams); $i++) {
+                if ($this->LOParams[$i]->keyId > 0) {
+                    $this->LOParams[$i]->DuplicateRecord();
+                }
             }
         }
         if ($this->_WCAs->keyId > 0) {
