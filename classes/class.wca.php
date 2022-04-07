@@ -690,7 +690,7 @@ class WCA extends FEComponent {
         }
 
         $xw->startElement("OptimizationTargets");
-        $xw->writeAttribute("FreqLO", $lowlo);
+        $xw->writeAttribute("FreqLO", number_format(floatval($lowlo), 1) . "E9");   // Hz
         $xw->writeAttribute("PhotoMixerCurrent", "0");
         $xw->endElement();
         
