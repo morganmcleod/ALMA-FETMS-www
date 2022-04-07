@@ -39,7 +39,7 @@ class WCA extends FEComponent {
         parent::__construct();
         $this->fkDataStatus = '7';
         $this->swversion = "1.3.7";
-        /* 1.3.7 Fix bug in Update_Configuration_From_INI
+        /* 1.3.7 Fix bugs in Update_Configuration_From_INI(), GetXmlFileContent()
          * 1.3.6 Fix GetXmlFileContent() to comply with /alma/ste/config/TMCDB_DATA/ for Cycle 8
          * 1.3.5 includes OptimizationTargets in WCA data delivery XML
          * 1.3.4 Amplitude stability: force Y-axis to scientific notation.
@@ -456,7 +456,7 @@ class WCA extends FEComponent {
         $lowlo = "0.000";
         switch ($band) {
             case 1:
-                $lowlo = "35.000";
+                $lowlo = "31.000";
                 break;
             case 2:
                 $lowlo = "67.000";
@@ -508,13 +508,34 @@ class WCA extends FEComponent {
             $ret .= "FLOYIG=" . $this->_WCAs->GetValue('FloYIG') . "\r\n";
             $ret .= "FHIYIG=" . $this->_WCAs->GetValue('FhiYIG') . "\r\n";
 
-            $ret .= "LOParams=1\r\n";
-            $mstring = "LOParam01=$lowlo";
-            $mstring .= ",1.00,1.00,";
-
-            $mstring .= number_format(floatval($this->_WCAs->GetValue('VG0')), 2) . ",";
-            $mstring .= number_format(floatval($this->_WCAs->GetValue('VG1')), 2) . "\r\n";
-            $ret .= $mstring;
+            $r = $this->db_pull->q(4, $this->keyId);
+            $count = 0;
+            while ($row = mysqli_fetch_array($r)) {
+                $countKey = $count + 1;
+                $countKey = "$countKey";
+                if ($count < 9) {
+                    $countKey = "0" . $countKey;
+                }
+                $mstring = "LOParam$countKey=" . $row['FreqLO'];
+                $mstring .= ", " . number_format(floatval($row['VDP0']), 2);
+                $mstring .= ", " . number_format(floatval($row['VDP1']), 2);
+                $mstring .= ", " . number_format(floatval($row['VGP0']), 2);
+                $mstring .= ", " . number_format(floatval($row['VGP1']), 2). "\r\n";
+                $ret .= $mstring;
+                $count += 1;
+            }
+            
+            if ($count) {
+                $ret .= "LOParams=$count\r\n";
+            } else {
+                $ret .= "LOParams=1\r\n";
+                $mstring = "LOParam01=$lowlo";
+                $mstring .= ",1.00,1.00,";
+    
+                $mstring .= number_format(floatval($this->_WCAs->GetValue('VG0')), 2) . ",";
+                $mstring .= number_format(floatval($this->_WCAs->GetValue('VG1')), 2) . "\r\n";
+                $ret .= $mstring;
+            }
             $ret .= "\r\n\r\n\r\n";
         } else if ($type == 'wca') {
 
@@ -636,14 +657,29 @@ class WCA extends FEComponent {
         $xw->writeAttribute("value", $FHIYIG);
         $xw->endElement();
 
-        $xw->startElement("PowerAmp");
-        $xw->writeAttribute("FreqLO", $lowlo);
-        $xw->writeAttribute("VD0", "0.00");
-        $xw->writeAttribute("VD1", "0.00");
-        $xw->writeAttribute("VG0", number_format(floatval($this->_WCAs->GetValue('VG0')), 2));
-        $xw->writeAttribute("VG1", number_format(floatval($this->_WCAs->GetValue('VG1')), 2));
-        $xw->endElement();
-
+        $r = $this->db_pull->q(4, $this->keyId);
+        $count = 0;
+        while ($row = mysqli_fetch_array($r)) {
+            $xw->startElement("PowerAmp");
+            $xw->writeAttribute("FreqLO", $row['FreqLO']);
+            $xw->writeAttribute("VD0", number_format(floatval($row['VDP0']), 2));
+            $xw->writeAttribute("VD1", number_format(floatval($row['VDP1']), 2));
+            $xw->writeAttribute("VG0", number_format(floatval($row['VGP0']), 2));
+            $xw->writeAttribute("VG1", number_format(floatval($row['VGP1']), 2));
+            $xw->endElement();
+            $count += 1;
+        }
+        
+        if (!$count) {
+            $xw->startElement("PowerAmp");
+            $xw->writeAttribute("FreqLO", $lowlo);
+            $xw->writeAttribute("VD0", "0.00");
+            $xw->writeAttribute("VD1", "0.00");
+            $xw->writeAttribute("VG0", number_format(floatval($this->_WCAs->GetValue('VG0')), 2));
+            $xw->writeAttribute("VG1", number_format(floatval($this->_WCAs->GetValue('VG1')), 2));
+            $xw->endElement();
+        }
+        
         $table = $this->Compute_MaxSafePowerLevels();
         foreach ($table as $row) {
             $xw->startElement("PowerAmpLimit");
