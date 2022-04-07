@@ -581,10 +581,10 @@ class WCA extends FEComponent {
         $esn  = $this->GetValue('ESN1');
         $esnDec = hexdec($esn);
         $longSn = "WCA$band-$sn";
-        $FLOYIG = $this->_WCAs->GetValue('FloYIG') . "0E9"; // Hz
-        $FHIYIG = $this->_WCAs->GetValue('FhiYIG') . "0E9";
+        $FLOYIG = $this->_WCAs->GetValue('FloYIG');
+        $FHIYIG = $this->_WCAs->GetValue('FhiYIG');
         $powerLimit = $this->maxSafePowerForBand($band);
-        $lowlo = $this->GetLowLOForBand($band) . "E9"; //Hz
+        $lowlo = $this->GetLowLOForBand($band);
 
         $xw = new XMLWriter();
         $xw->openMemory();
@@ -650,18 +650,18 @@ class WCA extends FEComponent {
         }
         
         $xw->startElement("FLOYIG");
-        $xw->writeAttribute("value", $FLOYIG);
+        $xw->writeAttribute("value", number_format(floatval($FLOYIG), 4) . "E9");  // Hz
         $xw->endElement();
 
         $xw->startElement("FHIYIG");
-        $xw->writeAttribute("value", $FHIYIG);
+        $xw->writeAttribute("value", number_format(floatval($FHIYIG), 4) . "E9");  // Hz
         $xw->endElement();
 
         $r = $this->db_pull->q(4, $this->keyId);
         $count = 0;
         while ($row = mysqli_fetch_array($r)) {
             $xw->startElement("PowerAmp");
-            $xw->writeAttribute("FreqLO", $row['FreqLO']);
+            $xw->writeAttribute("FreqLO", number_format(floatval($row['FreqLO']), 1) . "E9");   // Hz
             $xw->writeAttribute("VD0", number_format(floatval($row['VDP0']), 2));
             $xw->writeAttribute("VD1", number_format(floatval($row['VDP1']), 2));
             $xw->writeAttribute("VG0", number_format(floatval($row['VGP0']), 2));
@@ -672,7 +672,7 @@ class WCA extends FEComponent {
         
         if (!$count) {
             $xw->startElement("PowerAmp");
-            $xw->writeAttribute("FreqLO", $lowlo);
+            $xw->writeAttribute("FreqLO", number_format(floatval($lowlo), 1) . "E9");   // Hz
             $xw->writeAttribute("VD0", "0.00");
             $xw->writeAttribute("VD1", "0.00");
             $xw->writeAttribute("VG0", number_format(floatval($this->_WCAs->GetValue('VG0')), 2));
