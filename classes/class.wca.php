@@ -38,8 +38,9 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.7";
-        /* 1.3.7 Fix bugs in Update_Configuration_From_INI(), GetXmlFileContent()
+        $this->swversion = "1.3.8";
+        /* 1.3.8 Delete WCA_LOParams in Upload_WCAs_file().  Will get recreated on refresh.
+         * 1.3.7 Fix bugs in Update_Configuration_From_INI(), GetXmlFileContent()
          * 1.3.6 Fix GetXmlFileContent() to comply with /alma/ste/config/TMCDB_DATA/ for Cycle 8
          * 1.3.5 includes OptimizationTargets in WCA data delivery XML
          * 1.3.4 Amplitude stability: force Y-axis to scientific notation.
@@ -394,7 +395,7 @@ class WCA extends FEComponent {
         echo "</tr>";
 
         echo "<tr>";
-        echo "<th>INI file downloads</th>";
+        echo "<th>INI, XML downloads</th>";
         echo "<td>";
 
         $xmlname = hexdec($this->GetValue('ESN1'));
@@ -1132,6 +1133,8 @@ class WCA extends FEComponent {
                     $this->_WCAs->SetValue('FloYIG', trim($tempArray[5], $quotes));
                     $this->_WCAs->SetValue('VG0', trim($tempArray[6], $quotes));
                     $this->_WCAs->SetValue('VG1', trim($tempArray[7], $quotes));
+                    // Get rid of any existing LO Params.  Will get re-created on refresh.
+                    $r = $this->db_pull->q(7, $this->keyId);
                     $ret = true;
                 }
             }
