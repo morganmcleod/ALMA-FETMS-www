@@ -40,6 +40,7 @@ class WCA extends FEComponent {
         $this->fkDataStatus = '7';
         $this->swversion = "1.3.8";
         /* 1.3.8 Delete WCA_LOParams in Upload_WCAs_file().  Will get recreated on refresh.
+         *       Map VGA, VGB to VG0, VG1 in band-dependent way on WCAs fileimport 
          * 1.3.7 Fix bugs in Update_Configuration_From_INI(), GetXmlFileContent()
          * 1.3.6 Fix GetXmlFileContent() to comply with /alma/ste/config/TMCDB_DATA/ for Cycle 8
          * 1.3.5 includes OptimizationTargets in WCA data delivery XML
@@ -1108,6 +1109,45 @@ class WCA extends FEComponent {
         parent::Delete_record();
         echo '<meta http-equiv="Refresh" content="1;url=wca_main.php">';
     }
+    private function WCA_PA_Mapping_Swap($band) {
+        // Return true if PA_A is Pol1 and PA_B is Pol0.
+        switch ($band) {
+            case 1:
+                return false;
+                break;
+            case 2:
+                return false;
+                break;
+            case 3:
+                return true;
+                break;
+            case 4:
+                return true;
+                break;
+            case 5:
+                return false;
+                break;
+            case 6:
+                return false;
+                break;
+            case 7:
+                return false;
+                break;
+            case 8:
+                return true;
+                break;
+            case 9:
+                return true;
+                break;
+            case 10:
+                return true;
+                break;
+            default:
+                break;
+        }
+        return false;
+    }
+    
     private function Upload_WCAs_file($datafile_name) {
         $ret = false;
         $filecontents = file($datafile_name);
@@ -1131,8 +1171,13 @@ class WCA extends FEComponent {
                     $this->SetValue('ESN1', trim($tempArray[3], $quotes));
                     $this->_WCAs->SetValue('FhiYIG', trim($tempArray[4], $quotes));
                     $this->_WCAs->SetValue('FloYIG', trim($tempArray[5], $quotes));
-                    $this->_WCAs->SetValue('VG0', trim($tempArray[6], $quotes));
-                    $this->_WCAs->SetValue('VG1', trim($tempArray[7], $quotes));
+                    if ($this->WCA_PA_Mapping_Swap($band)) {
+                        $this->_WCAs->SetValue('VG1', trim($tempArray[6], $quotes));
+                        $this->_WCAs->SetValue('VG0', trim($tempArray[7], $quotes));
+                    } else {
+                        $this->_WCAs->SetValue('VG0', trim($tempArray[6], $quotes));
+                        $this->_WCAs->SetValue('VG1', trim($tempArray[7], $quotes));
+                    }
                     // Get rid of any existing LO Params.  Will get re-created on refresh.
                     $r = $this->db_pull->q(7, $this->keyId);
                     $ret = true;
