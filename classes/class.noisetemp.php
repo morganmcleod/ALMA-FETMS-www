@@ -113,8 +113,19 @@ class NoiseTemperature extends TestData_header {
         $this->NT_SubHeader->Initialize('Noise_Temp_SubHeader', $keyID, 'keyId', $facility, 'keyFacility');
     }
 
+    public function hasSB2($band) {
+        switch ($band) {
+            case 1:
+            case 9:
+            case 10:
+                return false;
+                break;
+            default:
+                return true;
+        }
+    }
+     
     public function DisplayPlots() {
-        $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
 
         $this->Display_OptimizationNotes();
 
@@ -149,7 +160,6 @@ class NoiseTemperature extends TestData_header {
     }
 
     public function DisplayPlots_html() {
-        $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
 
         $html = ["", ""];
         $html[0] = $this->Display_OptimizationNotes_html();
@@ -1315,9 +1325,7 @@ class NoiseTemperature extends TestData_header {
         fwrite($f, $this->plot_label_1);
         fwrite($f, $this->plot_label_2);
         // band dependent plotting
-        $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
-
-        if (!$hasSB2) {
+        if (!$this->hasSB2($this->GetValue('band'))) {
             fwrite($f, "plot  '$this->if_datafile' using 1:2 with lines lt 1 lw 1 title 'Pol0',");
             fwrite($f, "'$this->if_datafile' using 1:4 with lines lt 3 lw 1 title 'Pol1'\r\n");
         } else {
@@ -1443,8 +1451,8 @@ class NoiseTemperature extends TestData_header {
                 fwrite($f, "'$this->avg_datafile' using 1:3 with linespoints lt 2 lw 1 title 'Pol0sb2',");
                 fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1sb1',");
                 fwrite($f, "'$this->avg_datafile' using 1:5 with linespoints lt 4 lw 1 title 'Pol1sb2',");
-                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
-                fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
+                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)'\r\n");
+//                 fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
                 break;
         }
         fclose($f);
@@ -1491,7 +1499,6 @@ class NoiseTemperature extends TestData_header {
             } else {
                 fwrite($f, "set ylabel 'T_Rec uncorrected (K)'\r\n");
                 if ($this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
-                    fwrite($f,  " " . 'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .16' . "\r\n");
                     fwrite($f,  " " . 'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .9' . "\r\n");
                 }
             }
@@ -1505,12 +1512,10 @@ class NoiseTemperature extends TestData_header {
             fwrite($f, $this->plot_label_1);
             fwrite($f, $this->plot_label_2);
             fwrite($f, "set yrange [0:$this->y_lim]\r\n");
-
-            $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
-            
+           
             switch ($ifNum) {
                 case 0:
-                    if (!$hasSB2) {
+                    if (!$this->hasSB2($this->GetValue('band'))) {
                         $SB = "";
                     } else {
                         $SB = "USB";
@@ -1534,7 +1539,7 @@ class NoiseTemperature extends TestData_header {
                     break;
 
                 case 1:
-                    if (!$hasSB2) {
+                    if ($this->hasSB2($this->GetValue('band'))) {
                         $plot_title = "$plot_title Pol 0 LSB";
                         fwrite($f, "set title '$plot_title'\r\n");
                         fwrite($f, "plot  '$this->rf_datafile' using 2:4 with lines lt 1 lw 3 title 'FEIC Meas Pol0 LSB'");
@@ -1557,7 +1562,7 @@ class NoiseTemperature extends TestData_header {
                     break;
 
                 case 2:
-                    if (!$hasSB2) {
+                    if (!$this->hasSB2($this->GetValue('band'))) {
                         $SB = "";
                     } else {
                         $SB = "USB";
@@ -1585,7 +1590,7 @@ class NoiseTemperature extends TestData_header {
                     break;
 
                 case 3:
-                    if (!$hasSB2) {
+                    if ($this->hasSB2($this->GetValue('band'))) {
                         $plot_title = "$plot_title Pol 1 LSB";
                         fwrite($f, "set title '$plot_title'\r\n");
                         fwrite($f, "plot  '$this->rf_datafile' using 2:6 with lines lt 1 lw 3 title 'FEIC Meas Pol1 LSB'");
