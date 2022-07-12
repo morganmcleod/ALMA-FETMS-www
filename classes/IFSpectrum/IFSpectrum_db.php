@@ -210,7 +210,34 @@ class IFSpectrum_db {
 	    }
 	    return $output;
 	}
-
+	
+	/**
+	 * Retrieve noise floor data for total power calculation
+	 *
+	 * @param integer $keyNF
+	 * @return structure suitable for IFSpectrum_calc:
+	 * array(
+	 *     [0] => array(
+	 *          'Freq_GHz' => float,   // Spectrum analyzer IF center
+	 *          'Power_dBm' => float  // Spectrum analyzer power measurement
+	 *     )
+	 *     [1] => array(...
+	 * )
+	 */
+	public function getNoiseFloorData($keyNF) {
+	    $q = "SELECT (Freq_Hz / 1.0E9) as Freq_GHz, Power_dBm FROM TEST_IFSpectrum_NoiseFloor
+	    WHERE fkHeader = $keyNF ORDER BY Freq_Hz;";
+	    $r = $this->run_query($q);
+	    
+	    $output = array();
+	    $count = 0;
+	    while ($row = mysqli_fetch_assoc($r)) {
+	        $output[] = $row;
+	        $count++;
+	    }
+	    return $output;
+	}
+	
 	/**
 	 * Helper function that finds TestData_Header keys for the given parameters.
 	 * @param int $DataSetGroup

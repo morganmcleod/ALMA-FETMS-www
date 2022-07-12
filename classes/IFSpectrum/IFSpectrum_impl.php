@@ -721,7 +721,10 @@ class IFSpectrum_impl extends TestData_header {
     public function Calc_TotalInbandPower($progressStart, $progressIncrement) {
         $iflim = $this->specs['maxch'];
         $progress = $progressStart;
-
+        
+        $nfData = $this->ifSpectrumDb->getNoiseFloorData($this->$keyNoiseFloor);
+        $this->ifCalc->setNoiseFloorData($nfData);
+        
         for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())
                 return;
