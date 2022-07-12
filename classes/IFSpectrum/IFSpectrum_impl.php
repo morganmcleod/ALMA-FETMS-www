@@ -76,7 +76,8 @@ class IFSpectrum_impl extends TestData_header {
 
     public function __construct() {
         parent::__construct();
-        $this->swVersion = "1.4.6";
+        $this->swVersion = "1.4.7";
+        // 1.4.7  Fixed loading noise floor profiles for total and in-band power tables
         // 1.4.6  Changed tables from 'table7' to 'table1' style for grid lines.
         // 1.4.5  Move sizing the <div> for the info page out to the loader page
         //        Added GetTDHkeyString()
