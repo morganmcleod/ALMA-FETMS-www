@@ -38,8 +38,10 @@ class WCA extends FEComponent {
     function __construct() {
         parent::__construct();
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.9";
-        /* 1.3.9 Use "LO" terminology instead of "WCA" for band 1
+        $this->swversion = "1.3.10";
+        /* 1.3.10 Re-enable saving basic parameters from wca.php:  ESN, YIG low, YIG high, VG0, VG1
+         *        Make Band and SN entry fields read-only.   Remove Notes entry field (wasn't working anyway.)
+         * 1.3.9 Use "LO" terminology instead of "WCA" for band 1
          * 1.3.8 Delete WCA_LOParams in Upload_WCAs_file().  Will get recreated on refresh.
          *       Map VGA, VGB to VG0, VG1 in band-dependent way on WCAs fileimport 
          * 1.3.7 Fix bugs in Update_Configuration_From_INI(), GetXmlFileContent()
@@ -213,7 +215,7 @@ class WCA extends FEComponent {
 
         $this->DisplayMainData();
 
-        echo "<br><br>";
+        echo "<br>";
 
         echo "<input type='hidden' name='" . $this->keyId_name . "' value='$this->keyId'>";
         if ($this->fc == '')
@@ -221,10 +223,9 @@ class WCA extends FEComponent {
         else
             echo "<input type='hidden' name='fc' value='$this->fc'>";
 
-        // Removed for 1.3.0 by request:
-        //         echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>";
+        echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 
-        echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'><br>";
+        echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'>";
 
         echo "</div>";
 
@@ -366,34 +367,34 @@ class WCA extends FEComponent {
         echo "<td><font size='-1'>$ts</font></td></tr>";
         echo "<tr>";
         echo "<th>Band</th>";
-        echo "<td><input type='text' name='Band' size='2' maxlength='200' value = '" . $this->GetValue('Band') . "'></td>";
+        echo "<td><input type='text' name='Band' size='2' maxlength='200' disabled value='" . $this->GetValue('Band') . "'></td>";
         echo "</tr>";
         echo "<tr>";
         echo "<th>SN</th>";
-        echo "<td><input type='text' name='SN' size='2' maxlength='200' value = '" . $this->GetValue('SN') . "'></td>";
+        echo "<td><input type='text' name='SN' size='2' maxlength='200' disabled value='" . $this->GetValue('SN') . "'></td>";
         echo "</tr>";
         echo "<tr>";
         echo "<th>ESN</th>";
-        echo "<td><input type='text' name='ESN1' size='20' maxlength='200' value = '" . $this->GetValue('ESN1') . "'></td>";
+        echo "<td><input type='text' name='ESN1' size='20' maxlength='200' value='" . $this->GetValue('ESN1') . "'></td>";
         echo "</tr>";
 
         echo "<tr>";
         echo "<th>YIG LOW (GHz)</th>";
-        echo "<td><input type='text' name='FloYIG' size='5' maxlength='200' value = '" . $this->_WCAs->GetValue('FloYIG') . "'></td>";
+        echo "<td><input type='text' name='FloYIG' size='5' maxlength='200' value='" . $this->_WCAs->GetValue('FloYIG') . "'></td>";
         echo "</tr>";
 
         echo "<tr>";
         echo "<th>YIG HIGH (GHz)</th>";
-        echo "<td><input type='text' name='FhiYIG' size='5' maxlength='200' value = '" . $this->_WCAs->GetValue('FhiYIG') . "'></td>";
+        echo "<td><input type='text' name='FhiYIG' size='5' maxlength='200' value='" . $this->_WCAs->GetValue('FhiYIG') . "'></td>";
         echo "</tr>";
 
         echo "<tr>";
         echo "<th>VG0</th>";
-        echo "<td><input type='text' name='VG0' size='5' maxlength='200' value = '" . $this->_WCAs->GetValue('VG0') . "'></td>";
+        echo "<td><input type='text' name='VG0' size='5' maxlength='200' value='" . $this->_WCAs->GetValue('VG0') . "'></td>";
         echo "</tr>";
         echo "<tr>";
         echo "<th>VG1</th>";
-        echo "<td><input type='text' name='VG1' size='5' maxlength='200' value = '" . $this->_WCAs->GetValue('VG1') . "'></td>";
+        echo "<td><input type='text' name='VG1' size='5' maxlength='200' value='" . $this->_WCAs->GetValue('VG1') . "'></td>";
         echo "</tr>";
 
         echo "<tr>";
@@ -413,8 +414,6 @@ class WCA extends FEComponent {
         echo "</tr>";
 
         echo "</table></div>";
-        echo "<br>Notes:<input type='text' name='Notes' size='50'
-        maxlength='200' value = '" . $this->GetValue('Notes') . "'>";
     }
     public function DisplayMainDataNonEdit() {
         echo "<div style = 'width: 300px'><br><br>";
