@@ -17,7 +17,7 @@ if (!isset($_REQUEST['ifsub'])) {
         $td = new TestData_header();
         $td->Initialize_TestData_header($TestData_header_keyId, $fc);
         $testDataType = $td->GetValue('fkTestData_Type');
-        $csv_filename = str_replace(" ", "_", $td->TestDataType) . "_Band" . $td->GetValue('Band');
+        $csv_filename = str_replace(" ", "_", $td->TestDataType) . "_Band" . $td->GetValue('Band') . "_" . $TestData_header_keyId;
 
         if ($testDataType == 29) {
             //Workmanship Amplitude:  get the LO frequency to include in the filename.
