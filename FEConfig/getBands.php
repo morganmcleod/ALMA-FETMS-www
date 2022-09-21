@@ -18,5 +18,3 @@ while ($bands = mysqli_fetch_array($getbands)) {
 }
 
 echo json_encode($BandArray);
-
-?>

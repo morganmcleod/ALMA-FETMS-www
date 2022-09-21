@@ -9,10 +9,9 @@ $type = isset($_REQUEST['type']) ? $_REQUEST['type'] : 'fec';
 $xmlname = isset($_REQUEST['xmlname']) ? $_REQUEST['xmlname'] : false;
 // type is expected to be 'fec', 'wca', or 'xml'
 
-$wca = new WCA();
-$wca->Initialize_WCA($id, $fc, WCA::INIT_ALL);
+$wca = new WCA($id, $fc, WCA::INIT_ALL);
 
-$band = $wca->GetValue('Band');
+$band = $wca->Band;
 if ($type == 'wca')
     $fname = "WCA$band.ini";
 else if ($type == 'fec')
@@ -34,5 +33,3 @@ if ($type == 'xml')
     echo $wca->GetXmlFileContent();
 else
     echo $wca->GetIniFileContent($type);
-
-?>

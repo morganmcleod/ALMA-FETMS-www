@@ -16,16 +16,16 @@ class WCAdb { //extends DBRetrieval {
      * @param $db- existing database connection
      */
     public function __construct($db) {
-        $this->dbconnection = site_getDbConnection();
+        $this->dbConnection = site_getDbConnection();
     }
 
     /**
      * @param string $query- SQL query to be passed to database
      *
-     * @return Resource ID- results from query
+     * @return mysqli_result ID- results from query
      */
     public function run_query($query) {
-        return mysqli_query($this->dbconnection, $query);
+        return mysqli_query($this->dbConnection, $query);
     }
 
     /**
@@ -35,7 +35,7 @@ class WCAdb { //extends DBRetrieval {
      * @param integer $fc (default = NULL)
      * @param array $values- integers representing LO, Jitter, and pol. (default = NULL)
      *
-     * @return resource for query results in action is select.
+     * @return mysqli_result for query results in action is select.
      */
     public function qpj($action, $keyId, $fc = NULL, $values = NULL) {
         $q = '';
@@ -168,7 +168,7 @@ class WCAdb { //extends DBRetrieval {
      * @param integer $FreqLOW (default = NULL)
      * @param integer $FreqHI (default = NULL)
      * @param integer $pol (default = NULL)
-     * @return resource
+     * @return mysqli_result
      */
     public function qlo($test_type, $keyId, $fc, $get_pol = TRUE, $FreqLOW = NULL, $FreqHI = NULL, $pol = NULL) {
         $q = "SELECT DISTINCT(FreqLO)";
@@ -196,7 +196,7 @@ class WCAdb { //extends DBRetrieval {
      * @param integer $fc (default = NULL)
      * @param integer $pol (default = NULL)
      * @param integer $kDSet_comp- keyDataSet (default = NULL)
-     * @return resource
+     * @return mysqli_result
      */
     public function qFindLO($test_type, $keyId, $fc = NULL, $pol = NULL, $kDSet_comp = NULL) {
         $q = "SELECT DISTINCT(FreqLO) FROM $test_type WHERE fkHeader = $keyId";

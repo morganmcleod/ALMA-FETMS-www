@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ALMA - Atacama Large Millimeter Array
  * (c) Associated Universities Inc., 2014
@@ -41,12 +42,12 @@ class IFSpectrum_calc {
     private $logger1;               // Logger for debug output
 
     private $minMaxData;            // Min and max power, etc. per LO:
-                                    // array(
-                                    //     'LO_GHz'   => float,
-                                    //     'pMin_dBm' => float,
-                                    //     'pMax_dBm' => float,
-                                    //     'last_dBm' => float    // rightmost point in trace, for Y2 axis labels.
-                                    // )
+    // array(
+    //     'LO_GHz'   => float,
+    //     'pMin_dBm' => float,
+    //     'pMax_dBm' => float,
+    //     'last_dBm' => float    // rightmost point in trace, for Y2 axis labels.
+    // )
 
     private $pMin_dBm_overall;      // Min and max power overall.
     private $pMax_dBm_overall;      //
@@ -69,7 +70,7 @@ class IFSpectrum_calc {
      *
      * @param $data structure shown for setData() below.
      */
-    public function IFSpectrum_calc($data = false) {
+    public function __construct($data = false) {
         $this->setData($data);
         $this->cablePad = self::DFLT_CABLEPAD;
         unset($this->noiseFloorData);
@@ -139,7 +140,7 @@ class IFSpectrum_calc {
      * Sort the data ascending by LO_GHz, Freq_GHz.
      */
     private function sortData() {
-        usort($this->data, function(array $a, array $b) {
+        usort($this->data, function (array $a, array $b) {
             if ($a['LO_GHz'] != $b['LO_GHz'])
                 return $a['LO_GHz'] - $b['LO_GHz'];
             else
@@ -158,7 +159,7 @@ class IFSpectrum_calc {
         $lastLO = self::BAD_LO;
 
         // loop on all rows:
-        foreach($this->data as $row) {
+        foreach ($this->data as $row) {
             $LO = $row['LO_GHz'];
             // for each new LO seen,
             if ($LO != $lastLO) {
@@ -188,9 +189,9 @@ class IFSpectrum_calc {
 
         $output = array();
         $outputRec = array(
-                'LO_GHz' => self::BAD_LO,
-                'minIndex' => 0,
-                'maxIndex' => 0
+            'LO_GHz' => self::BAD_LO,
+            'minIndex' => 0,
+            'maxIndex' => 0
         );
 
         // loop on all rows:
@@ -226,12 +227,12 @@ class IFSpectrum_calc {
      */
     public function getTotalPowerSpans() {
         // helper function to append a record to the output:
-        $appendResult = function(&$output, &$pMin_overall, &$pMax_overall, $LO, $mindBm, $maxdBm, $lastdBm) {
+        $appendResult = function (&$output, &$pMin_overall, &$pMax_overall, $LO, $mindBm, $maxdBm, $lastdBm) {
             $output[] = array(
-                    'LO_GHz' => $LO,
-                    'pMin_dBm' => $mindBm,
-                    'pMax_dBm' => $maxdBm,
-                    'last_dBm' => $lastdBm
+                'LO_GHz' => $LO,
+                'pMin_dBm' => $mindBm,
+                'pMax_dBm' => $maxdBm,
+                'last_dBm' => $lastdBm
             );
             // and accumulate overall min/max:
             if ($mindBm < $pMin_overall)
@@ -277,7 +278,7 @@ class IFSpectrum_calc {
                         $maxdBm = $PW;
                 }
 
-            // if new LO seen:
+                // if new LO seen:
             } else {
                 // output a row for previous LO:
                 $appendResult($this->minMaxData, $this->pMin_dBm_overall, $this->pMax_dBm_overall, $lastLO, $mindBm, $maxdBm, $lastdBm);
@@ -337,7 +338,7 @@ class IFSpectrum_calc {
                 // Compute IF limit of rfMax:
                 $ifLim = $this->rfMax - $LO;
 
-            // if LSB and rfMin is defined:
+                // if LSB and rfMin is defined:
             } else if ($sb == self::LSB && $this->rfMin != self::RFMIN_DEFAULT) {
                 // Compute IF limit of rfMin:
                 $ifLim = $LO - $this->rfMin;
@@ -390,9 +391,9 @@ class IFSpectrum_calc {
             // Append all the points to the output array:
             foreach ($pvarPoints as $row) {
                 $output[] = array(
-                        'LO_GHz' => $LO,
-                        'Freq_GHz' => $row['Freq_GHz'],
-                        'pVar_dB' => $row['pVar_dB']
+                    'LO_GHz' => $LO,
+                    'Freq_GHz' => $row['Freq_GHz'],
+                    'pVar_dB' => $row['pVar_dB']
                 );
             }
 
@@ -427,7 +428,7 @@ class IFSpectrum_calc {
         if (defined('DEBUG_IFSPECTRUM_CALC'))
             $this->logger1->WriteLogFile("getPowerVarWindowForRange($minIndex, $maxIndex, $fMin, $fMax, $fWindow, $spec, $sb)");
 
-    	$output = array();
+        $output = array();
 
         // sanity check inputs:
         if (empty($this->data))
@@ -469,7 +470,7 @@ class IFSpectrum_calc {
         $iLowerWindow = $this->findWindowEdge($minIndex, $iLower, $fMin, false);
 
         // assuming the frequency data is evenly spaced, find the window span in index counts:
-        $iSpan = $iLower - $iLowerWindow;
+        $iSpan = (int)$iLower - (int)$iLowerWindow;
 
         if (defined('DEBUG_IFSPECTRUM_CALC'))
             $this->logger1->WriteLogFile("iLowerWindow=$iLowerWindow iSpan=$iSpan");
@@ -480,7 +481,7 @@ class IFSpectrum_calc {
         $first = true;
 
         // loop the window center from the lower to upper index:
-        for ($iCenter = $iLower; $iCenter <= $iUpper; $iCenter++) {
+        for ($iCenter = (int)$iLower; $iCenter <= $iUpper; $iCenter++) {
             $fCenter = $this->data[$iCenter]['Freq_GHz'];
             $LO = $this->data[$iCenter]['LO_GHz'];
 
@@ -495,8 +496,8 @@ class IFSpectrum_calc {
             $iWinMax = $iCenter + $iSpan;
 
             if ($first && defined('DEBUG_IFSPECTRUM_CALC')) {
-            	$this->logger1->WriteLogFile("LO=$LO fCenter=$fCenter iWinMin=$iWinMin iWinMax=$iWinMax windowEdge=$windowEdge");
-            	$first = false;
+                $this->logger1->WriteLogFile("LO=$LO fCenter=$fCenter iWinMin=$iWinMin iWinMax=$iWinMax windowEdge=$windowEdge");
+                $first = false;
             }
 
             for ($index = $iWinMin; $index <= $iWinMax; $index++) {
@@ -519,8 +520,8 @@ class IFSpectrum_calc {
                 $pVar = $maxdBm - $mindBm;
                 // append output record:
                 $output[] = array(
-                        'Freq_GHz' => $fCenter,
-                        'pVar_dB' => $pVar
+                    'Freq_GHz' => $fCenter,
+                    'pVar_dB' => $pVar
                 );
                 // accumulate $maxVarWindow:
                 if ($pVar > $this->maxVarWindow)
@@ -588,12 +589,12 @@ class IFSpectrum_calc {
      */
     public function getPowerVarFullBand($fMin = 4.0, $fMax = 8.0, $sb = self::USB) {
         // helper function to append a record to the output:
-        $appendResult = function(&$output, $LO, $mindBm, $maxdBm) {
+        $appendResult = function (&$output, $LO, $mindBm, $maxdBm) {
             $output[] = array(
-                    'LO_GHz' => $LO,
-                    'pVar_dB' => ($maxdBm - $mindBm),
-                    'pMin_dBm' => $mindBm,
-                    'pMax_dBm' => $maxdBm
+                'LO_GHz' => $LO,
+                'pVar_dB' => ($maxdBm - $mindBm),
+                'pMin_dBm' => $mindBm,
+                'pMax_dBm' => $maxdBm
             );
         };
 
@@ -609,7 +610,7 @@ class IFSpectrum_calc {
         $sb = ($sb == self::LSB) ? -1.0 : 1.0;
 
         // loop on all rows:
-        foreach($this->data as $row) {
+        foreach ($this->data as $row) {
             $LO = $row['LO_GHz'];
             $IF = $row['Freq_GHz'];
             $PW = $row['Power_dBm'];
@@ -663,12 +664,12 @@ class IFSpectrum_calc {
      */
     public function getTotalAndInBandPower($fMin = 4.0, $fMax = 8.0) {
         // helper function to append a record to the output:
-        $appendResult = function(&$output, $LO, $total, $inBand) {
+        $appendResult = function (&$output, $LO, $total, $inBand) {
             // accumulated powers converted back to dBm:
             $output[] = array(
-                    'LO_GHz' => $LO,
-                    'pTotal_dBm' => 10 * log($total, 10),
-                    'pInBand_dBm' => 10 * log($inBand, 10)
+                'LO_GHz' => $LO,
+                'pTotal_dBm' => 10 * log($total, 10),
+                'pInBand_dBm' => 10 * log($inBand, 10)
             );
         };
 
@@ -688,7 +689,7 @@ class IFSpectrum_calc {
         $lastLO = self::BAD_LO;
 
         // loop on all rows:
-        foreach($this->data as $row) {
+        foreach ($this->data as $row) {
             $LO = $row['LO_GHz'];
             $IF = $row['Freq_GHz'];
             $PW = $row['Power_dBm'];
@@ -738,7 +739,7 @@ class IFSpectrum_calc {
         $nfIndex = 0;
         $size = count($this->data);
         $lastLO = self::BAD_LO;
-        for ($index = 0; $index < size; $index++) {
+        for ($index = 0; $index < $size; $index++) {
             $row = $this->data[$index];
             $LO = $row['LO_GHz'];
             $PW = $row['Power_dBm'];
@@ -768,5 +769,3 @@ class IFSpectrum_calc {
         }
     }
 }
-
-?>

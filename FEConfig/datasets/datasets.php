@@ -50,18 +50,16 @@ $test_desc = ADAPT_mysqli_result($r, 0, 0);
 $title = $test_desc;
 
 if ($FEid) {
-    $fe = new FrontEnd();
-    $fe->Initialize_FrontEnd($FEid, $fc, FrontEnd::INIT_NONE);
+    $fe = new FrontEnd($FEid, $fc, FrontEnd::INIT_NONE);
 
     //The following two variables are used in datasets_header.php for the Front End button in top right corner.
     $feconfig = $fe->feconfig->keyId;
-    $fesn = $fe->GetValue('SN');
+    $fesn = $fe->SN;
 
     $title .= " FE-$fesn";
     unset($fe);
 } else {
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($TDHid, $fc);
+    $tdh = new TestData_header($TDHid, $fc);
     $compId = $tdh->GetValue('fkFE_Components');
 
     $title .= " Band $Band";

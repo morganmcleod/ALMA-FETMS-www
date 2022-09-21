@@ -10,15 +10,14 @@ $comptype = $_REQUEST['comptype'];
 switch ($comptype) {
     case 11:
         //WCA
-        $wca = new WCA();
-        $wca->Initialize_WCA($id, $fc, WCA::INIT_ALL);
-        $esn = $wca->GetValue('ESN1');
+        $wca = new WCA($id, $fc, WCA::INIT_ALL);
+        $esn = $wca->ESN1;
         if ($esn) {
             $esn = hexdec($esn);
             $fname = "$esn.xml";
         } else {
-            $band = $wca->GetValue(GetValue('Band'));
-            $sn = $wca->GetValue(GetValue('SN'));
+            $band = $wca->Band;
+            $sn = $wca->SN;
             $fname = "WCA$band-$sn";
         }
         header("Content-type: text/xml");
@@ -27,18 +26,17 @@ switch ($comptype) {
         header("Expires: 0");
         echo $wca->GetXmlFileContent();
         break;
-        
+
     case 20:
         //CCA
-        $cca = new CCA();
-        $cca->Initialize_CCA($id, $fc, CCA::INIT_ALL);
-        $esn = $cca->GetValue('ESN1');
+        $cca = new CCA($id, $fc, CCA::INIT_ALL);
+        $esn = $cca->ESN1;
         if ($esn) {
             $esn = hexdec($esn);
             $fname = "$esn.xml";
         } else {
-            $band = $cca->GetValue(GetValue('Band'));
-            $sn = $cca->GetValue(GetValue('SN'));
+            $band = $cca->Band;
+            $sn = $cca->SN;
             $fname = "CCA$band-$sn";
         }
         header("Content-type: text/xml");
@@ -47,7 +45,7 @@ switch ($comptype) {
         header("Expires: 0");
         echo $cca->GetXmlFileContent();
         break;
-    
+
     default:
         header("Content-type: text/plain");
         header("Content-Disposition: attachment");
@@ -56,4 +54,3 @@ switch ($comptype) {
         echo "no data";
         break;
 }
-?>

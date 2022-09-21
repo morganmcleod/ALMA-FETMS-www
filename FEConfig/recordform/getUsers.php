@@ -7,10 +7,8 @@ $q = "SELECT Initials, Name FROM Users ORDER BY Initials ASC;";
 $r = mysqli_query($dbconnection, $q);
 
 $jsonstring = '{"sucess":true,"records":[{"UserName":" ", "UserCode":" "}';
-while ($row=mysqli_fetch_array($r)){
-	$jsonstring .= ',{"UserName":"' . $row[1] . '", "UserCode":"' . $row[0] . '"}';
+while ($row = mysqli_fetch_array($r)) {
+    $jsonstring .= ',{"UserName":"' . $row[1] . '", "UserCode":"' . $row[0] . '"}';
 }
 $jsonstring .= ']}';
 echo $jsonstring;
-
-?>

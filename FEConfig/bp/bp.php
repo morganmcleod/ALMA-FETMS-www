@@ -3,12 +3,10 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-
     <link rel="stylesheet" type="text/css" href="../Cartstyle.css">
     <link rel="stylesheet" type="text/css" href="../tables.css">
     <link rel="stylesheet" type="text/css" href="../buttons.css">
     <link rel="stylesheet" type="text/css" href="../headerbuttons.css">
-
     <link rel="stylesheet" type="text/css" href="../../ext4/resources/css/ext-all.css" />
     <script type="text/javascript" src="../../ext4/ext-all.js"></script>
     <script type='text/javascript' src='../../classes/pickComponent/popupMoveToOtherFE.js'></script>
@@ -25,43 +23,33 @@
 
     // get the Facility Code and TestDataHeader id from the request:
     $fc = $_REQUEST['fc'];
-    $tdh_key = $_REQUEST['keyheader'];
+    $headerKeyId = $_REQUEST['keyheader'];
+    $drawplot = $_REQUEST['drawplot'] ?? 0;
+    $fkDataStatus = $_REQUEST['fkDataStatus'] ?? NULL;
+    $Notes = $_REQUEST['Notes'] ?? NULL;
+
 
     // Make a TestData_header record object for the FC and header id:
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($tdh_key, $fc);
+    $tdh = new TestData_header($headerKeyId, $fc);
 
     // if the HTML request includes a Notes parameter call the TestDataHeader method to write those notes back to the database:
     // The 'SAVE' button under the notes window reloads this page with the notes text included in the URL.
-    if (isset($_REQUEST['Notes'])) {
-        $tdh->RequestValues_TDH();
-    }
+    $tdh->requestValuesHeader($fkDataStatus, $Notes);
 
     // Find the ScanSetDetails record id corresponding to the TestDataHeader id:
-    $q = "SELECT keyId FROM ScanSetDetails WHERE fkHeader = " . $tdh->keyId . ";";
-    $r = mysqli_query($dbconnection, $q);
-    $ssid = ADAPT_mysqli_result($r, 0, 0);
-
-    // Make a ScanSetDetails record object;
-    $ssd = new ScanSetDetails();
-    $ssd->Initialize_ScanSetDetails($ssid, $fc);
+    $ssid = ScanSetDetails::getIdFromHeader($headerKeyId);
 
     // Create the main beam efficiency analysis class and set it up to work with the current scan set:
-    $eff = new eff();
-    $eff->Initialize_eff_SingleScanSet($ssid, $fc);
-
-    // Create the FrontEnd record object corresponding to the TestDataHeader configuration:
-    $fe = new FrontEnd();
-    $fe->Initialize_FrontEnd_FromConfig($tdh->GetValue('fkFE_Config'), $fc, FrontEnd::INIT_NONE);
+    $eff = new eff($ssid, $fc);
 
     // feconfig is the configuration number for the front end:
-    $feconfig = $fe->feconfig->keyId;
+    $feconfig = $tdh->frontEnd->feconfig->keyId;
 
     // get the front end serial number and the current measurement cartridge band:
-    $fesn = $fe->GetValue('SN');
-    $band = $tdh->GetValue('Band');
+    $fesn = $tdh->frontEnd->SN;
+    $band = $tdh->Band;
 
-    if ($eff->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nfamp') != '') {
+    if ($eff->scansets[0]->Scan_copol_pol0->BeamEfficencies->plot_copol_nfamp != '') {
         //All three scans are complete, and have already been processed.
         echo '<link rel="stylesheet" type="text/css" href="buttonblue.css">';
         $bpstatus = 2;
@@ -92,23 +80,21 @@
     include "header_bp.php";
 
     // this section performs the analysis and draws the plots
-    if (isset($_REQUEST['drawplot'])) {
-        if ($_REQUEST['drawplot'] == 1) {
+    if ($drawplot == 1) {
 
-            //Show a spinner while plots are being drawn.
-            include($site_FEConfig . '/spin.php');
+        //Show a spinner while plots are being drawn.
+        include($site_FEConfig . '/spin.php');
 
-            $pointingOption = 'nominal';
-            if (isset($_REQUEST['pointing'])) {
-                $pointingOption = $_REQUEST['pointing'];
-            }
-
-            // GetEfficiencies calls out to the beameff_64 application to compute efficiencies and plots:
-            $eff->GetEfficiencies($pointingOption);
-            echo "done getting effs. <br>";
-
-            echo '<meta http-equiv="Refresh" content="1;url=bp.php?keyheader=' . $tdh->keyId . '&fc=' . $fc . '">';
+        $pointingOption = 'nominal';
+        if (isset($_REQUEST['pointing'])) {
+            $pointingOption = $_REQUEST['pointing'];
         }
+
+        // GetEfficiencies calls out to the beameff_64 application to compute efficiencies and plots:
+        $eff->GetEfficiencies($pointingOption);
+        echo "done getting effs. <br>";
+
+        echo "<meta http-equiv='Refresh' content='1;url=bp.php?keyheader={$tdh->keyId}&fc={$fc}'>";
     }
 
     echo "<script type='text/javascript'>
@@ -116,7 +102,7 @@
 		    function popupCallback() {
 		        popupMoveToOtherFE('FE-$fesn', \"$url_root\", [$tdh->keyId]);
 		    }
-		    createBPTabs($fc, $tdh_key, $band, $bpstatus, popupCallback)
+		    createBPTabs($fc, $headerKeyId, $band, $bpstatus, popupCallback)
         });</script>";
 
     // HTML code below are the targets for javaScript loaded from onload=createBPTabs() above.

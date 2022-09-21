@@ -8,8 +8,7 @@ $fc = $_REQUEST['fc'];
 
 $compkey = $_GET['compkey'];
 
-$fecomp = new FEComponent();
-$fecomp->Initialize_FEComponent($compkey, $fc);
+$fecomp = new FEComponent(NULL, $compkey, NULL, $fc);
 $comptype = $fecomp->GetValue('fkFE_ComponentType');
 
 $feconfig = $fecomp->FEConfig;
@@ -61,5 +60,3 @@ while ($loc_rs = mysqli_fetch_array($location_query)) {
     }
     $location_block .= "<option value=\"$keyloc\" $selected_l>$name</option>";
 }
-
-?>

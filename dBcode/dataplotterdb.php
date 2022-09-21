@@ -17,9 +17,9 @@ class DPdb { //extends DBRetrieval{
      *
      * @param $dB- existing database connection
      */
-    public function DPdb($dB) {
+    public function __construct($dB) {
         require(site_get_config_main());
-        $this->dbconnection = $dB;
+        $this->dbConnection = $dB;
     }
 
     /**
@@ -29,7 +29,7 @@ class DPdb { //extends DBRetrieval{
      * @return resource Id for SQL query
      */
     public function run_query($query) {
-        return mysqli_query($this->dbconnection, $query);
+        return mysqli_query($this->dbConnection, $query);
     }
 
 
@@ -54,7 +54,7 @@ class DPdb { //extends DBRetrieval{
         WHERE FE_ConfigLink.fkFE_Config = $FEcfg
         AND FE_Components.fkFE_ComponentType = $type
         AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-        AND FE_Components.Band = " . $TestDataHeader->GetValue('Band') . "
+        AND FE_Components.Band = " . $TestDataHeader->Band . "
         AND FE_Components.keyFacility = $fc
         AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
         ORDER BY Band ASC;";
@@ -88,7 +88,7 @@ class DPdb { //extends DBRetrieval{
         } elseif ($request == 'sub') {
             $q = "SELECT MAX(keyId) FROM TEST_LOLockTest_SubHeader
 					WHERE fkHeader = " . $TestDataHeader->keyId . "
-					AND TEST_LOLockTest_SubHeader.keyFacility = " . $TestDataHeader->getValue('keyFacility') . ";";
+					AND TEST_LOLockTest_SubHeader.keyFacility = " . $TestDataHeader->keyFacility . ";";
             $r = $this->run_query($q);
             $t->WriteLogFile($q);
             return ADAPT_mysqli_result($r, 0, 0);
@@ -117,7 +117,7 @@ class DPdb { //extends DBRetrieval{
 			FROM TEST_PolAngles
 			WHERE fkHeader = $td_header
 			AND fkFacility = $fc ORDER BY angle ASC;";
-        } elseif ($occurr == 2) {
+        } elseif ($occur == 2) {
             if ($TestDataHeader->GetValue('DataSetGroup') == 0) {
                 $q = "SELECT TEST_LOLockTest.LOFreq,
 				TEST_LOLockTest.PhotomixerCurrent, TEST_LOLockTest.PLLRefTotalPower
@@ -129,13 +129,13 @@ class DPdb { //extends DBRetrieval{
 				GROUP BY TEST_LOLockTest.LOFreq ASC;";
             } else {
                 $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = " .
-                    $TestDataHeader->GetValue('fkFE_Config');
+                    $TestDataHeader->fkFE_Config;
                 $q = "SELECT TEST_LOLockTest.LOFreq, TEST_LOLockTest.PhotomixerCurrent,
 						TEST_LOLockTest.PLLRefTotalPower FROM FE_Config LEFT JOIN TestData_header
 						ON TestData_header.fkFE_Config = FE_Config.keyFEConfig LEFT JOIN TEST_LOLockTest_SubHeader
 						ON TEST_LOLockTest_SubHeader.`fkHeader` = `TestData_header`.`keyId` LEFT
 						JOIN TEST_LOLockTest ON TEST_LOLockTest_SubHeader.`keyId` = TEST_LOLockTest.fkHeader
-						WHERE TestData_header.Band = " . $TestDataHeader->GetValue('Band') . "
+						WHERE TestData_header.Band = " . $TestDataHeader->Band . "
 						AND TestData_header.fkTestData_Type= 57 AND TestData_header.DataSetGroup= " .
                     $TestDataHeader->GetValue('DataSetGroup') . " AND TEST_LOLockTest.IsIncluded = 1
 						AND FE_Config.fkFront_Ends = ($qfe) GROUP BY TEST_LOLockTest.LOFreq ASC;";
@@ -194,11 +194,11 @@ class DPdb { //extends DBRetrieval{
 					`TestData_header`.`fkFE_Config`,`TestData_header`.Meas_SWVer
 					FROM FE_Config LEFT JOIN `TestData_header`
 					ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
-					WHERE TestData_header.Band = " . $TestDataHeader->GetValue('Band') . "
-					AND TestData_header.fkTestData_Type= " . $TestDataHeader->GetValue('fkTestData_Type') . "
+					WHERE TestData_header.Band = " . $TestDataHeader->Band . "
+					AND TestData_header.fkTestData_Type= " . $TestDataHeader->fkTestData_Type . "
 					AND TestData_header.DataSetGroup= " . $TestDataHeader->GetValue('DataSetGroup') . "
 					AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM `FE_Config`
-					WHERE `keyFEConfig` = " . $TestDataHeader->GetValue('fkFE_Config') . ")
+					WHERE `keyFEConfig` = " . $TestDataHeader->fkFE_Config . ")
 					ORDER BY `TestData_header`.keyID DESC;";
         } elseif ($occur == 8) {
             // Workmanship amplitude for CCAs having SIS

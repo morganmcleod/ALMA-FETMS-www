@@ -12,8 +12,7 @@ header("Expires: 0");
 $fc = $_REQUEST['fc'];
 $id = $_REQUEST['keyId'];
 
-$cca = new CCA();
-$cca->Initialize_CCA($id, $fc, CCA::INIT_ALL);
+$cca = new CCA($id, $fc, CCA::INIT_ALL);
 $result = $cca->getFrontEndControlDLL_ini();
 echo $result;
 unset($cca);

@@ -11,7 +11,7 @@ require_once($site_dBcode . '/dataplotterdb.php');
 require_once($site_dbConnect);
 
 
-class DataPlotter extends GenericTable{
+class DataPlotter extends GenericTable {
     var $writedirectory;
     var $url_directory;
     var $GNUPLOT_path;
@@ -29,12 +29,82 @@ class DataPlotter extends GenericTable{
     var $cca; //CCA object
     var $db_pull;    // dataplotter database object
 
-    function __construct() {
-        parent::__construct();
+    function __construct($in_TestDataHeaderID, $in_fc) {
+        parent::__construct(NULL, $in_TestDataHeaderID, NULL, $in_fc);
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
         $this->GNUPLOT_path = $GNUPLOT;
         $this->swversion = "1.2.12";
+
+        $this->fc = $in_fc;
+        $this->db_pull = new DPdb($this->dbConnection);
+        $this->TestDataHeader = new TestData_header($in_TestDataHeaderID, $in_fc);
+        $this->FEcfg = $this->TestDataHeader->fkFE_Config;
+        if (isset($this->TestDataHeader->frontEnd->keyId)) {
+            $this->FESN = $this->TestDataHeader->frontEnd->SN;
+        }
+
+        $band = '%';
+        if ($this->TestDataHeader->Band > 0) $band = $this->TestDataHeader->Band;
+
+        //Get CCA
+        $q = "SELECT FE_Components.keyId
+        FROM FE_Components, FE_ConfigLink
+        WHERE FE_ConfigLink.fkFE_Config = $this->FEcfg
+        AND FE_Components.fkFE_ComponentType = 20
+        AND FE_Components.Band LIKE '$band'
+        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId;";
+
+
+        $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+
+        $this->CCASN = "N/A";
+        if (mysqli_num_rows($r) > 0) {
+            $this->cca = new CCA(ADAPT_mysqli_result($r, 0, 0), $this->fc, CCA::INIT_NONE);
+            $this->CCASN = $this->cca->SN;
+        }
+        $this->measdate = $this->TestDataHeader->TS;
+        //Get meas date
+        switch ($this->TestDataHeader->fkTestData_Type) {
+            case 7:
+                //IF Spectrum
+                $q = "SELECT TS FROM IFSpectrum_SubHeader
+                WHERE fkHeader = " . $this->TestDataHeader->keyId . ";";
+                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $this->measdate = ADAPT_mysqli_result($r, 0, 0);
+                break;
+        }
+
+        if ($this->FESN == "") {
+            //Get Front End SN and
+            $qfe = "SELECT Front_Ends.SN, FE_Config.keyFEConfig, IFSpectrum_SubHeader.TS
+                    FROM TestData_header, Front_Ends,FE_Config,IFSpectrum_SubHeader
+                    WHERE TestData_header.keyId = $in_TestDataHeaderID
+                    AND FE_Config.keyFEConfig = TestData_header.fkFE_Config
+                    AND Front_Ends.keyFrontEnds = FE_Config.fkFront_Ends
+                    AND IFSpectrum_SubHeader.fkHeader = $in_TestDataHeaderID
+                    AND Front_Ends.keyFacility = $this->fc
+                    AND TestData_header.keyFacility = $this->fc
+                    AND FE_Config.keyFacility = $this->fc
+                    AND IFSpectrum_SubHeader.fkFacility = $this->fc
+                    ;";
+            $rfe = mysqli_query($this->dbConnection, $qfe); //  or die('Failed on query in dataplotter.php line ' . __LINE__);
+            $this->measdate = ADAPT_mysqli_result($rfe, 0, 2);
+        }
+
+        if ($this->FESN == "") {
+            //Get Front End SN and
+            $qfe = "SELECT Front_Ends.SN, FE_Config.keyFEConfig, TestData_header.TS
+                    FROM TestData_header, Front_Ends,FE_Config
+                    WHERE TestData_header.keyId = $in_TestDataHeaderID
+                    AND FE_Config.keyFEConfig = TestData_header.fkFE_Config
+                    AND Front_Ends.keyFrontEnds = FE_Config.fkFront_Ends
+                    AND Front_Ends.keyFacility = $this->fc
+                    AND TestData_header.keyFacility = $this->fc
+                    AND FE_Config.keyFacility = $this->fc;";
+            $rfe = mysqli_query($this->dbConnection, $qfe)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+            $this->measdate = ADAPT_mysqli_result($rfe, 0, 2);
+        }
 
         /*
          * 1.2.12: Plot 15K CCA temps for workmanship amplitude
@@ -56,109 +126,47 @@ class DataPlotter extends GenericTable{
 
         $this->logfile = $this->writedirectory . "log_" . date("Y_m_d__H_i_s") . ".txt";
         $this->logging = 0;
-   }
-
-    public function Initialize_DataPlotter($in_TestDataHeaderID, $in_fc){
-        $this->fc = $in_fc;
-        $this->db_pull = new DPdb($this->dbconnection);
-        $this->TestDataHeader = new TestData_header();
-        $this->TestDataHeader->Initialize_TestData_header($in_TestDataHeaderID,$in_fc);
-        $this->FEcfg = $this->TestDataHeader->GetValue('fkFE_Config');
-        if (isset($this->TestDataHeader->FrontEnd->keyId)) {
-            $this->FESN = $this->TestDataHeader->FrontEnd->GetValue('SN');
-        }
-
-        $band = '%';
-        if ($this->TestDataHeader->GetValue('Band') > 0){
-            $band = $this->TestDataHeader->GetValue('Band');
-        }
-
-        //Get CCA
-        $q = "SELECT FE_Components.keyId
-        FROM FE_Components, FE_ConfigLink
-        WHERE FE_ConfigLink.fkFE_Config = $this->FEcfg
-        AND FE_Components.fkFE_ComponentType = 20
-        AND FE_Components.Band LIKE '$band'
-        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId;";
-
-
-        $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-
-        $this->CCASN = "N/A";
-        if (mysqli_num_rows($r) > 0){
-            $this->cca = new CCA();
-            $this->cca->Initialize_CCA(ADAPT_mysqli_result($r,0,0), $this->fc, CCA::INIT_NONE);
-            $this->CCASN = $this->cca->GetValue('SN');
-        }
-        $this->measdate = $this->TestDataHeader->GetValue('TS');
-        //Get meas date
-        switch ($this->TestDataHeader->GetValue('fkTestData_Type')){
-            case 7:
-            //IF Spectrum
-                $q = "SELECT TS FROM IFSpectrum_SubHeader
-                WHERE fkHeader = " . $this->TestDataHeader->keyId . ";";
-                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-                $this->measdate = ADAPT_mysqli_result($r,0,0);
-                break;
-        }
-
-        if ($this->FESN == ""){
-            //Get Front End SN and
-            $qfe = "SELECT Front_Ends.SN, FE_Config.keyFEConfig, IFSpectrum_SubHeader.TS
-                    FROM TestData_header, Front_Ends,FE_Config,IFSpectrum_SubHeader
-                    WHERE TestData_header.keyId = $in_TestDataHeaderID
-                    AND FE_Config.keyFEConfig = TestData_header.fkFE_Config
-                    AND Front_Ends.keyFrontEnds = FE_Config.fkFront_Ends
-                    AND IFSpectrum_SubHeader.fkHeader = $in_TestDataHeaderID
-                    AND Front_Ends.keyFacility = $this->fc
-                    AND TestData_header.keyFacility = $this->fc
-                    AND FE_Config.keyFacility = $this->fc
-                    AND IFSpectrum_SubHeader.fkFacility = $this->fc
-                    ;";
-            $rfe = mysqli_query($this->dbconnection, $qfe);//  or die('Failed on query in dataplotter.php line ' . __LINE__);
-            $this->measdate = ADAPT_mysqli_result($rfe,0,2);
-        }
-
-        if ($this->FESN == ""){
-            //Get Front End SN and
-            $qfe = "SELECT Front_Ends.SN, FE_Config.keyFEConfig, TestData_header.TS
-                    FROM TestData_header, Front_Ends,FE_Config
-                    WHERE TestData_header.keyId = $in_TestDataHeaderID
-                    AND FE_Config.keyFEConfig = TestData_header.fkFE_Config
-                    AND Front_Ends.keyFrontEnds = FE_Config.fkFront_Ends
-                    AND Front_Ends.keyFacility = $this->fc
-                    AND TestData_header.keyFacility = $this->fc
-                    AND FE_Config.keyFacility = $this->fc;";
-            $rfe = mysqli_query($this->dbconnection, $qfe)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-            $this->measdate = ADAPT_mysqli_result($rfe,0,2);
-        }
     }
 
-    public function Plot_CCA_AmplitudeStability(){
+    private function sendImage($imagepath, $path) {
+        global $site_storage;
+        $ch = curl_init($site_storage . 'upload.php');
+        curl_setopt_array($ch, array(
+            CURLOPT_POST => 1,
+            CURLOPT_POSTFIELDS => array(
+                'image' => new CURLFile($imagepath, 'image/png'),
+                'path' => $path,
+                'token' => "hF^d^hyu3mHxYTa%"
+            )
+        ));
+        curl_exec($ch);
+        unlink($imagepath);
+    }
+
+    public function Plot_CCA_AmplitudeStability() {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
         $TestData_Id = $this->TestDataHeader->keyId;
-        $tdhfc = $this->TestDataHeader->GetValue('keyFacility');
+        $tdhfc = $this->TestDataHeader->keyFacility;
 
         //Initialize component object
-        $this->Component = new FEComponent();
-        $this->Component->Initialize_FEComponent($this->TestDataHeader->GetValue('fkFE_Components'),$tdhfc);
+        $this->Component = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $tdhfc);
 
         //write data file from database
         $qFindLO = "SELECT DISTINCT(FreqLO) FROM CCA_TEST_AmplitudeStability
                     WHERE fkHeader = $TestData_Id
                     AND fkFacility = $tdhfc
                     ORDER BY FreqLO ASC;";
-        $rFindLO = mysqli_query($this->dbconnection, $qFindLO)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-        $rowLO=mysqli_fetch_array($rFindLO);
+        $rFindLO = mysqli_query($this->dbConnection, $qFindLO)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $rowLO = mysqli_fetch_array($rFindLO);
 
-        $datafile_count=0;
+        $datafile_count = 0;
         $spec_value = 0.0000001;
 
-        for ($j=0;$j<=1;$j++){
-            for ($i=0;$i<=sizeof($rowLO);$i++){
-                $CurrentLO = ADAPT_mysqli_result($rFindLO,$i);
+        for ($j = 0; $j <= 1; $j++) {
+            for ($i = 0; $i <= sizeof($rowLO); $i++) {
+                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
                 $q = "SELECT Time,AllanVar FROM CCA_TEST_AmplitudeStability
@@ -167,40 +175,40 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     AND fkFacility = $tdhfc
                     ORDER BY Time ASC;";
-                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
-                if (mysqli_num_rows($r) > 1){
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle[$datafile_count] = "Pol $j, $CurrentLO GHz";
-                    $data_file[$datafile_count] = $this->writedirectory . "cca_as_data_".$i."_".$j.".txt";
+                    $data_file[$datafile_count] = $this->writedirectory . "cca_as_data_" . $i . "_" . $j . ".txt";
                     $fh = fopen($data_file[$datafile_count], 'w');
-                    $row=mysqli_fetch_array($r);
+                    $row = mysqli_fetch_array($r);
                     $TimeVal = $row[0];
 
-                    if ($TimeVal > 500){
+                    if ($TimeVal > 500) {
                         fwrite($fh, "$row[0]\t0.00000009\r\n");
                     }
-                        while($row=mysqli_fetch_array($r)){
-                            $stringData = "$row[0]\t$row[1]\r\n";
-                            fwrite($fh, $stringData);
-                        }
+                    while ($row = mysqli_fetch_array($r)) {
+                        $stringData = "$row[0]\t$row[1]\r\n";
+                        fwrite($fh, $stringData);
+                    }
                     fclose($fh);
                     $datafile_count++;
                 }
-            }//end for i
-        }//end for j
+            } //end for i
+        } //end for j
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_as_command.txt";
-        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)){
+        $imagedirectory = $this->writedirectory . $this->Component->Band . "_" . $this->Component->SN . "/";
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
-        $imagename = "CCA_AmplitudeStability_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Amplitude Stability";
+        $imagename = "CCA_AmplitudeStability_SN" . $this->Component->SN . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $this->Component->Band . "_" . $this->Component->SN . "/$imagename";
+        $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " Amplitude Stability";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -213,14 +221,14 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set key outside\r\n");
         fwrite($fh, "set ylabel 'Allan Variance'\r\n");
         fwrite($fh, "set xlabel 'Allan Time, T (=Integration, Tau)'\r\n");
-        $ymax = pow(10,-5);
+        $ymax = pow(10, -5);
         fwrite($fh, "set yrange [:$ymax]\r\n");
         fwrite($fh, "f1(x)=((x>500) && (x<100000)) ? 0.00000009 : 1/0\r\n");
         fwrite($fh, "f2(x)=((x>299999) && (x<350000)) ? 0.000001 : 1/0\r\n");
         $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
         $plot_string .= ", f2(x) title 'Spec' with points pt 5 pointsize 1";
         $plot_string .= ", '$data_file[0]' using 1:2 title '$plottitle[0]' with lines";
-        for ($i=1;$i<sizeof($data_file);$i++){
+        for ($i = 1; $i < sizeof($data_file); $i++) {
             $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
         }
         $plot_string .= "\r\n";
@@ -231,42 +239,41 @@ class DataPlotter extends GenericTable{
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    public function Plot_CCA_PhaseDrift(){
+    public function Plot_CCA_PhaseDrift() {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
         $TestData_Id = $this->TestDataHeader->keyId;
 
         //Initialize component object
-        $this->Component = new FEComponent();
-        $this->Component->Initialize_FEComponent($this->TestDataHeader->GetValue('fkFE_Components'),$this->TestDataHeader->GetValue('keyFacility'));
+        $this->Component = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $this->TestDataHeader->keyFacility);
 
 
         $qlo = "SELECT DISTINCT(FreqLO), Pol FROM CCA_TEST_PhaseDrift
               WHERE fkHeader = $TestData_Id
               ORDER BY FreqLO ASC;";
-        $rlo = mysqli_query($this->dbconnection, $qlo)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $rlo = mysqli_query($this->dbConnection, $qlo)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
-        $loindex=0;
+        $loindex = 0;
 
         $qTS = "SELECT TS FROM CCA_TEST_PhaseDrift
                     WHERE fkHeader = $TestData_Id
                     AND TS <> ''
                     LIMIT 1;";
-        $rTS = mysqli_query($this->dbconnection, $qTS)  or die('Failed on query in dataplotter.php line ' . __LINE__);
-        $TS = ADAPT_mysqli_result($rTS,0);
+        $rTS = mysqli_query($this->dbConnection, $qTS)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $TS = ADAPT_mysqli_result($rTS, 0);
 
         //write data file from database
         $qFindLO = "SELECT DISTINCT(FreqLO) FROM CCA_TEST_PhaseDrift
                     WHERE fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
-        $rFindLO = mysqli_query($this->dbconnection, $qFindLO)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $rFindLO = mysqli_query($this->dbConnection, $qFindLO)  or die('Failed on query in dataplotter.php line ' . __LINE__);
         $numLO = mysqli_num_rows($rFindLO);
         $rowLO = mysqli_fetch_array($rFindLO);
 
-        $datafile_count=0;
-        for ($j=0;$j<=1;$j++){
-            for ($i=0; $i<$numLO; $i++){
+        $datafile_count = 0;
+        for ($j = 0; $j <= 1; $j++) {
+            for ($i = 0; $i < $numLO; $i++) {
                 $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
                 $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
@@ -275,36 +282,36 @@ class DataPlotter extends GenericTable{
                     AND Pol = $j
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqCarrier ASC;";
-                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
-                if (mysqli_num_rows($r) > 1){
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle[$datafile_count] = "Pol $j, $CurrentLO GHz";
-                    $data_file[$datafile_count] = $this->writedirectory . "cca_phasenz_".$i."_".$j.".txt";
+                    $data_file[$datafile_count] = $this->writedirectory . "cca_phasenz_" . $i . "_" . $j . ".txt";
                     $fh = fopen($data_file[$datafile_count], 'w');
-                    $row=mysqli_fetch_array($r);
+                    $row = mysqli_fetch_array($r);
 
-                    while($row=mysqli_fetch_array($r)){
+                    while ($row = mysqli_fetch_array($r)) {
                         $stringData = "$row[0]\t$row[1]\r\n";
                         fwrite($fh, $stringData);
                     }
                     fclose($fh);
                     $datafile_count++;
                 }
-            }//end for i
-        }//end for j
+            } //end for i
+        } //end for j
 
-        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)){
+        $imagedirectory = $this->writedirectory . $this->Component->Band . "_" . $this->Component->SN . "/";
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
-        $imagename = "CCA_PhaseNoise_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
+        $imagename = "CCA_PhaseNoise_SN" . $this->Component->SN . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $this->Component->Band . "_" . $this->Component->SN . "/$imagename";
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
 
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Phase Drift ($TS)";
+        $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " Phase Drift ($TS)";
         $imagepath = $imagedirectory . $imagename;
 
         //Write command file for gnuplot
@@ -323,7 +330,7 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set ylabel 'L(f) [dBc/Hz]'\r\n");
         fwrite($fh, "set key outside\r\n");
         $plot_string = "plot '$data_file[0]' using 1:2 title '$plottitle[0]' with lines";
-        for ($i=1;$i<sizeof($data_file);$i++){
+        for ($i = 1; $i < sizeof($data_file); $i++) {
             $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
         }
         $plot_string .= "\r\n";
@@ -336,23 +343,21 @@ class DataPlotter extends GenericTable{
         system($CommandString);
     }
 
-    public function Plot_CCA_InBandPower(){
+    public function Plot_CCA_InBandPower() {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
         $TestData_Id = $this->TestDataHeader->keyId;
 
         //Initialize component object
-        $this->Component = new FEComponent();
+        $this->Component = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $this->TestDataHeader->keyFacility);
 
-        $this->Component->Initialize_FEComponent($this->TestDataHeader->GetValue('fkFE_Components'),$this->TestDataHeader->GetValue('keyFacility'));
-
-        $datafile_count=0;
+        $datafile_count = 0;
 
         //Pol 0 and 1
-        for ($pol=0;$pol<=1;$pol++){
+        for ($pol = 0; $pol <= 1; $pol++) {
             //SB 0, 1 or 2
-            for ($sb=0;$sb<=2;$sb++){
+            for ($sb = 0; $sb <= 2; $sb++) {
                 $DataSeriesName = "Pol $pol SB $sb";
 
                 $q = "SELECT FreqLO,Power FROM CCA_TEST_InBandPower
@@ -361,38 +366,38 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
                 //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
-                if (mysqli_num_rows($r) > 1){
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle[$datafile_count] = "Pol $pol, SB $sb";
                     //$data_file[$datafile_count] = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/cca_datafiles/cca_as_data_".$i."_".$j.".txt";
-                    $data_file[$datafile_count] = $this->writedirectory . "cca_ibp_data_".$pol."_".$sb.".txt";
+                    $data_file[$datafile_count] = $this->writedirectory . "cca_ibp_data_" . $pol . "_" . $sb . ".txt";
 
                     //unlink($data_file[$datafile_count]);
                     $fh = fopen($data_file[$datafile_count], 'w');
-                    $row=mysqli_fetch_array($r);
-                        while($row=mysqli_fetch_array($r)){
-                            $stringData = "$row[0]\t$row[1]\r\n";
-                            fwrite($fh, $stringData);
-                        }
+                    $row = mysqli_fetch_array($r);
+                    while ($row = mysqli_fetch_array($r)) {
+                        $stringData = "$row[0]\t$row[1]\r\n";
+                        fwrite($fh, $stringData);
+                    }
                     fclose($fh);
                     $datafile_count++;
                 }
-            }//end for i
-        }//end for j
+            } //end for i
+        } //end for j
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_ibp_command.txt";
-        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)){
+        $imagedirectory = $this->writedirectory . $this->Component->Band . "_" . $this->Component->SN . "/";
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
-        $imagename = "CCA_InBandPower_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " In-Band Power";
+        $imagename = "CCA_InBandPower_SN" . $this->Component->SN . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $this->Component->Band . "_" . $this->Component->SN . "/$imagename";
+        $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " In-Band Power";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -407,7 +412,7 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set pointsize 2\r\n");
 
         $plot_string = "plot '$data_file[0]' using 1:2 title '$plottitle[0]' with points";
-        for ($i=1;$i<sizeof($data_file);$i++){
+        for ($i = 1; $i < sizeof($data_file); $i++) {
             $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with points";
         }
         $plot_string .= "\r\n";
@@ -417,7 +422,7 @@ class DataPlotter extends GenericTable{
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    public function Plot_CCA_TotalPower(){
+    public function Plot_CCA_TotalPower() {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
@@ -427,12 +432,12 @@ class DataPlotter extends GenericTable{
         $this->Component = new TestData_Component();
         $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'));
 
-        $datafile_count=0;
+        $datafile_count = 0;
 
         //Pol 0 and 1
-        for ($pol=0;$pol<=1;$pol++){
+        for ($pol = 0; $pol <= 1; $pol++) {
             //SB 0, 1 or 2
-            for ($sb=0;$sb<=2;$sb++){
+            for ($sb = 0; $sb <= 2; $sb++) {
                 $DataSeriesName = "Pol $pol SB $sb";
 
                 $q = "SELECT FreqLO,Power FROM CCA_TEST_TotalPower
@@ -441,38 +446,38 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
                 //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
-                if (mysqli_num_rows($r) > 1){
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle[$datafile_count] = "Pol $pol, SB $sb";
                     //$data_file[$datafile_count] = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/cca_datafiles/cca_as_data_".$i."_".$j.".txt";
-                    $data_file[$datafile_count] = $this->writedirectory . "cca_tp_data_".$pol."_".$sb.".txt";
+                    $data_file[$datafile_count] = $this->writedirectory . "cca_tp_data_" . $pol . "_" . $sb . ".txt";
 
                     //unlink($data_file[$datafile_count]);
                     $fh = fopen($data_file[$datafile_count], 'w');
-                    $row=mysqli_fetch_array($r);
-                        while($row=mysqli_fetch_array($r)){
-                            $stringData = "$row[0]\t$row[1]\r\n";
-                            fwrite($fh, $stringData);
-                        }
+                    $row = mysqli_fetch_array($r);
+                    while ($row = mysqli_fetch_array($r)) {
+                        $stringData = "$row[0]\t$row[1]\r\n";
+                        fwrite($fh, $stringData);
+                    }
                     fclose($fh);
                     $datafile_count++;
                 }
-            }//end for i
-        }//end for j
+            } //end for i
+        } //end for j
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_tp_command.txt";
-        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)){
+        $imagedirectory = $this->writedirectory . $this->Component->Band . "_" . $this->Component->SN . "/";
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
-        $imagename = "CCA_TotalPower_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Total Power";
+        $imagename = "CCA_TotalPower_SN" . $this->Component->SN . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $this->Component->Band . "_" . $this->Component->SN . "/$imagename";
+        $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " Total Power";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -487,7 +492,7 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set pointsize 2\r\n");
 
         $plot_string = "plot '$data_file[0]' using 1:2 title '$plottitle[0]' with points";
-        for ($i=1;$i<sizeof($data_file);$i++){
+        for ($i = 1; $i < sizeof($data_file); $i++) {
             $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with points";
         }
         $plot_string .= "\r\n";
@@ -498,7 +503,7 @@ class DataPlotter extends GenericTable{
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    public function Plot_CCA_GainCompression(){
+    public function Plot_CCA_GainCompression() {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
@@ -506,14 +511,14 @@ class DataPlotter extends GenericTable{
 
         //Initialize component object
         $this->Component = new TestData_Component();
-        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'), $this->dbconnection);
+        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'), $this->dbConnection);
 
-        $datafile_count=0;
+        $datafile_count = 0;
 
         //Pol 0 and 1
-        for ($pol=0;$pol<=1;$pol++){
+        for ($pol = 0; $pol <= 1; $pol++) {
             //SB 0, 1 or 2
-            for ($sb=0;$sb<=2;$sb++){
+            for ($sb = 0; $sb <= 2; $sb++) {
                 $DataSeriesName = "Pol $pol SB $sb";
 
                 $q = "SELECT FreqLO,Compression FROM CCA_TEST_GainCompression
@@ -522,38 +527,38 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
                 //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
-                if (mysqli_num_rows($r) > 1){
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle[$datafile_count] = "Pol $pol, SB $sb";
                     //$data_file[$datafile_count] = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/cca_datafiles/cca_as_data_".$i."_".$j.".txt";
-                    $data_file[$datafile_count] = $this->writedirectory . "cca_gc_data_".$pol."_".$sb.".txt";
+                    $data_file[$datafile_count] = $this->writedirectory . "cca_gc_data_" . $pol . "_" . $sb . ".txt";
 
                     //unlink($data_file[$datafile_count]);
                     $fh = fopen($data_file[$datafile_count], 'w');
-                    $row=mysqli_fetch_array($r);
-                        while($row=mysqli_fetch_array($r)){
-                            $stringData = "$row[0]\t$row[1]\r\n";
-                            fwrite($fh, $stringData);
-                        }
+                    $row = mysqli_fetch_array($r);
+                    while ($row = mysqli_fetch_array($r)) {
+                        $stringData = "$row[0]\t$row[1]\r\n";
+                        fwrite($fh, $stringData);
+                    }
                     fclose($fh);
                     $datafile_count++;
                 }
-            }//end for i
-        }//end for j
+            } //end for i
+        } //end for j
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_gc_command.txt";
-        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)){
+        $imagedirectory = $this->writedirectory . $this->Component->Band . "_" . $this->Component->SN . "/";
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
-        $imagename = "CCA_GainCompression_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Gain Compression ($TS)";
+        $imagename = "CCA_GainCompression_SN" . $this->Component->SN . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $this->Component->Band . "_" . $this->Component->SN . "/$imagename";
+        $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " Gain Compression ($TS)";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -568,7 +573,7 @@ class DataPlotter extends GenericTable{
 
 
         $plot_string = "plot '$data_file[0]' using 1:2 title '$plottitle[0]' with points";
-        for ($i=1;$i<sizeof($data_file);$i++){
+        for ($i = 1; $i < sizeof($data_file); $i++) {
             $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with points";
         }
         $plot_string .= "\r\n";
@@ -579,7 +584,7 @@ class DataPlotter extends GenericTable{
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    public function Plot_CCA_IFSpectrum(){
+    public function Plot_CCA_IFSpectrum() {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
@@ -589,12 +594,12 @@ class DataPlotter extends GenericTable{
         $this->Component = new TestData_Component();
         $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'));
 
-        $datafile_count=0;
+        $datafile_count = 0;
 
         //Pol 0 and 1
-        for ($pol=0;$pol<=1;$pol++){
+        for ($pol = 0; $pol <= 1; $pol++) {
             //SB 1 or 2
-            for ($sb=1;$sb<=2;$sb++){
+            for ($sb = 1; $sb <= 2; $sb++) {
                 $DataSeriesName = "Pol $pol SB $sb";
 
                 $q = "SELECT CenterIF,Power FROM CCA_TEST_IFSpectrum
@@ -603,38 +608,38 @@ class DataPlotter extends GenericTable{
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
                 //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
-                if (mysqli_num_rows($r) > 1){
+                if (mysqli_num_rows($r) > 1) {
                     $plottitle[$datafile_count] = "Pol $pol, SB $sb";
                     //$data_file[$datafile_count] = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/cca_datafiles/cca_as_data_".$i."_".$j.".txt";
-                    $data_file[$datafile_count] = $this->writedirectory . "cca_ifs_data_".$pol."_".$sb.".txt";
+                    $data_file[$datafile_count] = $this->writedirectory . "cca_ifs_data_" . $pol . "_" . $sb . ".txt";
 
                     //unlink($data_file[$datafile_count]);
                     $fh = fopen($data_file[$datafile_count], 'w');
-                    $row=mysqli_fetch_array($r);
-                        while($row=mysqli_fetch_array($r)){
-                            $stringData = "$row[0]\t$row[1]\r\n";
-                            fwrite($fh, $stringData);
-                        }
+                    $row = mysqli_fetch_array($r);
+                    while ($row = mysqli_fetch_array($r)) {
+                        $stringData = "$row[0]\t$row[1]\r\n";
+                        fwrite($fh, $stringData);
+                    }
                     fclose($fh);
                     $datafile_count++;
                 }
-            }//end for i
-        }//end for j
+            } //end for i
+        } //end for j
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_ifs_command.txt";
-        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)){
+        $imagedirectory = $this->writedirectory . $this->Component->Band . "_" . $this->Component->SN . "/";
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
-        $imagename = "CCA_IFSpectrum_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " IF Spectrum";
+        $imagename = "CCA_IFSpectrum_SN" . $this->Component->SN . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $this->Component->Band . "_" . $this->Component->SN . "/$imagename";
+        $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " IF Spectrum";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -649,7 +654,7 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set pointsize 2\r\n");
 
         $plot_string = "plot '$data_file[0]' using 1:2 title '$plottitle[0]' with points";
-        for ($i=1;$i<sizeof($data_file);$i++){
+        for ($i = 1; $i < sizeof($data_file); $i++) {
             $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with points";
         }
         $plot_string .= "\r\n";
@@ -660,57 +665,56 @@ class DataPlotter extends GenericTable{
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
     }
-    public function Plot_CCA_PolAccuracy(){
+    public function Plot_CCA_PolAccuracy() {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
         $TestData_Id = $this->TestDataHeader->keyId;
 
         //Initialize component object
-        $this->Component = new FEComponent();
-        $this->Component->Initialize_FEComponent($this->TestDataHeader->GetValue('fkFE_Components'),$this->TestDataHeader->GetValue('keyFacility'));
-        $datafile_count=0;
+        $this->Component = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $this->TestDataHeader->keyFacility);
+        $datafile_count = 0;
         //Pol 0 and 1
-        for ($pol=0;$pol<=1;$pol++){
+        for ($pol = 0; $pol <= 1; $pol++) {
             //SB 0, 1 or 2
-                $DataSeriesName = "Pol $pol";
+            $DataSeriesName = "Pol $pol";
 
-                $q = "SELECT FreqLO,AngleError FROM CCA_TEST_PolAccuracy
+            $q = "SELECT FreqLO,AngleError FROM CCA_TEST_PolAccuracy
                     WHERE Pol = $pol
                     AND fkHeader = $TestData_Id
                     ORDER BY FreqLO ASC;";
-                //echo "q3 = $q<br>";
-                $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+            //echo "q3 = $q<br>";
+            $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
-                if (mysqli_num_rows($r) > 1){
-                    $plottitle[$datafile_count] = "Pol $pol";
-                    //$data_file[$datafile_count] = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/cca_datafiles/cca_as_data_".$i."_".$j.".txt";
-                    $data_file[$datafile_count] = $this->writedirectory . "cca_polacc_data_".$pol ."txt";
+            if (mysqli_num_rows($r) > 1) {
+                $plottitle[$datafile_count] = "Pol $pol";
+                //$data_file[$datafile_count] = "/export/home/teller/vhosts/safe.nrao.edu/active/php/ntc/cca_datafiles/cca_as_data_".$i."_".$j.".txt";
+                $data_file[$datafile_count] = $this->writedirectory . "cca_polacc_data_" . $pol . "txt";
 
-                    //unlink($data_file[$datafile_count]);
-                    $fh = fopen($data_file[$datafile_count], 'w');
-                    $row=mysqli_fetch_array($r);
-                        while($row=mysqli_fetch_array($r)){
-                            $stringData = "$row[0]\t$row[1]\r\n";
-                            fwrite($fh, $stringData);
-                        }
-                    fclose($fh);
-                    $datafile_count++;
+                //unlink($data_file[$datafile_count]);
+                $fh = fopen($data_file[$datafile_count], 'w');
+                $row = mysqli_fetch_array($r);
+                while ($row = mysqli_fetch_array($r)) {
+                    $stringData = "$row[0]\t$row[1]\r\n";
+                    fwrite($fh, $stringData);
                 }
-        }//end for pol
+                fclose($fh);
+                $datafile_count++;
+            }
+        } //end for pol
 
         //Write command file for gnuplot
         $plot_command_file = $this->writedirectory . "cca_polacc_command.txt";
-        $imagedirectory = $this->writedirectory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)){
+        $imagedirectory = $this->writedirectory . $this->Component->Band . "_" . $this->Component->SN . "/";
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
-        $imagename = "CCA_PolAccuracy_SN" . $this->Component->GetValue('SN') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $this->Component->GetValue('Band') . "_" . $this->Component->GetValue('SN') . "/$imagename";
-        $plot_title = "CCA Band" . $this->Component->GetValue('Band') . " SN" . $this->Component->GetValue('SN') . " Polarization Accuracy";
+        $imagename = "CCA_PolAccuracy_SN" . $this->Component->SN . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . $this->Component->Band . "_" . $this->Component->SN . "/$imagename";
+        $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " Polarization Accuracy";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -725,7 +729,7 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set pointsize 2\r\n");
 
         $plot_string = "plot '$data_file[0]' using 1:2 title '$plottitle[0]' with points";
-        for ($i=1;$i<sizeof($data_file);$i++){
+        for ($i = 1; $i < sizeof($data_file); $i++) {
             $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with points";
         }
         $plot_string .= "\r\n";
@@ -738,52 +742,50 @@ class DataPlotter extends GenericTable{
     }
 
     //New version, generate a plot for each LO frequency
-    public function Plot_CCA_IVCurve(){
+    public function Plot_CCA_IVCurve() {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
         $this->url_directory = $cca_url_directory;
         $TestData_Id = $this->TestDataHeader->keyId;
 
-        $TS = $this->TestDataHeader->GetValue('TS');
-        if ($this->TestDataHeader->GetValue('fkFE_Components') > 0){
-            $c = new FEComponent();
-            $c->Initialize_FEComponent($this->TestDataHeader->GetValue('fkFE_Components'),$this->TestDataHeader->GetValue('keyFacility'));
-            $sn = $c->GetValue('SN');
+        $TS = $this->TestDataHeader->TS;
+        if ($this->TestDataHeader->GetValue('fkFE_Components') > 0) {
+            $c = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $this->TestDataHeader->keyFacility);
+            $sn = $c->SN;
             unset($c);
         }
-        if ($this->TestDataHeader->GetValue('fkFE_Config') > 0){
-            $fe = new FrontEnd();
-            $fe->Initialize_FrontEnd_FromConfig($this->TestDataHeader->GetValue('fkFE_Config'),$this->TestDataHeader->GetValue('keyFacility'), FrontEnd::INIT_NONE);
-            $sn = $fe->GetValue('SN');
+        if ($this->TestDataHeader->fkFE_Config > 0) {
+            $fe = new FrontEnd(NULL, $this->TestDataHeader->keyFacility, FrontEnd::INIT_NONE, $this->TestDataHeader->fkFE_Config);
+            $sn = $fe->SN;
             unset($fe);
         }
 
-        $band = $this->TestDataHeader->GetValue('Band');
+        $band = $this->TestDataHeader->Band;
 
         $imagedirectory = $this->writedirectory . $band . "_" . $sn . "/";
-        if (!file_exists($imagedirectory)){
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
 
         $FreqLOarr[0] = " = 0";
         $FreqLOarr[1] = " <> 0";
 
-        $l = New Logger('ivcurve.txt');
+        $l = new Logger('ivcurve.txt');
         $l->WriteLogFile('test...');
 
         $qlo = "SELECT FreqLO FROM CCA_TEST_IVCurve
-            WHERE fkFacility = ".$this->TestDataHeader->GetValue('keyFacility')."
+            WHERE fkFacility = " . $this->TestDataHeader->keyFacility . "
             AND fkHeader = $TestData_Id
             GROUP BY FreqLO ASC";
         $l->WriteLogFile($qlo);
-        $rlo = mysqli_query($this->dbconnection, $qlo);
+        $rlo = mysqli_query($this->dbConnection, $qlo);
 
         $image_url = "";
 
-        while($rowlo = mysqli_fetch_array($rlo)){
+        while ($rowlo = mysqli_fetch_array($rlo)) {
             $CurrentLO = $rowlo[0];
-            for ($pol=0;$pol<=1;$pol++){
-                for ($sb=1;$sb<=2;$sb++){
+            for ($pol = 0; $pol <= 1; $pol++) {
+                for ($sb = 1; $sb <= 2; $sb++) {
 
                     $DataSeriesName = "Pol $pol SIS $sb IJ";
 
@@ -794,16 +796,16 @@ class DataPlotter extends GenericTable{
                         AND fkHeader = $TestData_Id
                         ORDER BY FreqLO ASC;";
                     $l->WriteLogFile($q);
-                    $r = mysqli_query($this->dbconnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
+                    $r = mysqli_query($this->dbConnection, $q)  or die('Failed on query in dataplotter.php line ' . __LINE__);
 
-                    if (mysqli_num_rows($r) > 1){
+                    if (mysqli_num_rows($r) > 1) {
                         $plottitle = "$DataSeriesName";
-                        $data_file = $imagedirectory . "cca_ivc_data_".$pol . "_" . $sb . "_" . $this->udate("Ymd_G_i_s_u") . ".txt";
+                        $data_file = $imagedirectory . "cca_ivc_data_" . $pol . "_" . $sb . "_" . $this->udate("Ymd_G_i_s_u") . ".txt";
 
                         $l->WriteLogFile("data file= $data_file");
                         $fh = fopen($data_file, 'w');
-                        $row=mysqli_fetch_array($r);
-                        while($row=mysqli_fetch_array($r)){
+                        $row = mysqli_fetch_array($r);
+                        while ($row = mysqli_fetch_array($r)) {
                             $stringData = "$row[0]\t$row[1]\r\n";
                             fwrite($fh, $stringData);
                         }
@@ -814,16 +816,17 @@ class DataPlotter extends GenericTable{
                         $plot_command_file = $imagedirectory . "cca_ivc_command.txt";
                         $l->WriteLogFile("plot_command_file= $plot_command_file");
 
-                        $imagename = "CCA_IVCurve_SN$sn" . "_" . $this->udate("Ymd_G_i_s_u") . ".png";
+                        $imagename = "CCA_IVCurve_Band{$band}_SN$sn" . "_" . $this->FEcfg . "_" . $this->TestDataHeader->keyId . ".png";
+                        global $site_storage;
                         if ($image_url)
-                            $image_url .= "," . $this->url_directory . $band . "_" . $sn . "/$imagename";
+                            $image_url .= "," . "ivcurve/$imagename";
                         else
-                            $image_url = $this->url_directory . $band . "_" . $sn . "/$imagename";
+                            $image_url = "ivcurve/$imagename";
 
                         $plot_title = "IV Curve, $CurrentLO GHz, CCA$band-$this->CCASN";
-                        $plot_label_1 =" set label 'TDH: ".$this->TestDataHeader->keyId.", Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+                        $plot_label_1 = " set label 'TDH: " . $this->TestDataHeader->keyId . ", Plot SWVer: $this->swversion, Meas SWVer: " . $this->TestDataHeader->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
                         $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
-                        $plot_label_2 ="set label 'Measured$fetms"." ".$this->TestDataHeader->GetValue('TS').", FE Configuration ".$this->TestDataHeader->GetValue('fkFE_Config')."' at screen 0.01, 0.04\r\n";
+                        $plot_label_2 = "set label 'Measured$fetms" . " " . $this->TestDataHeader->TS . ", FE Configuration " . $this->TestDataHeader->fkFE_Config . "' at screen 0.01, 0.04\r\n";
 
                         $imagepath = $imagedirectory . $imagename;
                         $fh = fopen($plot_command_file, 'w');
@@ -846,21 +849,21 @@ class DataPlotter extends GenericTable{
 
                         $CommandString = "$GNUPLOT $plot_command_file";
                         system($CommandString);
-
-                    }// end if (mysqli_num_rows($r) > 1)
-                }//end for sb
-            }//end for pol
+                        $this->sendImage($imagepath, "ivcurve/");
+                        unlink($plot_command_file);
+                    } // end if (mysqli_num_rows($r) > 1)
+                } //end for sb
+            } //end for pol
         }
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $l->WriteLogfile($image_url);
     }
 
-    public  function udate($format, $utimestamp = null)
-    {
+    public  function udate($format, $utimestamp = null) {
         if (is_null($utimestamp))
             $utimestamp = microtime(true);
 
@@ -873,12 +876,12 @@ class DataPlotter extends GenericTable{
     public function Plot_WorkmanshipAmplitude($appendURL = false) {
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
-        if (!file_exists($this->writedirectory)){
+        if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);
         }
 
         $TestData_Id = $this->TestDataHeader->keyId;
-        $band = $this->TestDataHeader->GetValue('Band');
+        $band = $this->TestDataHeader->Band;
 
         if (!$band) {
             // If band is 0, don't plot IF powers:
@@ -889,35 +892,34 @@ class DataPlotter extends GenericTable{
             return;
         }
 
-        $filesDir = "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
+        $filesDir = "workmanship/";
         $imagedirectory = $this->writedirectory . $filesDir;
         $data_file = $imagedirectory . "wkm_amp_data.txt";
         $plot_command_file = $imagedirectory . "wkm_amp_command_tdh$TestData_Id.txt";
-        $this->url_directory = $main_url_directory . $filesDir;
+        $this->url_directory = $filesDir;
 
         // True if this receiver band uses all four IF outputs:
         $is2SB = !($band == 1 || $band == 9 || $band == 10);
-        
-        if (!file_exists($imagedirectory)){
+
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
 
         if ($is2SB) {
 
             $r = $this->db_pull->q(2, $TestData_Id, $this->fc);
-            $tiltmin = ADAPT_mysqli_result($r,0,0) - 10;
-            $tiltmax = ADAPT_mysqli_result($r,0,1) + 10;
+            $tiltmin = ADAPT_mysqli_result($r, 0, 0) - 10;
+            $tiltmax = ADAPT_mysqli_result($r, 0, 1) + 10;
 
-            $ampmin = min(ADAPT_mysqli_result($r,0,2),ADAPT_mysqli_result($r,0,3),ADAPT_mysqli_result($r,0,4),ADAPT_mysqli_result($r,0,5)) - 0.1;
-            $ampmax = max(ADAPT_mysqli_result($r,0,6),ADAPT_mysqli_result($r,0,7),ADAPT_mysqli_result($r,0,8),ADAPT_mysqli_result($r,0,9)) + 0.1;
-
+            $ampmin = min(ADAPT_mysqli_result($r, 0, 2), ADAPT_mysqli_result($r, 0, 3), ADAPT_mysqli_result($r, 0, 4), ADAPT_mysqli_result($r, 0, 5)) - 0.1;
+            $ampmax = max(ADAPT_mysqli_result($r, 0, 6), ADAPT_mysqli_result($r, 0, 7), ADAPT_mysqli_result($r, 0, 8), ADAPT_mysqli_result($r, 0, 9)) + 0.1;
         } else {
             $r = $this->db_pull->q(3, $TestData_Id, $this->fc);
-            $tiltmin = ADAPT_mysqli_result($r,0,0) - 10;
-            $tiltmax = ADAPT_mysqli_result($r,0,1) + 10;
+            $tiltmin = ADAPT_mysqli_result($r, 0, 0) - 10;
+            $tiltmax = ADAPT_mysqli_result($r, 0, 1) + 10;
 
-            $ampmin = min(ADAPT_mysqli_result($r,0,2),ADAPT_mysqli_result($r,0,3)) - 0.1;
-            $ampmax = max(ADAPT_mysqli_result($r,0,4),ADAPT_mysqli_result($r,0,5)) + 0.1;
+            $ampmin = min(ADAPT_mysqli_result($r, 0, 2), ADAPT_mysqli_result($r, 0, 3)) - 0.1;
+            $ampmax = max(ADAPT_mysqli_result($r, 0, 4), ADAPT_mysqli_result($r, 0, 5)) + 0.1;
         }
 
         $r = $this->db_pull->q(4, $TestData_Id, $this->fc);
@@ -935,11 +937,11 @@ class DataPlotter extends GenericTable{
         if (!$fh)
             return;
 
-        $row=mysqli_fetch_array($r);
+        $row = mysqli_fetch_array($r);
         $timeStart = 0;
         $minutes = 0;
         $once = true;
-        while($row=mysqli_fetch_array($r)){
+        while ($row = mysqli_fetch_array($r)) {
             $ts = $row[5];
             $ts = DateTime::createFromFormat("Y-m-d H:i:s+", $ts);
 
@@ -947,9 +949,9 @@ class DataPlotter extends GenericTable{
                 $timeStart = $ts;
 
                 if ($is2SB) {
-                    $maxtemp = max($row[1],$row[2],$row[3],$row[4]);
+                    $maxtemp = max($row[1], $row[2], $row[3], $row[4]);
                 } else {
-                    $maxtemp = max($row[1],$row[3]);
+                    $maxtemp = max($row[1], $row[3]);
                 }
                 $o1 = $row[1] - $maxtemp;
                 $o2 = $row[2] - $maxtemp;
@@ -980,25 +982,24 @@ class DataPlotter extends GenericTable{
         //Lookup the WkAmp subheader ID:
         $subheader_id = $this->db_pull->q_other('wkamp_sh', NULL, $TestData_Id);
         //Use it to finde the subheader record:
-        $wsub = new GenericTable();
-        $wsub->Initialize('TEST_Workmanship_Amplitude_SubHeader',$subheader_id,'keyTEST_Workmanship_Amplitude_SubHeader');
+        $wsub = new GenericTable('TEST_Workmanship_Amplitude_SubHeader', $subheader_id, 'keyTEST_Workmanship_Amplitude_SubHeader');
         //Get the measurement LO frequency:
         $fLO = $wsub->GetValue('lo');
 
-        $imagename = "WorkmanshipAmplitude_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
+        $imagename = "WorkmanshipAmplitude_band" . $this->TestDataHeader->Band . "_" . $this->FEcfg . "_" . $TestData_Id . ".png";
         $image_url = $this->url_directory . "$imagename";
-        $plot_title = "Workmanship Amplitude, FE" . $this->TestDataHeader->Component->GetValue('SN')
-                    . " Band " . $this->TestDataHeader->GetValue('Band')
-                    . ", LO " . $fLO . " GHz";
+        $plot_title = "Workmanship Amplitude, FE" . $this->TestDataHeader->Component->SN
+            . " Band " . $this->TestDataHeader->Band
+            . ", LO " . $fLO . " GHz";
 
         //Update plot url
         if ($appendURL) {
-            $oldUrl = $this->TestDataHeader->GetValue('PlotURL');
+            $oldUrl = $this->TestDataHeader->PlotURL;
             if ($oldUrl)
                 $image_url = $oldUrl . "," . $image_url;
         }
 
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -1025,11 +1026,11 @@ class DataPlotter extends GenericTable{
 
         $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
         $plot_string .= ", '$data_file'  using 1:3 title 'Pol 0, USB Power' with lines axis x1y1";
-        if ($is2SB){
+        if ($is2SB) {
             $plot_string .= ", '$data_file'  using 1:4 title 'Pol 0, LSB Power' with lines axis x1y1";
         }
         $plot_string .= ", '$data_file'  using 1:5 title 'Pol 1, USB Power' with lines axis x1y1";
-        if ($is2SB){
+        if ($is2SB) {
             $plot_string .= ", '$data_file'  using 1:6 title 'Pol 1, LSB Power' with lines axis x1y1";
         }
 
@@ -1040,28 +1041,30 @@ class DataPlotter extends GenericTable{
 
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
+        $this->sendImage($imagepath, "workmanship/");
+        unlink($plot_command_file);
     }
 
     public function Plot_WorkAmpTemperatures($appendURL = false) {
         require(site_get_config_main());
         $this->writedirectory = $main_write_directory;
-        if (!file_exists($this->writedirectory)){
+        if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);
         }
 
         $TestData_Id = $this->TestDataHeader->keyId;
-        $band = $this->TestDataHeader->GetValue('Band');
-        
+        $band = $this->TestDataHeader->Band;
+
         // True if this receiver band has 15K LNAs and no SIS:
         $isLNAOnly = ($band == 1 || $band == 2);
 
-        $filesDir = "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
+        $filesDir = "workmanship/";
         $imagedirectory = $this->writedirectory . $filesDir;
         $data_file = $imagedirectory . "wkm_temp_data.txt";
         $plot_command_file = $imagedirectory . "wkm_temp_command_tdh$TestData_Id.txt";
-        $this->url_directory = $main_url_directory . $filesDir;
+        $this->url_directory = $filesDir;
 
-        if (!file_exists($imagedirectory)){
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
 
@@ -1069,7 +1072,7 @@ class DataPlotter extends GenericTable{
             $r = $this->db_pull->q(9, $TestData_Id, $this->fc);
         else
             $r = $this->db_pull->q(8, $TestData_Id, $this->fc);
-            
+
         if (!mysqli_num_rows($r)) {
             // No data.  Write blank URL:
             if (!$appendURL) {
@@ -1083,12 +1086,12 @@ class DataPlotter extends GenericTable{
         if (!$fh)
             return;
 
-        $row=mysqli_fetch_array($r);
+        $row = mysqli_fetch_array($r);
         $timeStart = 0;
         $minutes = 0;
         $once = true;
 
-        while($row=mysqli_fetch_array($r)) {
+        while ($row = mysqli_fetch_array($r)) {
             $ts = $row['TS'];
             $ts = DateTime::createFromFormat("Y-m-d H:i:s+", $ts);
 
@@ -1116,30 +1119,36 @@ class DataPlotter extends GenericTable{
         $this->Impl_Plot_WorkAmpTemperatures($TestData_Id, $band, $imagedirectory, $plot_command_file, $data_file, $appendURL, true);
     }
 
-    private function Impl_Plot_WorkAmpTemperatures($TestData_Id, $band, $imagedirectory, $plot_command_file, $data_file,
-            $appendURL, $fifteenKStage) {
+    private function Impl_Plot_WorkAmpTemperatures(
+        $TestData_Id,
+        $band,
+        $imagedirectory,
+        $plot_command_file,
+        $data_file,
+        $appendURL,
+        $fifteenKStage
+    ) {
 
         require(site_get_config_main());
 
         $r = $this->db_pull->q(2, $TestData_Id, $this->fc);
 
-        $tiltmin = ADAPT_mysqli_result($r,0,0) - 10;
-        $tiltmax = ADAPT_mysqli_result($r,0,1) + 10;
+        $tiltmin = ADAPT_mysqli_result($r, 0, 0) - 10;
+        $tiltmax = ADAPT_mysqli_result($r, 0, 1) + 10;
 
         //Lookup the WkAmp subheader ID:
         $subheader_id = $this->db_pull->q_other('wkamp_sh', NULL, $TestData_Id);
         //Use it to finde the subheader record:
-        $wsub = new GenericTable();
-        $wsub->Initialize('TEST_Workmanship_Amplitude_SubHeader',$subheader_id,'keyTEST_Workmanship_Amplitude_SubHeader');
+        $wsub = new GenericTable('TEST_Workmanship_Amplitude_SubHeader', $subheader_id, 'keyTEST_Workmanship_Amplitude_SubHeader');
         //Get the measurement LO frequency:
         $fLO = $wsub->GetValue('lo');
 
-        $imagename = "WorkAmpTemperatures_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
+        $imagename = "WorkAmpTemperatures_band" . $this->TestDataHeader->Band . "_" . $this->FEcfg . "_" . $TestData_Id . ".png";
         if ($fifteenKStage)
             $image_url = $this->url_directory . "15K_$imagename";
         else
             $image_url = $this->url_directory . "$imagename";
-        $plot_title = "Workmanship Temperatures, FE" . $this->TestDataHeader->Component->GetValue('SN');
+        $plot_title = "Workmanship Temperatures, FE" . $this->TestDataHeader->Component->SN;
         if ($band)
             $plot_title .= " Band $band, LO $fLO GHz";
         else
@@ -1147,12 +1156,12 @@ class DataPlotter extends GenericTable{
 
         //Update plot url
         if ($appendURL) {
-            $oldUrl = $this->TestDataHeader->GetValue('PlotURL');
+            $oldUrl = $this->TestDataHeader->PlotURL;
             if ($oldUrl)
                 $image_url = $oldUrl . "," . $image_url;
         }
 
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         if ($fifteenKStage)
@@ -1213,45 +1222,46 @@ class DataPlotter extends GenericTable{
 
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
+        $this->sendImage($imagepath, "workmanship/");
+        unlink($plot_command_file);
     }
 
-    public function Plot_WorkmanshipPhase(){
+    public function Plot_WorkmanshipPhase() {
         require(site_get_config_main());
-        $this->writedirectory = $main_write_directory  . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
+        $this->writedirectory = $main_write_directory  . "FE_" . $this->TestDataHeader->Component->SN . "/";
         $this->writedirectory = $main_write_directory;
-        if (!file_exists($this->writedirectory)){
+        if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);
         }
 
-        $this->url_directory = $main_url_directory  . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
+        $this->url_directory = $main_url_directory  . "FE_" . $this->TestDataHeader->Component->SN . "/";
         $this->url_directory = $main_url_directory;
-        if (!file_exists($this->url_directory)){
+        if (!file_exists($this->url_directory)) {
             mkdir($this->url_directory);
         }
         $TestData_Id = $this->TestDataHeader->keyId;
 
-        $datafile_count=0;
+        $datafile_count = 0;
 
         $r = $this->db_pull->q(5, $TestData_Id, $this->fc);
-        $tiltmin = ADAPT_mysqli_result($r,0,0) - 10;
-        $tiltmax = ADAPT_mysqli_result($r,0,1) + 10;
+        $tiltmin = ADAPT_mysqli_result($r, 0, 0) - 10;
+        $tiltmax = ADAPT_mysqli_result($r, 0, 1) + 10;
 
         $subheader_id = $this->db_pull->q_other('sh', NULL, $TestData_Id);
-        $wsub = new GenericTable();
-        $wsub->Initialize('TEST_Workmanship_Phase_SubHeader',$subheader_id,'keyTEST_Workmanship_Phase_SubHeader');
+        $wsub = new GenericTable('TEST_Workmanship_Phase_SubHeader', $subheader_id, 'keyTEST_Workmanship_Phase_SubHeader');
 
 
         $l = new Logger('CLASSDATAPLOTTER.txt');
 
 
         // Get array of phase values and unwrap, to determine offset value for plotting.
-        $r = $this->db_pull->q(6 ,$TestData_Id, $this->fc, NULL, $l);
+        $r = $this->db_pull->q(6, $TestData_Id, $this->fc, NULL, $l);
 
         if (mysqli_num_rows($r) > 1) {
-            $row=mysqli_fetch_array($r);
+            $row = mysqli_fetch_array($r);
             $timeval = 0;
             $phasecount = 0;
-            while($row=mysqli_fetch_array($r)){
+            while ($row = mysqli_fetch_array($r)) {
                 $phase = $row[0];
                 if ($phase < 0)
                     $phase += 360;
@@ -1267,8 +1277,8 @@ class DataPlotter extends GenericTable{
 
             $l->WriteLogFile("Max=$maxphase min=$minphase mid=$phasemid");
         }
-        $imagedirectory = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/";
-        if (!file_exists($imagedirectory)){
+        $imagedirectory = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->SN . "/";
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
 
@@ -1277,14 +1287,14 @@ class DataPlotter extends GenericTable{
 
         $fh = fopen($data_file, 'w');
 
-        $row=mysqli_fetch_array($r);
+        $row = mysqli_fetch_array($r);
         $timeval = 0;
 
-        for ($i=0; $i < count($phases); $i++){
+        for ($i = 0; $i < count($phases); $i++) {
             $newphase = $phases[$i];
             $stringData = "$timeval\t$tilts[$i]\t$phases[$i]\r\n";
             fwrite($fh, $stringData);
-            $timeval += (1/60);
+            $timeval += (1 / 60);
         }
         fclose($fh);
         $datafile_count++;
@@ -1292,19 +1302,19 @@ class DataPlotter extends GenericTable{
         //Write command file for gnuplot
         $plot_command_file = $imagedirectory . "wkm_phase_command_tdh$TestData_Id.txt.txt";
 
-        $imagename = "WorkmanshipPhase_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/$imagename";
+        $imagename = "WorkmanshipPhase_band" . $this->TestDataHeader->Band . "_" . date("Ymd_G_i_s") . ".png";
+        $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->SN . "/$imagename";
 
         $sb = "USB";
-        if ($wsub->GetValue('sb') == 2){
+        if ($wsub->GetValue('sb') == 2) {
             $sb = "LSB";
         }
 
-        $plot_title = "Workmanship Phase, FE" . $this->TestDataHeader->Component->GetValue('SN') . " Band " . $this->TestDataHeader->GetValue('Band');
+        $plot_title = "Workmanship Phase, FE" . $this->TestDataHeader->Component->SN . " Band " . $this->TestDataHeader->Band;
         $plot_title .= ", Pol " . $wsub->GetValue('pol') . " $sb (RF " . $wsub->GetValue('rf') . ", LO " . $wsub->GetValue('lo') . ")";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -1321,7 +1331,7 @@ class DataPlotter extends GenericTable{
         fwrite($fh, "set y2range[$tiltmin:$tiltmax]\r\n");
         fwrite($fh, "set y2label 'Tilt Angle (deg)'\r\n");
         fwrite($fh, "set y2tics\r\n");
-        fwrite($fh, "set yrange[".($minphase-10).":".($maxphase+10)."]\r\n");
+        fwrite($fh, "set yrange[" . ($minphase - 10) . ":" . ($maxphase + 10) . "]\r\n");
         fwrite($fh, "set ytics\r\n");
         fwrite($fh, "set ylabel 'Phase (deg)'\r\n");
         //fwrite($fh, "set y3range[-181:181]\r\n");
@@ -1345,64 +1355,63 @@ class DataPlotter extends GenericTable{
 
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
-
     }
 
 
-    public function Plot_PolAngles(){
+    public function Plot_PolAngles() {
         require(site_get_config_main());
 
         $td_header = $this->TestDataHeader->keyId;
         $this->writedirectory = $main_write_directory;
         $this->url_directory = $main_url_directory;
-        $plot_title = "Pol Angles  FE-" . $this->FESN . ", Band " . $this->TestDataHeader->GetValue('Band');
+        $plot_title = "Pol Angles  FE-" . $this->FESN . ", Band " . $this->TestDataHeader->Band;
 
         /**********************
          * Write the data file
          * ********************/
-            $min0 = 999;
-            $min1 = 999;
+        $min0 = 999;
+        $min1 = 999;
 
 
 
-            $data_file = $this->writedirectory . "polangle_data" . $this->TestDataHeader->keyId .".txt";
-            $fh = fopen($data_file, 'w');
+        $data_file = $this->writedirectory . "polangle_data" . $this->TestDataHeader->keyId . ".txt";
+        $fh = fopen($data_file, 'w');
 
 
-            $rdata = $this->db_pull->qdata(1, $td_header, $this->fc);
-            while ($rowdata = mysqli_fetch_array($rdata)){
-                $stringData = "$rowdata[0]\t$rowdata[1]\t$rowdata[2]\t$rowdata[3]\t$rowdata[4]\r\n";
-                fwrite($fh, $stringData);
+        $rdata = $this->db_pull->qdata(1, $td_header, $this->fc);
+        while ($rowdata = mysqli_fetch_array($rdata)) {
+            $stringData = "$rowdata[0]\t$rowdata[1]\t$rowdata[2]\t$rowdata[3]\t$rowdata[4]\r\n";
+            fwrite($fh, $stringData);
 
-                if ($rowdata[1] < $min0){
-                    $min0 = round($rowdata[1],2);
-                    $min0angle = round($rowdata[0],2);
-                }
-                if ($rowdata[3] < $min1){
-                    $min1 = round($rowdata[3],2);
-                    $min1angle = round($rowdata[0],2);
-                }
+            if ($rowdata[1] < $min0) {
+                $min0 = round($rowdata[1], 2);
+                $min0angle = round($rowdata[0], 2);
             }
-            //Put empty line after each series for gnuplot
-            fwrite($fh, "\r\n");
+            if ($rowdata[3] < $min1) {
+                $min1 = round($rowdata[3], 2);
+                $min1angle = round($rowdata[0], 2);
+            }
+        }
+        //Put empty line after each series for gnuplot
+        fwrite($fh, "\r\n");
 
-            unset($ifsub);
-            fclose($fh);
+        unset($ifsub);
+        fclose($fh);
 
         //Create directories if necesary
         $imagedirectory = $this->writedirectory . 'tdh/';
-        if (!file_exists($imagedirectory)){
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
         $imagedirectory .= "$td_header/";
-        if (!file_exists($imagedirectory)){
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
         $imagedirectory .= 'PolAngle/';
-        if (!file_exists($imagedirectory)){
+        if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
         }
-        $imagename = "polangleFE" . $this->FESN . "_Band" . $this->TestDataHeader->GetValue('Band') . "_tdh" . $this->TestDataHeader->keyId . ".png";
+        $imagename = "polangleFE" . $this->FESN . "_Band" . $this->TestDataHeader->Band . "_tdh" . $this->TestDataHeader->keyId . ".png";
         $imagepath = $imagedirectory . $imagename;
 
 
@@ -1434,17 +1443,17 @@ class DataPlotter extends GenericTable{
         $image_url = $this->url_directory . "tdh/$td_header/PolAngle/$imagename";
 
 
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
     }
 
-    public function Plot_LOLockTest(){
+    public function Plot_LOLockTest() {
         require(site_get_config_main());
 
         $td_header = $this->TestDataHeader->keyId;
-        $this->url_directory = $main_url_directory  . "FE_" . $this->FESN . "/";
+        $this->url_directory = "FE_" . $this->FESN . "/";
         $this->writedirectory = $main_write_directory  . "FE_" . $this->FESN . "/";
-        if (!file_exists($this->writedirectory)){
+        if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);
         }
 
@@ -1468,12 +1477,11 @@ class DataPlotter extends GenericTable{
         $UnlockedPwr = '';
         $UnlockedCount = 0;
 
-        $lpr = new GenericTable();
-        $lpr->Initialize('TEST_LOLockTest_SubHeader',$subheader_id,'keyId',$this->fc,'keyFacility');
+        $lpr = new GenericTable('TEST_LOLockTest_SubHeader', $subheader_id, 'keyId', $this->fc, 'keyFacility');
 
         // data query depending on dataset
         if ($this->TestDataHeader->GetValue('DataSetGroup') == 0) {
-            $qdata= "SELECT TEST_LOLockTest.LOFreq,
+            $qdata = "SELECT TEST_LOLockTest.LOFreq,
             TEST_LOLockTest.PhotomixerCurrent,
             TEST_LOLockTest.PLLIFTotalPower,
             TEST_LOLockTest.PLLRefTotalPower,
@@ -1487,7 +1495,7 @@ class DataPlotter extends GenericTable{
             GROUP BY TEST_LOLockTest.LOFreq ASC;";
         } else {
             // query to get front end key of the FEConfig of the TDH.
-            $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ". $this->TestDataHeader->GetValue('fkFE_Config');
+            $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = " . $this->TestDataHeader->fkFE_Config;
             // query to get data
             $qdata = "SELECT TEST_LOLockTest.LOFreq,
             TEST_LOLockTest.PhotomixerCurrent,
@@ -1499,15 +1507,15 @@ class DataPlotter extends GenericTable{
             LEFT JOIN TestData_header ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
             LEFT JOIN TEST_LOLockTest_SubHeader ON TEST_LOLockTest_SubHeader.`fkHeader` = `TestData_header`.`keyId`
             LEFT JOIN TEST_LOLockTest ON TEST_LOLockTest_SubHeader.`keyId` = TEST_LOLockTest.fkHeader
-            WHERE TestData_header.Band = " . $this->TestDataHeader->GetValue('Band')."
+            WHERE TestData_header.Band = " . $this->TestDataHeader->Band . "
             AND TestData_header.fkTestData_Type= 57
-            AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup')."
+            AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup') . "
             AND TEST_LOLockTest.IsIncluded = 1
             AND FE_Config.fkFront_Ends = ($qfe)
             GROUP BY TEST_LOLockTest.LOFreq ASC;";
         }
         $t->WriteLogFile($qdata);
-        $rdata = mysqli_query($this->dbconnection, $qdata) or die('Failed on query in dataplotter.php line ' . __LINE__);
+        $rdata = mysqli_query($this->dbConnection, $qdata) or die('Failed on query in dataplotter.php line ' . __LINE__);
 
         $UnlocksFound = array();
         $count = 0;
@@ -1519,9 +1527,9 @@ class DataPlotter extends GenericTable{
                 $UnlocksFound[] = $rowdata['LOFreq'];
             }
             $stringData = $rowdata['LOFreq'] . "\t"
-                        . $rowdata['PhotomixerCurrent'] . "\t"
-                        . $rowdata['PLLIFTotalPower'] . "\t"
-                        . $rowdata['PLLRefTotalPower'] . "\r\n";
+                . $rowdata['PhotomixerCurrent'] . "\t"
+                . $rowdata['PLLIFTotalPower'] . "\t"
+                . $rowdata['PLLRefTotalPower'] . "\r\n";
             fwrite($fh, $stringData);
 
             $previousLO = $rowdata['LOFreq'];
@@ -1534,7 +1542,7 @@ class DataPlotter extends GenericTable{
         fclose($fh);
 
         //Get the test data header notes in case we wish to substitute them for the title:
-        $notes = $this->TestDataHeader->getValue('Notes');
+        $notes = $this->TestDataHeader->Notes;
 
         $t->WriteLogFile("Notes = '$notes'");
 
@@ -1544,21 +1552,20 @@ class DataPlotter extends GenericTable{
             $showFEConfig = false;    // remove the 'feconfig' portion of the caption at the bottom.
         } else {
             $plot_title = "LO Lock Test FE SN" . $this->FESN;
-            $plot_title .= ", CCA". $this->TestDataHeader->GetValue('Band'). "-$CCA_SN ";
-            $plot_title .= "WCA". $this->TestDataHeader->GetValue('Band'). "-$WCA_SN, ";
-            $plot_title .= "LPR EDFA Modulation ". $lpr->GetValue('LPRModulation')."V ";
+            $plot_title .= ", CCA" . $this->TestDataHeader->Band . "-$CCA_SN ";
+            $plot_title .= "WCA" . $this->TestDataHeader->Band . "-$WCA_SN, ";
+            $plot_title .= "LPR EDFA Modulation " . $lpr->GetValue('LPRModulation') . "V ";
         }
 
         $t->WriteLogFile($plot_title);
 
         //Create directories if necesary
-        $imagename = "LOLockTest_band" . $this->TestDataHeader->GetValue('Band') . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->GetValue('SN') . "/$imagename";
+        $imagename = "LOLockTest_band" . $this->TestDataHeader->Band . "_" . $this->FEcfg . "_" . $td_header . ".png";
         $plot_command_file = $this->writedirectory . "lolocktest_command_tdh$td_header.txt";
-        $image_url = $this->url_directory . "/$imagename";
+        $image_url = "lolocktest/$imagename";
 
         //Update plot url. Set the same value for all TestData_header records in this group.
-        $this->TestDataHeader->SetValue('PlotURL',$image_url);
+        $this->TestDataHeader->SetValue('PlotURL', $image_url);
         $this->TestDataHeader->Update();
 
         $this->db_pull->q_other('URL', $t, NULL, NULL, $image_url, $td_header);
@@ -1569,16 +1576,15 @@ class DataPlotter extends GenericTable{
 
         // set up plot labels
         if ($this->TestDataHeader->GetValue('DataSetGroup') == 0) {
-            $plot_label_1 ="set label 'TDH: $td_header, Plot SWVer: $this->swversion, Meas SWVer: ".$this->TestDataHeader->GetValue('Meas_SWVer')."' at screen 0.01, 0.01\r\n";
+            $plot_label_1 = "set label 'TDH: $td_header, Plot SWVer: $this->swversion, Meas SWVer: " . $this->TestDataHeader->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
             $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
-            $plot_label_2 ="set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n";
-
+            $plot_label_2 = "set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n";
         } else {
             $r = $this->db_pull->q(7, NULL, NULL, NULL, NULL, $this->TestDataHeader);
 
             $cnt = 0; //initialize counter
-            while ($row = mysqli_fetch_array($r)){
-                if ($cnt == 0){ // initialize label variables
+            while ($row = mysqli_fetch_array($r)) {
+                if ($cnt == 0) { // initialize label variables
                     $keyId = $row[0];
                     $maxTS = $row[1];
                     $minTS = $row[1];
@@ -1587,23 +1593,23 @@ class DataPlotter extends GenericTable{
                     $meas_ver = $row[3];
                 } else { // find the max and min TS and FE_config
                     $keyId = "$keyId,$row[0]";
-                    if ($row[1] > $maxTS){
+                    if ($row[1] > $maxTS) {
                         $maxTS = $row[1];
                     }
-                    if ($row[1] < $minTS){
+                    if ($row[1] < $minTS) {
                         $minTS = $row[1];
                     }
-                    if ($row[1] > $max_FE_Config){
+                    if ($row[1] > $max_FE_Config) {
                         $max_FE_Config = $row[2];
                     }
-                    if ($row[1] < $min_FE_Config){
+                    if ($row[1] < $min_FE_Config) {
                         $min_FE_Config = $row[2];
                     }
                 }
                 $cnt++;
             }
             // format label string variables to display
-            if ($cnt > 1){
+            if ($cnt > 1) {
                 $TS = "($maxTS, $minTS)";
                 $FE_Config = "($max_FE_Config, $min_FE_Config)";
             } else {
@@ -1611,10 +1617,10 @@ class DataPlotter extends GenericTable{
                 $FE_Config = "($max_FE_Config)";
             }
 
-            $plot_label_1 ="set label 'TDH: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
-            $plot_label_2 ="set label 'Dataset: ".$this->TestDataHeader->GetValue('DataSetGroup').", TS: $TS";
+            $plot_label_1 = "set label 'TDH: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
+            $plot_label_2 = "set label 'Dataset: " . $this->TestDataHeader->GetValue('DataSetGroup') . ", TS: $TS";
             if ($showFEConfig)
-                $plot_label_2 .=", FE Configuration: $FE_Config";
+                $plot_label_2 .= ", FE Configuration: $FE_Config";
             $plot_label_2 .= "' at screen 0.01, 0.04\r\n";
         }
 
@@ -1635,10 +1641,10 @@ class DataPlotter extends GenericTable{
         fwrite($fh, $plot_label_1);
         fwrite($fh, $plot_label_2);
 
-        if (!empty($UnlocksFound)){
+        if (!empty($UnlocksFound)) {
             //Plot points where lock failed
             //This loop adds a function for each point where LO was unlocked.
-            for ($i=0; $i<count($UnlocksFound); $i++) {
+            for ($i = 0; $i < count($UnlocksFound); $i++) {
                 $LO = $UnlocksFound[$i];
                 $minpoint = $LO - (0.5 * $FreqStepSize);
                 $maxpoint = $LO + (0.5 * $FreqStepSize);
@@ -1654,10 +1660,10 @@ class DataPlotter extends GenericTable{
         $plot_string .= ", -0.5  title 'PLL detectors spec' lt 1 with lines axis x1y1";
         $plot_string .= ", -4.5  notitle lt 1 with lines axis x1y1";
 
-        if (!empty($UnlocksFound)){
+        if (!empty($UnlocksFound)) {
             //Plot points where lock failed
             //This loops plots each function where LO was unlocked.
-            for ($i=0; $i<count($UnlocksFound); $i++) {
+            for ($i = 0; $i < count($UnlocksFound); $i++) {
                 $j = $i + 1;
                 $plot_string .= ", p$j(x) with linespoints notitle pt 5 lt 12 pointsize 1 axis x1y1";
             }
@@ -1670,7 +1676,8 @@ class DataPlotter extends GenericTable{
 
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
+        $this->sendImage($imagepath, "lolocktest/");
+        unlink($plot_command_file);
+        unlink($data_file);
     }
 }//end class
-
-?>

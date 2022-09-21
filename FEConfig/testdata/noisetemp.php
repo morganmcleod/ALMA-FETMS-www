@@ -28,11 +28,10 @@
     $Notes = $_REQUEST['Notes'] ?? NULL;
     if (!$keyHeader) exit();
 
-    $td = new TestData_header($keyHeader, $fc);
+    $td = new NoiseTemperature($keyHeader, $fc);
 
     // Some plot types should draw automatically if the PlotURL is blank:
-    if (!$td->PlotURL && $td->AutoDrawThis())
-        $drawplot = true;
+    if (!$td->PlotURL && $td->AutoDrawThis()) $drawplot = true;
 
     // Compute page title and header text, buttons...
     if ($td->Component->ComponentType == "Front End") {
@@ -40,12 +39,12 @@
         $feconfig = $td->frontEnd->feconfig->keyId;
         $fesn = $td->frontEnd->SN;
         // URL for header button to FE configuration:
-        $header_main  = '<a href="../ShowFEConfig.php?key='
-            . $td->frontEnd->feconfig->keyId . '&fc=' . $fc
-            . '"><font color="#ffffff">'
-            . $td->Component->ComponentType
-            . ' SN ' . $td->Component->SN
-            . '</font></a>';
+        $header_main  = '<a href="../ShowFEConfig.php?key=' .
+            $td->frontEnd->feconfig->keyId . '&fc=' . $fc .
+            '"><font color="#ffffff">' .
+            $td->Component->ComponentType .
+            ' SN ' . $td->Component->SN .
+            '</font></a>';
     } else {
         // Test data is associated with a component...
         $feconfig = $td->Component->FEConfig;
@@ -116,7 +115,8 @@
                 echo '<meta http-equiv="Refresh" content="1;url=' . $refurl . '">';
             }
 
-            $td->Display_TestDataMain();
+            $td->Display_DataSetNotes();
+            $td->displayPlots();
 
             if ($td->AutoShowRawDataThis())
                 $showrawdata = true;

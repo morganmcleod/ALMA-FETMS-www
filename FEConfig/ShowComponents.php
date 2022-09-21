@@ -44,17 +44,15 @@
     $fc = $_REQUEST['fc'];
     $comp_key = $_GET['conf'];
 
-    $component = new FEComponent();
-    $component->Initialize_FEComponent($comp_key, $fc);
+    $component = new FEComponent(NULL, $comp_key, NULL, $fc);
 
-    $band = $component->GetValue('Band');
-    $comp_type = $component->GetValue('fkFE_ComponentType');
+    $band = $component->Band;
+    $comp_type = $component->fkFE_ComponentType;
     $feconfig = $component->FEConfig;
     $fesn = $component->FESN;
-    $compsn = $component->GetValue('SN');
+    $compsn = $component->SN;
 
-    if ($band < 1)
-        $band = 0;
+    if ($band < 1) $band = 0;
 
     $CompDescription = 'Component';
 
@@ -81,19 +79,17 @@
     $getQuery = new dbGetQueries;
 
     if (isset($_REQUEST['submitted_ccafile'])) {
-        $cca = new CCA();
-        $cca->Initialize_CCA($comp_key, $fc);
+        $cca = new CCA($comp_key, $fc);
         $cca->RequestValues_CCA();
     }
 
     if (isset($_REQUEST['submit_datafile_cryostat'])) {
         //Cryostat
-        $cryo = new Cryostat();
-        $cryo->Initialize_Cryostat($comp_key, $fc);
+        $cryo = new Cryostat($comp_key, $fc);
         $cryo->RequestValues_Cryostat();
         $cryo->Update_Cryostat();
         $url = "ShowComponents.php?conf=$cryo->keyId";
-        $url .= "&fc=" . $cryo->GetValue('keyFacility');
+        $url .= "&fc=" . $cryo->keyFacility;
         unset($cryo);
         //echo "<meta http-equiv='Refresh' content='1;url=$url'>";
     }

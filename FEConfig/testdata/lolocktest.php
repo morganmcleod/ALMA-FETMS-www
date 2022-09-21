@@ -4,9 +4,11 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
     <link href="../images/favicon.ico" rel="shortcut icon" type="image/x-icon">
+
     <link rel="stylesheet" type="text/css" href="../Cartstyle.css">
     <link rel="stylesheet" type="text/css" href="../tables.css">
     <link rel="stylesheet" type="text/css" href="../buttons.css">
+
     <link rel="stylesheet" type="text/css" href="../../ext4/resources/css/ext-all.css" />
     <script type="text/javascript" src="../../ext4/ext-all.js"></script>
     <script type='text/javascript' src='../../classes/pickComponent/popupMoveToOtherFE.js'></script>
@@ -26,13 +28,14 @@
     $showrawdata = $_REQUEST['showrawdata'] ?? false;
     $fkDataStatus = $_REQUEST['fkDataStatus'] ?? NULL;
     $Notes = $_REQUEST['Notes'] ?? NULL;
+
+    // nothing to do.
     if (!$keyHeader) exit();
 
-    $td = new TestData_header($keyHeader, $fc);
+    $td = new NoiseTemperature($keyHeader, $fc);
 
     // Some plot types should draw automatically if the PlotURL is blank:
-    if (!$td->PlotURL && $td->AutoDrawThis())
-        $drawplot = true;
+    if (!$td->PlotURL && $td->AutoDrawThis()) $drawplot = true;
 
     // Compute page title and header text, buttons...
     if ($td->Component->ComponentType == "Front End") {
@@ -50,27 +53,27 @@
         // Test data is associated with a component...
         $feconfig = $td->Component->FEConfig;
         $fesn = $td->Component->FESN;
-        $compdisplay = $td->Component->ComponentType;
         $band = $td->Component->Band;
 
-        if ($band)
-            $compdisplay .= " Band $band";
-
+        $compdisplay = $td->Component->ComponentType;
+        if ($band) $compdisplay .= " Band $band";
         $compdisplay .= " SN " . $td->Component->SN;
 
-        // URL for for header button to component configuration:
+        // URL for header button to component configuration:
         $refurl = "../ShowComponents.php?";
         $refurl .= "conf=" . $td->Component->keyId . "&fc=" . $td->keyFacility;
         $header_main = '<a href="' . $refurl . '"><font color="#ffffff">' . $compdisplay . '</font></a>';
     }
 
+    // Build title
     $title = "";
     if ($fesn && !$FETMS_CCA_MODE) $title = "FE-$fesn - ";
     $band = $td->Band;
     if ($band) $title .= "Band $band - ";
-    $title .= $td->testDataType;
 
-    echo "<title>{$title}</title></head>";
+    $title .= $td->TestDataType;
+
+    echo "<title>" . $title . "</title></head>";
     echo "<body style='background-color: #19475E'>";
     include('header_with_fe.php');
 
@@ -111,12 +114,20 @@
                 //Show a spinner while plots are being drawn.
                 include($site_FEConfig . '/spin.php');
                 $td->drawPlot();
-                $refurl = "testdata.php?keyheader=$keyHeader";
-                $refurl .= "&fc=$fc";
+                $refurl = "testdata.php?keyheader=$keyHeader&fc=$fc";
                 echo '<meta http-equiv="Refresh" content="1;url=' . $refurl . '">';
             }
 
-            $td->Display_TestDataMain();
+            $td->Display_DataSetNotes();
+            echo "<br>";
+
+            $urlarray = explode(",", $td->PlotURL);
+            for ($i = 0; $i < count($urlarray); $i++) {
+                if ($urlarray[$i]) {
+                    global $site_storage;
+                    echo "<img src='" . $site_storage . $urlarray[$i] . "'><br><br>";
+                }
+            }
 
             if ($td->AutoShowRawDataThis())
                 $showrawdata = true;

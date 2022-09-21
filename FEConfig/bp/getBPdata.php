@@ -22,15 +22,13 @@ $keyId = $_REQUEST['id'];
 $tabtype = $_REQUEST['tabtype'];
 
 //Instantiate a new TestData_header object
-$tdh = new TestData_header();
-$tdh->Initialize_TestData_header($keyId, $fc);
+$tdh = new TestData_header($keyId, $fc);
 
 //Instantiate a new eff object
 $q = "SELECT keyId FROM ScanSetDetails WHERE fkHeader = " . $keyId . ";";
 $r = mysqli_query($dbconnection, $q);
 $ssid = ADAPT_mysqli_result($r, 0, 0);
-$eff = new eff();
-$eff->Initialize_eff_SingleScanSet($ssid, $fc);
+$eff = new eff($ssid, $fc);
 
 echo "<div style='background-color:#6C7070;width:1000px;'>";
 
@@ -41,7 +39,7 @@ $fetms = $tdh->GetFetmsDescription("Measured at: ");
 switch ($tabtype) {
     case 1:
         //Scan Info tab
-        $posturl = "bp.php?keyheader=$tdh->keyId&fc=" . $tdh->GetValue('keyFacility');
+        $posturl = "bp.php?keyheader=$tdh->keyId&fc=" . $tdh->keyFacility;
 
         //If not MISE, we will wrap the test data notes in a <form>.
         //TODO:  apparently this means you can't save notes in MSIE!
@@ -56,8 +54,8 @@ switch ($tabtype) {
             echo "<tr><th>$fetms</th></tr>";
         echo "<tr><th>Notes</th></tr>";
         echo "<tr><td>";
-        echo "<textarea rows='20' cols='85' name = 'Notes'>" . stripslashes($tdh->GetValue('Notes')) . "</textarea>";
-        echo "<input type='hidden' name='fc' value='" . $tdh->GetValue('keyFacility') . "'>";
+        echo "<textarea rows='20' cols='85' name = 'Notes'>" . stripslashes($tdh->Notes) . "</textarea>";
+        echo "<input type='hidden' name='fc' value='" . $tdh->keyFacility . "'>";
         echo "<input type='hidden' name='keyheader' value='$tdh->keyId'>";
         echo "<br><input type='submit' name='submitted' value='SAVE'>";
         echo "</td></tr>";
@@ -139,4 +137,3 @@ switch ($tabtype) {
 
 unset($eff);
 echo "</div>";
-?>

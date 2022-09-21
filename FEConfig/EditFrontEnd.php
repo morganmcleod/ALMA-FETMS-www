@@ -22,11 +22,10 @@
         $keyId = $_REQUEST['id'];  //keyId of FE_Components table
         $fc = $_REQUEST['fc'];
 
-        $fe = new FrontEnd();
-        $fe->Initialize_FrontEnd_FromConfig($keyId, $fc, FrontEnd::INIT_NONE);
+        $fe = new FrontEnd(NULL, $fc, FrontEnd::INIT_NONE, $keyId);
         //This is used by the header to display a link back to the FE page
         $feconfig = $fe->feconfig->keyId;
-        $fesn = $fe->GetValue('SN');
+        $fesn = $fe->SN;
 
         $title = "Front End SN $fesn";
 

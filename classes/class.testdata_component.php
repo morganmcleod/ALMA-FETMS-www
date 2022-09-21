@@ -14,7 +14,7 @@ class TestData_Component extends GenericTable{
 
         $q = "SELECT Description FROM ComponentTypes
               WHERE keyId = " . $this->GetValue('fkFE_ComponentType');
-        $r = mysqli_query($this->dbconnection, $q);
+        $r = mysqli_query($this->dbConnection, $q);
         $this->ComponentType = ADAPT_mysqli_result($r,0);
     }
 
@@ -23,11 +23,11 @@ class TestData_Component extends GenericTable{
         echo "<table id = 'table1'>";
         echo "<tr>";
         echo "<th>Band</th>";
-        echo "<td>" . $this->GetValue('Band') . "</td>";
+        echo "<td>" . $this->Band . "</td>";
         echo "</tr>";
         echo "<tr>";
         echo "<th>SN</th>";
-        echo "<td>".$this->GetValue('SN')."</td>";
+        echo "<td>".$this->SN."</td>";
         echo "</tr>";
         echo "</table></div>";
     }

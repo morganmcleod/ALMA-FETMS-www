@@ -22,17 +22,16 @@
     $keyId = $_REQUEST['id'];  //keyId of FE_Components table
     $fc = $_REQUEST['fc'];
 
-    $c = new FEComponent();
-    $c->Initialize_FEComponent($keyId, $fc);
+    $c = new FEComponent(NULL, $keyId, NULL, $fc);
     //This is used by the header to display a link back to the FE page
     $feconfig = $c->FEConfig;
     $fesn = $c->FESN;
 
-    $title = $c->ComponentType->GetValue('Description');
-    if ($c->GetValue('Band') > 0) {
-        $title .= " Band" . $c->GetValue('Band');
+    $title = $c->ComponentType;
+    if ($c->Band > 0) {
+        $title .= " Band" . $c->Band;
     }
-    $title .= " SN" . $c->GetValue('SN');
+    $title .= " SN" . $c->SN;
 
     include "header.php";
 
@@ -127,7 +126,7 @@
 							  ORDER BY keyStatusType ASC;";
         $r = mysqli_query($dbconnection, $q);
         while ($row = mysqli_fetch_array($r)) {
-            if ($row[0] == $c->sln->GetValue('fkStatusType')) {
+            if ($row[0] == $c->sln->fkStatusType) {
                 echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";
             } else {
                 echo "<option value='$row[0]'>$row[1]</option>";
@@ -154,7 +153,7 @@
 							  ORDER BY Description ASC;";
         $r = mysqli_query($dbconnection, $q);
         while ($row = mysqli_fetch_array($r)) {
-            if ($row[0] == $c->sln->GetValue('fkLocationNames')) {
+            if ($row[0] == $c->sln->fkLocationNames) {
                 echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";
             } else {
                 echo "<option value='$row[0]'>$row[1]</option>";
@@ -171,7 +170,7 @@
 			</table>
 			<div style='padding-left:20px;padding-top:20px'>
 				<input type='submit' name='submit' class='button blue2 bigrounded value = 'Submit' style='width:120px'>
-				<a style='width:90px' href='ShowComponents.php?conf=$c->keyId&fc=" . $c->GetValue('keyFacility') . "' class='button blue2 bigrounded'
+				<a style='width:90px' href='ShowComponents.php?conf=$c->keyId&fc=" . $c->keyFacility . "' class='button blue2 bigrounded'
 				<span style='width:130px'>Cancel</span></a>
 			</div>
 	</div>

@@ -8,30 +8,40 @@ require_once($site_classes . '/class.spec_functions.php');
 class FineLOSweep extends TestData_header {
     private $FLOSweepSubHeader; // array for subheader objects from TEST_FineLOSweep_SubHeader (class.generictable.php)
 
-    public function __construct() {
-        parent::__construct();
-    }
-
-    public function Initialize_FineLOSweep($in_keyId, $in_fc) {
-        parent::Initialize_TestData_header($in_keyId, $in_fc);
+    public function __construct($in_keyId, $in_fc) {
+        parent::__construct($in_keyId, $in_fc);
 
         $q = "SELECT keyId, keyFacility FROM TEST_FineLOSweep_SubHeader
               WHERE fkHeader = $in_keyId AND keyFacility = $in_fc
               order by keyId ASC;";
-        $r = mysqli_query($this->dbconnection, $q);
+        $r = mysqli_query($this->dbConnection, $q);
 
         // create tables for FineLOSweep SubHeaders for both polarization states
         $cnt = 0;
         while ($row = mysqli_fetch_array($r)) {
             $keyID = $row[0];
             $facility = $row[1];
-            $this->FLOSweepSubHeader[$cnt] = new GenericTable();
-            $this->FLOSweepSubHeader[$cnt]->Initialize('TEST_FineLOSweep_SubHeader', $keyID, 'keyId', $facility, 'keyFacility');
+            $this->FLOSweepSubHeader[$cnt] = new GenericTable('TEST_FineLOSweep_SubHeader', $keyID, 'keyId', $facility, 'keyFacility');
             $cnt++;
         }
     }
 
-    public function DrawPlot() {
+    private function sendImage($imagepath, $path = "flosweep/") {
+        global $site_storage;
+        $ch = curl_init($site_storage . 'upload.php');
+        curl_setopt_array($ch, array(
+            CURLOPT_POST => 1,
+            CURLOPT_POSTFIELDS => array(
+                'image' => new CURLFile($imagepath, 'image/png'),
+                'path' => $path,
+                'token' => "hF^d^hyu3mHxYTa%"
+            )
+        ));
+        curl_exec($ch);
+        unlink($imagepath);
+    }
+
+    public function drawPlot() {
         // set Plot Software Version
         $Plot_SWVer = "1.2.2";
         /*
@@ -43,7 +53,7 @@ class FineLOSweep extends TestData_header {
      *  1.0.7:  MTM fixed "set...screen" commands to gnuplot
      *  1.0.6:  MTM updated plotting to show measured TS rather than TS from the TestDataHeader
      */
-        $this->SetValue('Plot_SWVer', $Plot_SWVer);
+        $this->Plot_SWVer = $Plot_SWVer;
         $this->Update();
 
         //main_write_directory is defined in config_main.php
@@ -51,36 +61,35 @@ class FineLOSweep extends TestData_header {
 
         $plotdir = $main_write_directory . "flosweep/";
         //Create plot directory if it doesn't exist.
-        if (!file_exists($plotdir)) {
-            mkdir($plotdir);
-        }
+        if (!file_exists($plotdir)) mkdir($plotdir);
+
 
         // start a logger file for debugging
         $l = new Logger("FineLOSweepLog.txt");
         //Get CCA Serial Number
         $q = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-             WHERE FE_ConfigLink.fkFE_Config = " . $this->GetValue('fkFE_Config') . "
+             WHERE FE_ConfigLink.fkFE_Config = " . $this->fkFE_Config . "
              AND FE_Components.fkFE_ComponentType = 20
              AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-             AND FE_Components.Band = " . $this->GetValue('Band') . "
-             AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') . "
+             AND FE_Components.Band = " . $this->Band . "
+             AND FE_Components.keyFacility =" . $this->keyFacility . "
              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
              GROUP BY Band ASC;";
-        $r = mysqli_query($this->dbconnection, $q);
+        $r = mysqli_query($this->dbConnection, $q);
         $l->WriteLogFile("CCA SN Query: $q");
         $CCA_SN = ADAPT_mysqli_result($r, 0, 0);
         $l->WriteLogFile("CCA SN: $CCA_SN");
 
         //Get WCA Serial Number
         $q = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-             WHERE FE_ConfigLink.fkFE_Config = " . $this->GetValue('fkFE_Config') . "
+             WHERE FE_ConfigLink.fkFE_Config = " . $this->fkFE_Config . "
              AND FE_Components.fkFE_ComponentType = 11
              AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-             AND FE_Components.Band = " . $this->GetValue('Band') . "
-             AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') . "
+             AND FE_Components.Band = " . $this->Band . "
+             AND FE_Components.keyFacility =" . $this->keyFacility . "
              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
              GROUP BY Band ASC;";
-        $r = mysqli_query($this->dbconnection, $q);
+        $r = mysqli_query($this->dbConnection, $q);
         $l->WriteLogFile("WCA SN Query: $q");
         $WCA_SN = ADAPT_mysqli_result($r, 0, 0);
         $l->WriteLogFile("WCA SN: $WCA_SN");
@@ -89,7 +98,7 @@ class FineLOSweep extends TestData_header {
         $plot_cnt = count($this->FLOSweepSubHeader); // find out how many plots
         for ($cnt = 0; $cnt < $plot_cnt; $cnt++) {
 
-            $imagename = "FineLOSweep $cnt " . date('Y_m_d_H_i_s') . ".png";
+            $imagename = "FineLOSweep_{$cnt}_{$this->fkFE_Config}_{$this->keyId}.png";
             $imagepath = $plotdir . $imagename;
             $l->WriteLogFile("image path: $imagepath");
 
@@ -108,9 +117,9 @@ class FineLOSweep extends TestData_header {
 
             $q = "SELECT FreqLO, SIS1Current, SIS2Current, LOPADrainSetting, LOPADrainVMonitor
          FROM TEST_FineLOSweep
-         WHERE fkFacility = " . $this->GetValue('keyFacility') . "
-         AND fkSubHeader = " . $this->FLOSweepSubHeader[$cnt]->GetValue('keyId') . "";
-            $r = mysqli_query($this->dbconnection, $q);
+         WHERE fkFacility = " . $this->keyFacility . "
+         AND fkSubHeader = " . $this->FLOSweepSubHeader[$cnt]->keyId . "";
+            $r = mysqli_query($this->dbConnection, $q);
             $l->WriteLogFile("FineLOSweep get Data query: $q");
 
             $max_freq = 0;
@@ -149,7 +158,7 @@ class FineLOSweep extends TestData_header {
 
             //get specs
             $new_spec = new Specifications();
-            $specs = $new_spec->getSpecs('FLOSweep', $this->GetValue('Band'));
+            $specs = $new_spec->getSpecs('FLOSweep', $this->Band);
 
             // find outliers
             $new_spec->stdevChks($PA_set, $LO_freq, $specs['FLOSpts_win'], $specs['FLOSstdev'], $fspec1);
@@ -162,10 +171,10 @@ class FineLOSweep extends TestData_header {
             $commandfile = $plotdir . "plotcommands.txt";
             $fh = fopen($commandfile, 'w');
             $l->WriteLogFile("command file: $commandfile");
-            $plot_title = "Fine LO Sweep, FE SN" . $this->FrontEnd->GetValue('SN') .
-                ", Band " . $this->GetValue('Band') .
-                " CCA SN$CCA_SN WCA SN$WCA_SN, Pol" . $this->FLOSweepSubHeader[$cnt]->GetValue('Pol')
-                . ", Elevation " . $this->FLOSweepSubHeader[$cnt]->GetValue('TiltAngle_Deg') . "";
+            $plot_title = "Fine LO Sweep, FE SN" . $this->frontEnd->SN .
+                ", Band " . $this->Band .
+                " CCA SN$CCA_SN WCA SN$WCA_SN, Pol" . $this->FLOSweepSubHeader[$cnt]->Pol
+                . ", Elevation " . $this->FLOSweepSubHeader[$cnt]->TiltAngle_Deg . "";
             fwrite($fh, "set terminal png size 900,600 crop\r\n");
             fwrite($fh, "set output '$imagepath'\r\n");
             fwrite($fh, "set title '$plot_title'\r\n");
@@ -178,9 +187,9 @@ class FineLOSweep extends TestData_header {
             fwrite($fh, "set y2range [0:5]\r\n");
             fwrite($fh, "set key outside\r\n");
             fwrite($fh, "set bmargin 6\r\n");
-            fwrite($fh, "set label 'TDH: $this->keyId, Plot SWVer: $Plot_SWVer, Meas SWVer: " . $this->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n");
+            fwrite($fh, "set label 'TDH: $this->keyId, Plot SWVer: $Plot_SWVer, Meas SWVer: " . $this->Meas_SWVer . "' at screen 0.01, 0.01\r\n");
             $fetms = $this->GetFetmsDescription(" at: ");
-            fwrite($fh, "set label 'Measured" . $fetms . " " . $this->FLOSweepSubHeader[$cnt]->GetValue('TS') . ", FE Configuration " . $this->GetValue('fkFE_Config') . "' at screen 0.01, 0.04\r\n");
+            fwrite($fh, "set label 'Measured" . $fetms . " " . $this->FLOSweepSubHeader[$cnt]->TS . ", FE Configuration " . $this->fkFE_Config . "' at screen 0.01, 0.04\r\n");
             fwrite($fh, "set pointsize 2\r\n");
             fwrite($fh, "plot  '$datafile' using 1:2 with lines lt 1 title 'IJ1 uA',");
             fwrite($fh, "'$datafile' using 1:3 with lines lt 2 title 'IJ2 uA',");
@@ -195,18 +204,21 @@ class FineLOSweep extends TestData_header {
             //***************************************************
             //Update plot url in TestData_header
             //***************************************************
-            $image_url = $main_url_directory . "flosweep/$imagename";
+            $image_url = "flosweep/$imagename";
 
 
-            $this->FLOSweepSubHeader[$cnt]->SetValue('ploturl1', $image_url);
+            $this->FLOSweepSubHeader[$cnt]->ploturl1 = $image_url;
             $this->FLOSweepSubHeader[$cnt]->Update();
+            $this->sendImage($imagepath);
+            unlink($commandfile);
         }
     }
 
-    public function DisplayPlots() {
+    public function displayPlots() {
         $plot_cnt = count($this->FLOSweepSubHeader); // find out how many plots
+        global $site_storage;
         for ($cnt = 0; $cnt < $plot_cnt; $cnt++) {
-            echo "<img src= '" . $this->FLOSweepSubHeader[$cnt]->GetValue('ploturl1') . "'><br><br>";
+            echo "<img src= '" . $site_storage . $this->FLOSweepSubHeader[$cnt]->ploturl1 . "'><br><br>";
         }
     }
 
@@ -214,22 +226,22 @@ class FineLOSweep extends TestData_header {
         $plot_cnt = count($this->FLOSweepSubHeader); // find out how many plots
         $html = "";
         for ($cnt = 0; $cnt < $plot_cnt; $cnt++) {
-            $html .= "<div class='ploturl" . ($cnt + 1) . "'><img src='" . $this->FLOSweepSubHeader[$cnt]->GetValue('ploturl1') . "'/></div>";
+            $html .= "<div class='ploturl" . ($cnt + 1) . "'><img src='" . $this->FLOSweepSubHeader[$cnt]->ploturl1 . "'/></div>";
         }
         return $html;
     }
 
     public function Export($outputDir) {
-        $destFile = $outputDir . "FineLO_B" . $this->GetValue('Band') . "_H" . $this->TestDataHeader . ".ini";
+        $destFile = $outputDir . "FineLO_B" . $this->Band . "_H" . $this->TestDataHeader . ".ini";
         $handle = fopen($destFile, "w");
         fwrite($handle, "[export]\n");
-        fwrite($handle, "band=" . $this->GetValue('Band') . "\n");
-        fwrite($handle, "FEid=" . $this->fe_keyId . "\n");
-        fwrite($handle, "CCAid=" . $this->GetValue('fkFE_Components') . "\n");
+        fwrite($handle, "band=" . $this->Band . "\n");
+        fwrite($handle, "FEid=" . $this->feKeyId . "\n");
+        fwrite($handle, "CCAid=" . $this->fkFE_Components . "\n");
         fwrite($handle, "TDHid=" . $this->TestDataHeader . "\n");
         $plot_cnt = count($this->FLOSweepSubHeader); // find out how many plots
         for ($i = 0; $i < $plot_cnt; $i++) {
-            fwrite($handle, "plot" . $i + 1 . "=" . $this->FLOSweepSubHeader[$i]->GetValue('ploturl1') . "\n");
+            fwrite($handle, "plot" . $i + 1 . "=" . $this->FLOSweepSubHeader[$i]->ploturl1 . "\n");
         }
         fclose($handle);
         echo "Exported '$destFile'.<br>";

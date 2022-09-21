@@ -72,14 +72,10 @@ function site_warnProductionDb($dbname) {
 }
 
 function ADAPT_mysqli_result($res, $row, $field = 0) {
-    if (!$res)
-        return FALSE;
-    if (!mysqli_num_rows($res))
-        return FALSE;
-    if (!mysqli_data_seek($res, $row))
-        return FALSE;
+    if (!$res) return FALSE;
+    if (!mysqli_num_rows($res)) return FALSE;
+    if (!mysqli_data_seek($res, $row)) return FALSE;
     $datarow = mysqli_fetch_array($res);
-    if (!$datarow)
-        return FALSE;
+    if (!$datarow) return FALSE;
     return $datarow[$field];
 }

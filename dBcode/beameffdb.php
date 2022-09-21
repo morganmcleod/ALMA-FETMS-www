@@ -14,9 +14,9 @@ class BeamEffDB { //extends DBRetrieval {
      *
      * @param $db- existing database connection
      */
-    public function BeamEffDB($db) {
+    public function __construct($db) {
         require(site_get_config_main());
-        $this->dbconnection = $db;
+        $this->dbConnection = $db;
     }
     /**
      * @param string $query- SQL query
@@ -24,7 +24,7 @@ class BeamEffDB { //extends DBRetrieval {
      * @return Resource Id for SQL query
      */
     public function run_query($query) {
-        return mysqli_query($this->dbconnection, $query);
+        return mysqli_query($this->dbConnection, $query);
     }
 
     /**

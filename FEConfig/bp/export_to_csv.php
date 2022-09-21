@@ -2,6 +2,8 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.testdata_header.php');
+require_once($site_classes . '/class.scandetails.php');
+require_once($site_classes . '/class.scansetdetails.php');
 require_once($site_dbConnect);
 
 $keyScanSet = isset($_REQUEST['setid']) ? $_REQUEST['setid'] : false;
@@ -20,8 +22,7 @@ if ($keyScanDet) {
     header("Pragma: no-cache");
     header("Expires: 0");
 
-    $scanDet = new GenericTable();
-    $scanDet->Initialize('ScanDetails', $keyScanDet, 'keyId');
+    $scanDet = new ScanDetails($keyScanDet);
 
     if ($which == 'nf')
         echo "!Nearfield Beam Listing\r\n";
@@ -35,8 +36,7 @@ if ($keyScanDet) {
     echo "!SourceRotAngle=" . $scanDet->GetValue('SourceRotationAngle') . "\r\n";
 
     if ($keyScanSet) {
-        $scanSet = new GenericTable();
-        $scanSet->Initialize('ScanSetDetails', $keyScanSet, 'keyId');
+        $scanSet = new ScanSetDetails($keyScanSet);
         echo "!Elevation=" . $scanSet->GetValue('tilt') . "\r\n";
         echo "!RF_GHz=" . $scanSet->GetValue('f') . "\r\n";
         unset($scanSet);
@@ -87,5 +87,3 @@ if ($keyScanDet) {
     }
     unset($scanDet);
 }
-
-?>

@@ -23,7 +23,7 @@ $dataSetGroup = $_REQUEST['g'];
 $tabtype = $_REQUEST['tabtype'];
 
 // Make a new IF Spectrum object
-$ifspec = new IFSpectrum_impl();
+$ifspec = new IFSpectrum_impl($keyId, $fc);
 $ifspec->Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $keyId);
 
 $URLs = $ifspec->getPlotURLs();
@@ -40,7 +40,8 @@ switch ($tabtype) {
         //Spurious Noise tab was selected, IF0 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[0]))
-            echo "<img src='" . $URLs[0]->GetValue('spurious_url2d') . "'>";
+            $test_url = $site_storage . $URLs[0]->GetValue('spurious_url2d');
+            echo "<img src='" . $test_url . "'>";
         echo "</div>";
         break;
 
@@ -48,7 +49,7 @@ switch ($tabtype) {
         //Spurious Noise tab was selected, IF1 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[1]))
-            echo "<img src='" . $URLs[1]->GetValue('spurious_url2d') . "'>";
+            echo "<img src='" . $site_storage . $URLs[1]->GetValue('spurious_url2d') . "'>";
         echo "</div>";
         break;
 
@@ -56,7 +57,7 @@ switch ($tabtype) {
         //Spurious Noise tab was selected, IF2 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[2]))
-            echo "<img src='" . $URLs[2]->GetValue('spurious_url2d') . "'>";
+            echo "<img src='" . $site_storage . $URLs[2]->GetValue('spurious_url2d') . "'>";
         echo "</div>";
         break;
 
@@ -64,7 +65,7 @@ switch ($tabtype) {
         //Spurious Noise tab was selected, IF3 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[3]))
-            echo "<img src='" . $URLs[3]->GetValue('spurious_url2d') . "'>";
+            echo "<img src='" . $site_storage . $URLs[3]->GetValue('spurious_url2d') . "'>";
         echo "</div>";
         break;
 
@@ -72,7 +73,7 @@ switch ($tabtype) {
         //Spurious Noise (Expanded Plots) tab was selected, IF0 subtab was selected.
         echo "<div style='height:1810px'>";
         if (isset($URLs[0]))
-            echo "<img src='" . $URLs[0]->GetValue('spurious_url2d2') . "'>";
+            echo "<img src='" . $site_storage . $URLs[0]->GetValue('spurious_url2d2') . "'>";
         echo "</div>";
         break;
 
@@ -80,7 +81,7 @@ switch ($tabtype) {
         //Spurious Noise (Expanded Plots) tab was selected, IF1 subtab was selected.
         echo "<div style='height:1810px'>";
         if (isset($URLs[1]))
-            echo "<img src='" . $URLs[1]->GetValue('spurious_url2d2') . "'>";
+            echo "<img src='" . $site_storage . $URLs[1]->GetValue('spurious_url2d2') . "'>";
         echo "</div>";
         break;
 
@@ -88,7 +89,7 @@ switch ($tabtype) {
         //Spurious Noise (Expanded Plots) tab was selected, IF2 subtab was selected.
         echo "<div style='height:1810px'>";
         if (isset($URLs[2]))
-            echo "<img src='" . $URLs[2]->GetValue('spurious_url2d2') . "'>";
+            echo "<img src='" . $site_storage . $URLs[2]->GetValue('spurious_url2d2') . "'>";
         echo "</div>";
         break;
 
@@ -96,7 +97,7 @@ switch ($tabtype) {
         //Spurious Noise (Expanded Plots) tab was selected, IF3 subtab was selected.
         echo "<div style='height:1810px'>";
         if (isset($URLs[3]))
-            echo "<img src='" . $URLs[3]->GetValue('spurious_url2d2') . "'>";
+            echo "<img src='" . $site_storage . $URLs[3]->GetValue('spurious_url2d2') . "'>";
         echo "</div>";
         break;
 
@@ -104,7 +105,7 @@ switch ($tabtype) {
         //Power Variation (2 GHz) tab was selected, IF0 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[0]))
-            echo "<img src='" . $URLs[0]->GetValue('powervar_2GHz_url') . "'>";
+            echo "<img src='" . $site_storage . $URLs[0]->GetValue('powervar_2GHz_url') . "'>";
         echo "</div>";
         break;
 
@@ -112,7 +113,7 @@ switch ($tabtype) {
         //Power Variation (2 GHz) tab was selected, IF1 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[1]))
-            echo "<img src='" . $URLs[1]->GetValue('powervar_2GHz_url') . "'>";
+            echo "<img src='" . $site_storage . $URLs[1]->GetValue('powervar_2GHz_url') . "'>";
         echo "</div>";
         break;
 
@@ -120,7 +121,7 @@ switch ($tabtype) {
         //Power Variation (2 GHz) tab was selected, IF2 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[2]))
-            echo "<img src='" . $URLs[2]->GetValue('powervar_2GHz_url') . "'>";
+            echo "<img src='" . $site_storage . $URLs[2]->GetValue('powervar_2GHz_url') . "'>";
         echo "</div>";
         break;
 
@@ -128,7 +129,7 @@ switch ($tabtype) {
         //Power Variation (2 GHz) tab was selected, IF3 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[3]))
-            echo "<img src='" . $URLs[3]->GetValue('powervar_2GHz_url') . "'>";
+            echo "<img src='" . $site_storage . $URLs[3]->GetValue('powervar_2GHz_url') . "'>";
         echo "</div>";
         break;
 
@@ -136,7 +137,7 @@ switch ($tabtype) {
         //Power Variation (31 MHz) tab was selected, IF0 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[0]))
-            echo "<img src='" . $URLs[0]->GetValue('powervar_31MHz_url') . "'>";
+            echo "<img src='" . $site_storage . $URLs[0]->GetValue('powervar_31MHz_url') . "'>";
         echo "</div>";
         break;
 
@@ -144,7 +145,7 @@ switch ($tabtype) {
         //Power Variation (31 MHz) tab was selected, IF1 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[1]))
-            echo "<img src='" . $URLs[1]->GetValue('powervar_31MHz_url') . "'>";
+            echo "<img src='" . $site_storage . $URLs[1]->GetValue('powervar_31MHz_url') . "'>";
         echo "</div>";
         break;
 
@@ -152,7 +153,7 @@ switch ($tabtype) {
         //Power Variation (31 MHz) tab was selected, IF2 subtab was selected.
         echo "<div style='height:600px'>";
         if (isset($URLs[2]))
-            echo "<img src='" . $URLs[2]->GetValue('powervar_31MHz_url') . "'>";
+            echo "<img src='" . $site_storage . $URLs[2]->GetValue('powervar_31MHz_url') . "'>";
         echo "</div>";
         break;
 
@@ -160,7 +161,7 @@ switch ($tabtype) {
         //Power Variation (31 MHz) tab was selected, IF3 subtab was selected.
         echo "<div style='height:600px'>";
         if (isset($URLs[3]))
-            echo "<img src='" . $URLs[3]->GetValue('powervar_31MHz_url') . "'>";
+            echo "<img src='" . $site_storage . $URLs[3]->GetValue('powervar_31MHz_url') . "'>";
         echo "</div>";
         break;
 
@@ -199,4 +200,3 @@ switch ($tabtype) {
         echo "<br><br></div>";
         break;
 }
-?>

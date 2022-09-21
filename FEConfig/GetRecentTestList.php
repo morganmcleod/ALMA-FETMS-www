@@ -10,10 +10,10 @@ if ($TestStatus == 'All') {
 }
 
 $q = "SELECT keyId, keyFacility, Band, TS, fkTestData_Type, fkFE_Config, Notes
-    FROM TestData_header
-    WHERE fkFE_Config <> ''
-    and fkDataStatus LIKE '$TestStatus'
-    ORDER BY TS DESC LIMIT 200;";
+      FROM TestData_header
+      WHERE fkFE_Config <> ''
+      and fkDataStatus LIKE '$TestStatus'
+      ORDER BY TS DESC LIMIT 200;";
 $r = mysqli_query($dbconnection, $q);
 
 $outstring = "[";
@@ -60,5 +60,3 @@ while ($row = mysqli_fetch_array($r)) {
 }
 $outstring .= "]";
 echo $outstring;
-
-?>

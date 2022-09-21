@@ -31,8 +31,8 @@ function table_header_html($width, &$tdh, $cols = 2, $filterChecked = false, $ch
     $testpage = 'testdata.php';
 
     $q = "SELECT `Description` FROM `TestData_Types`
-        WHERE `keyId` = " . $tdh->GetValue('fkTestData_Type') . "";
-    $r = mysqli_query($tdh->dbconnection, $q);
+        WHERE `keyId` = " . $tdh->fkTestData_Type . "";
+    $r = mysqli_query($tdh->dbConnection, $q);
     $test_name = ADAPT_mysqli_result($r, 0, 0);
 
     $html = '';
@@ -59,14 +59,14 @@ function table_header_html($width, &$tdh, $cols = 2, $filterChecked = false, $ch
 
         // second title block line
         $fetms = $tdh->GetFetmsDescription(" at: ");
-        $html .= "<tr><th colspan=$cols>Measured" . $fetms . " " . $tdh->GetValue('TS') .
-            ", TDH: <a href='$testpage?keyheader=" . $tdh->GetValue('keyId') . "&fc=40' target = 'blank'>" . $tdh->GetValue('keyId') . "</a>
+        $html .= "<tr><th colspan=$cols>Measured" . $fetms . " " . $tdh->TS .
+            ", TDH: <a href='$testpage?keyheader=" . $tdh->keyId . "&fc=40' target = 'blank'>" . $tdh->keyId . "</a>
                 </th></tr>";
 
         //third title block line
         // check to see if it was a FE component test or a FE config test
-        if ($tdh->GetValue('fkFE_Config') != 0) {
-            $html .= "<tr><th colspan=$cols> FE Config: " . $tdh->GetValue('fkFE_Config') .
+        if ($tdh->fkFE_Config != 0) {
+            $html .= "<tr><th colspan=$cols> FE Config: " . $tdh->fkFE_Config .
                 ", Table SWVer: $table_ver, Meas SWVer: " . $tdh->GetValue('Meas_SWVer') . "
                     </th></tr>";
         } else {
@@ -202,8 +202,7 @@ function mon_data_html($number) {
 }
 
 function update_dataset_html($td_keyID, $data_set_group) {
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
     $tdh->SetValue('DataSetGroup', $data_set_group);
     $tdh->Update();
 }
@@ -217,8 +216,7 @@ function update_dataset_html($td_keyID, $data_set_group) {
  *
  */
 function CPDS_results_html($td_keyID, $filterChecked) {
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $col_name = array("Band", "+6V Voltage", "-6V Voltage", "+15V Voltage", "-15V Voltage", "+24V Voltage", "+8V Voltage", "+6V Current", "-6V Current", "+15V Current", "-15V Current", "+24V Current", "+8V Current");
 
@@ -230,7 +228,7 @@ function CPDS_results_html($td_keyID, $filterChecked) {
                 FROM `CPDS_monitor`
                 WHERE `fkHeader` = $td_keyID
                 ORDER BY BAND ASC";
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         // write table subheader
         $html .= "</tr>";
@@ -262,8 +260,7 @@ function CPDS_results_html($td_keyID, $filterChecked) {
  */
 function LNA_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(700, $tdh, 8, $filterChecked);
 
@@ -277,7 +274,7 @@ function LNA_results_html($td_keyID, $filterChecked) {
         $q = "SELECT Pol, SB, Stage, FreqLO, VdRead, IdRead, VgRead
             FROM CCA_LNA_bias
             WHERE fkHeader = $td_keyID ORDER BY `Pol`ASC, `SB` ASC, Stage ASC";
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $FreqLO = 0;
         $Cntrl_FreqLO = 0;
@@ -305,8 +302,8 @@ function LNA_results_html($td_keyID, $filterChecked) {
             $q_CompID = "SELECT MAX(FE_Components.keyId)
                 FROM `FE_Components` JOIN `FE_ConfigLink`
                 ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
-                WHERE  FE_ConfigLink.fkFE_Config =" . $tdh->GetValue('fkFE_Config') . "
-                AND `fkFE_ComponentType`= 20 AND Band =" . $tdh->GetValue('Band') . "";
+                WHERE  FE_ConfigLink.fkFE_Config =" . $tdh->fkFE_Config . "
+                AND `fkFE_ComponentType`= 20 AND Band =" . $tdh->Band . "";
 
             // data queries
             $q = "SELECT `Pol`,`SB`,`FreqLO`,`VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`
@@ -322,12 +319,12 @@ function LNA_results_html($td_keyID, $filterChecked) {
             $q_any_lo = $q . $ord;
 
             // try the exact LO match query:
-            $r = mysqli_query($tdh->dbconnection, $q_default) or die("QUERY FAILED: $q_default");
+            $r = mysqli_query($tdh->dbConnection, $q_default) or die("QUERY FAILED: $q_default");
 
             // if no result, try the any LO query:
             $numRows = mysqli_num_rows($r);
             if (!$numRows)
-                $r = mysqli_query($tdh->dbconnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
+                $r = mysqli_query($tdh->dbConnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
 
             // Match up control data with monitor data:
             while ($row = mysqli_fetch_array($r)) {
@@ -420,8 +417,7 @@ function LNA_results_html($td_keyID, $filterChecked) {
 function SIS_results_html($td_keyID, $filterChecked) {
 
     //get and save Monitor Data
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(700, $tdh, 8, $filterChecked);
 
@@ -434,7 +430,7 @@ function SIS_results_html($td_keyID, $filterChecked) {
         $q = "SELECT `Pol`,`SB`,`FreqLO`,`VjRead`,`IjRead`,`VmagRead`,`ImagRead`
             FROM `CCA_SIS_bias`
             WHERE `fkHeader` = $td_keyID ORDER BY `Pol`ASC, `SB` ASC";
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $FreqLO = 0;
         $output = array();
@@ -459,8 +455,8 @@ function SIS_results_html($td_keyID, $filterChecked) {
             $q_CompID = "SELECT DISTINCT MAX(FE_Components.keyId)
                 FROM `FE_Components` JOIN `FE_ConfigLink`
                 ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
-                WHERE  FE_ConfigLink.fkFE_Config =" . $tdh->GetValue('fkFE_Config') . "
-                AND `fkFE_ComponentType`= 20 AND Band =" . $tdh->GetValue('Band') . "";
+                WHERE  FE_ConfigLink.fkFE_Config =" . $tdh->fkFE_Config . "
+                AND `fkFE_ComponentType`= 20 AND Band =" . $tdh->Band . "";
 
             $q = "SELECT `Pol`,`SB`,`VJ`,`IJ`,`IMAG` FROM `CCA_MixerParams` WHERE `fkComponent` = ($q_CompID)";
 
@@ -470,12 +466,12 @@ function SIS_results_html($td_keyID, $filterChecked) {
             $q_any_lo = $q . $ord;
 
             // try the exact LO match query:
-            $r = mysqli_query($tdh->dbconnection, $q_default) or die("QUERY FAILED: $q_default");
+            $r = mysqli_query($tdh->dbConnection, $q_default) or die("QUERY FAILED: $q_default");
 
             // if no result, try the any LO query:
             $numRows = mysqli_num_rows($r);
             if (!$numRows)
-                $r = mysqli_query($tdh->dbconnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
+                $r = mysqli_query($tdh->dbConnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
 
             // Match up control data with monitor data:
             while ($row = mysqli_fetch_array($r)) {
@@ -590,8 +586,7 @@ ENGINE=MyISAM;
  *
  */
 function SIS_Resistance_results_html($td_keyID, $filterChecked) {
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -602,7 +597,7 @@ function SIS_Resistance_results_html($td_keyID, $filterChecked) {
         $q = "SELECT `Pol`,`SB`,`ROhms`
         FROM `CCA_TEST_SISResistance`
         WHERE `fkHeader` = $td_keyID ORDER BY `Pol`ASC, `SB` ASC";
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $html .= "<tr><th>Device</th><th colspan='2'>Resistance (Ohms)</th></tr>";
 
@@ -624,9 +619,8 @@ function SIS_Resistance_results_html($td_keyID, $filterChecked) {
  *
  */
 function Temp_Sensor_results_html($td_keyID, $filterChecked) {
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
-    $band = $tdh->GetValue('Band');
+    $tdh = new TestData_header($td_keyID, "40");
+    $band = $tdh->Band;
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -643,7 +637,7 @@ function Temp_Sensor_results_html($td_keyID, $filterChecked) {
             FROM CCA_TempSensors
             WHERE fkHeader= $td_keyID";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
         $i = 0;
         foreach ($col_name  as $Col) {
             $html .= "<tr>";
@@ -682,8 +676,7 @@ function Temp_Sensor_results_html($td_keyID, $filterChecked) {
  */
 function WCA_AMC_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -697,7 +690,7 @@ function WCA_AMC_results_html($td_keyID, $filterChecked) {
             FROM WCA_AMC_bias
             WHERE fkHeader= $td_keyID";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");;
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");;
 
         $html .= "<tr><th colspan='1'>Monitor Point</th><th colspan='1'>Monitor Values</th>";
 
@@ -723,8 +716,7 @@ function WCA_AMC_results_html($td_keyID, $filterChecked) {
  */
 function WCA_PA_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -738,7 +730,7 @@ function WCA_PA_results_html($td_keyID, $filterChecked) {
             FROM WCA_PA_bias
             WHERE fkHeader= $td_keyID";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $html .= "<tr><th colspan='1'>Monitor Point</th><th colspan='1'>Monitor Values</th>";
 
@@ -764,8 +756,7 @@ function WCA_PA_results_html($td_keyID, $filterChecked) {
  */
 function WCA_MISC_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -779,7 +770,7 @@ function WCA_MISC_results_html($td_keyID, $filterChecked) {
             FROM WCA_Misc_bias
             WHERE fkHeader= $td_keyID";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $html .= "<tr><th colspan='1'>Monitor Point</th><th colspan='1'>Monitor Values</th>";
 
@@ -804,8 +795,7 @@ function WCA_MISC_results_html($td_keyID, $filterChecked) {
  */
 function FLOOG_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -813,7 +803,7 @@ function FLOOG_results_html($td_keyID, $filterChecked) {
 
         $q = "SELECT `Band`, `RefTotalPower` FROM `FLOOGdist`
                 WHERE `fkHeader` = $td_keyID";
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $html .= "<tr><th></th><th colspan='2'>Reference Total Power (dBm)</th><tr>";
 
@@ -837,9 +827,8 @@ function FLOOG_results_html($td_keyID, $filterChecked) {
  */
 function IF_Power_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
-    $band = $tdh->GetValue('Band');
+    $tdh = new TestData_header($td_keyID, "40");
+    $band = $tdh->Band;
 
     $html = table_header_html(475, $tdh, 3, $filterChecked);
 
@@ -849,7 +838,7 @@ function IF_Power_results_html($td_keyID, $filterChecked) {
             FROM `IFTotalPower`
             WHERE `fkHeader` = $td_keyID";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $html .= "<tr><th>IFChannel</th>
             <th>Power 0dB gain (dBm)</th>
@@ -911,8 +900,7 @@ function IF_Power_results_html($td_keyID, $filterChecked) {
  */
 function IF_Switch_Temp_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -926,7 +914,7 @@ function IF_Switch_Temp_results_html($td_keyID, $filterChecked) {
 
         $html .= "<tr><th></th><th colspan='2'>Monitor Values (K)</th>";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
         $i = 0;
         foreach ($col_name  as $Col) {
             $html .= "<tr>";
@@ -949,8 +937,7 @@ function IF_Switch_Temp_results_html($td_keyID, $filterChecked) {
  */
 function LPR_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -961,7 +948,7 @@ function LPR_results_html($td_keyID, $filterChecked) {
             FROM `LPR_WarmHealth`
             WHERE `fkHeader`= $td_keyID";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $html .= "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values </th>";
 
@@ -987,8 +974,7 @@ function LPR_results_html($td_keyID, $filterChecked) {
  */
 function Photomixer_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -998,7 +984,7 @@ function Photomixer_results_html($td_keyID, $filterChecked) {
             FROM `Photomixer_WarmHealth`
             WHERE `fkHeader` = $td_keyID";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $col_name = array("Photomixer Voltage (V)", "Photomixer Current (mA)");
 
@@ -1028,8 +1014,7 @@ function Photomixer_results_html($td_keyID, $filterChecked) {
  */
 function Cryo_Temp_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(475, $tdh, 2, $filterChecked);
 
@@ -1043,7 +1028,7 @@ function Cryo_Temp_results_html($td_keyID, $filterChecked) {
 
         $html .= "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values (K)</th>";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
         $i = 0;
         foreach ($col_name  as $Col) {
             $html .= "<tr>
@@ -1066,25 +1051,24 @@ function Cryo_Temp_results_html($td_keyID, $filterChecked) {
  */
 function Y_factor_results_html($td_keyID, $filterChecked) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
-    $band = $tdh->GetValue('Band');
+    $tdh = new TestData_header($td_keyID, "40");
+    $band = $tdh->Band;
 
     $html = table_header_html(475, $tdh, 4, $filterChecked);
 
     if ($html != '') {
 
         // get specifications array
-        //$spec=get_specs ( 15 , $tdh->GetValue('Band') );
+        //$spec=get_specs ( 15 , $tdh->Band );
         $new_spec = new Specifications();
-        $spec = $new_spec->getSpecs('Yfactor', $tdh->GetValue('Band'));
+        $spec = $new_spec->getSpecs('Yfactor', $tdh->Band);
 
         $col_name = array("IFchannel", "Phot_dBm", "Pcold_dBm", "Y", "FreqLO");
         $col_strg = implode(",", $col_name);
         $q = "SELECT $col_strg
             FROM Yfactor
             WHERE fkHeader= $td_keyID";
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $FreqLO = ADAPT_mysqli_result($r, 0, 4);
         mysqli_data_seek($r, 0);
@@ -1144,11 +1128,10 @@ function Y_factor_results_html($td_keyID, $filterChecked) {
  *
  */
 function I_V_Curve_results_html($td_keyID, $filterChecked, $count_iv) {
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
     $plot = 'iv_curve_' . $count_iv;
     $plot_name = null;
-    $band = $tdh->GetValue('Band');
+    $band = $tdh->Band;
     if ($band <= 8) {
         switch ($count_iv) {
             case 1:
@@ -1195,7 +1178,8 @@ function I_V_Curve_results_html($td_keyID, $filterChecked, $count_iv) {
     $html = table_header_html(800, $tdh, 1, $filterChecked, null,  $plot, $plot_name);
 
     if ($html != '') {
-        $html .= "<tr><td colspan='1'><img width='100%' src='" . $tdh->GetValue('PlotURL') . "'/></td></tr>";
+        global $site_storage;
+        if ($tdh->PlotURL) $html .= "<tr><td colspan='1'><img width='100%' src='{$site_storage}{$tdh->PlotURL}'/></td></tr>";
         $html .= "</table></div>";
     }
     return $html;
@@ -1210,8 +1194,7 @@ function I_V_Curve_results_html($td_keyID, $filterChecked, $count_iv) {
  */
 function Band3_NT_results_html($td_keyID) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     //get specs
     $spec_names = array();
@@ -1220,7 +1203,7 @@ function Band3_NT_results_html($td_keyID) {
         $spec_names[] = 'Bspec_bbTSSB' . $i . 's';
     }
     $new_spec = new Specifications();
-    $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
+    $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->Band, $spec_names);
     $specs = array();
     for ($i = 1; $i < 6; $i++) {
         $specs[$spec['Bspec_bbTSSB' . (string)$i . 'f']] = $spec['Bspec_bbTSSB' . (string)$i . 's'];
@@ -1233,7 +1216,7 @@ function Band3_NT_results_html($td_keyID) {
         FROM `Noise_Temp_Band3_Results`
         WHERE fkHeader= $td_keyID
         ORDER BY FreqLO;";
-    $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+    $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
     $html = table_header_html(800, $tdh, 7);
 
@@ -1305,8 +1288,7 @@ function Band3_NT_results_html($td_keyID) {
  */
 function Band3_CCA_NT_results_html($td_keyID) {
 
-    $tdh = new TestData_header();
-    $tdh->Initialize_TestData_header($td_keyID, "40");
+    $tdh = new TestData_header($td_keyID, "40");
 
     $html = "";
 
@@ -1316,9 +1298,9 @@ function Band3_CCA_NT_results_html($td_keyID) {
         $spec_names[] = 'Bspec_bbTSSB' . (string)$i . 'f';
         $spec_names[] = 'Bspec_bbTSSB' . (string)$i . 's';
     }
-    //$specs=get_specs_by_spec_type ( 10 , $tdh->GetValue('Band') );
+    //$specs=get_specs_by_spec_type ( 10 , $tdh->Band );
     $new_spec = new Specifications();
-    $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->GetValue('Band'), $spec_names);
+    $spec = $new_spec->getSpecs('FEIC_NoiseTemperature', $tdh->Band, $spec_names);
     $specs = array();
     for ($i = 1; $i < 6; $i++) {
         $specs[$spec['Bspec_bbTSSB' . (string)$i . 'f']] = $spec['Bspec_bbTSSB' . (string)$i . 's'];
@@ -1326,22 +1308,22 @@ function Band3_CCA_NT_results_html($td_keyID) {
 
     //Query to get CCA Serial Number
     $q = "SELECT MAX(FE_Components.SN) FROM FE_Components, FE_ConfigLink, FE_Config
-         WHERE FE_ConfigLink.fkFE_Config = " . $tdh->GetValue('fkFE_Config') . "
+         WHERE FE_ConfigLink.fkFE_Config = " . $tdh->fkFE_Config . "
          AND FE_Components.fkFE_ComponentType = 20
          AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-         AND FE_Components.Band = " . $tdh->GetValue('Band') . "
-         AND FE_Components.keyFacility =" . $tdh->GetValue('keyFacility') . "
+         AND FE_Components.Band = " . $tdh->Band . "
+         AND FE_Components.keyFacility =" . $tdh->keyFacility . "
          AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
          ORDER BY Band ASC";
 
     //Get CCA FE_Component keyid
     $q = "SELECT keyId FROM FE_Components
          WHERE SN = ($q) AND fkFE_ComponentType = 20
-         AND band = " . $tdh->GetValue('Band') . "
-         AND keyFacility =" . $tdh->GetValue('keyFacility') . "
+         AND band = " . $tdh->Band . "
+         AND keyFacility =" . $tdh->keyFacility . "
          GROUP BY keyId DESC";
 
-    $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");;
+    $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");;
     while ($row = mysqli_fetch_array($r)) {
         $CCA_key[] = $row[0];
     }
@@ -1352,15 +1334,14 @@ function Band3_CCA_NT_results_html($td_keyID) {
         //get CCA Test Data key
         $q = "SELECT keyID FROM TestData_header WHERE fkTestData_Type = 42
             AND fkDataStatus = 7 AND fkFE_Components = $CCA_key[$cnt]
-            AND keyFacility =" . $tdh->GetValue('keyFacility') . "";
-        $r = mysqli_query($tdh->dbconnection, $q);
+            AND keyFacility =" . $tdh->keyFacility . "";
+        $r = mysqli_query($tdh->dbConnection, $q);
 
         $CCA_TD_key = ADAPT_mysqli_result($r, 0, 0);
         $cnt++;
     } while ($CCA_TD_key === FALSE && $cnt < count($CCA_key));
 
-    $cca_tdh = new TestData_header();
-    $cca_tdh->Initialize_TestData_header($CCA_TD_key, "40");
+    $cca_tdh = new TestData_header($CCA_TD_key, "40");
 
     if ($CCA_TD_key) {
         // get and display table
@@ -1371,7 +1352,7 @@ function Band3_CCA_NT_results_html($td_keyID) {
             WHERE fkHeader= $CCA_TD_key AND `CenterIF` != 0
             ORDER BY `Pol` ASC, `SB` ASC, `FreqLO` ASC, `CenterIF` ASC";
 
-        $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");
+        $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         // read sort and average Noise Temperature Data
         $last_FREQ_LO = 0;
@@ -1439,7 +1420,7 @@ function Band3_CCA_NT_results_html($td_keyID) {
         $q = "SELECT `AvgNT`, `FreqLO`
             FROM `Noise_Temp_Band3_Results`
             WHERE fkHeader= $td_keyID";
-        $r = mysqli_query($tdh->dbconnection, $q);
+        $r = mysqli_query($tdh->dbConnection, $q);
         $TFETMS = array();
         while ($row = mysqli_fetch_array($r)) {
             $TFETMS[$row[1]] = $row[0];

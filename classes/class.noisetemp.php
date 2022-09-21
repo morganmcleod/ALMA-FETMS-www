@@ -71,12 +71,8 @@ class NoiseTemperature extends TestData_header {
     private $plot_label_2;
     private $y_lim;                 // y-axis upper limit for plots
 
-    public function __construct() {
-        parent::__construct();
-    }
-
-    public function Initialize_NoiseTemperature($in_keyId, $in_fc) {
-        parent::Initialize_TestData_header($in_keyId, $in_fc);
+    public function __construct($inKeyId, $inFc) {
+        parent::__construct($inKeyId, $inFc);
 
         $this->SWVersion = "1.3.3";
         /*
@@ -103,148 +99,106 @@ class NoiseTemperature extends TestData_header {
          * 1.0.16 MTM: fix plot axis labels for Tssb and "corrected"
          */
 
-        $q = "SELECT keyId, keyFacility FROM Noise_Temp_SubHeader
-              WHERE fkHeader = $in_keyId AND keyFacility = $in_fc
-              order by keyId ASC;";
-        $r = mysqli_query($this->dbconnection, $q);
-        $keyID = ADAPT_mysqli_result($r, 0, 0);
-        $facility = ADAPT_mysqli_result($r, 0, 1);
-        $this->NT_SubHeader = new GenericTable();
-        $this->NT_SubHeader->Initialize('Noise_Temp_SubHeader', $keyID, 'keyId', $facility, 'keyFacility');
+        $keyId = self::getKeyIdFromHeader($inKeyId);
+        $this->NT_SubHeader = new GenericTable('Noise_Temp_SubHeader', $keyId, 'keyId', $inFc, 'keyFacility');
     }
 
-    public function DisplayPlots() {
-        $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
+    public static function getKeyIdFromHeader($fkHeader) {
+        $dbConnection = site_getDbConnection();
+        $q = "SELECT keyId FROM Noise_Temp_SubHeader
+              WHERE fkHeader = {$fkHeader}
+              ORDER BY keyId ASC;";
+        $r = mysqli_query($dbConnection, $q);
+        return ADAPT_mysqli_result($r, 0, 0);
+    }
 
-        $this->Display_OptimizationNotes();
+    private function sendImage($imagepath, $path = "noisetemp/") {
+        global $site_storage;
+        $ch = curl_init("{$site_storage}upload.php");
+        curl_setopt_array($ch, array(
+            CURLOPT_POST => 1,
+            CURLOPT_POSTFIELDS => array(
+                'image' => new CURLFile($imagepath, 'image/png'),
+                'path' => $path,
+                'token' => "hF^d^hyu3mHxYTa%"
+            )
+        ));
+        curl_exec($ch);
+        unlink($imagepath);
+    }
 
-        $url = $this->NT_SubHeader->GetValue('ploturl1');
-        if ($url)
-            echo "<img src= '$url'><br><br>";
+    public function displayPlots() {
+        $this->displayOptimizationNotes();
 
-        $url = $this->NT_SubHeader->GetValue('ploturl2');
-        if ($url)
-            echo "<img src= '$url'><br><br>";
+        global $site_storage;
+        $indexes = [1, 2, 5, 6, 3, 4];
+        foreach ($indexes as $index) {
+            $url = $this->NT_SubHeader->{"ploturl{$index}"};
+            if ($url) echo "<img src='{$site_storage}{$url}'><br><br>";
+        }
 
-        $url = $this->NT_SubHeader->GetValue('ploturl5');
-        if ($url)
-            echo "<img src= '$url'><br><br>";
-
-        $url = $this->NT_SubHeader->GetValue('ploturl6');
-        if ($url)
-            echo "<img src= '$url'><br><br>";
-
-        $url = $this->NT_SubHeader->GetValue('ploturl3');
-        if ($url)
-            echo "<img src= '$url'><br><br>";
-
-        $url = $this->NT_SubHeader->GetValue('ploturl4');
-        if ($url)
-            echo "<img src= '$url'><br><br>";
-
-        if ($this->GetValue('Band') == 3) {
-            Band3_NT_results($this->GetValue('keyId'));
-            Band3_CCA_NT_results($this->GetValue('keyId'));
+        if ($this->Band == 3) {
+            Band3_NT_results($this->keyId);
+            Band3_CCA_NT_results($this->keyId);
         }
     }
 
     public function DisplayPlots_html() {
-        $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
 
         $html = ["", ""];
-        $html[0] = $this->Display_OptimizationNotes_html();
+        $html[0] = $this->displayOptimizationNotesHtml();
 
-        $url = $this->NT_SubHeader->GetValue('ploturl1');
-        if ($url)
-            $html[0] .= "<div class='ploturl1'><img src='$url'/></div>";
+        global $site_storage;
+        $indexes = [1, 2, 5, 6, 3, 4];
+        foreach ($indexes as $index) {
+            $url = $site_storage . $this->NT_SubHeader->{"ploturl{$index}"};
+            $html[0] .= "<div class='ploturl{$index}'><img src='$url'/></div>";
+        }
 
-        $url = $this->NT_SubHeader->GetValue('ploturl2');
-        if ($url)
-            $html[0] .= "<div class='ploturl2'><img src='$url'/></div>";
-
-        $url = $this->NT_SubHeader->GetValue('ploturl5');
-        if ($url)
-            $html[0] .= "<div class='ploturl3'><img src='$url'/></div>";
-
-        $url = $this->NT_SubHeader->GetValue('ploturl6');
-        if ($url)
-            $html[0] .= "<div class='ploturl4'><img src='$url'/></div>";
-
-        $url = $this->NT_SubHeader->GetValue('ploturl3');
-        if ($url)
-            $html[0] .= "<div class='ploturl5'><img src='$url'/></div>";
-
-        $url = $this->NT_SubHeader->GetValue('ploturl4');
-        if ($url)
-            $html[0] .= "<div class='ploturl6'><img src='$url'/></div>";
-
-        if ($this->GetValue('Band') == 3) {
-            $html[1] .= Band3_NT_results_html($this->GetValue('keyId'));
-            $html[1] .= Band3_CCA_NT_results_html($this->GetValue('keyId'));
+        if ($this->Band == 3) {
+            $html[1] .= Band3_NT_results_html($this->keyId);
+            $html[1] .= Band3_CCA_NT_results_html($this->keyId);
         }
         return $html;
     }
 
-    public function DrawPlot() {
+    public function drawPlot() {
         // start a logger file for debugging
         $this->NT_Logger = new Logger("NT_Log.txt");
-
-        $this->SetValue('Plot_SWVer', $this->SWVersion);
+        $this->Plot_SWVer = $this->SWVersion;
         $this->Update();
-
-        $this->NT_Logger->WriteLogFile("class NoiseTemperature version $this->SWVersion");
-
+        $this->NT_Logger->WriteLogFile("class NoiseTemperature version {$this->SWVersion}");
         // get the main data files write directory from config_main:
         require(site_get_config_main());
 
-        $this->plotDir = $main_write_directory . "noisetemp/";
+        $this->plotDir = "{$main_write_directory}noisetemp/";
         //Create plot directory if it doesn't exist.
-        if (!file_exists($this->plotDir)) {
-            mkdir($this->plotDir);
-        }
-
+        if (!file_exists($this->plotDir)) mkdir($this->plotDir);
         // load the CCA and WCA serial numbers and configuration keys:
         $this->LoadCartridgeKeys();
-
         // load the image rejection data to use for correcting noise temps:
         $this->LoadImageRejectionData();
-
         $this->LoadSpecs();
-
         $this->WriteSpecsDataFile();
-
         $this->LoadNoiseTempData();
-
         if (!count($this->NT_data)) {
             $this->NT_Logger->WriteLogFile("No Data");
             return;
         }
-
         $this->CalculateNoiseTemps();
-
         $this->CalculateAvgNoiseTemps();
-
-        if ($this->GetValue('Band') == 3)
-            $this->CalculateBand3AvgNT();
-
-        if ($this->GetValue('Band') == 10)
-            $this->CalculateBand10AvgNT();
-
+        if ($this->Band == 3) $this->CalculateBand3AvgNT();
+        if ($this->Band == 10) $this->CalculateBand10AvgNT();
         $this->LoadAndWriteCCANoiseTempData();
-
         $this->MakePlotFooterLabels();
-
         $this->DrawPlotTrVsIF();
-
         $this->DrawPlotTrAverage();
-
         $this->DrawPlotTrVsRF();
-
         $this->NT_SubHeader->Update();  // save image locations to database
     }
 
-    private function Display_OptimizationNotes() {
-        $optNotes = $this->NT_SubHeader->GetValue('OptNotes');
+    private function displayOptimizationNotes() {
+        $optNotes = $this->NT_SubHeader->OptNotes;
         if (!$optNotes) {
             echo "<br>";
             return;
@@ -256,60 +210,59 @@ class NoiseTemperature extends TestData_header {
         echo "</table></div><br>";
     }
 
-    private function Display_OptimizationNotes_html() {
+    private function displayOptimizationNotesHtml() {
         $html = "";
-        $optNotes = $this->NT_SubHeader->GetValue('OptNotes');
+        $optNotes = $this->NT_SubHeader->OptNotes;
         if (!$optNotes) {
             $html .= "<br>";
             return;
         }
-        $html .= "<div style='width:300px'>";
-        $html .= "<table id = 'table2'>";
-        $html .= "<tr><th>Optimization Notes</th></tr>";
-        $html .= "<tr><td><textarea readonly rows='10' cols='90'>" . stripcslashes($optNotes) . "</textarea>";
-        $html .= "</table></div><br>";
+        $html .= "<div style='width:300px'>" .
+            "<table id = 'table2'>" .
+            "<tr><th>Optimization Notes</th></tr>" .
+            "<tr><td><textarea readonly rows='10' cols='90'>" . stripcslashes($optNotes) . "</textarea>" .
+            "</table></div><br>";
     }
 
     private function LoadCartridgeKeys() {
-        //Get CCA Serial Number
+        // Get CCA Serial Number
         $q = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-        WHERE FE_ConfigLink.fkFE_Config = " . $this->GetValue('fkFE_Config') . "
-        AND FE_Components.fkFE_ComponentType = 20
-        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-        AND FE_Components.Band = " . $this->GetValue('Band') . "
-        AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') . "
-        AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-        ORDER BY Band ASC;";
-        $r = mysqli_query($this->dbconnection, $q);
+              WHERE FE_ConfigLink.fkFE_Config = {$this->fkFE_Config}
+              AND FE_Components.fkFE_ComponentType = 20
+              AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
+              AND FE_Components.Band = {$this->Band}
+              AND FE_Components.keyFacility = {$this->keyFacility}
+              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
+              ORDER BY Band ASC;";
+        $r = mysqli_query($this->dbConnection, $q);
         $this->NT_Logger->WriteLogFile("CCA SN Query: $q");
         $this->CCA_SN = ADAPT_mysqli_result($r, 0, 0);
         $this->NT_Logger->WriteLogFile("CCA SN: $this->CCA_SN");
 
-        //Get WCA Serial Number
+        // Get WCA Serial Number
         $q = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-        WHERE FE_ConfigLink.fkFE_Config = " . $this->GetValue('fkFE_Config') . "
-        AND FE_Components.fkFE_ComponentType = 11
-        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-        AND FE_Components.Band = " . $this->GetValue('Band') . "
-        AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') . "
-        AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-        GROUP BY Band ASC;";
-        $r = mysqli_query($this->dbconnection, $q);
+              WHERE FE_ConfigLink.fkFE_Config = {$this->fkFE_Config}
+              AND FE_Components.fkFE_ComponentType = 11
+              AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
+              AND FE_Components.Band = {$this->Band}
+              AND FE_Components.keyFacility = {$this->keyFacility}
+              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
+              GROUP BY Band ASC;";
+        $r = mysqli_query($this->dbConnection, $q);
         $this->NT_Logger->WriteLogFile("WCA SN Query: $q");
         $this->WCA_SN = ADAPT_mysqli_result($r, 0, 0);
         $this->NT_Logger->WriteLogFile("WCA SN: $this->WCA_SN");
 
         //Get list of CCA FE_Component keyid, history for this CCA:
         $q = "SELECT keyId FROM FE_Components
-        WHERE SN = '$this->CCA_SN' AND fkFE_ComponentType = 20
-        AND band = " . $this->GetValue('Band') . "
-        AND keyFacility =" . $this->GetValue('keyFacility') . "
-        GROUP BY keyId DESC";
-        $r = mysqli_query($this->dbconnection, $q);
+              WHERE SN = '$this->CCA_SN' AND fkFE_ComponentType = 20
+              AND band = {$this->Band}
+              AND keyFacility = {$this->keyFacility}
+              GROUP BY keyId DESC";
+        $r = mysqli_query($this->dbConnection, $q);
         $this->NT_Logger->WriteLogFile("CCA FE_Component key query: $q");
         while ($row = mysqli_fetch_array($r)) {
             // append to the array of CCA component keys:
-            $temp = $row[0];
             $this->CCA_componentKeys[] = $row[0];
         }
         $this->NT_Logger->WriteLogFile("CCA FE_Component key: " . $this->CCA_componentKeys[0]);
@@ -330,7 +283,7 @@ class NoiseTemperature extends TestData_header {
         $this->foundIRData = FALSE;
 
         // don't load IR data for bands 1, 9 or 10:
-        $band = $this->GetValue('Band');
+        $band = $this->Band;
         if ($band != 1 && $band != 9 && $band != 10) {
 
             //Find the first matching Image Rejection Data corresponding to one of the CCA componentKeys:
@@ -341,9 +294,9 @@ class NoiseTemperature extends TestData_header {
 
                 //get CCA Test Data key for cartridge image rejection:
                 $q = "SELECT keyID FROM TestData_header WHERE fkTestData_Type = 38
-                AND fkDataStatus = 7 AND fkFE_Components = $compKey
-                AND keyFacility =" . $this->GetValue('keyFacility');
-                $r = mysqli_query($this->dbconnection, $q);
+                      AND fkDataStatus = 7 AND fkFE_Components = {$compKey}
+                      AND keyFacility = {$this->keyFacility}";
+                $r = mysqli_query($this->dbConnection, $q);
                 $this->NT_Logger->WriteLogFile("CCA Image Rejection Testdata_Header Query: $q");
                 $CCA_TD_key = ADAPT_mysqli_result($r, 0, 0);
                 $this->NT_Logger->WriteLogFile("CCA TD key: $CCA_TD_key");
@@ -365,17 +318,19 @@ class NoiseTemperature extends TestData_header {
             $this->NT_Logger->WriteLogFile("Cartridge Image Rejection Data Was Found");
 
             // find the max keyDataSet for CCA image rejection:
-            $q = "SELECT MAX(keyDataSet) FROM CCA_TEST_SidebandRatio WHERE fkheader = $CCA_TD_key";
-            $r = mysqli_query($this->dbconnection, $q);
+            $q = "SELECT MAX(keyDataSet)
+                  FROM CCA_TEST_SidebandRatio
+                  WHERE fkheader = {$CCA_TD_key}";
+            $r = mysqli_query($this->dbConnection, $q);
             $this->NT_Logger->WriteLogFile("CCA Image Rejection keyDataSet Query: $q");
             $keyDataSet = ADAPT_mysqli_result($r, 0, 0);
 
             //get CCA Image Rejection data
             $q = "SELECT FreqLO, CenterIF, Pol, SB, SBR
-            FROM CCA_TEST_SidebandRatio WHERE fkHeader = $CCA_TD_key
-            AND fkFacility =" . $this->GetValue('keyFacility') . "
-            ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
-            $r = mysqli_query($this->dbconnection, $q);
+                  FROM CCA_TEST_SidebandRatio WHERE fkHeader = {$CCA_TD_key}
+                  AND fkFacility = {$this->keyFacility}
+                  ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
+            $r = mysqli_query($this->dbConnection, $q);
             $this->NT_Logger->WriteLogFile("CCA Image Rejection Data Query: $q");
 
             // initialize arrays:
@@ -419,14 +374,7 @@ class NoiseTemperature extends TestData_header {
     private function LoadSpecs() {
         //get specs from DB
         $new_specs = new Specifications();
-        $specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $this->GetValue('Band'));
-
-        $keys = array_keys($specs);
-        $values = array_values($specs);
-
-        //     	for($i=0; $i<count($keys); $i++) {
-        //     		echo $keys[$i], $values[$i];
-        //     	}
+        $specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $this->Band);
 
         $this->effColdLoadTemp = $specs['CLTemp'];         // effective cold load temperature
         $this->default_IR = $specs['defImgRej'];              // default image rejection to use if no CCA data available.
@@ -436,7 +384,7 @@ class NoiseTemperature extends TestData_header {
         $this->NT_80_spec = $specs['NT80'];              // spec which must be met over 80% of the RF band
 
         // extra Tssb spec applies to band 3 only:
-        if ($this->GetValue('Band') == 3) {
+        if ($this->Band == 3) {
             $this->NT_B3Special_spec = $specs['B3exSpec'];
         }
         // lower RF limit for applying 80% spec:
@@ -466,36 +414,38 @@ class NoiseTemperature extends TestData_header {
         $this->NT_data = array();
 
         // if no DataSetGroup defined, use the TDH provided to Initialize_NoiseTemperature:
-        if ($this->GetValue('DataSetGroup') == 0) {
+        if ($this->DataSetGroup == 0) {
             $q = "SELECT FreqLO, CenterIF, TAmbient, Pol0Sb1YFactor, Pol0Sb2YFactor, Pol1Sb1YFactor, Pol1Sb2YFactor
-            FROM Noise_Temp
-            WHERE fkSub_Header=" . $this->NT_SubHeader->GetValue('keyId') . "
-            AND keyFacility =" . $this->GetValue('keyFacility') . "
-            AND Noise_Temp.IsIncluded = 1
-            ORDER BY FreqLO ASC, CenterIF ASC";
+                  FROM Noise_Temp
+                  WHERE fkSub_Header={$this->NT_SubHeader->keyId}
+                  AND keyFacility ={$this->keyFacility}
+                  AND Noise_Temp.IsIncluded = 1
+                  ORDER BY FreqLO ASC, CenterIF ASC";
 
             // load all data for the specified DataSetGroup:
         } else {
             // nested query to get front end key of the FEConfig of the TDH.
-            $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = " . $this->GetValue('fkFE_Config');
+            $qfe = "SELECT fkFront_Ends
+                    FROM FE_Config
+                    WHERE keyFEConfig = {$this->fkFE_Config}";
 
             // Get all Noise_Temp_SubHeader keyId values for records with the same DataSetGroup as this one
-            $q = "SELECT Noise_Temp.FreqLO, Noise_Temp.CenterIF, Noise_Temp.TAmbient,
-            Noise_Temp.Pol0Sb1YFactor, Noise_Temp.Pol0Sb2YFactor, Noise_Temp.Pol1Sb1YFactor, Noise_Temp.Pol1Sb2YFactor, TestData_header.keyId
-            FROM FE_Config
-            LEFT JOIN TestData_header ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
-            LEFT JOIN Noise_Temp_SubHeader ON Noise_Temp_SubHeader.`fkHeader` = `TestData_header`.`keyId`
-            LEFT JOIN Noise_Temp ON Noise_Temp_SubHeader.`keyId` = Noise_Temp.fkSub_Header
-            WHERE TestData_header.Band = " . $this->GetValue('Band') . "
-            AND TestData_header.fkTestData_Type = 58
-            AND TestData_header.DataSetGroup = " . $this->GetValue('DataSetGroup') . "
-            AND Noise_Temp.IsIncluded = 1
-            AND FE_Config.fkFront_Ends = ($qfe)
-            ORDER BY Noise_Temp.FreqLO ASC, Noise_Temp.CenterIF ASC";
+            $q = "SELECT Noise_Temp.FreqLO, Noise_Temp.CenterIF, Noise_Temp.TAmbient, Noise_Temp.Pol0Sb1YFactor,
+                  Noise_Temp.Pol0Sb2YFactor, Noise_Temp.Pol1Sb1YFactor, Noise_Temp.Pol1Sb2YFactor, TestData_header.keyId
+                  FROM FE_Config
+                  LEFT JOIN TestData_header ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
+                  LEFT JOIN Noise_Temp_SubHeader ON Noise_Temp_SubHeader.fkHeader = TestData_header.keyId
+                  LEFT JOIN Noise_Temp ON Noise_Temp_SubHeader.keyId = Noise_Temp.fkSub_Header
+                  WHERE TestData_header.Band = {$this->Band}
+                  AND TestData_header.fkTestData_Type = 58
+                  AND TestData_header.DataSetGroup = {$this->DataSetGroup}
+                  AND Noise_Temp.IsIncluded = 1
+                  AND FE_Config.fkFront_Ends = ($qfe)
+                  ORDER BY Noise_Temp.FreqLO ASC, Noise_Temp.CenterIF ASC";
         }
 
         $this->NT_Logger->WriteLogFile("LoadNoiseTempData query: $q");
-        $r = mysqli_query($this->dbconnection, $q);
+        $r = mysqli_query($this->dbConnection, $q);
 
         // Append the loaded noise temperature data into a 2-d array:
         while ($row = mysqli_fetch_array($r)) {
@@ -513,7 +463,6 @@ class NoiseTemperature extends TestData_header {
     }
 
     private function CalculateNoiseTemps() {
-
         function Trx_Uncorr($TAmb, $TColdEff, $Y) {
             // compute Tr, uncorrected (K)
             if (($Y - 1) != 0)
@@ -561,6 +510,7 @@ class NoiseTemperature extends TestData_header {
         $currentLO = $this->NT_data[0]['FreqLO'];
         $done = false;
         $index = 0;
+        // WTF!!
         do {
             if ($index >= $cnt)
                 $done = true;
@@ -676,7 +626,7 @@ class NoiseTemperature extends TestData_header {
         }
 
         $this->avg_datafile = $this->plotDir . "NoiseTemp_avg.txt";
-        $this->NT_Logger->WriteLogFile("average_datafile: $this->avg_datafile");
+        $this->NT_Logger->WriteLogFile("average_datafile: {$this->avg_datafile}");
         $favg = fopen($this->avg_datafile, 'w');
 
         // arrays for accumulating data points for the averaging plot:
@@ -689,6 +639,7 @@ class NoiseTemperature extends TestData_header {
         $currentLO = $this->NT_data[0]['FreqLO'];
         $done = false;
         $index = 0;
+        // WTF!!!!!
         do {
             if ($index >= $cnt)
                 $done = true;
@@ -763,7 +714,7 @@ class NoiseTemperature extends TestData_header {
 
     private function CalculateBand3AvgNT() {
         // For band 3 read the average NT file and store the information in the db
-        if ($this->GetValue('Band') == 3) {
+        if ($this->Band == 3) {
             $favg = fopen($this->avg_datafile, 'r');
 
             $values = "";
@@ -772,21 +723,21 @@ class NoiseTemperature extends TestData_header {
             while ($scan = fscanf($favg, "%f\t%f\t%f\t%f\t%f\t%f\r\n")) {
                 list($freq, $avg01, $avg02, $avg11, $avg12, $this->NT_80_spec) = $scan;
                 $avg = ($avg01 + $avg02 + $avg11 + $avg12) / 4;
-                $values = "(" . $this->GetValue('keyId') . ",$freq,$avg01,$avg02,$avg11,$avg12,$avg)," . $values;
+                $values = "(" . $this->keyId . ",$freq,$avg01,$avg02,$avg11,$avg12,$avg)," . $values;
             }
             //delete last "," and replace it with ";"
             $values = substr_replace($values, ";", (strlen($values)) - 1);
 
             //query to delete any existing data in the DB with the same TD Header keyID
             $q = "DELETE FROM `Noise_Temp_Band3_Results`
-            WHERE  `fkHeader` = " . $this->GetValue('keyId') . "";
-            $r = mysqli_query($this->dbconnection, $q);
+            WHERE  `fkHeader` = " . $this->keyId . "";
+            $r = mysqli_query($this->dbConnection, $q);
 
             // query to insert new data into table
             $q = "INSERT INTO `Noise_Temp_Band3_Results`
             (`fkHeader`,`FreqLO`,`Pol0USB`,`Pol0LSB`,`Pol1USB`,`Pol1LSB`,`AvgNT`)
             VALUES $values";
-            $r = mysqli_query($this->dbconnection, $q);
+            $r = mysqli_query($this->dbConnection, $q);
 
             $this->NT_Logger->WriteLogFile("Band3 Replace Query: $q\r\n");
 
@@ -795,7 +746,6 @@ class NoiseTemperature extends TestData_header {
     }
 
     private function CalculateBand10AvgNT() {
-
         function truncateSpanToSpecRange($LO0, $LO1, $lower80, $upper80) {
             // compute the portion within the spec bounds:
             $span = $LO1 - $LO0;
@@ -812,22 +762,18 @@ class NoiseTemperature extends TestData_header {
             // - Truncate to the range to where the 80% spec applies.
 
             // $LO1 must be > $LO0
-            if ($LO1 <= $LO0)
-                return 0;
+            if ($LO1 <= $LO0) return 0;
 
             // at least one point must be in the spec range:
-            if ($LO0 < $lower80 && $LO1 < $lower80)
-                return 0;
-            if ($LO0 > $upper80 && $LO1 > $upper80)
-                return 0;
+            if ($LO0 < $lower80 && $LO1 < $lower80) return 0;
+            if ($LO0 > $upper80 && $LO1 > $upper80) return 0;
 
             // check for endpoints in spec:
             $inSpec0 = $TR0 <= $spec;
             $inSpec1 = $TR1 <= $spec;
 
             // both endppoints are in spec:
-            if ($inSpec0 && $inSpec1)
-                return 0;
+            if ($inSpec0 && $inSpec1) return 0;
 
             // neither endpoint in spec:
             if (!$inSpec0 && !$inSpec1)
@@ -867,13 +813,12 @@ class NoiseTemperature extends TestData_header {
         $this->Pol1_80_metric = 0;
 
         // don't do this except for band 10:
-        if ($this->GetValue('Band') != 10)
+        if ($this->Band != 10)
             return;
 
         // total number of rows in data set:
         $cnt = count($this->NT_avgData);
-        if (!$cnt)
-            return;
+        if (!$cnt) return;
 
         // vars to accumulate frequency span out of spec:
         $span0 = $span1 = 0;
@@ -934,24 +879,14 @@ class NoiseTemperature extends TestData_header {
 
     private function LoadAndWriteCCANoiseTempData() {
         $this->foundCCAData = false;
+        $CCA_NT_key = false;
 
-        $cnt = 0;  // initialize counter for do-while loop
         $compKey = '';
-        do {    // check all CCA configurations for NT data
-            $compKey = $this->CCA_componentKeys[$cnt];
-            //Use CCA FE_Component keyid to get keyID for Testdata header record for CCA Noise temp data
-            $q = "SELECT keyId FROM TestData_header
-            WHERE fkFE_Components = $compKey
-            AND fkTestData_Type = 42
-            AND fkDataStatus=7
-            AND keyFacility =" . $this->GetValue('keyFacility') . "
-            GROUP BY keyId DESC";
-            $r = mysqli_query($this->dbconnection, $q);
-            $this->NT_Logger->WriteLogFile("CCA Noise Temp Testdata record query: $q");
-            $CCA_NT_key = ADAPT_mysqli_result($r, 0, 0);
+        foreach ($this->CCA_componentKeys as $compKey) {
+            $CCA_NT_key = TestData_header::getIdFromArguments($compKey, 42, 7, $this->keyFacility);
             $this->NT_Logger->WriteLogFile("CCA NoiseTemp Testdataheader key: $CCA_NT_key");
-            $cnt++;
-        } while ($CCA_NT_key === FALSE && $cnt < count($this->CCA_componentKeys));
+            if ($CCA_NT_key !== FALSE) break;
+        };
 
         if ($CCA_NT_key === FALSE) {
             $this->foundCCAData = false;
@@ -960,47 +895,47 @@ class NoiseTemperature extends TestData_header {
             $this->foundCCAData = true;
 
             $this->datafile_cart_0_1 = $this->plotDir . "NoiseTemp_Cart_pol0_SB1.txt";
-            $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB1: $this->datafile_cart_0_1");
+            $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB1: {$this->datafile_cart_0_1}");
             $fc01 = fopen($this->datafile_cart_0_1, 'w');
 
             $this->datafile_cart_0_2 = $this->plotDir . "NoiseTemp_Cart_pol0_SB2.txt";
-            $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB2: $this->datafile_cart_0_2");
+            $this->NT_Logger->WriteLogFile("datafile_cart pol 0 SB2: {$this->datafile_cart_0_2}");
             $fc02 = fopen($this->datafile_cart_0_2, 'w');
 
             $this->datafile_cart_1_1 = $this->plotDir . "NoiseTemp_Cart_pol1_SB1.txt";
-            $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB1: $this->datafile_cart_1_1");
+            $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB1: {$this->datafile_cart_1_1}");
             $fc11 = fopen($this->datafile_cart_1_1, 'w');
 
             $this->datafile_cart_1_2 = $this->plotDir . "NoiseTemp_Cart_pol1_SB2.txt";
-            $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB2: $this->datafile_cart_1_2");
+            $this->NT_Logger->WriteLogFile("datafile_cart pol 1 SB2: {$this->datafile_cart_1_2}");
             $fc12 = fopen($this->datafile_cart_1_2, 'w');
 
             $this->datafile_diff_0_1 = $this->plotDir . "NoiseTemp_Diff_pol0_SB1.txt";
-            $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB1: $this->datafile_diff_0_1");
+            $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB1: {$this->datafile_diff_0_1}");
             $fdiff01 = fopen($this->datafile_diff_0_1, 'w');
 
             $this->datafile_diff_0_2 = $this->plotDir . "NoiseTemp_Diff_pol0_SB2.txt";
-            $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB2: $this->datafile_diff_0_2");
+            $this->NT_Logger->WriteLogFile("datafile_diff pol 0 SB2: {$this->datafile_diff_0_2}");
             $fdiff02 = fopen($this->datafile_diff_0_2, 'w');
 
             $this->datafile_diff_1_1 = $this->plotDir . "NoiseTemp_Diff_pol1_SB1.txt";
-            $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB1: $this->datafile_diff_1_1");
+            $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB1: {$this->datafile_diff_1_1}");
             $fdiff11 = fopen($this->datafile_diff_1_1, 'w');
 
             $this->datafile_diff_1_2 = $this->plotDir . "NoiseTemp_Diff_pol1_SB2.txt";
-            $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB2: $this->datafile_diff_1_2");
+            $this->NT_Logger->WriteLogFile("datafile_diff pol 1 SB2: {$this->datafile_diff_1_2}");
             $fdiff12 = fopen($this->datafile_diff_1_2, 'w');
 
             // find the max keyDataSet for CCA noise temp:
-            $q = "SELECT MAX(keyDataSet) FROM CCA_TEST_NoiseTemperature WHERE fkheader = $CCA_NT_key";
-            $r = mysqli_query($this->dbconnection, $q);
+            $q = "SELECT MAX(keyDataSet) FROM CCA_TEST_NoiseTemperature WHERE fkheader = {$CCA_NT_key}";
+            $r = mysqli_query($this->dbConnection, $q);
             $keyDataSet = ADAPT_mysqli_result($r, 0, 0);
 
             // finally get the CCA Noise Temp data...I'm sure there's a better way
             $q = "SELECT FreqLO, CenterIF, Pol, SB, Treceiver FROM CCA_TEST_NoiseTemperature
-            WHERE fkheader = $CCA_NT_key AND keyDataSet = $keyDataSet
+            WHERE fkheader = {$CCA_NT_key} AND keyDataSet = {$keyDataSet}
             ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
-            $r = mysqli_query($this->dbconnection, $q);
+            $r = mysqli_query($this->dbConnection, $q);
             $this->NT_Logger->WriteLogFile("CCA Noise Temp data query: $q");
 
             $cnt_band9_0 = 0;
@@ -1009,7 +944,7 @@ class NoiseTemperature extends TestData_header {
             while ($row = mysqli_fetch_array($r)) {
 
                 // special band 3 NT_specs
-                if ($this->GetValue('Band') == 3 && $row[0] == 104) {
+                if ($this->Band == 3 && $row[0] == 104) {
                     $NT_spec = $this->NT_B3Special_spec;
                 } else {
                     $NT_spec = $this->NT_80_spec;
@@ -1166,7 +1101,7 @@ class NoiseTemperature extends TestData_header {
             } // end while loop
 
             // Average the band 9&10 Cartridge data
-            if ($this->GetValue('Band') == 9 || $this->GetValue('Band') == 10) {
+            if ($this->Band == 9 || $this->Band == 10) {
 
                 // calculate difference for Pol 0
                 $FEIC_cnt = 0;    // initilize index for FEIC NT data
@@ -1222,22 +1157,22 @@ class NoiseTemperature extends TestData_header {
 
     private function MakePlotFooterLabels() {
         // if no DataSetGroup then use data from the test TestData_header
-        if ($this->GetValue('DataSetGroup') == 0) {
+        if ($this->DataSetGroup == 0) {
             $fetms = $this->GetFetmsDescription(" at: ");
-            $this->plot_label_1 = "set label 'TDH: $this->keyId, Plot SWVer: $this->SWVersion, Meas SWVer: " . $this->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
-            $this->plot_label_2 = "set label 'Measured" . $fetms . " " . $this->GetValue('TS') . ", FE Configuration " . $this->GetValue('fkFE_Config') . ", TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
+            $this->plot_label_1 = "set label 'TDH: {$this->keyId}, Plot SWVer: {$this->SWVersion}, Meas SWVer: {$this->Meas_SWVer}' at screen 0.01, 0.01\r\n";
+            $this->plot_label_2 = "set label 'Measured{$fetms} {$this->TS}, FE Configuration {$this->fkFE_Config}, TcoldEff={$this->effColdLoadTemp} K' at screen 0.01, 0.04\r\n";
 
             // find the max timestamp and FE config number for the plot labels
         } else {
-            $q = "SELECT `TestData_header`.keyID, `TestData_header`.TS,`TestData_header`.`fkFE_Config`,`TestData_header`.Meas_SWVer
-            FROM FE_Config
-            LEFT JOIN `TestData_header` ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
-            WHERE TestData_header.Band = " . $this->GetValue('Band') . "
-            AND TestData_header.fkTestData_Type= " . $this->GetValue('fkTestData_Type') . "
-            AND TestData_header.DataSetGroup= " . $this->GetValue('DataSetGroup') . "
-            AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = " . $this->GetValue('fkFE_Config') . ")
-            ORDER BY `TestData_header`.keyID DESC";
-            $r = mysqli_query($this->dbconnection, $q);
+            $q = "SELECT TestData_header.keyID, TestData_header.TS,TestData_header.fkFE_Config,TestData_header.Meas_SWVer
+                  FROM FE_Config
+                  LEFT JOIN TestData_header ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
+                  WHERE TestData_header.Band = {$this->Band}
+                  AND TestData_header.fkTestData_Type = {$this->fkTestData_Type}
+                  AND TestData_header.DataSetGroup = {$this->DataSetGroup}
+                  AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM FE_Config WHERE keyFEConfig = {$this->fkFE_Config})
+                  ORDER BY TestData_header.keyID DESC";
+            $r = mysqli_query($this->dbConnection, $q);
 
             $cnt = 0; //initialize counter
             while ($row = mysqli_fetch_array($r)) {
@@ -1274,27 +1209,27 @@ class NoiseTemperature extends TestData_header {
                 $FE_Config = "$max_FE_Config";
             }
             $this->plot_label_1 = "set label 'TestData_header.keyId: ($keyId), Plot SWVer: $this->SWVersion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
-            $this->plot_label_2 = "set label 'Dataset: " . $this->GetValue('DataSetGroup') . ", TS: $TS, FE Configuration $FE_Config, TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
+            $this->plot_label_2 = "set label 'Dataset: " . $this->DataSetGroup . ", TS: $TS, FE Configuration $FE_Config, TcoldEff=$this->effColdLoadTemp K' at screen 0.01, 0.04\r\n";
         }
     }
 
     private function DrawPlotTrVsIF() {
         // Tssb vs IF frequency plot
-        $imagename = "Tssb_vs_IF_NoiseTemp " . date('Y_m_d_H_i_s') . ".png";
+        $imagename = "Tssb_vs_IF_NoiseTemp_" . $this->frontEnd->feconfig_id . "_" . $this->keyId . ".png";
         $imagepath = $this->plotDir . $imagename;
         $this->NT_Logger->WriteLogFile("image path: $imagepath");
         $plot_title = "Receiver Noise Temperature ";
-        if ($this->GetValue('Band') == 1)
+        if ($this->Band == 1)
             $plot_title .= "Tssb";
         elseif ($this->foundIRData)
             $plot_title .= "Tssb corrected";
         else
             $plot_title .= "T_rec uncorrected";
 
-        if (isset($this->FrontEnd))
-            $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN');
+        if (isset($this->frontEnd))
+            $plot_title .= ", FE SN" . $this->frontEnd->SN;
 
-        $plot_title .= ", CCA" . $this->GetValue('Band') . "-$this->CCA_SN WCA" . $this->GetValue('Band') . "-$this->WCA_SN";
+        $plot_title .= ", CCA" . $this->Band . "-$this->CCA_SN WCA" . $this->Band . "-$this->WCA_SN";
         $this->y_lim = 1.3 * $this->NT_allRF_spec;  // upper limit to y axis
 
         // Create GNU plot command file for Tssb vs IF plot command
@@ -1305,7 +1240,7 @@ class NoiseTemperature extends TestData_header {
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'IF(GHz)'\r\n");
-        if ($this->GetValue('Band') == 1 || $this->foundIRData)
+        if ($this->Band == 1 || $this->foundIRData)
             fwrite($f, "set ylabel 'Tssb (K)'\r\n");
         else
             fwrite($f, "set ylabel 'T_Rec (K)'\r\n");
@@ -1315,7 +1250,7 @@ class NoiseTemperature extends TestData_header {
         fwrite($f, $this->plot_label_1);
         fwrite($f, $this->plot_label_2);
         // band dependent plotting
-        $hasSB2 = (($this->GetValue('Band') != 1) && ($this->GetValue('Band') != 9) && ($this->GetValue('Band') != 10));
+        $hasSB2 = (($this->Band != 1) && ($this->Band != 9) && ($this->Band != 10));
 
         if (!$hasSB2) {
             fwrite($f, "plot  '$this->if_datafile' using 1:2 with lines lt 1 lw 1 title 'Pol0',");
@@ -1336,28 +1271,29 @@ class NoiseTemperature extends TestData_header {
         system("$GNUPLOT $commandfile");
 
         // store image location
-        $image_url = $main_url_directory . "noisetemp/$imagename";
-        $this->NT_SubHeader->SetValue('ploturl3', $image_url);
+        $image_url = "noisetemp/$imagename";
+        $this->NT_SubHeader->ploturl3 = $image_url;
+        $this->sendImage($imagepath);
     }
 
     private function DrawPlotTrAverage() {
         // Average Tssb vs LO frequency plot
-        $imagename = "Avg_Tssb_vs_LO_NoiseTemp " . date('Y_m_d_H_i_s') . ".png";
+        $imagename = "Avg_Tssb_vs_LO_NoiseTemp_" . $this->frontEnd->feconfig_id . "_" . $this->keyId . ".png";
         $imagepath = $this->plotDir . $imagename;
         $this->NT_Logger->WriteLogFile("image path: $imagepath");
 
         $plot_title = "Receiver Noise Temperature ";
-        if ($this->GetValue('Band') == 1)
+        if ($this->Band == 1)
             $plot_title .= "Tssb";
         elseif ($this->foundIRData)
             $plot_title .= "Tssb corrected";
         else
             $plot_title .= "T_Rec uncorrected";
 
-        if (isset($this->FrontEnd))
-            $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN');
+        if (isset($this->frontEnd))
+            $plot_title .= ", FE SN" . $this->frontEnd->SN;
 
-        $plot_title .= ", CCA" . $this->GetValue('Band') . "-$this->CCA_SN WCA" . $this->GetValue('Band') . "-$this->WCA_SN";
+        $plot_title .= ", CCA" . $this->Band . "-$this->CCA_SN WCA" . $this->Band . "-$this->WCA_SN";
 
         // Create GNU plot command file averaging plot command
         $commandfile = $this->plotDir . "Avg_Tssb_vs_LO_plotcommands.txt";
@@ -1367,7 +1303,7 @@ class NoiseTemperature extends TestData_header {
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'LO(GHz)'\r\n");
-        if ($this->GetValue('Band') == 1 || $this->foundIRData)
+        if ($this->Band == 1 || $this->foundIRData)
             fwrite($f, "set ylabel 'Average Tssb (K)'\r\n");
         else
             fwrite($f, "set ylabel 'Average T_Rec (K)'\r\n");
@@ -1377,7 +1313,7 @@ class NoiseTemperature extends TestData_header {
         fwrite($f, $this->plot_label_1);
         fwrite($f, $this->plot_label_2);
 
-        switch ($this->GetValue('Band')) {
+        switch ($this->Band) {
             case 1:
             case 9:
                 fwrite($f, "plot  '$this->avg_datafile' using 1:2 with linespoints lt 1 lw 1 title 'Pol0',");
@@ -1456,8 +1392,9 @@ class NoiseTemperature extends TestData_header {
         system("$GNUPLOT $commandfile");
 
         // store image location
-        $image_url = $main_url_directory . "noisetemp/$imagename";
-        $this->NT_SubHeader->SetValue('ploturl4', $image_url);
+        $image_url = "noisetemp/$imagename";
+        $this->NT_SubHeader->ploturl4 = $image_url;
+        $this->sendImage($imagepath);
     }
 
     private function DrawPlotTrVsRF() {
@@ -1468,14 +1405,14 @@ class NoiseTemperature extends TestData_header {
         for ($cnt = 0; $cnt < 4; $cnt++) {
             $plot_title = "Receiver Noise Temperature, $this->lowerIFLimit-$this->upperIFLimit GHz IF";
 
-            if (isset($this->FrontEnd))
-                $plot_title .= ", FE SN" . $this->FrontEnd->GetValue('SN');
+            if (isset($this->frontEnd))
+                $plot_title .= ", FE SN" . $this->frontEnd->SN;
 
-            $plot_title .= ", CCA" . $this->GetValue('Band') . "-$this->CCA_SN WCA" . $this->GetValue('Band') . "-$this->WCA_SN,";
-            $imagename = "Tssb_vs_RF_Freq_NoiseTemp Plot$cnt " . date('Y_m_d_H_i_s') . ".png";
+            $plot_title .= ", CCA" . $this->Band . "-$this->CCA_SN WCA" . $this->Band . "-$this->WCA_SN,";
+            $imagename = "Tssb_vs_RF_Freq_NoiseTemp_Plot${cnt}_" . $this->frontEnd->feconfig_id . "_" . $this->keyId . ".png";
             $imagepath = $this->plotDir . $imagename;
             $this->NT_Logger->WriteLogFile("image path: $imagepath");
-            $image_url = $main_url_directory . "noisetemp/$imagename";
+            $image_url = "noisetemp/$imagename";
 
             // Create GNU plot command file
             $commandfile = $this->plotDir . "plotcommands_$cnt.txt";
@@ -1484,13 +1421,13 @@ class NoiseTemperature extends TestData_header {
             fwrite($f, "set terminal png size 900,600 crop\r\n");
             fwrite($f, "set output '$imagepath'\r\n");
             fwrite($f, "set xlabel 'RF (GHz)'\r\n");
-            if ($this->GetValue('Band') == 1) {
+            if ($this->Band == 1) {
                 fwrite($f, "set ylabel 'Tssb (K)'\r\n");
             } elseif ($this->foundIRData) {
                 fwrite($f, "set ylabel 'Tssb corrected (K)'\r\n");
             } else {
                 fwrite($f, "set ylabel 'T_Rec uncorrected (K)'\r\n");
-                if ($this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
+                if ($this->Band != 9 && $this->Band != 10) {
                     fwrite($f,  " " . 'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .16' . "\r\n");
                     fwrite($f,  " " . 'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .9' . "\r\n");
                 }
@@ -1508,7 +1445,7 @@ class NoiseTemperature extends TestData_header {
 
             switch ($cnt) {
                 case 0;
-                    if ($this->GetValue('Band') == 9 || $this->GetValue('Band') == 10) {
+                    if ($this->Band == 9 || $this->Band == 10) {
                         $SB = "";
                     } else {
                         $SB = "USB";
@@ -1528,11 +1465,12 @@ class NoiseTemperature extends TestData_header {
 
                     //Call gnuplot
                     system("$GNUPLOT $commandfile");
-                    $this->NT_SubHeader->SetValue('ploturl1', $image_url);
+                    $this->NT_SubHeader->ploturl1 = $image_url;
+                    $this->sendImage($imagepath);
                     break;
 
                 case 1;
-                    if ($this->GetValue('Band') != 1 && $this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
+                    if ($this->Band != 1 && $this->Band != 9 && $this->Band != 10) {
                         $plot_title = "$plot_title Pol 0 LSB";
                         fwrite($f, "set title '$plot_title'\r\n");
                         fwrite($f, "plot  '$this->rf_datafile' using 2:4 with lines lt 1 lw 3 title 'FEIC Meas Pol0 LSB'");
@@ -1548,14 +1486,15 @@ class NoiseTemperature extends TestData_header {
 
                         //Call gnuplot
                         system("$GNUPLOT $commandfile");
-                        $this->NT_SubHeader->SetValue('ploturl2', $image_url);
+                        $this->NT_SubHeader->ploturl2 =  $image_url;
+                        $this->sendImage($imagepath);
                     } else {
-                        $this->NT_SubHeader->SetValue('ploturl2', '');
+                        $this->NT_SubHeader->ploturl2 =  '';
                     }
                     break;
 
                 case 2;
-                    if ($this->GetValue('Band') == 9 || $this->GetValue('Band') == 10) {
+                    if ($this->Band == 9 || $this->Band == 10) {
                         $SB = "";
                     } else {
                         $SB = "USB";
@@ -1575,15 +1514,17 @@ class NoiseTemperature extends TestData_header {
 
                     //Call gnuplot
                     system("$GNUPLOT $commandfile");
-                    if ($this->GetValue('Band') == 9 || $this->GetValue('Band') == 10) {
-                        $this->NT_SubHeader->SetValue('ploturl2', $image_url);
+                    if ($this->Band == 9 || $this->Band == 10) {
+                        $this->NT_SubHeader->ploturl2 = $image_url;
+                        $this->sendImage($imagepath);
                     } else {
-                        $this->NT_SubHeader->SetValue('ploturl5', $image_url);
+                        $this->NT_SubHeader->ploturl5 = $image_url;
+                        $this->sendImage($imagepath);
                     }
                     break;
 
                 case 3;
-                    if ($this->GetValue('Band') != 1 && $this->GetValue('Band') != 9 && $this->GetValue('Band') != 10) {
+                    if ($this->Band != 1 && $this->Band != 9 && $this->Band != 10) {
                         $plot_title = "$plot_title Pol 1 LSB";
                         fwrite($f, "set title '$plot_title'\r\n");
                         fwrite($f, "plot  '$this->rf_datafile' using 2:6 with lines lt 1 lw 3 title 'FEIC Meas Pol1 LSB'");
@@ -1599,9 +1540,10 @@ class NoiseTemperature extends TestData_header {
 
                         //Call gnuplot
                         system("$GNUPLOT $commandfile");
-                        $this->NT_SubHeader->SetValue('ploturl6', $image_url);
+                        $this->NT_SubHeader->ploturl6 = $image_url;
+                        $this->sendImage($imagepath);
                     } else {
-                        $this->NT_SubHeader->SetValue('ploturl6', '');
+                        $this->NT_SubHeader->ploturl6 = '';
                     }
                     break;
             }
@@ -1609,35 +1551,35 @@ class NoiseTemperature extends TestData_header {
     }
 
     public function Export($outputDir) {
-        $destFile = $outputDir . "NoiseTemp_B" . $this->GetValue('Band') . "_H" . $this->TestDataHeader . ".ini";
+        $destFile = "{$outputDir}NoiseTemp_B{$this->Band}_H{$this->keyId}.ini";
         $handle = fopen($destFile, "w");
         fwrite($handle, "[export]\n");
-        fwrite($handle, "band=" . $this->GetValue('Band') . "\n");
-        fwrite($handle, "FEid=" . $this->fe_keyId . "\n");
-        fwrite($handle, "CCAid=" . $this->GetValue('fkFE_Components') . "\n");
-        fwrite($handle, "TDHid=" . $this->TestDataHeader . "\n");
+        fwrite($handle, "band={$this->Band}\n");
+        fwrite($handle, "FEid={$this->feKeyId}\n");
+        fwrite($handle, "CCAid={$this->fkFE_Components}\n");
+        fwrite($handle, "TDHid={$this->keyId}\n");
 
-        $url = $this->NT_SubHeader->GetValue('ploturl1');
+        $url = $this->NT_SubHeader->ploturl1;
         if ($url)
             fwrite($handle, "NTIF0=$url\n");
 
-        $url = $this->NT_SubHeader->GetValue('ploturl2');
+        $url = $this->NT_SubHeader->ploturl2;
         if ($url)
             fwrite($handle, "NTIF1=$url\n");
 
-        $url = $this->NT_SubHeader->GetValue('ploturl5');
+        $url = $this->NT_SubHeader->ploturl5;
         if ($url)
             fwrite($handle, "NTIF2=$url\n");
 
-        $url = $this->NT_SubHeader->GetValue('ploturl6');
+        $url = $this->NT_SubHeader->ploturl6;
         if ($url)
             fwrite($handle, "NTIF3=$url\n");
 
-        $url = $this->NT_SubHeader->GetValue('ploturl3');
+        $url = $this->NT_SubHeader->ploturl3;
         if ($url)
             fwrite($handle, "NTEnsemble=$url\n");
 
-        $url = $this->NT_SubHeader->GetValue('ploturl4');
+        $url = $this->NT_SubHeader->ploturl4;
         if ($url)
             fwrite($handle, "NTAverage=$url\n");
 

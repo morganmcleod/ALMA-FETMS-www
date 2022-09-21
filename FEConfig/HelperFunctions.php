@@ -142,5 +142,3 @@ function GetPHPVersion() {
     $phpversion = $versionarray[0] . "." . $versionarray[1];
     return $phpversion;
 }
-
-?>
