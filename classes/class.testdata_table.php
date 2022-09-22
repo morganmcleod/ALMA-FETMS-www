@@ -46,6 +46,7 @@ class TestDataTable {
          * 2017-08-30 MM separated grouping, link, and text generation into helper groupHeaders()
          * 2017-01-18 MM combined methods from classes FEComponent and FrontEnd
          * 2015-04-28 jee for pattern data, added test number and day of week to date
+         * 2022-09-08 MM also show test number for noise temps
          */
 
         // Fetch TDH records matching the FE_Config or FE_Component for this band:
@@ -153,18 +154,18 @@ class TestDataTable {
                         //LO Lock Test or noise temp
                         $g = ($dataSetGroup) ? "&g=$dataSetGroup" : "";
                         $link = "testdata/lolocktest.php?keyheader=$keyId$g&fc=$fc";
-                        $description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : $dataDesc;
+                        $description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : "$dataDesc $keyId";
                         break;
                     case 58:
                         //LO Lock Test or noise temp
                         $g = ($dataSetGroup) ? "&g=$dataSetGroup" : "";
                         $link = "testdata/noisetemp.php?keyheader=$keyId$g&fc=$fc";
-                        $description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : $dataDesc;
+                        $description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : "$dataDesc $keyId";
                         break;
 
                     default:
                         $link = "testdata/testdata.php?keyheader=$keyId&fc=$fc";
-                        $description = $dataDesc;
+                        $description = "$dataDesc $keyId";
                         break;
                 }
 

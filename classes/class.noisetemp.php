@@ -112,6 +112,18 @@ class NoiseTemperature extends TestData_header {
         return ADAPT_mysqli_result($r, 0, 0);
     }
 
+    public function hasSB2($band) {
+        switch ($band) {
+            case 1:
+            case 9:
+            case 10:
+                return false;
+                break;
+            default:
+                return true;
+        }
+    }
+
     private function sendImage($imagepath, $path = "noisetemp/") {
         global $site_storage;
         $ch = curl_init("{$site_storage}upload.php");
@@ -1250,9 +1262,7 @@ class NoiseTemperature extends TestData_header {
         fwrite($f, $this->plot_label_1);
         fwrite($f, $this->plot_label_2);
         // band dependent plotting
-        $hasSB2 = (($this->Band != 1) && ($this->Band != 9) && ($this->Band != 10));
-
-        if (!$hasSB2) {
+        if (!$this->hasSB2($this->Band)) {
             fwrite($f, "plot  '$this->if_datafile' using 1:2 with lines lt 1 lw 1 title 'Pol0',");
             fwrite($f, "'$this->if_datafile' using 1:4 with lines lt 3 lw 1 title 'Pol1'\r\n");
         } else {
@@ -1379,8 +1389,8 @@ class NoiseTemperature extends TestData_header {
                 fwrite($f, "'$this->avg_datafile' using 1:3 with linespoints lt 2 lw 1 title 'Pol0sb2',");
                 fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1sb1',");
                 fwrite($f, "'$this->avg_datafile' using 1:5 with linespoints lt 4 lw 1 title 'Pol1sb2',");
-                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
-                fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
+                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)'\r\n");
+                //                 fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
                 break;
         }
         fclose($f);
@@ -1402,7 +1412,7 @@ class NoiseTemperature extends TestData_header {
         require(site_get_config_main());
 
         // start loop for TSSB vs RF freq plots
-        for ($cnt = 0; $cnt < 4; $cnt++) {
+        for ($ifNum = 0; $ifNum < 4; $ifNum++) {
             $plot_title = "Receiver Noise Temperature, $this->lowerIFLimit-$this->upperIFLimit GHz IF";
 
             if (isset($this->frontEnd))
@@ -1415,7 +1425,7 @@ class NoiseTemperature extends TestData_header {
             $image_url = "noisetemp/$imagename";
 
             // Create GNU plot command file
-            $commandfile = $this->plotDir . "plotcommands_$cnt.txt";
+            $commandfile = $this->plotDir . "plotcommands_$ifNum.txt";
             $f = fopen($commandfile, 'w');
             $this->NT_Logger->WriteLogFile("command file: $commandfile");
             fwrite($f, "set terminal png size 900,600 crop\r\n");
@@ -1428,7 +1438,6 @@ class NoiseTemperature extends TestData_header {
             } else {
                 fwrite($f, "set ylabel 'T_Rec uncorrected (K)'\r\n");
                 if ($this->Band != 9 && $this->Band != 10) {
-                    fwrite($f,  " " . 'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .16' . "\r\n");
                     fwrite($f,  " " . 'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .9' . "\r\n");
                 }
             }
@@ -1443,9 +1452,9 @@ class NoiseTemperature extends TestData_header {
             fwrite($f, $this->plot_label_2);
             fwrite($f, "set yrange [0:$this->y_lim]\r\n");
 
-            switch ($cnt) {
-                case 0;
-                    if ($this->Band == 9 || $this->Band == 10) {
+            switch ($ifNum) {
+                case 0:
+                    if (!$this->hasSB2($this->Band)) {
                         $SB = "";
                     } else {
                         $SB = "USB";
@@ -1469,8 +1478,8 @@ class NoiseTemperature extends TestData_header {
                     $this->sendImage($imagepath);
                     break;
 
-                case 1;
-                    if ($this->Band != 1 && $this->Band != 9 && $this->Band != 10) {
+                case 1:
+                    if ($this->hasSB2($this->Band)) {
                         $plot_title = "$plot_title Pol 0 LSB";
                         fwrite($f, "set title '$plot_title'\r\n");
                         fwrite($f, "plot  '$this->rf_datafile' using 2:4 with lines lt 1 lw 3 title 'FEIC Meas Pol0 LSB'");
@@ -1493,8 +1502,8 @@ class NoiseTemperature extends TestData_header {
                     }
                     break;
 
-                case 2;
-                    if ($this->Band == 9 || $this->Band == 10) {
+                case 2:
+                    if (!$this->hasSB2($this->Band)) {
                         $SB = "";
                     } else {
                         $SB = "USB";
@@ -1523,8 +1532,8 @@ class NoiseTemperature extends TestData_header {
                     }
                     break;
 
-                case 3;
-                    if ($this->Band != 1 && $this->Band != 9 && $this->Band != 10) {
+                case 3:
+                    if ($this->hasSB2($this->Band)) {
                         $plot_title = "$plot_title Pol 1 LSB";
                         fwrite($f, "set title '$plot_title'\r\n");
                         fwrite($f, "plot  '$this->rf_datafile' using 2:6 with lines lt 1 lw 3 title 'FEIC Meas Pol1 LSB'");

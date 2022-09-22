@@ -37,7 +37,9 @@ class IFSpectrum_impl extends TestData_header {
     public $specProvider;          // class Specifications
     public $specs;                 // array of specs loaded from specProvider
 
+    public $GNUPLOT_path;          // Path to Gnuplot from config_main.php
     public $writedirectory;        // Directory for output files
+    public $url_directory;         // URL stem for output files
     public $aborted;               // If true, plotting procedure has been aborted by user.
     public $debugRawDataFiles;     // If true, write CSV data files to disk for debugging.
 
@@ -54,6 +56,11 @@ class IFSpectrum_impl extends TestData_header {
     public $TS;                    // timestamp string for this dataSetGroup
     public $plotURLs;              // array of plot URLs for this dataSetGrou p
 
+    public $keyNoiseFloor;       //keyId for the noise floor header
+    public $NoiseFloorHeader;
+
+    public $fWindow_Low;           // low end of in-band IF
+    public $fWindow_High;          // high end of in-band IF
     public $CCASN;                 // SN of the CCA
 
     public $progressfile;          // ini file to store progress information during plot procedure.
@@ -65,12 +72,13 @@ class IFSpectrum_impl extends TestData_header {
 
     public $swVersion;             // software version string for this class.
 
-    const DFLT_OFFSET = 10;         // dB offset between traces
-    const EXPANDED_SPACING = 2.5;   // dB spacing between traces in expanded plot
+    const DFLT_OFFSET = 10;        // dB  offset between traces
+    const EXPANDED_SPACING = 2.5;  // dB  spacing between traces in expanded plot
 
     public function __construct($inKeyId, $inFc) {
         parent::__construct($inKeyId, $inFc);
-        $this->swVersion = "1.4.6";
+        $this->swVersion = "1.4.7";
+        // 1.4.7  Fixed loading noise floor profiles for total and in-band power tables
         // 1.4.6  Changed tables from 'table7' to 'table1' style for grid lines.
         // 1.4.5  Move sizing the <div> for the info page out to the loader page
         //        Added GetTDHkeyString()
@@ -697,6 +705,9 @@ class IFSpectrum_impl extends TestData_header {
     public function Calc_TotalInbandPower($progressStart, $progressIncrement) {
         $iflim = $this->specs['maxch'];
         $progress = $progressStart;
+
+        $nfData = $this->ifSpectrumDb->getNoiseFloorData($this->keyNoiseFloor);
+        $this->ifCalc->setNoiseFloorData($nfData);
 
         for ($ifChannel = 0; $ifChannel <= $iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())

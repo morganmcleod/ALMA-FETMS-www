@@ -11,13 +11,13 @@ $dbconnection = site_getDbConnection();
 $fc = '40';
 $_REQUEST['fc'] = $fc;
 
-$q = "SELECT FEC0.keyId
-      FROM FE_Components AS FEC0 LEFT JOIN FE_Components AS FEC1
-      ON FEC0.Band = FEC1.Band AND FEC0.SN = FEC1.SN AND FEC1.keyId > FEC0.keyId
-      WHERE FEC1.keyId IS NULL
-      AND FEC0.fkFE_ComponentType = 11
-      AND FEC0.Band >= 1 AND FEC0.Band <= 10
-      ORDER BY FEC0.Band, FEC0.SN;";
+$q = "SELECT keyId, LPAD(SN, 2, '0') AS SN, Band, TS
+     FROM FE_Components
+     WHERE Band IN (3, 4, 8, 9, 10)
+     AND Band <> 0
+     AND fkFE_ComponentType = 11
+     ORDER BY SN ASC;
+";
 
 $r = mysqli_query($dbconnection, $q);
 
@@ -31,7 +31,7 @@ while ($row = mysqli_fetch_array($r)) {
     $SN = $wca->SN;
     $xmlname = hexdec($wca->ESN1);
 
-    $outdir = $wca_write_directory . "xml5";
+    $outdir = $wca_write_directory . "xml2022-08-05";
     if (!file_exists($outdir))
         mkdir($outdir);
 

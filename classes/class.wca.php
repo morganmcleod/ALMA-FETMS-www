@@ -41,8 +41,13 @@ class WCA extends FEComponent {
         $this->fc = $in_fc;
         parent::__construct(NULL, $in_keyId, NULL, $in_fc);
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.7";
-        /* 1.3.7 Fix bugs in Update_Configuration_From_INI(), GetXmlFileContent()
+        $this->swversion = "1.3.10";
+        /* 1.3.10 Re-enable saving basic parameters from wca.php:  ESN, YIG low, YIG high, VG0, VG1
+         *        Make Band and SN entry fields read-only.   Remove Notes entry field (wasn't working anyway.)
+         * 1.3.9 Use "LO" terminology instead of "WCA" for band 1
+         * 1.3.8 Delete WCA_LOParams in Upload_WCAs_file().  Will get recreated on refresh.
+         *       Map VGA, VGB to VG0, VG1 in band-dependent way on WCAs fileimport 
+         * 1.3.7 Fix bugs in Update_Configuration_From_INI(), GetXmlFileContent()
          * 1.3.6 Fix GetXmlFileContent() to comply with /alma/ste/config/TMCDB_DATA/ for Cycle 8
          * 1.3.5 includes OptimizationTargets in WCA data delivery XML
          * 1.3.4 Amplitude stability: force Y-axis to scientific notation.
@@ -184,13 +189,15 @@ class WCA extends FEComponent {
         require(site_get_config_main());
         $where = $_SERVER["PHP_SELF"];
         $where = '';
+        $band = $this->GetValue('Band');
+        $name = ($band == 1) ? "LO" : "WCA";
         echo "<form action='" . $where . "' method='POST'>";
         echo "<div style ='width:100%;height:50%;margin-left:30px;'>";
-        echo "<br><font size='+2'><b>WCA Information</b></font>";
+        echo "<br><font size='+2'><b>$name Information</b></font>";
 
         $this->DisplayMainData();
 
-        echo "<br><br>";
+        echo "<br>";
 
         echo "<input type='hidden' name='" . $this->keyIdName . "' value='$this->keyId'>";
         if ($this->fc == '')
@@ -198,10 +205,9 @@ class WCA extends FEComponent {
         else
             echo "<input type='hidden' name='fc' value='$this->fc'>";
 
-        // Removed for 1.3.0 by request:
-        //         echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>";
+        echo "<input type='submit' name = 'submitted' value='SAVE CHANGES'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 
-        echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'><br>";
+        echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'>";
 
         echo "</div>";
 
@@ -345,11 +351,11 @@ class WCA extends FEComponent {
         echo "<td><font size='-1'>$ts</font></td></tr>";
         echo "<tr>";
         echo "<th>Band</th>";
-        echo "<td><input type='text' name='Band' size='2' maxlength='200' value = '" . $this->Band . "'></td>";
+        echo "<td><input type='text' name='Band' size='2' maxlength='200' disabled value = '" . $this->Band . "'></td>";
         echo "</tr>";
         echo "<tr>";
         echo "<th>SN</th>";
-        echo "<td><input type='text' name='SN' size='2' maxlength='200' value = '" . $this->SN . "'></td>";
+        echo "<td><input type='text' name='SN' size='2' maxlength='200' disabled value = '" . $this->SN . "'></td>";
         echo "</tr>";
         echo "<tr>";
         echo "<th>ESN</th>";
@@ -376,7 +382,7 @@ class WCA extends FEComponent {
         echo "</tr>";
 
         echo "<tr>";
-        echo "<th>INI file downloads</th>";
+        echo "<th>INI, XML downloads</th>";
         echo "<td>";
 
         $xmlname = hexdec($this->ESN1);
@@ -395,6 +401,7 @@ class WCA extends FEComponent {
         echo "<br>Notes:<input type='text' name='Notes' size='50'
         maxlength='200' value = '" . $this->Notes . "'>";
     }
+
     public function DisplayMainDataNonEdit() {
         echo "<div style = 'width: 300px'><br><br>";
         echo "<table id = 'table1'>";
@@ -687,11 +694,12 @@ class WCA extends FEComponent {
         $ts = ADAPT_mysqli_result($r, 0, 0);
         $band = $this->Band;
         $sn = $this->SN;
+        $name = ($band == 1) ? "LO" : "WCA";
 
         echo "<div style= 'width: 500px'>
             <table id = 'table1' border = '1'>";
         echo "<tr class='alt'><th colspan = '5'>
-            <font size = '+1'>LO PARAMS WCA $band-$sn <i>($ts)</font></i></th></tr>
+            <font size = '+1'>LO PARAMS for $name $band-$sn <i>($ts)</font></i></th></tr>
             <tr>
                 <th>LO (GHz)</th>
                 <th>VDP0</th>
@@ -1089,6 +1097,45 @@ class WCA extends FEComponent {
         parent::Delete_record();
         echo '<meta http-equiv="Refresh" content="1;url=wca_main.php">';
     }
+    private function WCA_PA_Mapping_Swap($band) {
+        // Return true if PA_A is Pol1 and PA_B is Pol0.
+        switch ($band) {
+            case 1:
+                return false;
+                break;
+            case 2:
+                return false;
+                break;
+            case 3:
+                return true;
+                break;
+            case 4:
+                return true;
+                break;
+            case 5:
+                return false;
+                break;
+            case 6:
+                return false;
+                break;
+            case 7:
+                return false;
+                break;
+            case 8:
+                return true;
+                break;
+            case 9:
+                return true;
+                break;
+            case 10:
+                return true;
+                break;
+            default:
+                break;
+        }
+        return false;
+    }
+
     private function Upload_WCAs_file($datafile_name) {
         $ret = false;
         $filecontents = file($datafile_name);
@@ -1112,8 +1159,15 @@ class WCA extends FEComponent {
                     $this->SetValue('ESN1', trim($tempArray[3], $quotes));
                     $this->_WCAs->FhiYIG = trim($tempArray[4], $quotes);
                     $this->_WCAs->FloYIG = trim($tempArray[5], $quotes);
-                    $this->_WCAs->VG0 = trim($tempArray[6], $quotes);
-                    $this->_WCAs->VG1 = trim($tempArray[7], $quotes);
+                    if ($this->WCA_PA_Mapping_Swap($band)) {
+                        $this->_WCAs->VG1 = trim($tempArray[6], $quotes);
+                        $this->_WCAs->VG0 = trim($tempArray[7], $quotes);
+                    } else {
+                        $this->_WCAs->VG0 = trim($tempArray[6], $quotes);
+                        $this->_WCAs->VG1 = trim($tempArray[7], $quotes);
+                    }
+                    // Get rid of any existing LO Params.  Will get re-created on refresh.
+                    $r = $this->db_pull->q(7, $this->keyId);
                     $ret = true;
                 }
             }
@@ -1426,7 +1480,11 @@ class WCA extends FEComponent {
                 $imagename = "WCA_AmplitudeStability_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
                 $image_url = $this->url_directory . $this->Band . "_" . $this->SN . "/$imagename";
 
-                $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN . " Amplitude Stability ($TS)";
+                if ($this->Band == 1)
+                    $plot_title = "LO ";
+                else
+                    $plot_title = "WCA ";
+                $plot_title .= "Band" . $this->Band . " SN" . $this->SN . " Amplitude Stability ($TS)";
                 $this->_WCAs->amp_stability_url = $image_url;
                 $this->_WCAs->Update();
                 $imagepath = $imagedirectory . $imagename;
@@ -1519,7 +1577,11 @@ class WCA extends FEComponent {
         $imagename = "WCA_AMNoiseDSB_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $imagename;
 
-        $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN . " AM Noise ($TS)";
+        if ($this->GetValue('Band') == 1)
+            $plot_title = "LO ";
+        else
+            $plot_title = "WCA ";
+        $plot_title .= "Band" . $this->Band . " SN" . $this->SN . " AM Noise ($TS)";
         $this->_WCAs->amnz_avgdsb_url = $image_url;
         $this->_WCAs->Update();
         $imagepath = $imagedirectory . $imagename;
@@ -1616,8 +1678,11 @@ class WCA extends FEComponent {
             }
             $imagename = "WCA_AMNoisePol$pol" . "_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
             $image_url = $this->url_directory . $imagename;
-
-            $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN . " AM Noise Pol $pol ($TS)";
+            if ($this->GetValue('Band') == 1)
+                $plot_title = "LO ";
+            else
+                $plot_title = "WCA ";
+            $plot_title .= " Band" . $this->Band . " SN" . $this->SN . " AM Noise Pol $pol ($TS)";
             $this->_WCAs->SetValue("amnz_pol" . $pol . "_url", $image_url);
             $this->_WCAs->Update();
             $imagepath = $imagedirectory . $imagename;
@@ -1761,8 +1826,11 @@ class WCA extends FEComponent {
         }
         $imagename = "WCA_PhaseNoise_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $imagename;
-
-        $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN . " Phase Noise ($TS)";
+        if ($this->GetValue('Band') == 1)
+            $plot_title = "LO ";
+        else
+            $plot_title = "WCA ";
+        $plot_title .= "Band" . $this->Band . " SN" . $this->SN . " Phase Noise ($TS)";
         $this->_WCAs->phasenoise_url = $image_url;
         $this->_WCAs->Update();
         $imagepath = $imagedirectory . $imagename;

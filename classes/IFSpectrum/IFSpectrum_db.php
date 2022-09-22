@@ -209,6 +209,33 @@ class IFSpectrum_db {
     }
 
     /**
+     * Retrieve noise floor data for total power calculation
+     *
+     * @param integer $keyNF
+     * @return structure suitable for IFSpectrum_calc:
+     * array(
+     *     [0] => array(
+     *          'Freq_GHz' => float,   // Spectrum analyzer IF center
+     *          'Power_dBm' => float  // Spectrum analyzer power measurement
+     *     )
+     *     [1] => array(...
+     * )
+     */
+    public function getNoiseFloorData($keyNF) {
+        $q = "SELECT (Freq_Hz / 1.0E9) as Freq_GHz, Power_dBm FROM TEST_IFSpectrum_NoiseFloor
+        WHERE fkHeader = $keyNF ORDER BY Freq_Hz;";
+        $r = $this->run_query($q);
+
+        $output = array();
+        $count = 0;
+        while ($row = mysqli_fetch_assoc($r)) {
+            $output[] = $row;
+            $count++;
+        }
+        return $output;
+    }
+
+    /**
      * Helper function that finds TestData_Header keys for the given parameters.
      * @param int $DataSetGroup
      * @param int $Band
@@ -317,10 +344,10 @@ class IFSpectrum_db {
      */
     public function getNoiseFloorHeaders($TDH) {
         $qnf = "SELECT IFSpectrum_SubHeader.fkNoiseFloorHeader, IFSpectrum_SubHeader.Band
-                FROM TestData_header, IFSpectrum_SubHeader
-                WHERE TestData_header.keyId = {$TDH}
-                AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
-                 AND TestData_header.keyId = IFSpectrum_SubHeader.fkHeader LIMIT 1";
+        FROM TestData_header, IFSpectrum_SubHeader
+        WHERE TestData_header.keyId = {$TDH}
+        AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
+        AND TestData_header.keyId = IFSpectrum_SubHeader.fkHeader LIMIT 1";
 
         $rnf = $this->run_query($qnf);
         $keyNF = ADAPT_mysqli_result($rnf, 0, 0);
