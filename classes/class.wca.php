@@ -214,7 +214,6 @@ class WCA extends FEComponent {
         echo "<div style ='width:100%;height:50%;margin-top:20px;margin-left:30px;'>";
 
         $band = $this->Band;
-
         if ($this->keyId != "") {
             echo "<table>";
             echo "<tr><td>";
@@ -970,15 +969,22 @@ class WCA extends FEComponent {
             <table id="table1"><tr class="alt"><th>Upload CSV Data files</th><th>Draw Plots</th></tr>
                 <tr><td align = "right">WCAs file:           </b><input name="file_wcas" type="file" /></td><td></td></tr>';
         echo '<tr><td align = "right">Amplitude Stability: </b><input name="file_amplitudestability" type="file" /></td>
-                    <td align = "center"><input type="submit" name="draw_amplitudestability" value="Redraw Amp. Stability"></td></tr>';
+                    <td align = "left"><input type="submit" name="draw_amplitudestability" value="Redraw Amp. Stability"></td></tr>';
         if ($band != 1) {
             echo '<tr><td align = "right">AM Noise:            </b><input name="file_amnoise" type="file" /></td>
-                    <td align = "center"><input type="submit" name="draw_amnoise" value="Redraw AM Noise"></td></tr>';
+                    <td align = "left"><input type="submit" name="draw_amnoise" value="Redraw AM Noise"></td></tr>';
         }
         echo '<tr><td align = "right">Output Power:        </b><input name="file_outputpower" type="file" /></td>
-                    <td align = "center"><input type="submit" name="draw_outputpower" value="Redraw Output Power"></td></tr>
+                    <td align = "left"><input type="submit" name="draw_outputpower" value="Redraw Output Power">';
+        if ($band == 7) {
+            echo '<br><label class="switch">Teledyne PA: X is ctrl scalar&nbsp;<input type="checkbox" name="has_teledyne_pa"';
+            if (isset($_REQUEST['has_teledyne_pa']))
+                echo ' checked';
+            echo '></label></td>';
+        }
+        echo '</tr>
                 <tr><td align = "right">Phase Noise:         </b><input name="file_phasenoise" type="file" /></td>
-                    <td align = "center"><input type="submit" name="draw_phasenoise" value="Redraw Phase Noise"></td></tr>';
+                    <td align = "left"><input type="submit" name="draw_phasenoise" value="Redraw Phase Noise"></td></tr>';
         if ($band == 1) {
             echo '<tr><td align = "right">Isolation:           </b><input name="file_isolation" type="file" /></td>
                     <td align = "center"><input type="submit" name="draw_isolation" value="Redraw Isolation"></td></tr>';
@@ -986,7 +992,7 @@ class WCA extends FEComponent {
         echo '<tr><td align = "right">';
         echo "<input type='hidden' name= 'fc' value='$this->fc' />";
         echo '<input type="submit" name= "submit_datafile" value="Upload All" /></td>
-                    <td align = "center"><input type="submit" name="draw_all" value="REDRAW ALL PLOTS"></td></tr>
+                    <td align = "left"><input type="submit" name="draw_all" value="REDRAW ALL PLOTS"></td></tr>
             </table>
         </form>
         </div>';
@@ -1135,7 +1141,6 @@ class WCA extends FEComponent {
         }
         return false;
     }
-
     private function Upload_WCAs_file($datafile_name) {
         $ret = false;
         $filecontents = file($datafile_name);
@@ -1576,8 +1581,7 @@ class WCA extends FEComponent {
         }
         $imagename = "WCA_AMNoiseDSB_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $imagename;
-
-        if ($this->GetValue('Band') == 1)
+        if ($this->Band == 1)
             $plot_title = "LO ";
         else
             $plot_title = "WCA ";
@@ -1682,7 +1686,7 @@ class WCA extends FEComponent {
                 $plot_title = "LO ";
             else
                 $plot_title = "WCA ";
-            $plot_title .= " Band" . $this->Band . " SN" . $this->SN . " AM Noise Pol $pol ($TS)";
+            $plot_title .= "Band" . $this->Band . " SN" . $this->SN . " AM Noise Pol $pol ($TS)";
             $this->_WCAs->SetValue("amnz_pol" . $pol . "_url", $image_url);
             $this->_WCAs->Update();
             $imagepath = $imagedirectory . $imagename;
@@ -2265,6 +2269,10 @@ class WCA extends FEComponent {
         $spec_description_2 = $specs['spec_description_2'];
         $enable_spec_2 = $specs['enable_spec_2'];
 
+        $teledynePA = False;
+        if (isset($_REQUEST['has_teledyne_pa']))
+            $teledynePA = True;
+
         // Find X-axis max:
         //$plotXMax = $specs['OPvsVD_XMax'];   Getting from data instead of specs now...
         $r = $this->db_pull->q(17, $this->tdh_outputpower->keyId);
@@ -2319,7 +2327,14 @@ class WCA extends FEComponent {
         $imagepath = $imagedirectory . $imagename;
 
         // Write command file for gnuplot
-        $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN . " Output Power Vs. Drain Voltage Pol $pol ($TS)";
+        $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN;
+        if ($teledynePA)
+            $plot_title .= " Output Power Vs. Control Scalar";
+        else
+            $plot_title .= " Output Power Vs. Drain Voltage";
+
+        $plot_title .= ": Pol $pol ($TS)";
+
         $plot_command_file = $this->writedirectory . "wca_op_vd_command.txt";
         if (file_exists($plot_command_file)) {
             unlink($plot_command_file);
@@ -2329,7 +2344,11 @@ class WCA extends FEComponent {
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
-        fwrite($fh, "set xlabel 'VD$pol (V)'\r\n");
+        if ($teledynePA) {
+            fwrite($fh, "set xlabel 'Control Scalar (0..2.5)'\r\n");
+        } else {
+            fwrite($fh, "set xlabel 'Drain Voltage'\r\n");
+        }
         fwrite($fh, "set ylabel 'Output Power (mW)'\r\n");
         fwrite($fh, "set key outside\r\n");
 
