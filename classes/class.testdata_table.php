@@ -151,15 +151,10 @@ class TestDataTable {
                         break;
 
                     case 57:
-                        //LO Lock Test or noise temp
-                        $g = ($dataSetGroup) ? "&g=$dataSetGroup" : "";
-                        $link = "testdata/lolocktest.php?keyheader=$keyId$g&fc=$fc";
-                        $description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : "$dataDesc $keyId";
-                        break;
                     case 58:
                         //LO Lock Test or noise temp
                         $g = ($dataSetGroup) ? "&g=$dataSetGroup" : "";
-                        $link = "testdata/noisetemp.php?keyheader=$keyId$g&fc=$fc";
+                        $link = "testdata/testdata.php?keyheader=$keyId$g&fc=$fc";
                         $description = ($dataSetGroup) ? "$dataDesc Group $dataSetGroup" : "$dataDesc $keyId";
                         break;
 

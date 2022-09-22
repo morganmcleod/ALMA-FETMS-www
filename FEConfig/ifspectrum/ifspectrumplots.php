@@ -21,12 +21,12 @@
     require_once($site_classes . '/IFSpectrum/IFSpectrum_impl.php');
     require_once($site_dbConnect);
 
-    $fc = isset($_REQUEST['fc']) ?? '';
-    $FEid = isset($_REQUEST['fe']) ?? '';
-    $band = isset($_REQUEST['b']) ?? '';
-    $dataSetGroup = isset($_REQUEST['g']) ?? '';
-    $TDHid = isset($_REQUEST['id']) ?? '0';
-    $drawPlots = isset($_REQUEST['d']) ?? 0;
+    $fc = $_REQUEST['fc'] ?? '';
+    $FEid = $_REQUEST['fe'] ?? '';
+    $band = $_REQUEST['b'] ?? '';
+    $dataSetGroup = $_REQUEST['g'] ?? '';
+    $TDHid = $_REQUEST['id'] ?? '0';
+    $drawPlots = $_REQUEST['d'] ?? 0;
 
     // Make a new IF Spectrum object
     $ifspec = new IFSpectrum_impl($TDHid, $fc);

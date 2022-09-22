@@ -40,8 +40,7 @@ switch ($tabtype) {
         //Spurious Noise tab was selected, IF0 subtab was selected.
         echo "<div style='height:610px'>";
         if (isset($URLs[0]))
-            $test_url = $site_storage . $URLs[0]->GetValue('spurious_url2d');
-            echo "<img src='" . $test_url . "'>";
+            echo "<img src='" . $site_storage . $URLs[0]->GetValue('spurious_url2d') . "'>";
         echo "</div>";
         break;
 

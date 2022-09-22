@@ -31,15 +31,15 @@ require_once($site_config_main);
 $progressfile = $main_write_directory . $_REQUEST['lf'] . ".txt";
 
 //Parse ini file to get contents, and echo out an XML document.
-$ini_array = parse_ini_file($progressfile);
-$progress	= $ini_array['progress'];
-$pmessage	= str_replace("&","&amp;",$ini_array['message']);
-$mainmessage= str_replace("&","&amp;",$ini_array['plotmessage']);
-$pimage 	= str_replace("&","&amp;",$ini_array['image']);
-$pabort 	= $ini_array['abort'];
-$perror 	= $ini_array['error'];
-$perrormsg 	= str_replace("&","&amp;",$ini_array['errormessage']);
-$purl 	    = str_replace("&","&amp;",$ini_array['refurl']);
+$ini_array      = parse_ini_file($progressfile);
+$progress       = $ini_array['progress'];
+$pmessage       = str_replace("&", "&amp;", $ini_array['message']);
+$mainmessage    = str_replace("&", "&amp;", $ini_array['plotmessage']);
+$pimage         = $site_storage . str_replace("&", "&amp;", $ini_array['image']);
+$pabort         = $ini_array['abort'];
+$perror         = $ini_array['error'];
+$perrormsg      = str_replace("&", "&amp;", $ini_array['errormessage']);
+$purl           = str_replace("&", "&amp;", $ini_array['refurl']);
 
 header('Pragma: no-cache');
 // HTTP/1.1
@@ -53,16 +53,12 @@ print '<?xml version="1.0"?>';
 
 ?>
 <DOCUMENT>
-	<PROGRESS> 	  <?php print $progress; 	?></PROGRESS>
-	<PMESSAGE> 	  <?php print $pmessage; 	?></PMESSAGE>
-	<MAINMESSAGE> <?php print $mainmessage; ?></MAINMESSAGE>
-	<PIMAGE>   	  <?php print $pimage;   	?></PIMAGE>
-	<PERROR>   	  <?php print $perror;   	?></PERROR>
-	<PERRORMSG>	  <?php print $perrormsg;	?></PERRORMSG>
-	<PURL>        <?php print $purl;     	?></PURL>
-	<PABORT>      <?php print $pabort;      ?></PABORT>
+    <PROGRESS> <?php print $progress;     ?></PROGRESS>
+    <PMESSAGE> <?php print $pmessage;     ?></PMESSAGE>
+    <MAINMESSAGE> <?php print $mainmessage; ?></MAINMESSAGE>
+    <PIMAGE> <?php print $pimage;       ?></PIMAGE>
+    <PERROR> <?php print $perror;       ?></PERROR>
+    <PERRORMSG> <?php print $perrormsg;    ?></PERRORMSG>
+    <PURL> <?php print $purl;         ?></PURL>
+    <PABORT> <?php print $pabort;      ?></PABORT>
 </DOCUMENT>
-
-
-
-

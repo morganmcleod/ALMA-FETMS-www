@@ -252,6 +252,7 @@ class GnuplotWrapper {
         foreach ($this->listTempFiles as $tempfile) {
             unlink($tempfile);
         }
+        $this->listTempFiles = array();
     }
 
     /**
