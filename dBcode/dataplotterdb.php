@@ -26,12 +26,11 @@ class DPdb { //extends DBRetrieval{
      *
      * @param string $query- SQL query
      *
-     * @return resource Id for SQL query
+     * @return mysqli_result|bool Id for SQL query
      */
     public function run_query($query) {
         return mysqli_query($this->dbConnection, $query);
     }
-
 
     /**
      *
@@ -51,13 +50,13 @@ class DPdb { //extends DBRetrieval{
         }
 
         $q = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-        WHERE FE_ConfigLink.fkFE_Config = $FEcfg
-        AND FE_Components.fkFE_ComponentType = $type
-        AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-        AND FE_Components.Band = " . $TestDataHeader->Band . "
-        AND FE_Components.keyFacility = $fc
-        AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-        ORDER BY Band ASC;";
+              WHERE FE_ConfigLink.fkFE_Config = $FEcfg
+              AND FE_Components.fkFE_ComponentType = $type
+              AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
+              AND FE_Components.Band = {$TestDataHeader->Band}
+              AND FE_Components.keyFacility = $fc
+              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
+              ORDER BY Band ASC;";
 
         $r = $this->run_query($q);
         return ADAPT_mysqli_result($r, 0, 0);
@@ -75,25 +74,26 @@ class DPdb { //extends DBRetrieval{
     public function q_other($request, $t = NULL, $TestData_Id = NULL, $TestDataHeader = NULL, $image_url = NULL, $td_header = NULL) {
         if ($request == 'sh') {
             $q = "SELECT keyTEST_Workmanship_Phase_SubHeader
-            FROM TEST_Workmanship_Phase_SubHeader
-            WHERE fkHeader = $TestData_Id;";
+                  FROM TEST_Workmanship_Phase_SubHeader
+                  WHERE fkHeader = $TestData_Id;";
             $r = $this->run_query($q);
             return ADAPT_mysqli_result($r, 0, 0);
         } elseif ($request == 'wkamp_sh') {
             $q = "SELECT keyTEST_Workmanship_Amplitude_SubHeader
-            FROM TEST_Workmanship_Amplitude_SubHeader
-            WHERE fkHeader = $TestData_Id;";
+                  FROM TEST_Workmanship_Amplitude_SubHeader
+                  WHERE fkHeader = $TestData_Id;";
             $r = $this->run_query($q);
             return ADAPT_mysqli_result($r, 0, 0);
         } elseif ($request == 'sub') {
             $q = "SELECT MAX(keyId) FROM TEST_LOLockTest_SubHeader
-                    WHERE fkHeader = " . $TestDataHeader->keyId . "
-                    AND TEST_LOLockTest_SubHeader.keyFacility = " . $TestDataHeader->keyFacility . ";";
+                  WHERE fkHeader = {$TestDataHeader->keyId}
+                  AND TEST_LOLockTest_SubHeader.keyFacility = {$TestDataHeader->keyFacility};";
             $r = $this->run_query($q);
             $t->WriteLogFile($q);
             return ADAPT_mysqli_result($r, 0, 0);
         } elseif ($request == 'URL') {
-            $q = "UPDATE TestData_header SET PlotURL = '$image_url' WHERE keyId = $td_header;";
+            $q = "UPDATE TestData_header SET PlotURL = '$image_url'
+                  WHERE keyId = $td_header;";
             $r = $this->run_query($q);
             $t->WriteLogFile($q);
             return;
@@ -109,7 +109,7 @@ class DPdb { //extends DBRetrieval{
      * @param $fc (default = NULL)
      * @param $t- table (default = NULL)
      * @param $TestDataHeader (default = NULL)
-     * @return resource
+     * @return mysqli_result|bool
      */
     public function qdata($occur, $td_header, $fc = NULL, $t = NULL, $TestDataHeader = NULL) {
         if ($occur == 1) {
@@ -122,18 +122,18 @@ class DPdb { //extends DBRetrieval{
                   WHERE fkHeader = $td_header
                   AND fkFacility = $fc ORDER BY angle ASC;";
         } elseif ($occur == 2) {
-            if ($TestDataHeader->GetValue('DataSetGroup') == 0) {
+            if ($TestDataHeader->DataSetGroup == 0) {
                 $q = "SELECT TEST_LOLockTest.LOFreq,
                              TEST_LOLockTest.PhotomixerCurrent,
                              TEST_LOLockTest.PLLRefTotalPower
-                      FROM TEST_LOLockTest, TEST_LOLockTest_SubHeader, TestData_header
-                      WHERE TEST_LOLockTest.fkHeader = TEST_LOLockTest_SubHeader.keyId
-                      AND TEST_LOLockTest_SubHeader.fkHeader = TestData_header.keyId
-                      AND TestData_header.keyId = $td_header
-                      AND TEST_LOLockTest.IsIncluded = 1
-                      GROUP BY TEST_LOLockTest.LOFreq ORDER BY TEST_LOLockTest.LOFreq ASC;";
+                FROM TEST_LOLockTest, TEST_LOLockTest_SubHeader, TestData_header
+                WHERE TEST_LOLockTest.fkHeader = TEST_LOLockTest_SubHeader.keyId
+                AND TEST_LOLockTest_SubHeader.fkHeader = TestData_header.keyId
+                AND TestData_header.keyId = $td_header
+                AND TEST_LOLockTest.IsIncluded = 1
+                GROUP BY TEST_LOLockTest.LOFreq ORDER BY TEST_LOLockTest.LOFreq ASC;";
             } else {
-                $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = " .
+                $qfe = "SELECT fkFront_Ends FROM FE_Config WHERE keyFEConfig = " .
                     $TestDataHeader->fkFE_Config;
                 $q = "SELECT TEST_LOLockTest.LOFreq,
                              TEST_LOLockTest.PhotomixerCurrent,
@@ -163,60 +163,104 @@ class DPdb { //extends DBRetrieval{
      * @param $data (default = NULL)
      * @param $l- logger (default = NULL)
      * @param $TestDataHeader (default = NULL)
-     * @return resource
+     * @return mysqli_result|bool
      */
     public function q($occur, $TestData_Id = NULL, $fc = NULL, $data = NULL, $l = NULL, $TestDataHeader = NULL) {
         if ($occur == 1) {
             $q = "SELECT TimeValue,$data
-            FROM TEST_Repeatability
-            WHERE fkHeader = $TestData_Id
-            ORDER BY TimeValue ASC;";
+                  FROM TEST_Repeatability
+                  WHERE fkHeader = $TestData_Id
+                  ORDER BY TimeValue ASC;";
         } elseif ($occur == 2) {
-            $q = "SELECT MIN(tilt), MAX(tilt),
-            MIN(power_pol0_chA), MIN(power_pol0_chB),
-            MIN(power_pol1_chA),MIN(power_pol1_chB),
-            MAX(power_pol0_chA),MAX(power_pol0_chB),
-            MAX(power_pol1_chA),MAX(power_pol1_chB)
-            FROM TEST_Workmanship_Amplitude
-            WHERE fkHeader = $TestData_Id;";
+            $q = "SELECT MIN(tilt),
+                         MAX(tilt),
+                         MIN(power_pol0_chA),
+                         MIN(power_pol0_chB),
+                         MIN(power_pol1_chA),
+                         MIN(power_pol1_chB),
+                         MAX(power_pol0_chA),
+                         MAX(power_pol0_chB),
+                         MAX(power_pol1_chA),
+                         MAX(power_pol1_chB)
+                  FROM TEST_Workmanship_Amplitude
+                  WHERE fkHeader = $TestData_Id;";
         } elseif ($occur == 3) {
-            $q = "SELECT MIN(tilt), MAX(tilt), MIN(power_pol0_chA),
-            MIN(power_pol1_chA), MAX(power_pol0_chA), MAX(power_pol1_chA)
-            FROM TEST_Workmanship_Amplitude
-            WHERE fkHeader = $TestData_Id;";
+            $q = "SELECT MIN(tilt),
+                         MAX(tilt),
+                         MIN(power_pol0_chA),
+                         MIN(power_pol1_chA),
+                         MAX(power_pol0_chA),
+                         MAX(power_pol1_chA)
+                  FROM TEST_Workmanship_Amplitude
+                  WHERE fkHeader = $TestData_Id;";
         } elseif ($occur == 4) {
-            $q = "SELECT tilt,power_pol0_chA,power_pol0_chB,
-            power_pol1_chA,power_pol1_chB, TS
-            FROM TEST_Workmanship_Amplitude
-            WHERE fkHeader = $TestData_Id ORDER BY TS ASC;";
+            $q = "SELECT tilt,
+                         power_pol0_chA,
+                         power_pol0_chB,
+                         power_pol1_chA,
+                         power_pol1_chB,
+                         TS
+                  FROM TEST_Workmanship_Amplitude
+                  WHERE fkHeader = $TestData_Id
+                  ORDER BY TS ASC;";
         } elseif ($occur == 5) {
-            $q = "SELECT MIN(tilt), MAX(tilt)
-            FROM TEST_Workmanship_Phase
-            WHERE fkHeader = $TestData_Id
-            AND fkFacility = $fc;";
+            $q = "SELECT MIN(tilt),
+                         MAX(tilt)
+                  FROM TEST_Workmanship_Phase
+                  WHERE fkHeader = $TestData_Id
+                  AND fkFacility = $fc;";
         } elseif ($occur == 6) {
-            $q = "SELECT phase, tilt FROM TEST_Workmanship_Phase WHERE fkHeader = $TestData_Id
-            AND fkFacility = $fc ORDER BY TS ASC;";
+            $q = "SELECT phase, tilt FROM TEST_Workmanship_Phase
+                  WHERE fkHeader = $TestData_Id
+                  AND fkFacility = $fc ORDER BY TS ASC;";
             $l->WriteLogFile($q);
         } elseif ($occur == 7) {
-            $q = "SELECT `TestData_header`.keyID, `TestData_header`.TS,
-                    `TestData_header`.`fkFE_Config`,`TestData_header`.Meas_SWVer
-                    FROM FE_Config LEFT JOIN `TestData_header`
-                    ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
-                    WHERE TestData_header.Band = " . $TestDataHeader->Band . "
-                    AND TestData_header.fkTestData_Type= " . $TestDataHeader->fkTestData_Type . "
-                    AND TestData_header.DataSetGroup= " . $TestDataHeader->GetValue('DataSetGroup') . "
-                    AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM `FE_Config`
-                    WHERE `keyFEConfig` = " . $TestDataHeader->fkFE_Config . ")
-                    ORDER BY `TestData_header`.keyID DESC;";
+            $q = "SELECT TestData_header.keyID,
+                         TestData_header.TS,
+                         TestData_header.fkFE_Config,
+                         TestData_header.Meas_SWVer
+                  FROM FE_Config LEFT JOIN TestData_header
+                  ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
+                  WHERE TestData_header.Band = {$TestDataHeader->Band}
+                  AND TestData_header.fkTestData_Type= {$TestDataHeader->fkTestData_Type}
+                  AND TestData_header.DataSetGroup= {$TestDataHeader->DataSetGroup}
+                  AND FE_Config.fkFront_Ends = (SELECT fkFront_Ends FROM FE_Config
+                  WHERE keyFEConfig = {$TestDataHeader->fkFE_Config})
+                  ORDER BY TestData_header.keyID DESC;";
         } elseif ($occur == 8) {
             // Workmanship amplitude for CCAs having SIS
-            $q = "SELECT tilt, CartTemp0,CartTemp2,CartTemp5,CryoTemp0,CryoTemp1,CryoTemp2,CryoTemp3,CryoTemp4,CryoTemp5,CryoTemp6,CryoTemp7,CryoTemp8,TS
+            $q = "SELECT tilt,
+                         CartTemp0,
+                         CartTemp2,
+                         CartTemp5,
+                         CryoTemp0,
+                         CryoTemp1,
+                         CryoTemp2,
+                         CryoTemp3,
+                         CryoTemp4,
+                         CryoTemp5,
+                         CryoTemp6,
+                         CryoTemp7,
+                         CryoTemp8,
+                         TS
                   FROM TEST_Workmanship_Amplitude
                   WHERE fkHeader = $TestData_Id ORDER BY TS ASC;";
         } elseif ($occur == 9) {
             // Workmanship amplitude for CCAs having only LNA
-            $q = "SELECT tilt, CartTemp4,CartTemp2,CartTemp5,CryoTemp0,CryoTemp1,CryoTemp2,CryoTemp3,CryoTemp4,CryoTemp5,CryoTemp6,CryoTemp7,CryoTemp8,TS
+            $q = "SELECT tilt,
+                         CartTemp4,
+                         CartTemp2,
+                         CartTemp5,
+                         CryoTemp0,
+                         CryoTemp1,
+                         CryoTemp2,
+                         CryoTemp3,
+                         CryoTemp4,
+                         CryoTemp5,
+                         CryoTemp6,
+                         CryoTemp7,
+                         CryoTemp8,
+                         TS
                   FROM TEST_Workmanship_Amplitude
                   WHERE fkHeader = $TestData_Id ORDER BY TS ASC;";
         } else {

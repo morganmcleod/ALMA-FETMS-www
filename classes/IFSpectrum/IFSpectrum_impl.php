@@ -26,6 +26,7 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.spec_functions.php');
+require_once($site_classes . '/class.test_ifspectrum_urls.php');
 require_once($site_classes . '/IFSpectrum/IFSpectrum_calc.php');
 require_once($site_classes . '/IFSpectrum/IFSpectrum_db.php');
 require_once($site_classes . '/IFSpectrum/IFSpectrum_plot.php');
@@ -122,8 +123,8 @@ class IFSpectrum_impl extends TestData_header {
         // Load additional info from the TDH:
         if ($TDHid) {
             $TDH = new TestData_header($TDHid, $this->facilityCode);
-            $this->CCAid = $TDH->GetValue('fkFE_Components');
-            $this->dataSetGroup = $TDH->GetValue('DataSetGroup');
+            $this->CCAid = $TDH->fkFE_Components;
+            $this->dataSetGroup = $TDH->DataSetGroup;
             unset($TDH);
         }
 
@@ -217,8 +218,7 @@ class IFSpectrum_impl extends TestData_header {
         //Create progress update ini file
         require(site_get_config_main());
         $testmessage = "IF Spectrum";
-        if ($this->frontEnd)
-            $testmessage .= " FE-" . $this->frontEnd->SN;
+        if ($this->frontEnd) $testmessage .= " FE-" . $this->frontEnd->SN;
         $testmessage .= " Band " . $this->Band;
 
         $url = '"' . $url_root . 'FEConfig/ifspectrum/ifspectrumplots.php?fc='
@@ -270,18 +270,17 @@ class IFSpectrum_impl extends TestData_header {
         echo "<tr><th>Key</th><th>Timestamp</th><th>Measured at</th><th>Notes</th></tr>";
 
         for ($i = 0; $i < count($this->TDHkeys); $i++) {
-            if ($i % 2 == 0) {
+            if ($i % 2 == 0)
                 $trclass = "alt";
-            }
-            if ($i % 2 != 0) {
+            else
                 $trclass = "";
-            }
+
             $t = new TestData_header($this->TDHkeys[$i], $this->facilityCode);
             echo "<tr class = $trclass>";
-            echo "<td>" . $t->keyId . "</td>";
-            echo "<td>" . $t->TS . "</td>";
-            echo "<td>" . $t->GetFetmsDescription() . "</td>";
-            echo "<td style='text-align:left !important;'>" . $t->Notes . "</td>";
+            echo "<td>{$t->keyId}</td>";
+            echo "<td>{$t->TS}</td>";
+            echo "<td>{$t->GetFetmsDescription()}</td>";
+            echo "<td style='text-align:left !important;'>{$t->Notes}</td>";
             echo "</tr>";
         }
         echo "</table>";
@@ -554,13 +553,13 @@ class IFSpectrum_impl extends TestData_header {
             $this->image_url .= $this->plotter->getOutputFileName();
 
             if ($this->plotURLs[$ifChannel]->keyId == '') {
-                $this->plotURLs[$ifChannel] = GenericTable::NewRecord('TEST_IFSpectrum_urls', 'keyId', 40, 'fkFacility');
-                $this->plotURLs[$ifChannel]->SetValue('fkHeader', $this->TDHkeys[0]);
-                $this->plotURLs[$ifChannel]->SetValue('Band', $this->Band);
-                $this->plotURLs[$ifChannel]->SetValue('IFChannel', $ifChannel);
-                $this->plotURLs[$ifChannel]->SetValue('IFGain', $ifGain);
+                $this->plotURLs[$ifChannel] = TEST_IFSpectrum_urls::NewRecord('TEST_IFSpectrum_urls', 'keyId', 40, 'fkFacility');
+                $this->plotURLs[$ifChannel]->fkHeader = $this->TDHkeys[0];
+                $this->plotURLs[$ifChannel]->Band = $this->Band;
+                $this->plotURLs[$ifChannel]->IFChannel = $ifChannel;
+                $this->plotURLs[$ifChannel]->IFGain = $ifGain;
             }
-            $this->plotURLs[$ifChannel]->SetValue($typeURL, $this->image_url);
+            $this->plotURLs[$ifChannel]->$typeURL = $this->image_url;
             $this->plotURLs[$ifChannel]->Update();
 
             // Update the progress display image:
@@ -663,13 +662,13 @@ class IFSpectrum_impl extends TestData_header {
             $this->image_url .= $this->plotter->getOutputFileName();
 
             if ($this->plotURLs[$ifChannel]->keyId == '') {
-                $this->plotURLs[$ifChannel] = GenericTable::NewRecord('TEST_IFSpectrum_urls', 'keyId', 40, 'fkFacility');
-                $this->plotURLs[$ifChannel]->SetValue('fkHeader', $this->TDHkeys[0]);
-                $this->plotURLs[$ifChannel]->SetValue('Band', $this->Band);
-                $this->plotURLs[$ifChannel]->SetValue('IFChannel', $ifChannel);
-                $this->plotURLs[$ifChannel]->SetValue('IFGain', $ifGain);
+                $this->plotURLs[$ifChannel] = TEST_IFSpectrum_urls::NewRecord('TEST_IFSpectrum_urls', 'keyId', 40, 'fkFacility');
+                $this->plotURLs[$ifChannel]->fkHeader = $this->TDHkeys[0];
+                $this->plotURLs[$ifChannel]->Band = $this->Band;
+                $this->plotURLs[$ifChannel]->IFChannel = $ifChannel;
+                $this->plotURLs[$ifChannel]->IFGain = $ifGain;
             }
-            $this->plotURLs[$ifChannel]->SetValue($typeURL, $this->image_url);
+            $this->plotURLs[$ifChannel]->$typeURL = $this->image_url;
             $this->plotURLs[$ifChannel]->Update();
 
             // Update the progress display image:
@@ -741,7 +740,7 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     public function Export($outputDir) {
-        $destFile = $outputDir . "IFSpectrum_B" . $this->Band . "_G" . $this->dataSetGroup . ".ini";
+        $destFile = $outputDir . "IFSpectrum_B{$this->Band}_G{$this->dataSetGroup}.ini";
         $handle = fopen($destFile, "w");
         fwrite($handle, "[export]\n");
         fwrite($handle, "band={$this->Band}\n");
@@ -753,28 +752,28 @@ class IFSpectrum_impl extends TestData_header {
         $URLs = $this->getPlotURLs();
 
         if (isset($URLs[0])) {
-            fwrite($handle, "spurious_IF0=" . $URLs[0]->GetValue('spurious_url2d') . "\n");
-            fwrite($handle, "spurious2_IF0=" . $URLs[0]->GetValue('spurious_url2d2') . "\n");
-            fwrite($handle, "powervar_2GHz_IF0=" . $URLs[0]->GetValue('powervar_2GHz_url') . "\n");
-            fwrite($handle, "powervar_31MHz_IF0=" . $URLs[0]->GetValue('powervar_31MHz_url') . "\n");
+            fwrite($handle, "spurious_IF0={$URLs[0]->spurious_url2d}\n");
+            fwrite($handle, "spurious2_IF0={$URLs[0]->spurious_url2d2}\n");
+            fwrite($handle, "powervar_2GHz_IF0={$URLs[0]->powervar_2GHz_url}\n");
+            fwrite($handle, "powervar_31MHz_IF0={$URLs[0]->powervar_31MHz_url}\n");
         }
         if (isset($URLs[1])) {
-            fwrite($handle, "spurious_IF1=" . $URLs[1]->GetValue('spurious_url2d') . "\n");
-            fwrite($handle, "spurious2_IF1=" . $URLs[1]->GetValue('spurious_url2d2') . "\n");
-            fwrite($handle, "powervar_2GHz_IF1=" . $URLs[1]->GetValue('powervar_2GHz_url') . "\n");
-            fwrite($handle, "powervar_31MHz_IF1=" . $URLs[1]->GetValue('powervar_31MHz_url') . "\n");
+            fwrite($handle, "spurious_IF1={$URLs[1]->spurious_url2d}\n");
+            fwrite($handle, "spurious2_IF1={$URLs[1]->spurious_url2d2}\n");
+            fwrite($handle, "powervar_2GHz_IF1={$URLs[1]->powervar_2GHz_url}\n");
+            fwrite($handle, "powervar_31MHz_IF1={$URLs[1]->powervar_31MHz_url}\n");
         }
         if (isset($URLs[2])) {
-            fwrite($handle, "spurious_IF2=" . $URLs[2]->GetValue('spurious_url2d') . "\n");
-            fwrite($handle, "spurious2_IF2=" . $URLs[2]->GetValue('spurious_url2d2') . "\n");
-            fwrite($handle, "powervar_2GHz_IF2=" . $URLs[2]->GetValue('powervar_2GHz_url') . "\n");
-            fwrite($handle, "powervar_31MHz_IF2=" . $URLs[2]->GetValue('powervar_31MHz_url') . "\n");
+            fwrite($handle, "spurious_IF2={$URLs[2]->spurious_url2d}\n");
+            fwrite($handle, "spurious2_IF2={$URLs[2]->spurious_url2d2}\n");
+            fwrite($handle, "powervar_2GHz_IF2={$URLs[2]->powervar_2GHz_url}\n");
+            fwrite($handle, "powervar_31MHz_IF2={$URLs[2]->powervar_31MHz_url}\n");
         }
         if (isset($URLs[3])) {
-            fwrite($handle, "spurious_IF3=" . $URLs[3]->GetValue('spurious_url2d') . "\n");
-            fwrite($handle, "spurious2_IF3=" . $URLs[3]->GetValue('spurious_url2d2') . "\n");
-            fwrite($handle, "powervar_2GHz_IF3=" . $URLs[3]->GetValue('powervar_2GHz_url') . "\n");
-            fwrite($handle, "powervar_31MHz_IF3=" . $URLs[3]->GetValue('powervar_31MHz_url') . "\n");
+            fwrite($handle, "spurious_IF3={$URLs[3]->spurious_url2d}\n");
+            fwrite($handle, "spurious2_IF3={$URLs[3]->spurious_url2d2}\n");
+            fwrite($handle, "powervar_2GHz_IF3={$URLs[3]->powervar_2GHz_url}\n");
+            fwrite($handle, "powervar_31MHz_IF3={$URLs[3]->powervar_31MHz_url}\n");
         }
         fclose($handle);
         echo "Exported '$destFile'.<br>";

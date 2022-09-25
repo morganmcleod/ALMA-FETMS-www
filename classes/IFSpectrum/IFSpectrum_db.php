@@ -25,6 +25,7 @@
  */
 
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
+require_once($site_classes . '/class.test_ifspectrum_urls.php');
 require_once($site_libraries . '/array_column/src/array_column.php');
 require_once($site_dbConnect);
 
@@ -66,8 +67,6 @@ class IFSpectrum_db {
         $q = "DROP TEMPORARY TABLE IF EXISTS TEMP_IFSpectrum;";
         $this->run_query($q);
 
-        $feConfig = 0;
-
         $qcreate = "CREATE TEMPORARY TABLE TEMP_IFSpectrum (
             fkSubHeader INT,
             Freq_Hz DOUBLE,
@@ -75,18 +74,18 @@ class IFSpectrum_db {
             INDEX (fkSubHeader)) ";
 
         $qcreate .= "SELECT IFSpectrum.fkSubHeader, IFSpectrum.Freq_Hz, IFSpectrum.Power_dBm
-            FROM TestData_header, IFSpectrum_SubHeader LEFT JOIN IFSpectrum
-            ON IFSpectrum_SubHeader.keyId = IFSpectrum.fkSubHeader
-            AND IFSpectrum_SubHeader.keyFacility = IFSpectrum.fkFacility
-            WHERE TestData_header.keyId = IFSpectrum_SubHeader.fkHeader
-            AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
-            AND TestData_header.Band = $band
-            AND TestData_header.fkTestData_Type = 7
-            AND IFSpectrum_SubHeader.IsIncluded = 1
-            AND TestData_header.DataSetGroup = $dataSetGroup";
+                     FROM TestData_header, IFSpectrum_SubHeader LEFT JOIN IFSpectrum
+                     ON IFSpectrum_SubHeader.keyId = IFSpectrum.fkSubHeader
+                     AND IFSpectrum_SubHeader.keyFacility = IFSpectrum.fkFacility
+                     WHERE TestData_header.keyId = IFSpectrum_SubHeader.fkHeader
+                     AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
+                     AND TestData_header.Band = $band
+                     AND TestData_header.fkTestData_Type = 7
+                     AND IFSpectrum_SubHeader.IsIncluded = 1
+                     AND TestData_header.DataSetGroup = $dataSetGroup";
 
         if ($FEid) {
-            $qcreate .= " AND TestData_header.fkFE_Config in
+            $qcreate .= " AND TestData_header.fkFE_Config IN
                         (SELECT keyFEConfig from FE_Config WHERE fkFront_Ends = $FEid);";
         } else if ($CCAid) {
             $qcreate .= " AND TestData_header.fkFE_Components = $CCAid;";
@@ -321,18 +320,13 @@ class IFSpectrum_db {
     public function getPlotURLs($TDHkeys) {
 
         $keysList = $this->makeKeysList($TDHkeys);
-
-        $q = "SELECT keyId, IFChannel FROM TEST_IFSpectrum_urls
-              WHERE TEST_IFSpectrum_urls.fkHeader IN ($keysList)
-              ORDER BY IFChannel ASC;";
-
-        $urls = array();
-        $r = $this->run_query($q);
+        $r = TEST_IFSpectrum_urls::getIdAndIFChannelFromHeader($keysList);
         $numurl = mysqli_num_rows($r);
+        $urls = array();
 
         while ($row = mysqli_fetch_array($r)) {
             $ifchannel = $row[1];
-            $urls[$ifchannel] = new GenericTable('TEST_IFSpectrum_urls', $row[0], 'keyId', 40, 'fkFacility');
+            $urls[$ifchannel] = new TEST_IFSpectrum_urls($row[0], 40);
         }
         return array($numurl, $urls);
     }
@@ -349,7 +343,7 @@ class IFSpectrum_db {
     public function getNoiseFloorHeaders($TDH) {
         $qnf = "SELECT IFSpectrum_SubHeader.fkNoiseFloorHeader, IFSpectrum_SubHeader.Band
                 FROM TestData_header, IFSpectrum_SubHeader
-                WHERE TestData_header.keyId = $TDH 
+                WHERE TestData_header.keyId = {$TDH}
                 AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
                 AND TestData_header.keyId = IFSpectrum_SubHeader.fkHeader LIMIT 1";
 
@@ -371,8 +365,7 @@ class IFSpectrum_db {
         $output = "";
         if ($keysArray) {
             foreach ($keysArray as $key) {
-                if ($output)
-                    $output .= ",";
+                if ($output) $output .= ",";
                 $output .= $key;
             }
         }

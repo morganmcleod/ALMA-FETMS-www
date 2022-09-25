@@ -151,7 +151,7 @@ class DataPlotter extends GenericTable {
         $tdhfc = $this->TestDataHeader->keyFacility;
 
         //Initialize component object
-        $this->Component = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $tdhfc);
+        $this->Component = new FEComponent(NULL, $this->TestDataHeader->fkFE_Components, NULL, $tdhfc);
 
         //write data file from database
         $qFindLO = "SELECT DISTINCT(FreqLO) FROM CCA_TEST_AmplitudeStability
@@ -208,7 +208,7 @@ class DataPlotter extends GenericTable {
         $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " Amplitude Stability";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -247,7 +247,7 @@ class DataPlotter extends GenericTable {
         $TestData_Id = $this->TestDataHeader->keyId;
 
         //Initialize component object
-        $this->Component = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $this->TestDataHeader->keyFacility);
+        $this->Component = new FEComponent(NULL, $this->TestDataHeader->fkFE_Components, NULL, $this->TestDataHeader->keyFacility);
 
 
         $qlo = "SELECT DISTINCT(FreqLO), Pol FROM CCA_TEST_PhaseDrift
@@ -308,7 +308,7 @@ class DataPlotter extends GenericTable {
         $imagename = "CCA_PhaseNoise_SN" . $this->Component->SN . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $this->Component->Band . "_" . $this->Component->SN . "/$imagename";
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
 
@@ -352,7 +352,7 @@ class DataPlotter extends GenericTable {
         $TestData_Id = $this->TestDataHeader->keyId;
 
         //Initialize component object
-        $this->Component = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $this->TestDataHeader->keyFacility);
+        $this->Component = new FEComponent(NULL, $this->TestDataHeader->fkFE_Components, NULL, $this->TestDataHeader->keyFacility);
 
         $datafile_count = 0;
 
@@ -399,7 +399,7 @@ class DataPlotter extends GenericTable {
         $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " In-Band Power";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -432,7 +432,7 @@ class DataPlotter extends GenericTable {
 
         //Initialize component object
         $this->Component = new TestData_Component();
-        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'));
+        $this->Component->Initialize_TestData_Component($this->TestDataHeader->fkFE_Components);
 
         $datafile_count = 0;
 
@@ -479,7 +479,7 @@ class DataPlotter extends GenericTable {
         $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " Total Power";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -514,7 +514,7 @@ class DataPlotter extends GenericTable {
 
         //Initialize component object
         $this->Component = new TestData_Component();
-        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'), $this->dbConnection);
+        $this->Component->Initialize_TestData_Component($this->TestDataHeader->fkFE_Components, $this->dbConnection);
 
         $datafile_count = 0;
 
@@ -561,7 +561,7 @@ class DataPlotter extends GenericTable {
         $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " Gain Compression ($TS)";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -596,7 +596,7 @@ class DataPlotter extends GenericTable {
 
         //Initialize component object
         $this->Component = new TestData_Component();
-        $this->Component->Initialize_TestData_Component($this->TestDataHeader->GetValue('fkFE_Components'));
+        $this->Component->Initialize_TestData_Component($this->TestDataHeader->fkFE_Components);
 
         $datafile_count = 0;
 
@@ -643,7 +643,7 @@ class DataPlotter extends GenericTable {
         $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " IF Spectrum";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -677,7 +677,7 @@ class DataPlotter extends GenericTable {
         $TestData_Id = $this->TestDataHeader->keyId;
 
         //Initialize component object
-        $this->Component = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $this->TestDataHeader->keyFacility);
+        $this->Component = new FEComponent(NULL, $this->TestDataHeader->fkFE_Components, NULL, $this->TestDataHeader->keyFacility);
         $datafile_count = 0;
         //Pol 0 and 1
         for ($pol = 0; $pol <= 1; $pol++) {
@@ -719,7 +719,7 @@ class DataPlotter extends GenericTable {
         $plot_title = "CCA Band" . $this->Component->Band . " SN" . $this->Component->SN . " Polarization Accuracy";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -755,8 +755,8 @@ class DataPlotter extends GenericTable {
         $TestData_Id = $this->TestDataHeader->keyId;
 
         $TS = $this->TestDataHeader->TS;
-        if ($this->TestDataHeader->GetValue('fkFE_Components') > 0) {
-            $c = new FEComponent(NULL, $this->TestDataHeader->GetValue('fkFE_Components'), NULL, $this->TestDataHeader->keyFacility);
+        if ($this->TestDataHeader->fkFE_Components > 0) {
+            $c = new FEComponent(NULL, $this->TestDataHeader->fkFE_Components, NULL, $this->TestDataHeader->keyFacility);
             $sn = $c->SN;
             unset($c);
         }
@@ -830,7 +830,7 @@ class DataPlotter extends GenericTable {
                             $image_url = "ivcurve/$imagename";
 
                         $plot_title = "IV Curve, $CurrentLO GHz, CCA$band-$this->CCASN";
-                        $plot_label_1 = " set label 'TDH: " . $this->TestDataHeader->keyId . ", Plot SWVer: $this->swversion, Meas SWVer: " . $this->TestDataHeader->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
+                        $plot_label_1 = " set label 'TDH: " . $this->TestDataHeader->keyId . ", Plot SWVer: $this->swversion, Meas SWVer: " . $this->TestDataHeader->Meas_SWVer . "' at screen 0.01, 0.01\r\n";
                         $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
                         $plot_label_2 = "set label 'Measured$fetms" . " " . $this->TestDataHeader->TS . ", FE Configuration " . $this->TestDataHeader->fkFE_Config . "' at screen 0.01, 0.04\r\n";
 
@@ -864,7 +864,7 @@ class DataPlotter extends GenericTable {
         }
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $l->WriteLogfile($image_url);
@@ -893,7 +893,7 @@ class DataPlotter extends GenericTable {
         if (!$band) {
             // If band is 0, don't plot IF powers:
             if (!$appendURL) {
-                $this->TestDataHeader->SetValue('PlotURL', "");
+                $this->TestDataHeader->PlotURL = "";
                 $this->TestDataHeader->Update();
             }
             return;
@@ -934,7 +934,7 @@ class DataPlotter extends GenericTable {
         if (!mysqli_num_rows($r)) {
             // No data.  Write blank URL:
             if (!$appendURL) {
-                $this->TestDataHeader->SetValue('PlotURL', "_");
+                $this->TestDataHeader->PlotURL = "_";
                 $this->TestDataHeader->Update();
             }
             return;
@@ -1006,7 +1006,7 @@ class DataPlotter extends GenericTable {
                 $image_url = $oldUrl . "," . $image_url;
         }
 
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -1084,7 +1084,7 @@ class DataPlotter extends GenericTable {
         if (!mysqli_num_rows($r)) {
             // No data.  Write blank URL:
             if (!$appendURL) {
-                $this->TestDataHeader->SetValue('PlotURL', "_");
+                $this->TestDataHeader->PlotURL = "_";
                 $this->TestDataHeader->Update();
             }
             return;
@@ -1169,7 +1169,7 @@ class DataPlotter extends GenericTable {
                 $image_url = $oldUrl . "," . $image_url;
         }
 
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         if ($fifteenKStage)
@@ -1323,7 +1323,7 @@ class DataPlotter extends GenericTable {
         $plot_title .= ", Pol " . $wsub->GetValue('pol') . " $sb (RF " . $wsub->GetValue('rf') . ", LO " . $wsub->GetValue('lo') . ")";
 
         //Update plot url
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $imagepath = $imagedirectory . $imagename;
@@ -1453,7 +1453,7 @@ class DataPlotter extends GenericTable {
         $image_url = $this->url_directory . "tdh/$td_header/PolAngle/$imagename";
 
 
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
     }
 
@@ -1490,7 +1490,7 @@ class DataPlotter extends GenericTable {
         $lpr = new GenericTable('TEST_LOLockTest_SubHeader', $subheader_id, 'keyId', $this->fc, 'keyFacility');
 
         // data query depending on dataset
-        if ($this->TestDataHeader->GetValue('DataSetGroup') == 0) {
+        if ($this->TestDataHeader->DataSetGroup == 0) {
             $qdata = "SELECT TEST_LOLockTest.LOFreq,
                              TEST_LOLockTest.PhotomixerCurrent,
                              TEST_LOLockTest.PLLIFTotalPower,
@@ -1576,7 +1576,7 @@ class DataPlotter extends GenericTable {
         $image_url = "lolocktest/$imagename";
 
         //Update plot url. Set the same value for all TestData_header records in this group.
-        $this->TestDataHeader->SetValue('PlotURL', $image_url);
+        $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
         $this->db_pull->q_other('URL', $t, NULL, NULL, $image_url, $td_header);
@@ -1586,8 +1586,8 @@ class DataPlotter extends GenericTable {
         $t->WriteLogFile("Plot command file= " . $plot_command_file);
 
         // set up plot labels
-        if ($this->TestDataHeader->GetValue('DataSetGroup') == 0) {
-            $plot_label_1 = "set label 'TDH: $td_header, Plot SWVer: $this->swversion, Meas SWVer: " . $this->TestDataHeader->GetValue('Meas_SWVer') . "' at screen 0.01, 0.01\r\n";
+        if ($this->TestDataHeader->DataSetGroup == 0) {
+            $plot_label_1 = "set label 'TDH: $td_header, Plot SWVer: $this->swversion, Meas SWVer: " . $this->TestDataHeader->Meas_SWVer . "' at screen 0.01, 0.01\r\n";
             $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
             $plot_label_2 = "set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n";
         } else {
@@ -1629,7 +1629,7 @@ class DataPlotter extends GenericTable {
             }
 
             $plot_label_1 = "set label 'TDH: ($keyId), Plot SWVer: $this->swversion, Meas SWVer: $meas_ver' at screen 0.01, 0.01\r\n";
-            $plot_label_2 = "set label 'Dataset: " . $this->TestDataHeader->GetValue('DataSetGroup') . ", TS: $TS";
+            $plot_label_2 = "set label 'Dataset: " . $this->TestDataHeader->DataSetGroup . ", TS: $TS";
             if ($showFEConfig)
                 $plot_label_2 .= ", FE Configuration: $FE_Config";
             $plot_label_2 .= "' at screen 0.01, 0.04\r\n";

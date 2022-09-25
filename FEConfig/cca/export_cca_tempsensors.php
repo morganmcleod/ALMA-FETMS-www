@@ -74,7 +74,7 @@ echo "\r\n\r\n";
 //4k stage
 if ($cca->TempSensors[3]->keyId != '') {
     $av = "Y";
-    $os = $cca->TempSensors[3]->GetValue('OffsetK');
+    $os = $cca->TempSensors[3]->OffsetK;
 } else {
     $av = "N";
     $os = "0.00";
@@ -109,7 +109,7 @@ OFFSET=0.0\r\n";
 //Pol0 stage
 if ($cca->TempSensors[4]->keyId != '') {
     $av = "Y";
-    $os = $cca->TempSensors[4]->GetValue('OffsetK');
+    $os = $cca->TempSensors[4]->OffsetK;
 } else {
     $av = "N";
     $os = "0.00";
@@ -123,7 +123,7 @@ echo "\r\n\r\n";
 //Pol1 stage
 if ($cca->TempSensors[5]->keyId != '') {
     $av = "Y";
-    $os = $cca->TempSensors[5]->GetValue('OffsetK');
+    $os = $cca->TempSensors[5]->OffsetK;
 } else {
     $av = "N";
     $os = "0.00";

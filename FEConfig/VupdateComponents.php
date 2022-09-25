@@ -63,7 +63,7 @@
                     <div id="compform" style="width:700px">
                         <input type=hidden name="submitornot" id="submitornot" value=0>
                         <input type=hidden name="maxkey" id="maxkey" value="<?php echo $c->keyId; ?>">
-                        <input type=hidden name="comptype" id="comptype" value="<?php echo $c->GetValue('fkFE_ComponentType'); ?>">
+                        <input type=hidden name="comptype" id="comptype" value="<?php echo $c->fkFE_ComponentType; ?>">
                         <input type=hidden name="facility" id="facility" value="<?php echo $c->keyFacility; ?>">
                         <table id='table2'>
                             <tr class='alt'>
@@ -89,11 +89,11 @@
                             </tr>
                             <tr>
                                 <th>Component Description:</th>
-                                <td><textarea rows=3 cols=40 name='descr' id='descr'><?php echo $c->GetValue('Description'); ?></textarea></td>
+                                <td><textarea rows=3 cols=40 name='descr' id='descr'><?php echo $c->Description; ?></textarea></td>
                             </tr>
                             <tr>
                                 <th>Documentation:</th>
-                                <td><textarea rows=3 cols=40 name="docs" id="docs" value="<?php echo $c->GetValue('Docs'); ?>"></textarea></td>
+                                <td><textarea rows=3 cols=40 name="docs" id="docs" value="<?php echo $c->Docs; ?>"></textarea></td>
                             </tr>
                             <tr>
                                 <th>Band:</th>

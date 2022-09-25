@@ -29,16 +29,16 @@ if ($keyScanDet) {
     else
         echo "!Farfield Beam Listing\r\n";
 
-    echo "!ScanSetDetails.keyId=" . $scanDet->GetValue('fkScanSetDetails') . "\r\n";
+    echo "!ScanSetDetails.keyId=" . $scanDet->fkScanSetDetails . "\r\n";
     echo "!ScanDetails.keyId=$keyScanDet\r\n";
-    echo "!Pol=" . $scanDet->GetValue('pol') . ($scanDet->GetValue('copol') ? " copol" : " xpol") . "\r\n";
-    echo "!IFAtten=" . $scanDet->GetValue('ifatten') . "\r\n";
-    echo "!SourceRotAngle=" . $scanDet->GetValue('SourceRotationAngle') . "\r\n";
+    echo "!Pol=" . $scanDet->pol . ($scanDet->copol ? " copol" : " xpol") . "\r\n";
+    echo "!IFAtten=" . $scanDet->ifatten . "\r\n";
+    echo "!SourceRotAngle=" . $scanDet->SourceRotationAngle . "\r\n";
 
     if ($keyScanSet) {
         $scanSet = new ScanSetDetails($keyScanSet);
-        echo "!Elevation=" . $scanSet->GetValue('tilt') . "\r\n";
-        echo "!RF_GHz=" . $scanSet->GetValue('f') . "\r\n";
+        echo "!Elevation=" . $scanSet->tilt . "\r\n";
+        echo "!RF_GHz=" . $scanSet->f . "\r\n";
         unset($scanSet);
     }
 

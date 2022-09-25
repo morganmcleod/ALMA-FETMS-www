@@ -46,7 +46,7 @@ if (!isset($_REQUEST['ifsub'])) {
                          AND SH.fkHeader = TDH.keyId AND SH.keyFacility = TDH.keyFacility
                          AND TDH.keyId = $TestData_header_keyId
                          AND TDH.Band = $td->Band
-                         AND TDH.DataSetGroup = $td->GetValue('DataSetGroup')
+                         AND TDH.DataSetGroup = $td->DataSetGroup
                          AND TDH.fkFE_Config = $td->fkFE_Config
                          AND DT.IsIncluded = 1
                          ORDER BY DT.LOFreq ASC;";
@@ -83,7 +83,7 @@ if (!isset($_REQUEST['ifsub'])) {
                 break;
         }
 
-        switch ($td->Component->GetValue('fkFE_ComponentType')) {
+        switch ($td->Component->fkFE_ComponentType) {
             case 6:
                 //Cryostat
                 $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader

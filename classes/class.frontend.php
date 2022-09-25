@@ -476,21 +476,21 @@ class FrontEnd extends GenericTable {
                 echo "<td width = '160px'>" . $sln->TS . "</td>";
                 echo "<td width = '300px'>" . $sln->location . "</td>";
                 echo "<td width = '160px'>" . $sln->status . "</td>";
-                echo "<td>" . $sln->GetValue('Updated_By') . "</td>";
+                echo "<td>" . $sln->Updated_By . "</td>";
                 echo "<td width = '60px' align='center'>
                 <a href='../FEConfig/ShowFEConfig.php?key=" . $this->feconfig_ids_all[$i] . "&fc=" . $this->keyFacility . "'>" .
                     $this->feconfig_ids_all[$i] . "</a></td>";
 
-                if (strlen($sln->GetValue('lnk_Data')) > 5) {
+                if (strlen($sln->lnk_Data) > 5) {
                     echo "<td width = '40px'>
-                    <a href='" . FixHyperLink($sln->GetValue('lnk_Data')) . "'>
+                    <a href='" . FixHyperLink($sln->lnk_Data) . "'>
                     Link
                     </a></td>";
                     //echo "<td width = '40px'>
-                    //<a href= '".$sln->GetValue('lnk_Data')."'>LINK
+                    //<a href= '".$sln->lnk_Data."'>LINK
                     //</a></td>";
                 }
-                if (strlen($sln->GetValue('lnk_Data')) <= 5) {
+                if (strlen($sln->lnk_Data) <= 5) {
                     echo "<td></td>";
                 }
                 echo "<td>" . substr($sln->Notes, 0, 35) . "</td>";
@@ -522,10 +522,10 @@ class FrontEnd extends GenericTable {
                     $outstring .= ",{'TS':'" . $sln->TS . "',";
                 }
                 $outstring .= "'Location':'" . $sln->location . "',";
-                $outstring .= "'Who':'" .     $sln->GetValue('Updated_By') . "',";
+                $outstring .= "'Who':'" .     $sln->Updated_By . "',";
                 $outstring .= "'Status':'" .  $sln->status . "',";
                 $outstring .= "'Config':'" .  $this->feconfig_ids_all[$i] . "',";
-                $outstring .= "'Link':'" .    FixHyperLink($sln->GetValue('lnk_Data')) . "',";
+                $outstring .= "'Link':'" .    FixHyperLink($sln->lnk_Data) . "',";
 
                 $notes = mysqli_real_escape_string($this->dbConnection, $sln->Notes);
                 $outstring .= "'Notes':'" .   str_replace('"', "'", $notes) . "'}";

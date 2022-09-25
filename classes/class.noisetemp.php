@@ -427,7 +427,13 @@ class NoiseTemperature extends TestData_header {
 
         // if no DataSetGroup defined, use the TDH provided to Initialize_NoiseTemperature:
         if ($this->DataSetGroup == 0) {
-            $q = "SELECT FreqLO, CenterIF, TAmbient, Pol0Sb1YFactor, Pol0Sb2YFactor, Pol1Sb1YFactor, Pol1Sb2YFactor
+            $q = "SELECT FreqLO,
+                         CenterIF,
+                         TAmbient,
+                         Pol0Sb1YFactor,
+                         Pol0Sb2YFactor,
+                         Pol1Sb1YFactor,
+                         Pol1Sb2YFactor
                   FROM Noise_Temp
                   WHERE fkSub_Header={$this->NT_SubHeader->keyId}
                   AND keyFacility ={$this->keyFacility}
@@ -442,8 +448,14 @@ class NoiseTemperature extends TestData_header {
                     WHERE keyFEConfig = {$this->fkFE_Config}";
 
             // Get all Noise_Temp_SubHeader keyId values for records with the same DataSetGroup as this one
-            $q = "SELECT Noise_Temp.FreqLO, Noise_Temp.CenterIF, Noise_Temp.TAmbient, Noise_Temp.Pol0Sb1YFactor,
-                  Noise_Temp.Pol0Sb2YFactor, Noise_Temp.Pol1Sb1YFactor, Noise_Temp.Pol1Sb2YFactor, TestData_header.keyId
+            $q = "SELECT Noise_Temp.FreqLO,
+                         Noise_Temp.CenterIF,
+                         Noise_Temp.TAmbient,
+                         Noise_Temp.Pol0Sb1YFactor,
+                         Noise_Temp.Pol0Sb2YFactor,
+                         Noise_Temp.Pol1Sb1YFactor,
+                         Noise_Temp.Pol1Sb2YFactor,
+                         TestData_header.keyId
                   FROM FE_Config
                   LEFT JOIN TestData_header ON TestData_header.fkFE_Config = FE_Config.keyFEConfig
                   LEFT JOIN Noise_Temp_SubHeader ON Noise_Temp_SubHeader.fkHeader = TestData_header.keyId

@@ -186,8 +186,8 @@ if ($get_wca == '1') {
             //echo "SN=WCA$band-$sn\r\n";
             echo "SN=$sn\r\n";
             echo "ESN=$esn\r\n";
-            echo "FLOYIG=" . $fe->wcas[$iwca]->_WCAs->GetValue('FloYIG') . "\r\n";
-            echo "FHIYIG=" . $fe->wcas[$iwca]->_WCAs->FhiYIG . "\r\n";
+            echo "FLOYIG={$fe->wcas[$iwca]->_WCAs->FloYIG}\r\n";
+            echo "FHIYIG={$fe->wcas[$iwca]->_WCAs->FhiYIG}\r\n";
 
 
             //Get lowest LO
@@ -345,17 +345,17 @@ if ($get_cca == '1') {
                     $mstring = "PreampParam" . ($i + 1) . "=";
                 }
                 $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->FreqLO, 3) . ",";
-                $mstring .= $fe->ccas[$icca]->PreampParams[$i]->GetValue('Pol') . ",";
-                $mstring .= $fe->ccas[$icca]->PreampParams[$i]->GetValue('SB') . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VD1'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VD2'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VD3'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('ID1'), $ij_precision) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('ID2'), $ij_precision) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('ID3'), $ij_precision) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VG1'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VG2'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VG3'), 2) . "\r\n";
+                $mstring .= $fe->ccas[$icca]->PreampParams[$i]->Pol . ",";
+                $mstring .= $fe->ccas[$icca]->PreampParams[$i]->SB . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VD1, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VD2, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VD3, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->ID1, $ij_precision) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->ID2, $ij_precision) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->ID3, $ij_precision) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VG1, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VG2, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VG3, 2) . "\r\n";
                 echo $mstring;
             }
             //}//end !7

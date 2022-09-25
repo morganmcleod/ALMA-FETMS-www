@@ -165,7 +165,7 @@ if ($action == 'read') {
             'cls' => 'folder',
             'expanded' => false,
             'id' => $tdheader->keyId,
-            'groupnumber' => $tdheader->GetValue('DataSetGroup'),
+            'groupnumber' => $tdheader->DataSetGroup,
             'children' => $sub_records
         );
 

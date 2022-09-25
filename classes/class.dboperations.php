@@ -188,45 +188,39 @@ class DBOperations {
         $r = mysqli_query($this->dbConnection, $q);
         $keyId = ADAPT_mysqli_result($r, 0, 0);
 
-        $sln = new GenericTable('FE_StatusLocationAndNotes', 'keyId', $in_fc_fe, 'keyFacility');
-        $sln->NewRecord('FE_StatusLocationAndNotes', 'keyId', $in_fc_fe, 'keyFacility');
+        $sln = SLN::NewRecord('FE_StatusLocationAndNotes', 'keyId', $in_fc_fe, 'keyFacility');
 
         if ($keyId != '') {
-            $sln_old = new GenericTable('FE_StatusLocationAndNotes', $keyId, 'keyId', $in_fc_fe, 'keyFacility');
-            $sln->SetValue('fkFEComponents', $sln_old->GetValue('fkFEComponents'));
-            $sln->SetValue('fkConfigType', $sln_old->GetValue('fkConfigType'));
-            $sln->SetValue('fkLocationNames', $sln_old->fkLocationNames);
-            $sln->SetValue('fkStatusType', $sln_old->fkStatusType);
-            //$sln->SetValue('lnk_Data' , FixHyperlinkForMySQL($sln_old->GetValue('lnk_Data')));
-            $sln->SetValue('Updated_By', $sln_old->GetValue('Updated_By'));
+            $sln_old = new SLN($keyId, $in_fc_fe);
+            $sln->fkFEComponents = $sln_old->fkFEComponents;
+            $sln->fkConfigType = $sln_old->fkConfigType;
+            $sln->fkLocationNames = $sln_old->fkLocationNames;
+            $sln->fkStatusType = $sln_old->fkStatusType;
+            $sln->Updated_By = $sln_old->Updated_By;
         }
 
         if ($fkFEConfig == '') {
             //If a new FE Config record hasn't been created yet, then make one here.
-            $fe = new FrontEnd(NULL, $in_fc_fe, $FE_Config_Original);
-            $NewFEConfig = GenericTable::NewRecord('FE_Config', 'keyFEConfig', $in_fc_fe, 'keyFacility');
-            $NewFEConfig->SetValue('fkFront_Ends', $fe->keyId);
+            $fe = new FrontEnd(NULL, $in_fc_fe, NULL, $FE_Config_Original);
+            $NewFEConfig = FrontEnd::NewRecord('FE_Config', 'keyFEConfig', $in_fc_fe, 'keyFacility');
+            $NewFEConfig->fkFront_Ends = $fe->keyId;
             $NewFEConfig->Update();
             $fkFEConfig = $NewFEConfig->keyId;
         }
-        $sln->SetValue('fkFEConfig', $fkFEConfig);
+        $sln->fkFEConfig = $fkFEConfig;
 
 
-        if ($lnk_Data != '') {
-            $sln->SetValue('lnk_Data', $lnk_Data);
-        }
-        if ($fkLocationNames != '') {
-            $sln->SetValue('fkLocationNames', $fkLocationNames);
-        }
-        if ($fkStatusType != '') {
-            $sln->SetValue('fkStatusType', $fkStatusType);
-        }
-        if ($UpdatedBy != '') {
-            $sln->SetValue('Updated_By', $UpdatedBy);
-        }
-        $sln->SetValue('Notes', $Notes);
-        $sln->SetValue('TS', Date('Y-m-d H:i:s'));
-        $this->latest_feconfig = $sln->GetValue('fkFEConfig');
+        if ($lnk_Data != '')
+            $sln->lnk_Data = $lnk_Data;
+        if ($fkLocationNames != '')
+            $sln->fkLocationNames = $fkLocationNames;
+        if ($fkStatusType != '')
+            $sln->fkStatusType = $fkStatusType;
+        if ($UpdatedBy != '')
+            $sln->Updated_By = $UpdatedBy;
+        $sln->Notes = $Notes;
+        $sln->TS = Date('Y-m-d H:i:s');
+        $this->latest_feconfig = $sln->fkFEConfig;
         $sln->Update();
         unset($sln);
         unset($sln_old);
@@ -253,7 +247,7 @@ class DBOperations {
         $r = mysqli_query($this->dbConnection, $q);
         $keyId = ADAPT_mysqli_result($r, 0, 0);
 
-        $sln = GenericTable::NewRecord('FE_StatusLocationAndNotes', 'keyId', $in_fc_comp, 'keyFacility');
+        $sln = SLN::NewRecord('FE_StatusLocationAndNotes', 'keyId', $in_fc_comp, 'keyFacility');
 
         //Get location of front end, and use it for the component as well.
         $component_old = new FEComponent(NULL, $fkFEComponents, NULL, $in_fc_comp);
@@ -264,40 +258,33 @@ class DBOperations {
         $rloc = mysqli_query($this->dbConnection, $qloc);
         $locid = ADAPT_mysqli_result($rloc, 0, 0);
         if ($fkLocationNames == '') {
-            $sln->SetValue('fkLocationNames', $locid);
+            $sln->fkLocationNames = $locid;
         }
 
         if ($keyId != '') {
-            $sln_old = new GenericTable('FE_StatusLocationAndNotes', $keyId, 'keyId', $in_fc_comp, 'keyFacility');
-            $sln->SetValue('fkFEConfig', $sln_old->GetValue('fkFEConfig'));
-            $sln->SetValue('fkLocationNames', $sln_old->fkLocationNames);
-            $sln->SetValue('fkStatusType', $sln_old->fkStatusType);
-            $sln->SetValue('lnk_Data', FixHyperlinkForMySQL($sln_old->GetValue('lnk_Data')));
-            $sln->SetValue('Updated_By', $sln_old->GetValue('Updated_By'));
+            $sln_old = new SLN($keyId, $in_fc_comp);
+            $sln->fkFEConfig = $sln_old->fkFEConfig;
+            $sln->fkLocationNames = $sln_old->fkLocationNames;
+            $sln->fkStatusType = $sln_old->fkStatusType;
+            $sln->lnk_Data = FixHyperlinkForMySQL($sln_old->lnk_Data);
+            $sln->Updated_By = $sln_old->Updated_By;
         }
 
-        $sln->SetValue('fkFEComponents', $fkFEComponents);
+        $sln->fkFEComponents = $fkFEComponents;
 
-        if ($fkLocationNames != '') {
-            $sln->SetValue('fkLocationNames', $fkLocationNames);
-        }
+        if ($fkLocationNames != '')
+            $sln->fkLocationNames = $fkLocationNames;
+        if ($lnk_Data != '')
+            $sln->lnk_Data = $lnk_Data;
+        if ($fkStatusType != '')
+            $sln->fkStatusType = $fkStatusType;
+        if ($UpdatedBy != '')
+            $sln->Updated_By = $UpdatedBy;
 
-
-        if ($lnk_Data != '') {
-            $sln->SetValue('lnk_Data', $lnk_Data);
-        }
-
-        if ($fkStatusType != '') {
-            $sln->SetValue('fkStatusType', $fkStatusType);
-        }
-        if ($UpdatedBy != '') {
-            $sln->SetValue('Updated_By', $UpdatedBy);
-        }
-
-        $sln->SetValue('Notes', $Notes);
-        $sln->SetValue('TS', Date('Y-m-d H:i:s'));
+        $sln->Notes = $Notes;
+        $sln->TS = Date('Y-m-d H:i:s');
         $sln->Update();
-        $this->latest_feconfig = $sln->GetValue('fkFEConfig');
+        $this->latest_feconfig = $sln->fkFEConfig;
 
         unset($sln);
         unset($sln_old);
@@ -315,9 +302,8 @@ class DBOperations {
 
         //Make new config link records for all components in this front end
         $q = "SELECT keyId FROM FE_ConfigLink
-             WHERE
-             fkFE_ConfigFacility = $in_fc_fe AND
-             fkFE_Config = $in_feconfig_old;";
+              WHERE fkFE_ConfigFacility = $in_fc_fe
+              AND fkFE_Config = $in_feconfig_old;";
         $r = mysqli_query($this->dbConnection, $q);
         while ($row = mysqli_fetch_array($r)) {
             $fecl_old = new GenericTable('FE_ConfigLink', $row[0], 'keyId', $in_fc_fe, 'fkFE_ConfigFacility');
@@ -346,9 +332,8 @@ class DBOperations {
 
         //Make new config link records for all components in this front end
         $q = "SELECT keyId FROM FE_ConfigLink
-             WHERE
-             fkFE_ConfigFacility = $in_fc_fe AND
-             fkFE_Config = $in_feconfig_old;";
+              WHERE fkFE_ConfigFacility = $in_fc_fe
+              AND fkFE_Config = $in_feconfig_old;";
         $r = mysqli_query($this->dbConnection, $q);
         while ($row = mysqli_fetch_array($r)) {
             $fecl_old = new GenericTable('FE_ConfigLink', $row[0], 'keyId', $in_fc_fe, 'fkFE_ConfigFacility');

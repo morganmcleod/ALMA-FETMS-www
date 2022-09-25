@@ -42,7 +42,7 @@
         $IsDoc = 0;
         $IsWCA = 0;
 
-        switch ($c->GetValue('fkFE_ComponentType')) {
+        switch ($c->fkFE_ComponentType) {
             case 11:
                 $IsWCA = 1;
                 break;
@@ -55,11 +55,11 @@
             $SN_old       = $c->SN;
             $ESN1_old     = $c->ESN1;
             $ESN2_old     = $c->ESN2;
-            $desc_old       = $c->GetValue('Description');
-            $Link1_old       = $c->GetValue('Link1');
-            $Link2_old       = $c->GetValue('Link2');
-            $DocTitle_old = $c->GetValue('DocumentTitle');
-            $Ctype_old    = $c->GetValue('fkFE_ComponentType');
+            $desc_old     = $c->Description;
+            $Link1_old    = $c->Link1;
+            $Link2_old    = $c->Link2;
+            $DocTitle_old = $c->DocumentTitle;
+            $Ctype_old    = $c->fkFE_ComponentType;
             $Ctype_new    = $Ctype_old;
 
             // Turn off E_NOTICE error reporting for this section because of all tha unguarded $_REQUEST[]s:
@@ -73,16 +73,16 @@
                 $c->FE_ConfigLink->Update();
             }
 
-            $c->SetValue('SN', $_REQUEST['SN']);
-            $c->SetValue('ESN1', $_REQUEST['ESN1']);
-            $c->SetValue('ESN2', $_REQUEST['ESN2']);
-            $c->SetValue('Link1', $_REQUEST['Link1']);
-            $c->SetValue('Link2', $_REQUEST['Link2']);
-            $c->SetValue('Description', $_REQUEST['Description']);
+            $c->SN = $_REQUEST['SN'];
+            $c->ESN1 = $_REQUEST['ESN1'];
+            $c->ESN2 = $_REQUEST['ESN2'];
+            $c->Link1 = $_REQUEST['Link1'];
+            $c->Link2 = $_REQUEST['Link2'];
+            $c->Description = $_REQUEST['Description'];
 
             if (isset($_REQUEST['ctype'])) {
                 $Ctype_new = $_REQUEST['ctype'];
-                $c->SetValue('fkFE_ComponentType', $_REQUEST['ctype']);
+                $c->fkFE_ComponentType = $_REQUEST['ctype'];
             }
 
             $Notes = $_REQUEST['Updated_By'] . ' changed ';
@@ -117,11 +117,11 @@
                 $Notes .= ' Link2,';
                 $changed = 1;
             }
-            if ($desc_old != $c->GetValue('Description')) {
+            if ($desc_old != $c->Description) {
                 $Notes .= ' Description,';
                 $changed = 1;
             }
-            if ($DocTitle_old != $c->GetValue('DocumentTitle')) {
+            if ($DocTitle_old != $c->DocumentTitle) {
                 $Notes .= ' Doc. Title,';
                 $changed = 1;
             }
@@ -250,7 +250,7 @@
                         Link1 (CIDL):
                     </th>
                     <td align>
-                        <textarea rows='3' cols='40' name='Link2' id='Link2'>" . $c->GetValue('Link2') . "</textarea>
+                        <textarea rows='3' cols='40' name='Link2' id='Link2'>" . $c->Link2 . "</textarea>
                     </td>
                 </tr>
 
@@ -259,7 +259,7 @@
                         Link2 (SICL):
                     </th>
                     <td align>
-                        <textarea rows='3' cols='40' name='Link1' id='Link1'>" . $c->GetValue('Link1') . "</textarea>
+                        <textarea rows='3' cols='40' name='Link1' id='Link1'>" . $c->Link1 . "</textarea>
                     </td>
                 </tr>";
 
@@ -268,7 +268,7 @@
                         Description:
                     </th>
                     <td align>
-                        <textarea rows='3' cols='40' name='Description' id='Description'>" . $c->GetValue('Description') . "</textarea>
+                        <textarea rows='3' cols='40' name='Description' id='Description'>" . $c->Description . "</textarea>
                     </td>
                 </tr>";
 

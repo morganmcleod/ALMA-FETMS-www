@@ -9,7 +9,7 @@ $fc = $_REQUEST['fc'];
 $compkey = $_GET['compkey'];
 
 $fecomp = new FEComponent(NULL, $compkey, NULL, $fc);
-$comptype = $fecomp->GetValue('fkFE_ComponentType');
+$comptype = $fecomp->fkFE_ComponentType;
 
 $feconfig = $fecomp->FEConfig;
 $fesn = $fecomp->FESN;

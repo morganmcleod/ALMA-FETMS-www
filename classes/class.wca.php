@@ -189,7 +189,7 @@ class WCA extends FEComponent {
         require(site_get_config_main());
         $where = $_SERVER["PHP_SELF"];
         $where = '';
-        $band = $this->GetValue('Band');
+        $band = $this->Band;
         $name = ($band == 1) ? "LO" : "WCA";
         echo "<form action='" . $where . "' method='POST'>";
         echo "<div style ='width:100%;height:50%;margin-left:30px;'>";
@@ -1684,7 +1684,7 @@ class WCA extends FEComponent {
             }
             $imagename = "WCA_AMNoisePol$pol" . "_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
             $image_url = $this->url_directory . $imagename;
-            if ($this->GetValue('Band') == 1)
+            if ($this->Band == 1)
                 $plot_title = "LO ";
             else
                 $plot_title = "WCA ";
@@ -1833,7 +1833,7 @@ class WCA extends FEComponent {
         }
         $imagename = "WCA_PhaseNoise_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
         $image_url = $this->url_directory . $imagename;
-        if ($this->GetValue('Band') == 1)
+        if ($this->Band == 1)
             $plot_title = "LO ";
         else
             $plot_title = "WCA ";

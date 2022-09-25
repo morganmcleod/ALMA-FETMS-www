@@ -63,8 +63,8 @@
                 $HasChanged = 2;
                 $ChangedNotes .= " Status,";
             }
-            if ($_REQUEST['lnk_Data'] != $fe->fesln->GetValue('lnk_Data')) {
-                $len1 = strlen($fe->fesln->GetValue('lnk_Data'));
+            if ($_REQUEST['lnk_Data'] != $fe->fesln->lnk_Data) {
+                $len1 = strlen($fe->fesln->lnk_Data);
                 $len2 = strlen($_REQUEST['lnk_Data']);
 
                 if (($len1 + $len2) >= 4) {

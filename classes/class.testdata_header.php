@@ -81,6 +81,7 @@ class TestData_header extends GenericTable {
             $this->feKeyId = FE_Config::getFrontEndFromKeyId($this->fkFE_Config);
             $this->frontEnd = new FrontEnd($this->feKeyId, $this->fc, FrontEnd::INIT_SLN | FrontEnd::INIT_CONFIGS);
             $this->Component  = new FEComponent("Front_Ends", $this->feKeyId, "keyFrontEnds", $this->fc, 'keyFacility');
+            $this->Component->ComponentType = "Front End";
         }
     }
 
@@ -665,20 +666,22 @@ class TestData_header extends GenericTable {
 
     public function Display_RawTestData() {
         $fkHeader = $this->keyId;
-        $qgetdata = "SELECT * FROM $this->testDataTableName WHERE
-        fkHeader = $fkHeader AND fkFacility = " . $this->fc . ";";
+        $qgetdata = "SELECT * FROM {$this->testDataTableName}
+                     WHERE fkHeader = {$fkHeader}
+                     AND fkFacility = {$this->fc};";
 
         $preCols = "";
 
-        switch ($this->Component->GetValue('fkFE_ComponentType')) {
+        switch ($this->Component->fkFE_ComponentType) {
             case 6:
                 //Cryostat
                 $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
                       WHERE fkHeader = $this->keyId;";
                 $r = mysqli_query($this->dbConnection, $q);
                 $fkHeader = ADAPT_mysqli_result($r, 0, 0);
-                $qgetdata = "SELECT * FROM $this->testDataTableName WHERE
-                fkSubHeader = $fkHeader AND fkFacility = " . $this->fc . ";";
+                $qgetdata = "SELECT * FROM {$this->testDataTableName}
+                             WHERE fkSubHeader = {$fkHeader}
+                             AND fkFacility = {$this->fc};";
                 break;
         }
 
@@ -686,15 +689,15 @@ class TestData_header extends GenericTable {
             case 57:
                 //LO Lock test
                 $qgetdata = "SELECT DT.*
-                            FROM TEST_LOLockTest as DT, TEST_LOLockTest_SubHeader as SH, TestData_header as TDH
-                            WHERE DT.fkHeader = SH.keyId AND DT.fkFacility = SH.keyFacility
-                            AND SH.fkHeader = TDH.keyId AND SH.keyFacility = TDH.keyFacility
-                    AND TDH.keyId = {$fkHeader}
-                    AND TDH.Band = {$this->Band}
-                    AND TDH.DataSetGroup = {$this->dataSetGroup}
-                    AND TDH.fkFE_Config = " . $this->fkFE_Config
-                    . " AND DT.IsIncluded = 1
-                            ORDER BY DT.LOFreq ASC;";
+                             FROM TEST_LOLockTest as DT, TEST_LOLockTest_SubHeader as SH, TestData_header as TDH
+                             WHERE DT.fkHeader = SH.keyId AND DT.fkFacility = SH.keyFacility
+                             AND SH.fkHeader = TDH.keyId AND SH.keyFacility = TDH.keyFacility
+                             AND TDH.keyId = {$fkHeader}
+                             AND TDH.Band = {$this->Band}
+                             AND TDH.DataSetGroup = {$this->dataSetGroup}
+                             AND TDH.fkFE_Config = {$this->fkFE_Config}
+                             AND DT.IsIncluded = 1
+                             ORDER BY DT.LOFreq ASC;";
 
                 $this->testDataTableName = 'TEST_LOLockTest';
                 break;
@@ -702,8 +705,8 @@ class TestData_header extends GenericTable {
             case 58:
                 //Noise Temperature
                 $q = "SELECT keyId FROM Noise_Temp_SubHeader
-                      WHERE fkHeader = $this->keyId
-                      AND keyFacility = " . $this->fc;
+                      WHERE fkHeader = {$this->keyId}
+                      AND keyFacility = {$this->fc}";
                 $r = mysqli_query($this->dbConnection, $q);
                 $subid = ADAPT_mysqli_result($r, 0, 0);
                 $qgetdata = "SELECT * FROM Noise_Temp WHERE fkSub_Header = $subid AND keyFacility = "
@@ -977,6 +980,7 @@ class TestData_header extends GenericTable {
                 $wca->Plot_AMNoise();
                 break;
             case 48:
+                // ??!!
                 $wca->Plot_PhaseJitter();
                 break;
             case 49:
@@ -997,44 +1001,43 @@ class TestData_header extends GenericTable {
         //Pol 0, first minimum
         $qpa = "SELECT MIN(amp_pol0)
                 FROM TEST_PolAngles
-                WHERE fkFacility = " . $this->fc . "
-                        AND
-                        fkHeader = $this->keyId
-                        and angle < ($nom_0_m90 + 10)
-                        and angle > ($nom_0_m90 - 10);";
+                WHERE fkFacility = {$this->fc}
+                AND fkHeader = {$this->keyId}
+                AND angle < ($nom_0_m90 + 10)
+                AND angle > ($nom_0_m90 - 10);";
         $rpa = mysqli_query($this->dbConnection, $qpa);
 
         $pol0_min1 = ADAPT_mysqli_result($rpa, 0);
 
         $qpa = "SELECT angle
-        FROM TEST_PolAngles
-        WHERE fkHeader = $this->keyId
-        and fkFacility = " . $this->fc . "
-                and ROUND(amp_pol0,5) = " . round($pol0_min1, 5) . "
-                        and angle < ($nom_0_m90 + 10)
-                        and angle > ($nom_0_m90 - 10);";
+                FROM TEST_PolAngles
+                WHERE fkHeader = {$this->keyId}
+                AND fkFacility = {$this->fc}
+                AND ROUND(amp_pol0,5) = {round($pol0_min1, 5)}
+                AND angle < ($nom_0_m90 + 10)
+                AND angle > ($nom_0_m90 - 10);";
         $rpa = mysqli_query($this->dbConnection, $qpa);
 
         $angle_min0_1 = ADAPT_mysqli_result($rpa, 0);
 
         //Pol 0, 2nd minimum
         $qpa = "SELECT MIN(amp_pol0)
-        FROM TEST_PolAngles
-        WHERE fkHeader = $this->keyId
-        AND fkFacility = " . $this->fc . "
-        and angle < ($nom_0_p90 + 10)
-        and angle > ($nom_0_p90 - 10);";
+                FROM TEST_PolAngles
+                WHERE fkHeader = {$this->keyId}
+                AND fkFacility = {$this->fc}
+                AND angle < ($nom_0_p90 + 10)
+                AND angle > ($nom_0_p90 - 10);";
         $rpa = mysqli_query($this->dbConnection, $qpa);
 
         $pol0_min2 = ADAPT_mysqli_result($rpa, 0);
 
         $qpa = "SELECT angle
-        FROM TEST_PolAngles
-        WHERE fkHeader = $this->keyId
-        AND fkFacility = " . $this->fc . "
-                and ROUND(amp_pol0,5) = " . round($pol0_min2, 5) . "
-                        and angle < ($nom_0_p90 + 10)
-                        and angle > ($nom_0_p90 - 10);";
+                FROM TEST_PolAngles
+                WHERE fkHeader = {$this->keyId}
+                AND fkFacility = {$this->fc}
+                AND ROUND(amp_pol0,5) = {round($pol0_min2, 5)}
+                AND angle < ($nom_0_p90 + 10)
+                AND angle > ($nom_0_p90 - 10);";
         $rpa = mysqli_query($this->dbConnection, $qpa);
 
         $angle_min0_2 = ADAPT_mysqli_result($rpa, 0);
@@ -1042,44 +1045,44 @@ class TestData_header extends GenericTable {
 
         //Pol 1, first minimum
         $qpa = "SELECT MIN(amp_pol1)
-        FROM TEST_PolAngles
-        WHERE fkHeader = $this->keyId
-        AND fkFacility = " . $this->fc . "
-        and angle < ($nom_1_m90 + 10)
-        and angle > ($nom_1_m90 - 10);";
+                FROM TEST_PolAngles
+                WHERE fkHeader = {$this->keyId}
+                AND fkFacility = {$this->fc}
+                AND angle < ($nom_1_m90 + 10)
+                AND angle > ($nom_1_m90 - 10);";
         $rpa = mysqli_query($this->dbConnection, $qpa);
 
         $pol1_min1 = ADAPT_mysqli_result($rpa, 0);
 
         $qpa = "SELECT angle
-        FROM TEST_PolAngles
-        WHERE fkHeader = $this->keyId
-        AND fkFacility = " . $this->fc . "
-                and ROUND(amp_pol1,5) = " . round($pol1_min1, 5) . "
-                        and angle < ($nom_1_m90 + 10)
-                        and angle > ($nom_1_m90 - 10);";
+                FROM TEST_PolAngles
+                WHERE fkHeader = {$this->keyId}
+                AND fkFacility = {$this->fc}
+                AND ROUND(amp_pol1, 5) = {round($pol1_min1, 5)}
+                AND angle < ($nom_1_m90 + 10)
+                AND angle > ($nom_1_m90 - 10);";
         $rpa = mysqli_query($this->dbConnection, $qpa);
 
         $angle_min1_1 = ADAPT_mysqli_result($rpa, 0);
 
         //Pol 1, 2nd minimum
         $qpa = "SELECT MIN(amp_pol1)
-        FROM TEST_PolAngles
-        WHERE fkHeader = $this->keyId
-        AND fkFacility = " . $this->fc . "
-        and angle < ($nom_1_p90 + 10)
-        and angle > ($nom_1_p90 - 10);";
+                FROM TEST_PolAngles
+                WHERE fkHeader = {$this->keyId}
+                AND fkFacility = {$this->fc}
+                AND angle < ($nom_1_p90 + 10)
+                AND angle > ($nom_1_p90 - 10);";
         $rpa = mysqli_query($this->dbConnection, $qpa);
 
         $pol1_min2 = ADAPT_mysqli_result($rpa, 0);
 
         $qpa = "SELECT angle
-        FROM TEST_PolAngles
-        WHERE fkHeader = $this->keyId
-        AND fkFacility = " . $this->fc . "
-                and ROUND(amp_pol1,5) = " . round($pol1_min2, 5) . "
-                        and angle < ($nom_1_p90 + 10)
-                        and angle > ($nom_1_p90 - 10);";
+                FROM TEST_PolAngles
+                WHERE fkHeader = {$this->keyId}
+                AND fkFacility = {$this->fc}
+                AND ROUND(amp_pol1,5) = {round($pol1_min2, 5)}
+                AND angle < ($nom_1_p90 + 10)
+                AND angle > ($nom_1_p90 - 10);";
         $rpa = mysqli_query($this->dbConnection, $qpa);
 
         $angle_min1_2 = ADAPT_mysqli_result($rpa, 0);
@@ -1133,9 +1136,9 @@ class TestData_header extends GenericTable {
                 $hlon = (abs($diff) > 2) ? "<font color='#ff0000'>" : "";
                 $hloff = (abs($diff) > 2) ? "</font>" : "";
 
-                echo "<tr><td><b>" . $row['pol'] . "</b></td>";
-                echo "<td><b>" . $row['nominal'] . "</b></td>";
-                echo "<td><b>" . $row['actual'] . "</b></td>";
+                echo "<tr><td><b>{$row['pol']}</b></td>";
+                echo "<td><b>{$row['nominal']}</b></td>";
+                echo "<td><b>{$row['actual']}</b></td>";
                 echo "<td><b>$hlon$diff$hloff</b></td></tr>";
             }
         }

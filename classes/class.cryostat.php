@@ -1,6 +1,7 @@
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.generictable.php');
+require_once($site_classes . '/class.fecomponent.php');
 require_once($site_classes . '/class.tempsensor.php');
 require_once($site_dbConnect);
 
@@ -89,7 +90,7 @@ class Cryostat extends GenericTable {
                     break;
             }
             if (isset($tdhIndex)) {
-                $this->tdheaders[$tdhIndex] = new GenericTable('TestData_header', $rowtdh['keyId'], "keyId", $in_fc, 'keyFacility');
+                $this->tdheaders[$tdhIndex] = new TestData_header($rowtdh['keyId'], $in_fc);
                 $this->tdheaders[$tdhIndex]->subheader = new GenericTable('TEST_Cryostat_data_SubHeader', $rowtdh['keyId'], "fkHeader", $in_fc, 'keyFacility');
                 //Initialize first using fkHeader as key. This gets us the keyId value without having
                 //to do an extra query.
@@ -108,10 +109,11 @@ class Cryostat extends GenericTable {
     public function NewRecord_Cryostat() {
         require(site_get_config_main());
         //fc is defined in config_main.php
-        parent::NewRecord('FE_Components', 'keyId', $fc, 'keyFacility');
-        $this->SetValue('fkFE_ComponentType', 6);
+        $tempObj = FEComponent::NewRecord('FE_Components', 'keyId', $fc, 'keyFacility');
+        $tempObj->fkFE_ComponentType = 6;
         $this->Update();
 
+        // ??!!
         $tdtypes = array(0, 50, 53, 52, 54, 25);
     }
 
@@ -437,17 +439,17 @@ class Cryostat extends GenericTable {
         for ($i = 1; $i < count($this->tempsensors); $i++) {
             $trclass = ($trclass == "" ? "tr class = 'alt'" : "");
             echo "<tr $trclass>
-                    <td>" . $this->tempsensors[$i]->GetValue('sensor_number') . "</td>";
+                    <td>" . $this->tempsensors[$i]->sensor_number . "</td>";
             echo "<td><b>" .
-                $this->tempsensors[$i]->GetValue('sensor_type') . "</b></td>";
+                $this->tempsensors[$i]->sensor_type . "</b></td>";
             echo "<td>{$this->tempsensors[$i]->location}</td>
-                <td width = '40px'>" . round($this->tempsensors[$i]->GetValue('k1'), 3) . "</td>
-                <td width = '40px'>" . round($this->tempsensors[$i]->GetValue('k2'), 3) . "</td>
-                <td width = '40px'>" . round($this->tempsensors[$i]->GetValue('k3'), 3) . "</td>
-                <td width = '40px'>" . round($this->tempsensors[$i]->GetValue('k4'), 3) . "</td>
-                <td width = '40px'>" . round($this->tempsensors[$i]->GetValue('k5'), 3) . "</td>
-                <td width = '40px'>" . round($this->tempsensors[$i]->GetValue('k6'), 3) . "</td>
-                <td width = '40px'>" . round($this->tempsensors[$i]->GetValue('k7'), 3) . "</td>";
+                <td width = '40px'>" . round($this->tempsensors[$i]->k1, 3) . "</td>
+                <td width = '40px'>" . round($this->tempsensors[$i]->k2, 3) . "</td>
+                <td width = '40px'>" . round($this->tempsensors[$i]->k3, 3) . "</td>
+                <td width = '40px'>" . round($this->tempsensors[$i]->k4, 3) . "</td>
+                <td width = '40px'>" . round($this->tempsensors[$i]->k5, 3) . "</td>
+                <td width = '40px'>" . round($this->tempsensors[$i]->k6, 3) . "</td>
+                <td width = '40px'>" . round($this->tempsensors[$i]->k7, 3) . "</td>";
             echo "</tr>";
         }
 
@@ -763,13 +765,13 @@ class Cryostat extends GenericTable {
                     }
 
                     for ($j = 1; $j <= 13; $j++) {
-                        $K[1] = $this->tempsensors[$j]->GetValue('k1');
-                        $K[2] = $this->tempsensors[$j]->GetValue('k2');
-                        $K[3] = $this->tempsensors[$j]->GetValue('k3');
-                        $K[4] = $this->tempsensors[$j]->GetValue('k4');
-                        $K[5] = $this->tempsensors[$j]->GetValue('k5');
-                        $K[6] = $this->tempsensors[$j]->GetValue('k6');
-                        $K[7] = $this->tempsensors[$j]->GetValue('k7');
+                        $K[1] = $this->tempsensors[$j]->k1;
+                        $K[2] = $this->tempsensors[$j]->k2;
+                        $K[3] = $this->tempsensors[$j]->k3;
+                        $K[4] = $this->tempsensors[$j]->k4;
+                        $K[5] = $this->tempsensors[$j]->k5;
+                        $K[6] = $this->tempsensors[$j]->k6;
+                        $K[7] = $this->tempsensors[$j]->k7;
                         if ($this->rk == 'r') {
                             $T[$j] = $this->Convert_RtoTemp($R[$j], $K, $j);
                         }

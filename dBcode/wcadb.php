@@ -433,7 +433,7 @@ class WCAdb { //extends DBRetrieval {
      * @param integer $keyId
      * @param string $test_type- TestData_Type desired
      * @param integer $fc (default = NULL)
-     * @return resource
+     * @return mysqli_result|bool
      */
     public function qtdh($action, $keyId, $test_type, $fc = NULL) {
         if ($action == 'select') {

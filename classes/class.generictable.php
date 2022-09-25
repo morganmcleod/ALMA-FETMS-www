@@ -59,11 +59,12 @@ class GenericTable {
         if ($inKeyId) {
             if ($this->fcKeyName != 'none') {
                 $qVals = "SELECT * FROM $tableName
-                    WHERE $inKeyIdName = $inKeyId AND $this->fcKeyName = $inFc LIMIT 1;";
+                          WHERE $inKeyIdName = $inKeyId
+                          AND $this->fcKeyName = $inFc LIMIT 1;";
             }
             if ($this->fcKeyName == 'none') {
                 $qVals = "SELECT * FROM $tableName
-                    WHERE $inKeyIdName = $inKeyId LIMIT 1;";
+                          WHERE $inKeyIdName = $inKeyId LIMIT 1;";
             }
             $rVals = mysqli_query($this->dbConnection, $qVals);
             $arrayValues = mysqli_fetch_row($rVals);

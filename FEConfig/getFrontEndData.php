@@ -37,18 +37,18 @@ if ($band == 100) {
         </tr>
         <tr>
             <th>CAN SN:</td>
-            <td><?php echo $fe->GetValue('ESN'); ?></td>
+            <td><?php echo $fe->ESN; ?></td>
         </tr>
         <?php
-        if (strlen($fe->GetValue('Docs')) > 1) {
-            echo "<tr><th>Docs:</td><td><a href='" . FixHyperlink($fe->GetValue('Docs')) . "'>Link </a></td></tr>";
+        if (strlen($fe->Docs) > 1) {
+            echo "<tr><th>Docs:</td><td><a href='" . FixHyperlink($fe->Docs) . "'>Link </a></td></tr>";
         } else {
             echo "<tr><th>Docs:</td><td></td></tr>";
         }
         ?>
         <tr>
             <th>Description:</td>
-            <td><?php echo $fe->GetValue('Description'); ?></td>
+            <td><?php echo $fe->Description; ?></td>
         </tr>
     </table>
     </div>

@@ -30,8 +30,8 @@ function table_header_html($width, &$tdh, $cols = 2, $filterChecked = false, $ch
 
     $testpage = 'testdata.php';
 
-    $q = "SELECT `Description` FROM `TestData_Types`
-        WHERE `keyId` = " . $tdh->fkTestData_Type . "";
+    $q = "SELECT Description FROM TestData_Types
+          WHERE keyId = {$tdh->fkTestData_Type}";
     $r = mysqli_query($tdh->dbConnection, $q);
     $test_name = ADAPT_mysqli_result($r, 0, 0);
 
@@ -39,7 +39,7 @@ function table_header_html($width, &$tdh, $cols = 2, $filterChecked = false, $ch
 
     // decide if the box is checked:
     $checked = "";
-    if ($tdh->GetValue('UseForPAI')) $checked = "checked='checked'";
+    if ($tdh->UseForPAI) $checked = "checked='checked'";
 
     if (!$filterChecked || $checked) {
         // First title block line with check box
@@ -67,11 +67,11 @@ function table_header_html($width, &$tdh, $cols = 2, $filterChecked = false, $ch
         // check to see if it was a FE component test or a FE config test
         if ($tdh->fkFE_Config != 0) {
             $html .= "<tr><th colspan=$cols> FE Config: " . $tdh->fkFE_Config .
-                ", Table SWVer: $table_ver, Meas SWVer: " . $tdh->GetValue('Meas_SWVer') . "
+                ", Table SWVer: $table_ver, Meas SWVer: " . $tdh->Meas_SWVer . "
                     </th></tr>";
         } else {
-            $html .= "<tr><th colspan=$cols> FE Component: " . $tdh->GetValue('fkFE_Components') .
-                ", Table SWVer: $table_ver, Meas SWVer: " . $tdh->GetValue('Meas_SWVer') . "
+            $html .= "<tr><th colspan=$cols> FE Component: " . $tdh->fkFE_Components .
+                ", Table SWVer: $table_ver, Meas SWVer: " . $tdh->Meas_SWVer . "
                     </th></tr>";
         }
     }
@@ -644,7 +644,7 @@ function Temp_Sensor_results_html($td_keyID, $filterChecked) {
             $html .= "<td colspan='1'>" . $Col . "</td>";
             // check to see if data Status is: Cold PAS, Cold PAI or Health check
             $test_type_array = array("1", "3", "4");
-            if (in_array($tdh->GetValue('fkDataStatus'), $test_type_array)) {
+            if (in_array($tdh->fkDataStatus, $test_type_array)) {
                 // check to see if line is a 4k stage
                 $cold_array = array("4k", "Pol0_mixer", "Pol1_mixer");
                 if (in_array($Col, $cold_array)) {

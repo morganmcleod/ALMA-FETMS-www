@@ -4,9 +4,9 @@ require_once($site_dbConnect);
 require_once(site_get_config_main());
 
 class TestDataTable {
-    private $dbconnection;
+    private $dbConnection;
     private $fc;
-    private $band;
+    private $Band;
     private $keyFrontEnd;
     private $compType;
     private $compSN;

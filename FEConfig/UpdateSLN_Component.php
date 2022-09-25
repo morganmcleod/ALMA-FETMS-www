@@ -83,7 +83,7 @@
 						Link:
 					</th>
 					<td>
-						<textarea cols='40' rows='2' name='lnk_Data' id='lnk_Data'>" . $c->sln->GetValue('lnk_Data') . "</textarea>
+						<textarea cols='40' rows='2' name='lnk_Data' id='lnk_Data'>" . $c->sln->lnk_Data . "</textarea>
 					</td>
 				</tr>
 
@@ -102,7 +102,7 @@
 							  ORDER BY Initials ASC;";
         $r = mysqli_query($dbconnection, $q);
         while ($row = mysqli_fetch_array($r)) {
-            if ($row[0] == $c->sln->GetValue('Updated_By')) {
+            if ($row[0] == $c->sln->Updated_By) {
                 echo "<option value='$row[0]' selected = 'selected'>$row[0]</option>";
             } else {
                 echo "<option value='$row[0]'>$row[0]</option>";

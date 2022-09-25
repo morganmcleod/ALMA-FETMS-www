@@ -21,7 +21,7 @@ class BeamEffDB { //extends DBRetrieval {
     /**
      * @param string $query- SQL query
      *
-     * @return Resource Id for SQL query
+     * @return mysqli_result|bool Id for SQL query
      */
     public function run_query($query) {
         return mysqli_query($this->dbConnection, $query);
@@ -31,7 +31,7 @@ class BeamEffDB { //extends DBRetrieval {
      * @param integer $keyScanDetails
      * @param integer $fc (default = NULL)
      *
-     * @return resource
+     * @return mysqli_result|bool
      */
     public function qdelete($keyScanDetails, $fc = NULL) {
         $q = "DELETE FROM BeamEfficiencies WHERE fkScanDetails = $keyScanDetails";
@@ -54,7 +54,7 @@ class BeamEffDB { //extends DBRetrieval {
      * @param integer $keyScanDetails (default = NULL)
      * @param integer $band (default = NULL)
      *
-     * @return resource
+     * @return mysqli_result|bool
      */
     public function q_other($request, $keyScanDetails = NULL, $band = NULL) {
         $q = '';
@@ -116,7 +116,7 @@ class BeamEffDB { //extends DBRetrieval {
      * @param integer $fc (default = NULL)
      * @param integer $scanSetId (default = NULL)
      *
-     * @return resource
+     * @return mysqli_result|bool
      */
     public function qss($occur, $fe_id = NULL, $in_keyId = NULL, $band = NULL, $fc = NULL, $scanSetId = NULL) {
         $q = "";

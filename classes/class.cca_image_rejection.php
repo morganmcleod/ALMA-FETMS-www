@@ -16,7 +16,7 @@ class cca_image_rejection extends TestData_header {
          * version 1.0.2:  MTM fixed "set...screen" commands to gnuplot
          */
 
-        $this->SetValue('Plot_SWVer', $Plot_SWVer);
+        $this->Plot_SWVer = $Plot_SWVer;
         $this->Update();
 
         // start a logger file for debugging
@@ -142,10 +142,10 @@ class cca_image_rejection extends TestData_header {
         //Create data file from database
         //***************************************************
         $q = "SELECT FreqLO, CenterIF, POL, SB, SBR
-         FROM CCA_TEST_SidebandRatio
-         WHERE fkFacility = {$this->keyFacility}
-         AND fkHeader = {$this->keyId}
-         ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
+              FROM CCA_TEST_SidebandRatio
+              WHERE fkFacility = {$this->keyFacility}
+              AND fkHeader = {$this->keyId}
+              ORDER BY POL DESC, SB DESC, FreqLO ASC, CenterIF DESC";
         $r = mysqli_query($this->dbConnection, $q);
         $l->WriteLogFile("CCA Image Rejection Data Query: $q");
 
@@ -267,7 +267,7 @@ class cca_image_rejection extends TestData_header {
         //Update plot url in TestData_header
         //***************************************************
         $image_url_string = implode(",", $image_url);
-        $this->SetValue('PlotURL', $image_url_string);
+        $this->PlotURL = $image_url_string;
         $this->Update();
     }
 

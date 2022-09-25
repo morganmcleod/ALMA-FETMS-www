@@ -247,7 +247,7 @@ class IFSpectrum_calc {
         $this->pMax_dBm_overall = self::TINY_POWER;
 
         if (empty($this->data))
-            return $output;
+            return array();
 
         // to accumulate min/max powers seen per LO:
         $mindBm = self::HUGE_POWER;
