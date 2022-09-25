@@ -3,6 +3,7 @@ require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
 $dbconnection = site_getDbConnection();
+ini_set('max_execution_time', '0');
 
 $action   = $_REQUEST['action'];
 $FEid     = $_REQUEST['FEid'];

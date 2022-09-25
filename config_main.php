@@ -18,7 +18,7 @@ $FETMS_CCA_MODE = false;
 $site_hostname = $_SERVER['SERVER_NAME'];
 
 switch ($site_hostname) {
-    case "fetms.osf.alma.cl":
+    case "fetms-rhel8.osf.alma.cl":
         $url_root .= "fetms/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff2_64";

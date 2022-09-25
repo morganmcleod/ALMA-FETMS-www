@@ -7,7 +7,7 @@
 	<div id="footer">
 		
 	</div>
-	<?
+	<?php
 	echo "<div align = 'center'>";
 	echo "<a href='http://www.cv.nrao.edu/php-internal/ntc/SWTasks/Bugs/AddNewBug.php?modulekey=40'>
 					<b>Submit Bug report or feature request</b></a><br><br></div>";

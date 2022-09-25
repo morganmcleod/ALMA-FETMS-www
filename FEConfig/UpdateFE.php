@@ -9,8 +9,9 @@
     <link rel="stylesheet" type="text/css" href="recordform/css/empty.css" id="theme">
     <link rel="stylesheet" type="text/css" href="recordform/css/icons.css">
     <link rel="stylesheet" type="text/css" href="recordform/css/recordform.css">
-    <link rel="stylesheet" type="text/css" href="../../ext/examples/ux/css/RowEditor.css">
+    <link rel="stylesheet" type="text/css" href="../ext/examples/ux/css/RowEditor.css">
     <link rel="stylesheet" type="text/css" href="headerbuttons.css">
+
     <link type="text/css" href="../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
     <script src="../ext/adapter/ext/ext-base.js" type="text/javascript"></script>
     <script src="../ext/ext-all.js" type="text/javascript"></script>

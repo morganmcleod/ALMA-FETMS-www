@@ -68,13 +68,13 @@ class FineLOSweep extends TestData_header {
         $l = new Logger("FineLOSweepLog.txt");
         //Get CCA Serial Number
         $q = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-             WHERE FE_ConfigLink.fkFE_Config = " . $this->fkFE_Config . "
-             AND FE_Components.fkFE_ComponentType = 20
-             AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-             AND FE_Components.Band = " . $this->Band . "
-             AND FE_Components.keyFacility =" . $this->keyFacility . "
-             AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-             GROUP BY Band ASC;";
+              WHERE FE_ConfigLink.fkFE_Config = {$this->fkFE_Config}
+              AND FE_Components.fkFE_ComponentType = 20
+              AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
+              AND FE_Components.Band = {$this->Band}
+              AND FE_Components.keyFacility ={$this->keyFacility}
+              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
+              GROUP BY Band ORDER BY Band ASC;";
         $r = mysqli_query($this->dbConnection, $q);
         $l->WriteLogFile("CCA SN Query: $q");
         $CCA_SN = ADAPT_mysqli_result($r, 0, 0);
@@ -82,13 +82,13 @@ class FineLOSweep extends TestData_header {
 
         //Get WCA Serial Number
         $q = "SELECT FE_Components.SN FROM FE_Components, FE_ConfigLink, FE_Config
-             WHERE FE_ConfigLink.fkFE_Config = " . $this->fkFE_Config . "
-             AND FE_Components.fkFE_ComponentType = 11
-             AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
-             AND FE_Components.Band = " . $this->Band . "
-             AND FE_Components.keyFacility =" . $this->keyFacility . "
-             AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-             GROUP BY Band ASC;";
+              WHERE FE_ConfigLink.fkFE_Config = {$this->fkFE_Config}
+              AND FE_Components.fkFE_ComponentType = 11
+              AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
+              AND FE_Components.Band = {$this->Band}
+              AND FE_Components.keyFacility ={$this->keyFacility}
+              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
+              GROUP BY Band ORDER BY Band ASC;";
         $r = mysqli_query($this->dbConnection, $q);
         $l->WriteLogFile("WCA SN Query: $q");
         $WCA_SN = ADAPT_mysqli_result($r, 0, 0);
@@ -176,6 +176,7 @@ class FineLOSweep extends TestData_header {
                 " CCA SN$CCA_SN WCA SN$WCA_SN, Pol" . $this->FLOSweepSubHeader[$cnt]->Pol
                 . ", Elevation " . $this->FLOSweepSubHeader[$cnt]->TiltAngle_Deg . "";
             fwrite($fh, "set terminal png size 900,600 crop\r\n");
+            fwrite($fh, "set colorsequence classic\r\n");
             fwrite($fh, "set output '$imagepath'\r\n");
             fwrite($fh, "set title '$plot_title'\r\n");
             fwrite($fh, "set xrange [$min_freq:$max_freq]\r\n");

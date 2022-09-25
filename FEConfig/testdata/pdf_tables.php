@@ -1318,10 +1318,10 @@ function Band3_CCA_NT_results_html($td_keyID) {
 
     //Get CCA FE_Component keyid
     $q = "SELECT keyId FROM FE_Components
-         WHERE SN = ($q) AND fkFE_ComponentType = 20
-         AND band = " . $tdh->Band . "
-         AND keyFacility =" . $tdh->keyFacility . "
-         GROUP BY keyId DESC";
+          WHERE SN = ($q) AND fkFE_ComponentType = 20
+          AND band = {$tdh->Band}
+          AND keyFacility = {$tdh->keyFacility}
+          GROUP BY keyId ORDER BY keyId DESC";
 
     $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");;
     while ($row = mysqli_fetch_array($r)) {

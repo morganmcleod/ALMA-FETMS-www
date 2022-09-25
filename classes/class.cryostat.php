@@ -44,12 +44,14 @@ class Cryostat extends GenericTable {
         $this->datadir = $main_write_directory . "cSN" . $this->SN . "/";
         $this->urldir = $main_url_directory . "cSN" . $this->SN . "/";
         //Find which Front End this component is in (if any)
-        $q = "SELECT Front_Ends.SN, FE_Config.keyFEConfig,Front_Ends.keyFrontEnds
+        $q = "SELECT Front_Ends.SN,
+                     FE_Config.keyFEConfig,
+                     Front_Ends.keyFrontEnds
               FROM Front_Ends, FE_ConfigLink, FE_Config
               WHERE FE_ConfigLink.fkFE_Components = {$this->keyId}
               AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
               AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
-              GROUP BY FE_Config.keyFEConfig DESC LIMIT 1;";
+              GROUP BY FE_Config.keyFEConfig ORDER BY FE_Config.keyFEConfig DESC LIMIT 1;";
         $r = mysqli_query($this->dbConnection, $q);
         $this->FESN = ADAPT_mysqli_result($r, 0, 0);
         $this->FEConfig = ADAPT_mysqli_result($r, 0, 1);
@@ -965,6 +967,7 @@ class Cryostat extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1087,6 +1090,7 @@ class Cryostat extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1219,6 +1223,7 @@ class Cryostat extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");

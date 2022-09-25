@@ -23,6 +23,7 @@ function CreateTree(FEid, band, datatype, dtype_desc, link, TDHid, compId) {
         model: 'TDH',
         proxy: {
             type: 'ajax',
+            timeout: 240000,
             actionMethods: {
                 create: 'POST',
                 read: 'POST',

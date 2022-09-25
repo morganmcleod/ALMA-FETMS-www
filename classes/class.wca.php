@@ -1496,6 +1496,7 @@ class WCA extends FEComponent {
 
                 $fh = fopen($plot_command_file, 'w');
                 fwrite($fh, "set terminal png size 900,500\r\n");
+                fwrite($fh, "set colorsequence classic\r\n");
                 fwrite($fh, "set output '$imagepath'\r\n");
                 fwrite($fh, "set title '$plot_title'\r\n");
                 fwrite($fh, "set grid\r\n");
@@ -1636,6 +1637,7 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 700,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1725,6 +1727,7 @@ class WCA extends FEComponent {
             fwrite($fhc, "set pm3d map\r\n");
             fwrite($fhc, "set palette model RGB defined (0 'black', 2 'blue', 4 'green', 6 'yellow', 8 'orange', 10 'red')\r\n");
             fwrite($fhc, "set terminal png crop\r\n");
+            fwrite($fhc, "set colorsequence classic\r\n");
             fwrite($fhc, "set title '$plot_title'\r\n");
             fwrite($fhc, "set xlabel 'IF (GHz)'\r\n");
             fwrite($fhc, "set ylabel 'LO Frequency (GHz)'\r\n");
@@ -1846,6 +1849,7 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1938,6 +1942,7 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -2094,6 +2099,7 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 800,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -2224,6 +2230,7 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -2341,6 +2348,7 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 1000,600\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -2477,6 +2485,7 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 1000,600\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");

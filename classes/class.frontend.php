@@ -226,15 +226,19 @@ class FrontEnd extends GenericTable {
                   <th>Date/Time</th>
                   <th>Notes</th></tr>";
 
-        $q = "SELECT ScanSetDetails.band, ScanSetDetails.keyId,
-        	ScanSetDetails.TS, ScanSetDetails.notes, ScanSetDetails.f, FE_Config.keyFEConfig
+        $q = "SELECT ScanSetDetails.band,
+                     ScanSetDetails.keyId,
+                     ScanSetDetails.TS,
+                     ScanSetDetails.notes,
+                     ScanSetDetails.f,
+                     FE_Config.keyFEConfig
             FROM ScanSetDetails, Front_Ends, FE_Config
             WHERE ScanSetDetails.fkFE_Config = FE_Config.keyFEConfig
             AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
             AND Front_Ends.keyFrontEnds = $this->keyId
             AND ScanSetDetails.band LIKE '$in_band'
             AND is_deleted <> 1
-            GROUP BY ScanSetDetails.band ASC, ScanSetDetails.TS ASC;";
+            GROUP BY ScanSetDetails.band, ScanSetDetails.TS;";
 
         $r = mysqli_query($this->dbConnection, $q);
 
@@ -291,13 +295,13 @@ class FrontEnd extends GenericTable {
                 for ($i = 0; $i < count($this->feconfig_ids_all); $i++) {
                     $keyconfig = $this->feconfig_ids_all[$i];
                     $q = "SELECT TestData_header.keyId, TestData_header.TS
-                    FROM TestData_header, TEST_LOLockTest_SubHeader
-                    WHERE fkFE_Config = $keyconfig
-                    AND fkTestData_Type = 57
-                    AND TestData_header.Band = $iBand
-                    AND TEST_LOLockTest_SubHeader.fkHeader = TestData_header.keyId
-                    AND TEST_LOLockTest_SubHeader.fkFacility = $this->fc
-                    GROUP BY TestData_header.Band ASC;";
+                          FROM TestData_header, TEST_LOLockTest_SubHeader
+                          WHERE fkFE_Config = $keyconfig
+                          AND fkTestData_Type = 57
+                          AND TestData_header.Band = $iBand
+                          AND TEST_LOLockTest_SubHeader.fkHeader = TestData_header.keyId
+                          AND TEST_LOLockTest_SubHeader.fkFacility = $this->fc
+                          GROUP BY TestData_header.Band ORDER BY TestData_header.Band ASC;";
 
                     //echo $q ."<br><br>";
                     $r = mysqli_query($this->dbConnection, $q);
@@ -334,14 +338,17 @@ class FrontEnd extends GenericTable {
         echo "<tr><th>Band</th>
             <th>Date/Time</th>";
 
-        $q = "SELECT TestData_header.band, TestData_header.keyId, TestData_header.TS,
-             TestData_header.notes, TEST_PolAngles.f
-             FROM TestData_header,FE_Config,TEST_PolAngles
-             WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
-             AND TestData_header.fkTestData_Type = 56
-             AND TEST_PolAngles.fkHeader = TestData_header.keyId
-             AND FE_Config.fkFront_Ends = $this->keyId
-             GROUP BY TestData_header.band ASC, TestData_header.TS ASC;";
+        $q = "SELECT TestData_header.band,
+                     TestData_header.keyId,
+                     TestData_header.TS,
+                     TestData_header.notes,
+                     TEST_PolAngles.f
+              FROM TestData_header,FE_Config,TEST_PolAngles
+              WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
+              AND TestData_header.fkTestData_Type = 56
+              AND TEST_PolAngles.fkHeader = TestData_header.keyId
+              AND FE_Config.fkFront_Ends = $this->keyId
+              GROUP BY TestData_header.band, TestData_header.TS;";
 
         $r = mysqli_query($this->dbConnection, $q);
         if (mysqli_num_rows($r) > 0) {
@@ -362,13 +369,15 @@ class FrontEnd extends GenericTable {
         echo "<tr><th>Band</th>
                 <th>Date/Time</th>";
 
-        $q = "SELECT TestData_header.band, TestData_header.keyId, TestData_header.TS,
-        TestData_header.notes
-        FROM TestData_header,FE_Config
-        WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
-        AND TestData_header.fkTestData_Type = 29
-        AND FE_Config.fkFront_Ends = $this->keyId
-        GROUP BY TestData_header.band ASC, TestData_header.TS ASC;";
+        $q = "SELECT TestData_header.band,
+                     TestData_header.keyId,
+                     TestData_header.TS,
+                     TestData_header.notes
+              FROM TestData_header,FE_Config
+              WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
+              AND TestData_header.fkTestData_Type = 29
+              AND FE_Config.fkFront_Ends = $this->keyId
+              GROUP BY TestData_header.band, TestData_header.TS;";
         $r = mysqli_query($this->dbConnection, $q);
         if (mysqli_num_rows($r) > 0) {
             while ($row = mysqli_fetch_array($r)) {
@@ -390,16 +399,19 @@ class FrontEnd extends GenericTable {
         <th>Pol</th>
             <th>Date/Time</th>";
 
-        $q = "SELECT TestData_header.band, TestData_header.keyId, TestData_header.TS,
-        TestData_header.notes,
-        TEST_Workmanship_Phase_SubHeader.pol,TEST_Workmanship_Phase_SubHeader.rf,
-        TEST_Workmanship_Phase_SubHeader.lo,
-        TEST_Workmanship_Phase_SubHeader.sb
-        FROM TestData_header,FE_Config,TEST_Workmanship_Phase_SubHeader
-        WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
-        AND TestData_header.fkTestData_Type = 30
-        AND FE_Config.fkFront_Ends = $this->keyId
-        GROUP BY TestData_header.band ASC, TestData_header.TS ASC;";
+        $q = "SELECT TestData_header.band,
+                     TestData_header.keyId,
+                     TestData_header.TS,
+                     TestData_header.notes,
+                     TEST_Workmanship_Phase_SubHeader.pol,
+                     TEST_Workmanship_Phase_SubHeader.rf,
+                     TEST_Workmanship_Phase_SubHeader.lo,
+                     TEST_Workmanship_Phase_SubHeader.sb
+              FROM TestData_header,FE_Config,TEST_Workmanship_Phase_SubHeader
+              WHERE TestData_header.fkFE_Config = FE_Config.keyFEConfig
+              AND TestData_header.fkTestData_Type = 30
+              AND FE_Config.fkFront_Ends = $this->keyId
+              GROUP BY TestData_header.band, TestData_header.TS;";
 
         $r = mysqli_query($this->dbConnection, $q);
         if (mysqli_num_rows($r) > 0) {
@@ -548,8 +560,16 @@ class FrontEnd extends GenericTable {
 
         $bandLike = ($band) ? "$band" : "0";
 
-        $q = "SELECT CT.keyId AS keyCompType, CT.Description,
-              COMP.keyFacility, COMP.SN, COMP.ESN1, COMP.ESN2, COMP.TS, COMP.keyId AS keyComponent, COMP.Link1, COMP.Link2
+        $q = "SELECT CT.keyId AS keyCompType,
+                     CT.Description,
+                     COMP.keyFacility,
+                     COMP.SN,
+                     COMP.ESN1,
+                     COMP.ESN2,
+                     COMP.TS,
+                     COMP.keyId AS keyComponent,
+                     COMP.Link1,
+                     COMP.Link2
               FROM FE_ConfigLink AS LINK, FE_Components as COMP, ComponentTypes AS CT
               WHERE LINK.fkFE_Components = COMP.keyId
               AND COMP.fkFE_ComponentType = CT.keyId
@@ -616,16 +636,19 @@ class FrontEnd extends GenericTable {
     }
 
     public function DisplayTable_BeamPatternsNoHeader($in_band = "%") {
-        $q = "SELECT ScanSetDetails.band, ScanSetDetails.keyId,
-        ScanSetDetails.TS, ScanSetDetails.notes, ScanSetDetails.f, FE_Config.keyFEConfig
+        $q = "SELECT ScanSetDetails.band,
+                     ScanSetDetails.keyId,
+                     ScanSetDetails.TS,
+                     ScanSetDetails.notes,
+                     ScanSetDetails.f,
+                     FE_Config.keyFEConfig
             FROM ScanSetDetails, Front_Ends, FE_Config
             WHERE ScanSetDetails.fkFE_Config = FE_Config.keyFEConfig
             AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
             AND Front_Ends.keyFrontEnds = $this->keyId
             AND ScanSetDetails.band LIKE '$in_band'
             AND is_deleted <> 1
-            GROUP BY ScanSetDetails.band ASC, ScanSetDetails.TS ASC;";
-
+            GROUP BY ScanSetDetails.band, ScanSetDetails.TS;";
 
         $r = mysqli_query($this->dbConnection, $q);
 

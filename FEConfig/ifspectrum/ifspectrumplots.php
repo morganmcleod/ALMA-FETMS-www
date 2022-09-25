@@ -53,20 +53,22 @@
         ob_start();
 
         /* close out the server process, release to the client */
-        header('Content-Length: 0');
+        phpinfo();
+        $size = ob_get_length();
+        header("Content-Length: $size");
         header("location: $url_root/FEConfig/pbar/status.php?lf=" . $ifspec->getProgressFile());
         ob_end_flush();
         flush();
 
         /* end the forced redirect and continue with this script process */
         ignore_user_abort(true);
-
+    
         // Do the work of generating plots:
         $ifspec->GeneratePlots();
-
+    
         // wait a bit before deleting the progress file:
         sleep(20);
-
+    
         $ifspec->DeleteProgressFile();
         exit();
     }

@@ -129,13 +129,13 @@ class IFSpectrum_db {
      */
     private function getHeaderInfo($ifChannel, $ifGain = 15) {
         $q = "SELECT IFSpectrum_SubHeader.FreqLO, IFSpectrum_SubHeader.keyId, TestData_header.keyId
-        FROM IFSpectrum_SubHeader, TestData_header
-        WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
-        AND IFSpectrum_SubHeader.Band = $this->Band
-        AND IFSpectrum_SubHeader.IFChannel = $ifChannel
-        AND IFSpectrum_SubHeader.IFGain = $ifGain
-        AND IFSpectrum_SubHeader.IsIncluded = 1
-        AND TestData_header.DataSetGroup = $this->dataSetGroup";
+              FROM IFSpectrum_SubHeader, TestData_header
+              WHERE IFSpectrum_SubHeader.fkHeader = TestData_header.keyId
+              AND IFSpectrum_SubHeader.Band = $this->Band
+              AND IFSpectrum_SubHeader.IFChannel = $ifChannel
+              AND IFSpectrum_SubHeader.IFGain = $ifGain
+              AND IFSpectrum_SubHeader.IsIncluded = 1
+              AND TestData_header.DataSetGroup = $this->dataSetGroup";
 
         if ($this->FEid) {
             $q .= " AND TestData_header.fkFE_Config in
@@ -191,11 +191,13 @@ class IFSpectrum_db {
         $headerInfo = $this->getHeaderInfo($ifChannel, $ifGain);
         $keysList = $this->getSubHeaderKeys($headerInfo);
 
-        $q = "SELECT IFSpectrum_SubHeader.FreqLO as LO_GHz, (TEMP_IFSpectrum.Freq_Hz / 1.0E9) as Freq_GHz, TEMP_IFSpectrum.Power_dBm
-        FROM IFSpectrum_SubHeader, TEMP_IFSpectrum
-        WHERE TEMP_IFSpectrum.fkSubHeader = IFSpectrum_SubHeader.keyId
-        AND IFSpectrum_SubHeader.keyId in ($keysList)
-        ORDER BY LO_GHz, Freq_GHz ASC;";
+        $q = "SELECT IFSpectrum_SubHeader.FreqLO AS LO_GHz,
+                     (TEMP_IFSpectrum.Freq_Hz / 1.0E9) AS Freq_GHz,
+                     TEMP_IFSpectrum.Power_dBm
+              FROM IFSpectrum_SubHeader, TEMP_IFSpectrum
+              WHERE TEMP_IFSpectrum.fkSubHeader = IFSpectrum_SubHeader.keyId
+              AND IFSpectrum_SubHeader.keyId IN ($keysList)
+              ORDER BY LO_GHz ASC, Freq_GHz ASC;";
 
         $r = $this->run_query($q);
 
@@ -222,8 +224,9 @@ class IFSpectrum_db {
      * )
      */
     public function getNoiseFloorData($keyNF) {
-        $q = "SELECT (Freq_Hz / 1.0E9) as Freq_GHz, Power_dBm FROM TEST_IFSpectrum_NoiseFloor
-        WHERE fkHeader = $keyNF ORDER BY Freq_Hz;";
+        $q = "SELECT (Freq_Hz / 1.0E9) as Freq_GHz, Power_dBm 
+              FROM TEST_IFSpectrum_NoiseFloor
+              WHERE fkHeader = $keyNF ORDER BY Freq_Hz;";
         $r = $this->run_query($q);
 
         $output = array();
@@ -248,13 +251,13 @@ class IFSpectrum_db {
      */
     public function getTestDataHeaderKeys($FEid, $band, $dataSetGroup) {
         $q = "SELECT TestData_header.keyId, TestData_header.TS
-        FROM TestData_header, FE_Config
-        WHERE TestData_header.DataSetGroup = $dataSetGroup
-        AND TestData_header.fkTestData_Type = 7
-        AND TestData_header.Band = $band
-        AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
-        AND FE_Config.fkFront_Ends = $FEid
-        ORDER BY TestData_header.keyId ASC";
+              FROM TestData_header, FE_Config
+              WHERE TestData_header.DataSetGroup = $dataSetGroup
+              AND TestData_header.fkTestData_Type = 7
+              AND TestData_header.Band = $band
+              AND TestData_header.fkFE_Config = FE_Config.keyFEConfig
+              AND FE_Config.fkFront_Ends = $FEid
+              ORDER BY TestData_header.keyId ASC";
 
         $r = $this->run_query($q);
 
@@ -280,12 +283,12 @@ class IFSpectrum_db {
      */
     public function getTestDataHeaderKeysForComp($componentId, $band, $dataSetGroup) {
         $q = "SELECT TestData_header.keyId, TestData_header.TS
-        FROM TestData_header
-        WHERE TestData_header.DataSetGroup = $dataSetGroup
-        AND TestData_header.fkTestData_Type = 7
-        AND TestData_header.Band = $band
-        AND TestData_header.fkFE_Components = $componentId
-        ORDER BY TestData_header.keyId ASC";
+              FROM TestData_header
+              WHERE TestData_header.DataSetGroup = $dataSetGroup
+              AND TestData_header.fkTestData_Type = 7
+              AND TestData_header.Band = $band
+              AND TestData_header.fkFE_Components = $componentId
+              ORDER BY TestData_header.keyId ASC";
 
         $r = $this->run_query($q);
 
@@ -320,7 +323,8 @@ class IFSpectrum_db {
         $keysList = $this->makeKeysList($TDHkeys);
 
         $q = "SELECT keyId, IFChannel FROM TEST_IFSpectrum_urls
-        WHERE TEST_IFSpectrum_urls.fkHeader in ($keysList) ORDER BY IFChannel ASC;";
+              WHERE TEST_IFSpectrum_urls.fkHeader IN ($keysList)
+              ORDER BY IFChannel ASC;";
 
         $urls = array();
         $r = $this->run_query($q);
@@ -344,10 +348,10 @@ class IFSpectrum_db {
      */
     public function getNoiseFloorHeaders($TDH) {
         $qnf = "SELECT IFSpectrum_SubHeader.fkNoiseFloorHeader, IFSpectrum_SubHeader.Band
-        FROM TestData_header, IFSpectrum_SubHeader
-        WHERE TestData_header.keyId = {$TDH}
-        AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
-        AND TestData_header.keyId = IFSpectrum_SubHeader.fkHeader LIMIT 1";
+                FROM TestData_header, IFSpectrum_SubHeader
+                WHERE TestData_header.keyId = $TDH 
+                AND TestData_header.keyFacility = IFSpectrum_SubHeader.keyFacility
+                AND TestData_header.keyId = IFSpectrum_SubHeader.fkHeader LIMIT 1";
 
         $rnf = $this->run_query($qnf);
         $keyNF = ADAPT_mysqli_result($rnf, 0, 0);
@@ -404,14 +408,15 @@ class IFSpectrum_db {
 
         $keysList = $this->makeKeysList($TDHkeys);
 
-        $q = "SELECT IFSpectrum_SubHeader.FreqLO, IFSpectrum_SubHeader.IFChannel,
-        TEST_IFSpectrum_PowerVarFullBand.Power_dBm
-        FROM IFSpectrum_SubHeader, TEST_IFSpectrum_PowerVarFullBand
-        WHERE IFSpectrum_SubHeader.fkHeader IN ($keysList)
-        AND TEST_IFSpectrum_PowerVarFullBand.fkSubHeader = IFSpectrum_SubHeader.keyId
-        AND IFSpectrum_SubHeader.IsIncluded = 1
-        AND IFSpectrum_SubHeader.IFGain = 15
-        ORDER BY FreqLO, IFChannel ASC;";
+        $q = "SELECT IFSpectrum_SubHeader.FreqLO,
+                     IFSpectrum_SubHeader.IFChannel,
+                     TEST_IFSpectrum_PowerVarFullBand.Power_dBm
+              FROM IFSpectrum_SubHeader, TEST_IFSpectrum_PowerVarFullBand
+              WHERE IFSpectrum_SubHeader.fkHeader IN ($keysList)
+              AND TEST_IFSpectrum_PowerVarFullBand.fkSubHeader = IFSpectrum_SubHeader.keyId
+              AND IFSpectrum_SubHeader.IsIncluded = 1
+              AND IFSpectrum_SubHeader.IFGain = 15
+              ORDER BY FreqLO, IFChannel ASC;";
 
         $output = array();
 
@@ -483,7 +488,8 @@ class IFSpectrum_db {
         $keysList = $this->getSubHeaderKeys($headerInfo);
 
         // Delete previous data for the specified channel:
-        $q = "DELETE FROM TEST_IFSpectrum_PowerVarFullBand WHERE fkSubHeader IN ($keysList)";
+        $q = "DELETE FROM TEST_IFSpectrum_PowerVarFullBand
+              WHERE fkSubHeader IN ($keysList)";
 
         if (!$this->run_query($q))
             return false;
@@ -537,14 +543,16 @@ class IFSpectrum_db {
 
         $keysList = $this->makeKeysList($TDHkeys);
 
-        $q = "SELECT IFSpectrum_SubHeader.FreqLO, IFSpectrum_SubHeader.IFGain,
-        TEST_IFSpectrum_TotalPower.TotalPower, TEST_IFSpectrum_TotalPower.InBandPower
-        FROM IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower
-        WHERE IFSpectrum_SubHeader.fkHeader IN ($keysList)
-        AND TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId
-        AND IFSpectrum_SubHeader.IsIncluded = 1
-        AND IFSpectrum_SubHeader.IFChannel = $ifChannel
-        ORDER BY FreqLO, IFGain ASC;";
+        $q = "SELECT IFSpectrum_SubHeader.FreqLO,
+                     IFSpectrum_SubHeader.IFGain,
+                     TEST_IFSpectrum_TotalPower.TotalPower,
+                     TEST_IFSpectrum_TotalPower.InBandPower
+              FROM IFSpectrum_SubHeader, TEST_IFSpectrum_TotalPower
+              WHERE IFSpectrum_SubHeader.fkHeader IN ($keysList)
+              AND TEST_IFSpectrum_TotalPower.fkSubHeader = IFSpectrum_SubHeader.keyId
+              AND IFSpectrum_SubHeader.IsIncluded = 1
+              AND IFSpectrum_SubHeader.IFChannel = $ifChannel
+              ORDER BY FreqLO, IFGain ASC;";
 
         $output = array();
 
@@ -582,7 +590,8 @@ class IFSpectrum_db {
         $keysList = $this->getSubHeaderKeys($headerInfo);
 
         // Delete previous data for the specified channel:
-        $q = "DELETE FROM TEST_IFSpectrum_TotalPower WHERE fkSubHeader IN ($keysList)";
+        $q = "DELETE FROM TEST_IFSpectrum_TotalPower
+              WHERE fkSubHeader IN ($keysList)";
 
         if (!$this->run_query($q))
             return false;

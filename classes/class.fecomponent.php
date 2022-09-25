@@ -46,12 +46,16 @@ class FEComponent extends GenericTable {
 
 
         //Find which Front End this component is in (if any)
-        $q = "SELECT Front_Ends.SN, FE_Config.keyFEConfig,Front_Ends.keyFrontEnds, Front_Ends.keyFacility, FE_ConfigLink.keyId
+        $q = "SELECT Front_Ends.SN,
+                     FE_Config.keyFEConfig,
+                     Front_Ends.keyFrontEnds,
+                     Front_Ends.keyFacility,
+                     FE_ConfigLink.keyId
               FROM Front_Ends, FE_ConfigLink, FE_Config
               WHERE FE_ConfigLink.fkFE_Components = {$this->keyId}
               AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
               AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
-              GROUP BY FE_ConfigLink.keyId DESC LIMIT 1;";
+              GROUP BY FE_ConfigLink.keyId ORDER BY FE_ConfigLink.keyId DESC LIMIT 1;";
 
         $r = mysqli_query($this->dbConnection, $q);
         if ($r && mysqli_num_rows($r) > 0) {
@@ -278,18 +282,19 @@ class FEComponent extends GenericTable {
                 AND FE_ConfigLink.fkFE_ComponentFacility = FE_Components.keyFacility
 
                 AND FE_Components.DocumentTitle LIKE '$DocumentTitle'
-                GROUP BY FE_StatusLocationAndNotes.keyId DESC;";
+                GROUP BY FE_StatusLocationAndNotes.keyId ORDER BY FE_StatusLocationAndNotes.keyId DESC;";
         } else {
             $q = "SELECT FE_StatusLocationAndNotes.keyId AS SLNID,
-                FE_StatusLocationAndNotes.fkFEComponents AS COMPID,
-                FE_StatusLocationAndNotes.keyFacility AS SLNFC, FE_Components.keyFacility AS COMPFC,
-                FE_ConfigLink.fkFE_Config AS FECFG
-                FROM FE_StatusLocationAndNotes, FE_Components, FE_ConfigLink
-                WHERE FE_StatusLocationAndNotes.fkFEComponents = FE_Components.keyId
-                AND FE_Components.fkFE_ComponentType =  " . $this->fkFE_ComponentType . "
-                AND FE_Components.SN LIKE '$SN'
-                AND FE_Components.Band LIKE '" . $this->Band . "'
-                GROUP BY FE_StatusLocationAndNotes.keyId DESC;";
+                         FE_StatusLocationAndNotes.fkFEComponents AS COMPID,
+                         FE_StatusLocationAndNotes.keyFacility AS SLNFC,
+                         FE_Components.keyFacility AS COMPFC,
+                         FE_ConfigLink.fkFE_Config AS FECFG
+                  FROM FE_StatusLocationAndNotes, FE_Components, FE_ConfigLink
+                  WHERE FE_StatusLocationAndNotes.fkFEComponents = FE_Components.keyId
+                  AND FE_Components.fkFE_ComponentType = {$this->fkFE_ComponentType}
+                  AND FE_Components.SN LIKE '$SN'
+                  AND FE_Components.Band LIKE '{$this->Band}'
+                  GROUP BY FE_StatusLocationAndNotes.keyId ORDER BY FE_StatusLocationAndNotes.keyId DESC;";
         }
 
 
@@ -385,20 +390,22 @@ class FEComponent extends GenericTable {
                 AND FE_ConfigLink.fkFE_ComponentFacility = FE_Components.keyFacility
 
                 AND FE_Components.DocumentTitle LIKE '$DocumentTitle'
-                GROUP BY FE_StatusLocationAndNotes.keyId DESC;";
+                GROUP BY FE_StatusLocationAndNotes.keyId ORDER BY FE_StatusLocationAndNotes.keyId DESC;";
         }
         if ($IsDoc != 1) {
 
-            $q = "SELECT FE_StatusLocationAndNotes.keyId AS SLNID, FE_StatusLocationAndNotes.TS AS SLNTS,
-                FE_StatusLocationAndNotes.fkFEComponents AS COMPID,
-                FE_StatusLocationAndNotes.keyFacility AS SLNFC, FE_Components.keyFacility AS COMPFC,
-                FE_ConfigLink.fkFE_Config AS FECFG
-                FROM FE_StatusLocationAndNotes, FE_Components, FE_ConfigLink
-                WHERE FE_StatusLocationAndNotes.fkFEComponents = FE_Components.keyId
-                AND FE_Components.fkFE_ComponentType =  " . $this->fkFE_ComponentType . "
-                AND FE_Components.SN LIKE '$SN'
-                AND FE_Components.Band LIKE '" . $this->Band . "'
-                GROUP BY FE_StatusLocationAndNotes.keyId DESC;";
+            $q = "SELECT FE_StatusLocationAndNotes.keyId AS SLNID,
+                         FE_StatusLocationAndNotes.TS AS SLNTS,
+                         FE_StatusLocationAndNotes.fkFEComponents AS COMPID,
+                         FE_StatusLocationAndNotes.keyFacility AS SLNFC,
+                         FE_Components.keyFacility AS COMPFC,
+                         FE_ConfigLink.fkFE_Config AS FECFG
+                  FROM FE_StatusLocationAndNotes, FE_Components, FE_ConfigLink
+                  WHERE FE_StatusLocationAndNotes.fkFEComponents = FE_Components.keyId
+                  AND FE_Components.fkFE_ComponentType =  {$this->fkFE_ComponentType}
+                  AND FE_Components.SN LIKE '$SN'
+                  AND FE_Components.Band LIKE '{$this->Band}
+                  GROUP BY FE_StatusLocationAndNotes.keyId ORDER BY FE_StatusLocationAndNotes.keyId DESC;";
         }
 
         $r = mysqli_query($this->dbConnection, $q);

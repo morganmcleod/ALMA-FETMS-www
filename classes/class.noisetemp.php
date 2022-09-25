@@ -259,7 +259,7 @@ class NoiseTemperature extends TestData_header {
               AND FE_Components.Band = {$this->Band}
               AND FE_Components.keyFacility = {$this->keyFacility}
               AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-              GROUP BY Band ASC;";
+              GROUP BY Band ORDER BY Band ASC;";
         $r = mysqli_query($this->dbConnection, $q);
         $this->NT_Logger->WriteLogFile("WCA SN Query: $q");
         $this->WCA_SN = ADAPT_mysqli_result($r, 0, 0);
@@ -270,7 +270,7 @@ class NoiseTemperature extends TestData_header {
               WHERE SN = '$this->CCA_SN' AND fkFE_ComponentType = 20
               AND band = {$this->Band}
               AND keyFacility = {$this->keyFacility}
-              GROUP BY keyId DESC";
+              GROUP BY keyId ORDER BY keyId DESC";
         $r = mysqli_query($this->dbConnection, $q);
         $this->NT_Logger->WriteLogFile("CCA FE_Component key query: $q");
         while ($row = mysqli_fetch_array($r)) {
@@ -1232,11 +1232,11 @@ class NoiseTemperature extends TestData_header {
         $this->NT_Logger->WriteLogFile("image path: $imagepath");
         $plot_title = "Receiver Noise Temperature ";
         if ($this->Band == 1)
-            $plot_title .= "Tssb";
+            $plot_title .= "T_{ssb}";
         elseif ($this->foundIRData)
-            $plot_title .= "Tssb corrected";
+            $plot_title .= "T_{ssb} corrected";
         else
-            $plot_title .= "T_rec uncorrected";
+            $plot_title .= "T_{rec} uncorrected";
 
         if (isset($this->frontEnd))
             $plot_title .= ", FE SN" . $this->frontEnd->SN;
@@ -1249,15 +1249,23 @@ class NoiseTemperature extends TestData_header {
         $f = fopen($commandfile, 'w');
         $this->NT_Logger->WriteLogFile("command file: $commandfile");
         fwrite($f, "set terminal png size 900,600 crop\r\n");
+        fwrite($f, "set colorsequence classic\r\n");
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'IF(GHz)'\r\n");
-        if ($this->Band == 1 || $this->foundIRData)
-            fwrite($f, "set ylabel 'Tssb (K)'\r\n");
-        else
-            fwrite($f, "set ylabel 'T_Rec (K)'\r\n");
+        if ($this->Band == 1 || $this->foundIRData) {
+            fwrite($f, "set ylabel 'T_{ssb} (K)'\r\n");
+            fwrite($f, "set y2label 'T_{ssb} (K)'\r\n");
+            fwrite($f, "set y2tics\r\n");
+            fwrite($f, "set y2range [0:$this->y_lim]\r\n");
+        } else {
+            fwrite($f, "set ylabel 'T_{Rec} (K)'\r\n");
+            fwrite($f, "set y2label 'T_{Rec} (K)'\r\n");
+            fwrite($f, "set y2tics\r\n");
+            fwrite($f, "set y2range [0:$this->y_lim]\r\n");
+        }
         fwrite($f, "set yrange [0:$this->y_lim]\r\n");
-        fwrite($f, "set key outside\r\n");
+        fwrite($f, "set key top right\r\n");
         fwrite($f, "set bmargin 6\r\n");
         fwrite($f, $this->plot_label_1);
         fwrite($f, $this->plot_label_2);
@@ -1294,11 +1302,11 @@ class NoiseTemperature extends TestData_header {
 
         $plot_title = "Receiver Noise Temperature ";
         if ($this->Band == 1)
-            $plot_title .= "Tssb";
+            $plot_title .= "T_{ssb}";
         elseif ($this->foundIRData)
-            $plot_title .= "Tssb corrected";
+            $plot_title .= "T_{ssb} corrected";
         else
-            $plot_title .= "T_Rec uncorrected";
+            $plot_title .= "T_{Rec} uncorrected";
 
         if (isset($this->frontEnd))
             $plot_title .= ", FE SN" . $this->frontEnd->SN;
@@ -1310,15 +1318,23 @@ class NoiseTemperature extends TestData_header {
         $f = fopen($commandfile, 'w');
         $this->NT_Logger->WriteLogFile("command file: $commandfile");
         fwrite($f, "set terminal png size 900,600 crop\r\n");
+        fwrite($f, "set colorsequence classic\r\n");
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'LO(GHz)'\r\n");
-        if ($this->Band == 1 || $this->foundIRData)
-            fwrite($f, "set ylabel 'Average Tssb (K)'\r\n");
-        else
-            fwrite($f, "set ylabel 'Average T_Rec (K)'\r\n");
-        fwrite($f, "set yrange [0:$this->y_lim]\r\n");
-        fwrite($f, "set key outside\r\n");
+        if ($this->Band == 1 || $this->foundIRData) {
+            fwrite($f, "set ylabel 'Average T_{ssb} (K)'\r\n");
+            fwrite($f, "set y2label 'Average T_{ssb} (K)'\r\n");
+            fwrite($f, "set y2tics\r\n");
+            fwrite($f, "set y2range [0:$this->y_lim]\r\n");
+        } else {
+            fwrite($f, "set ylabel 'Average T_{Rec} (K)'\r\n");
+            fwrite($f, "set y2label 'Average T_{Rec} (K)'\r\n");
+            fwrite($f, "set y2tics\r\n");
+            fwrite($f, "set y2range [0:$this->y_lim]\r\n");
+        }
+        fwrite($f, "set yrange [0:$this->y_lim]\r\n");;
+        fwrite($f, "set key top right\r\n");
         fwrite($f, "set bmargin 6\r\n");
         fwrite($f, $this->plot_label_1);
         fwrite($f, $this->plot_label_2);
@@ -1429,14 +1445,16 @@ class NoiseTemperature extends TestData_header {
             $f = fopen($commandfile, 'w');
             $this->NT_Logger->WriteLogFile("command file: $commandfile");
             fwrite($f, "set terminal png size 900,600 crop\r\n");
+            fwrite($f, "set size 1,1\r\n");
+            fwrite($f, "set colorsequence classic\r\n");
             fwrite($f, "set output '$imagepath'\r\n");
             fwrite($f, "set xlabel 'RF (GHz)'\r\n");
             if ($this->Band == 1) {
-                fwrite($f, "set ylabel 'Tssb (K)'\r\n");
+                fwrite($f, "set ylabel 'T_{ssb} (K)'\r\n");
             } elseif ($this->foundIRData) {
-                fwrite($f, "set ylabel 'Tssb corrected (K)'\r\n");
+                fwrite($f, "set ylabel 'T_{ssb} corrected (K)'\r\n");
             } else {
-                fwrite($f, "set ylabel 'T_Rec uncorrected (K)'\r\n");
+                fwrite($f, "set ylabel 'T_{Rec} uncorrected (K)'\r\n");
                 if ($this->Band != 9 && $this->Band != 10) {
                     fwrite($f,  " " . 'set label "****** UNCORRECTED DATA ****** UNCORRECTED DATA ****** UNCORRECTED DATA ******" at screen .08, .9' . "\r\n");
                 }
@@ -1446,7 +1464,7 @@ class NoiseTemperature extends TestData_header {
                 fwrite($f, "set y2tics\r\n");
                 fwrite($f, "set y2range [0:120]\r\n");
             }
-            fwrite($f, "set key outside\r\n");
+            fwrite($f, "set key top right\r\n");
             fwrite($f, "set bmargin 6\r\n");
             fwrite($f, $this->plot_label_1);
             fwrite($f, $this->plot_label_2);

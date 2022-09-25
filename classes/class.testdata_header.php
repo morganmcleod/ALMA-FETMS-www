@@ -91,7 +91,7 @@ class TestData_header extends GenericTable {
               AND fkTestData_Type={$fkTestData_Type}
               AND fkDataStatus={$fkDataStatus}
               AND keyFacility={$keyFacility}
-              GROUP BY keyId DESC";
+              GROUP BY keyId ORDER BY keyId DESC";
         $r = mysqli_query($dbConnection, $q);
         return ADAPT_mysqli_result($r, 0, 0);
     }
