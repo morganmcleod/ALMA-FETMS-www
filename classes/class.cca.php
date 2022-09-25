@@ -148,7 +148,7 @@ class CCA extends FEComponent {
             //Initialize mixer params
             $q = "SELECT DISTINCT(FreqLO), keyId FROM CCA_MixerParams
             WHERE fkComponent = $this->keyId
-            GROUP BY FreqLO ASC;";
+            GROUP BY FreqLO ORDER BY FreqLO ASC;";
             $r = mysqli_query($this->dbconnection, $q);
             $mpcount = 0;
             while ($row = mysqli_fetch_array($r)) {

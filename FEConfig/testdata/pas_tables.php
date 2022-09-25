@@ -1216,7 +1216,7 @@ function Band3_CCA_NT_results($td_keyID) {
          WHERE SN = ($q) AND fkFE_ComponentType = 20
          AND band = " . $tdh->GetValue('Band') . "
          AND keyFacility =" . $tdh->GetValue('keyFacility') . "
-         GROUP BY keyId DESC";
+         GROUP BY keyId ORDER BY keyId DESC";
 
     $r = mysqli_query($tdh->dbconnection, $q) or die("QUERY FAILED: $q");;
     while ($row = mysqli_fetch_array($r)) {

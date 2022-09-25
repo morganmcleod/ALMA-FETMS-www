@@ -98,7 +98,7 @@ echo '<br>
 		
 ?>
 <form name = 'requestor_select' action="<?php echo $_SERVER['PHP_SELF']; ?>" method='get'>
-<?
+<?php
 echo "<br><br><b>Requestor:</b><select name='Requestor' onChange='submit()'>"; 
 $q_req = 'select distinct(Requestor) from ReceivedItems where Requestor <> "" ORDER BY Requestor ASC';
 $r_req = mysqli_query($link, $q_req,$dbc);

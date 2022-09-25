@@ -271,6 +271,9 @@ if ($get_cca == '1') {
             echo "ESN=$esn\r\n";
 
             switch ($fe->ccas[$icca]->GetValue('Band')) {
+                case 1:
+                    $mstring = "MagnetParams=0\r\n";
+                    break;
                 case 3:
                     $mstring = "MagnetParams=0\r\n";
                     break;
@@ -296,27 +299,31 @@ if ($get_cca == '1') {
 
             echo $mstring;
 
-
-            echo "MixerParams=" . (count($fe->ccas[$icca]->MixerParams)) . "\r\n";
-
-            for ($i = 0; $i  < (count($fe->ccas[$icca]->MixerParams)); $i++) {
-                if ($i < 9) {
-                    $mstring = "MixerParam0" . ($i + 1) . "=";
+            if ($fe->ccas[$icca]->GetValue('Band') <= 2) {
+                echo "MixerParams=0\r\n";
+            } else {
+                echo "MixerParams=" . (count($fe->ccas[$icca]->MixerParams)) . "\r\n";
+                for ($i = 0; $i  < (count($fe->ccas[$icca]->MixerParams)); $i++) {
+                    if ($i < 9) {
+                        $mstring = "MixerParam0" . ($i + 1) . "=";
+                    }
+                    if ($i >= 9) {
+                        $mstring = "MixerParam" . ($i + 1) . "=";
+                    }
+                    $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->lo, 3) . ",";
+                    $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->vj01, 3) . ",";
+                    $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->vj02, 3) . ",";
+                    $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->vj11, 3) . ",";
+                    $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->vj12, 3) . ",";
+                    $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->ij01, 2) . ",";
+                    $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->ij02, 2) . ",";
+                    $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->ij11, 2) . ",";
+                    $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->ij12, 2) . "\r\n";
+                    echo $mstring;
                 }
-                if ($i >= 9) {
-                    $mstring = "MixerParam" . ($i + 1) . "=";
-                }
-                $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->lo, 3) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->vj01, 3) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->vj02, 3) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->vj11, 3) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->vj12, 3) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->ij01, 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->ij02, 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->ij11, 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->MixerParams[$i]->ij12, 2) . "\r\n";
-                echo $mstring;
             }
+
+            
 
             $numpa = 4;
             if ($fe->ccas[$icca]->GetValue('Band') == 9) {

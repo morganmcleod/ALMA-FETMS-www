@@ -230,6 +230,7 @@ class cca_image_rejection extends TestData_header{
             $f = fopen($commandfile,'w');
             $l->WriteLogFile("command file: $commandfile");
             fwrite($f, "set terminal png size 900,600 crop\r\n");
+            fwrite($f, "set colorsequence classic\r\n");
             fwrite($f, "set output '$imagepath'\r\n");
             fwrite($f, "set title '$plot_title'\r\n");
             fwrite($f, "set xlabel 'Signal Frequency (GHz)'\r\n");

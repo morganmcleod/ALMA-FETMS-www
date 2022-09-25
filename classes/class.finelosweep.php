@@ -65,7 +65,7 @@ class FineLOSweep extends TestData_header {
              AND FE_Components.Band = " . $this->GetValue('Band') . "
              AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') . "
              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-             GROUP BY Band ASC;";
+             GROUP BY Band ORDER BY Band ASC;";
         $r = mysqli_query($this->dbconnection, $q);
         $l->WriteLogFile("CCA SN Query: $q");
         $CCA_SN = ADAPT_mysqli_result($r, 0, 0);
@@ -79,7 +79,7 @@ class FineLOSweep extends TestData_header {
              AND FE_Components.Band = " . $this->GetValue('Band') . "
              AND FE_Components.keyFacility =" . $this->GetValue('keyFacility') . "
              AND FE_ConfigLink.fkFE_ConfigFacility = FE_Config.keyFacility
-             GROUP BY Band ASC;";
+             GROUP BY Band ORDER BY Band ASC;";
         $r = mysqli_query($this->dbconnection, $q);
         $l->WriteLogFile("WCA SN Query: $q");
         $WCA_SN = ADAPT_mysqli_result($r, 0, 0);
@@ -167,6 +167,7 @@ class FineLOSweep extends TestData_header {
                 " CCA SN$CCA_SN WCA SN$WCA_SN, Pol" . $this->FLOSweepSubHeader[$cnt]->GetValue('Pol')
                 . ", Elevation " . $this->FLOSweepSubHeader[$cnt]->GetValue('TiltAngle_Deg') . "";
             fwrite($fh, "set terminal png size 900,600 crop\r\n");
+            fwrite($fh, "set colorsequence classic\r\n");
             fwrite($fh, "set output '$imagepath'\r\n");
             fwrite($fh, "set title '$plot_title'\r\n");
             fwrite($fh, "set xrange [$min_freq:$max_freq]\r\n");

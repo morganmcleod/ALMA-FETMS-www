@@ -3,6 +3,7 @@ require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_dbConnect);
 $dbconnection = site_getDbConnection();
+ini_set('max_execution_time', '0');
 
 $action   = $_REQUEST['action'];
 $FEid     = $_REQUEST['FEid'];
@@ -48,7 +49,7 @@ if ($action == 'read') {
 
             case 7: // ifspectrum
                 //Get IFSpectrum_SubHeader records where IFGain = 15
-                $qif = "SELECT keyId FROM IFSpectrum_SubHeader
+                $qif = "SELECT keyId, FreqLO, IFChannel, IsIncluded FROM IFSpectrum_SubHeader
                     WHERE fkHeader = $tdheader->keyId
                     AND IFGain = 15
                     ORDER BY FreqLO ASC, IFChannel ASC";
@@ -58,10 +59,8 @@ if ($action == 'read') {
 
                 while ($rowif = mysqli_fetch_array($rif)) {
                     $subId = $rowif['keyId'];
-                    $ifsub = new GenericTable();
-                    $ifsub->Initialize('IFSpectrum_SubHeader', $subId, 'keyId');
-                    $text = $ifsub->GetValue('FreqLO') . " GHz (IF" . $ifsub->GetValue('IFChannel') . ")";
-                    $checked = ($ifsub->GetValue('IsIncluded') == '1') ? true : false;
+                    $text = $rowif['FreqLO'] . " GHz (IF" . $rowif['IFChannel'] . ")";
+                    $checked = ($rowif['IsIncluded'] == '1') ? true : false;
                     // Append to sub_records:
                     $sub_records[] = array(
                         'text' => $text,
@@ -275,5 +274,3 @@ if ($action == 'update') {
     // echo server call back
     echo "{'success':'1'}";
 }
-
-?>

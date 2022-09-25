@@ -12,7 +12,7 @@
 
 <body>
     <div id='wrap'>
-        <?
+        <?php
         require_once(dirname(__FILE__) . '/../SiteConfig.php');
         require_once($site_classes . '/class.dboperations.php');
         require_once($site_classes . '/class.frontend.php');

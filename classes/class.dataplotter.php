@@ -206,6 +206,7 @@ class DataPlotter extends GenericTable{
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -312,6 +313,7 @@ class DataPlotter extends GenericTable{
         //unlink($plot_command_file) or die("cca pn command file not found");
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -478,6 +480,7 @@ class DataPlotter extends GenericTable{
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -559,6 +562,7 @@ class DataPlotter extends GenericTable{
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -640,6 +644,7 @@ class DataPlotter extends GenericTable{
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -716,6 +721,7 @@ class DataPlotter extends GenericTable{
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -774,7 +780,7 @@ class DataPlotter extends GenericTable{
         $qlo = "SELECT FreqLO FROM CCA_TEST_IVCurve
             WHERE fkFacility = ".$this->TestDataHeader->GetValue('keyFacility')."
             AND fkHeader = $TestData_Id
-            GROUP BY FreqLO ASC";
+            GROUP BY FreqLO ORDER BY FreqLO ASC";
         $l->WriteLogFile($qlo);
         $rlo = mysqli_query($this->dbconnection, $qlo);
 
@@ -828,6 +834,7 @@ class DataPlotter extends GenericTable{
                         $imagepath = $imagedirectory . $imagename;
                         $fh = fopen($plot_command_file, 'w');
                         fwrite($fh, "set terminal png size 900,500\r\n");
+                        fwrite($fh, "set colorsequence classic\r\n");
                         fwrite($fh, "set output '$imagepath'\r\n");
                         fwrite($fh, "set title '$plot_title'\r\n");
                         fwrite($fh, "set grid\r\n");
@@ -1005,6 +1012,7 @@ class DataPlotter extends GenericTable{
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1162,6 +1170,7 @@ class DataPlotter extends GenericTable{
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1310,6 +1319,7 @@ class DataPlotter extends GenericTable{
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1411,7 +1421,7 @@ class DataPlotter extends GenericTable{
         $commandfile = $this->writedirectory . "polangle_commands_tdh$td_header.txt";
         $fh = fopen($commandfile, 'w');
         fwrite($fh, "set terminal png crop\r\n");
-
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set xlabel 'Source Rotation Angle (deg)'\r\n");
@@ -1484,7 +1494,7 @@ class DataPlotter extends GenericTable{
             AND TEST_LOLockTest_SubHeader.fkHeader = TestData_header.keyId
             AND TestData_header.keyId = $td_header
             AND TEST_LOLockTest.IsIncluded = 1
-            GROUP BY TEST_LOLockTest.LOFreq ASC;";
+            GROUP BY TEST_LOLockTest.LOFreq ORDER BY TEST_LOLockTest.LOFreq ASC;";
         } else {
             // query to get front end key of the FEConfig of the TDH.
             $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = ". $this->TestDataHeader->GetValue('fkFE_Config');
@@ -1504,7 +1514,7 @@ class DataPlotter extends GenericTable{
             AND TestData_header.DataSetGroup= " . $this->TestDataHeader->GetValue('DataSetGroup')."
             AND TEST_LOLockTest.IsIncluded = 1
             AND FE_Config.fkFront_Ends = ($qfe)
-            GROUP BY TEST_LOLockTest.LOFreq ASC;";
+            GROUP BY TEST_LOLockTest.LOFreq ORDER BY TEST_LOLockTest.LOFreq ASC;";
         }
         $t->WriteLogFile($qdata);
         $rdata = mysqli_query($this->dbconnection, $qdata) or die('Failed on query in dataplotter.php line ' . __LINE__);
@@ -1620,6 +1630,7 @@ class DataPlotter extends GenericTable{
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");

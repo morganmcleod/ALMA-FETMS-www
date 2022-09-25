@@ -44,7 +44,7 @@ class FEComponent extends GenericTable {
             WHERE FE_ConfigLink.fkFE_Components = $this->keyId
             AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
             AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
-            GROUP BY FE_ConfigLink.keyId DESC LIMIT 1;";
+            GROUP BY FE_ConfigLink.keyId ORDER BY FE_ConfigLink.keyId DESC LIMIT 1;";
 
         $r = mysqli_query($this->dbconnection, $q);
 //         var_dump($r);
@@ -270,7 +270,7 @@ class FEComponent extends GenericTable {
                 AND FE_ConfigLink.fkFE_ComponentFacility = FE_Components.keyFacility
 
                 AND FE_Components.DocumentTitle LIKE '$DocumentTitle'
-                GROUP BY FE_StatusLocationAndNotes.keyId DESC;";
+                GROUP BY FE_StatusLocationAndNotes.keyId ORDER BY FE_StatusLocationAndNotes.keyId DESC;";
         }
         if ($IsDoc != 1){
 
@@ -283,7 +283,7 @@ class FEComponent extends GenericTable {
                 AND FE_Components.fkFE_ComponentType =  ".$this->GetValue('fkFE_ComponentType')."
                 AND FE_Components.SN LIKE '$SN'
                 AND FE_Components.Band LIKE '".$this->GetValue('Band')."'
-                GROUP BY FE_StatusLocationAndNotes.keyId DESC;";
+                GROUP BY FE_StatusLocationAndNotes.keyId ORDER BY FE_StatusLocationAndNotes.keyId DESC;";
         }
 
 
@@ -382,7 +382,7 @@ class FEComponent extends GenericTable {
                 AND FE_ConfigLink.fkFE_ComponentFacility = FE_Components.keyFacility
 
                 AND FE_Components.DocumentTitle LIKE '$DocumentTitle'
-                GROUP BY FE_StatusLocationAndNotes.keyId DESC;";
+                GROUP BY FE_StatusLocationAndNotes.keyId ORDER BY FE_StatusLocationAndNotes.keyId DESC;";
         }
         if ($IsDoc != 1){
 
@@ -395,7 +395,7 @@ class FEComponent extends GenericTable {
                 AND FE_Components.fkFE_ComponentType =  ".$this->GetValue('fkFE_ComponentType')."
                 AND FE_Components.SN LIKE '$SN'
                 AND FE_Components.Band LIKE '".$this->GetValue('Band')."'
-                GROUP BY FE_StatusLocationAndNotes.keyId DESC;";
+                GROUP BY FE_StatusLocationAndNotes.keyId ORDER BY FE_StatusLocationAndNotes.keyId DESC;";
         }
 
         $r = mysqli_query($this->dbconnection, $q);

@@ -64,7 +64,7 @@ class Cryostat extends GenericTable {
             WHERE FE_ConfigLink.fkFE_Components = $this->keyId
             AND FE_ConfigLink.fkFE_Config = FE_Config.keyFEConfig
             AND FE_Config.fkFront_Ends = Front_Ends.keyFrontEnds
-            GROUP BY FE_Config.keyFEConfig DESC LIMIT 1;";
+            GROUP BY FE_Config.keyFEConfig ORDER BY FE_Config.keyFEConfig DESC LIMIT 1;";
         $r = mysqli_query($this->dbconnection, $q);
         $this->FESN = ADAPT_mysqli_result($r,0,0);
         $this->FEConfig = ADAPT_mysqli_result($r,0,1);
@@ -1046,6 +1046,7 @@ class Cryostat extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1171,6 +1172,7 @@ class Cryostat extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1304,6 +1306,7 @@ class Cryostat extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");

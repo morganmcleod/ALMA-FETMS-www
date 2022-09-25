@@ -244,6 +244,7 @@ class ScanDetails extends GenericTable {
         $fk_cable = parent::GetValue('keyId');
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 500, 500 crop\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set xlabel 'X(m)'\r\n");
@@ -335,6 +336,7 @@ class ScanDetails extends GenericTable {
         $fk_cable = parent::GetValue('keyId');
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 500, 500 crop\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set xlabel 'AZ (deg)'\r\n");
@@ -427,6 +429,7 @@ class ScanDetails extends GenericTable {
         $fk_cable = parent::GetValue('keyId');
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 500, 500 crop\r\n");
+        fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set xlabel 'AZ (deg)'\r\n");

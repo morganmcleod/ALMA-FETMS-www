@@ -12,7 +12,7 @@
     <link rel="stylesheet" type="text/css" href="recordform/css/icons.css">
     <link rel="stylesheet" type="text/css" href="recordform/css/recordform.css">
 
-    <link rel="stylesheet" type="text/css" href="../../ext/examples/ux/css/RowEditor.css">
+    <link rel="stylesheet" type="text/css" href="../ext/examples/ux/css/RowEditor.css">
 
     <link type="text/css" href="../ext/resources/css/ext-all.css" media="screen" rel="Stylesheet" />
 

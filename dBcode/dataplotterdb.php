@@ -126,7 +126,7 @@ class DPdb { //extends DBRetrieval{
 				AND TEST_LOLockTest_SubHeader.fkHeader = TestData_header.keyId
 				AND TestData_header.keyId = $td_header
 				AND TEST_LOLockTest.IsIncluded = 1
-				GROUP BY TEST_LOLockTest.LOFreq ASC;";
+				GROUP BY TEST_LOLockTest.LOFreq ORDER BY TEST_LOLockTest.LOFreq ASC;";
             } else {
                 $qfe = "SELECT fkFront_Ends FROM `FE_Config` WHERE `keyFEConfig` = " .
                     $TestDataHeader->GetValue('fkFE_Config');
@@ -138,7 +138,7 @@ class DPdb { //extends DBRetrieval{
 						WHERE TestData_header.Band = " . $TestDataHeader->GetValue('Band') . "
 						AND TestData_header.fkTestData_Type= 57 AND TestData_header.DataSetGroup= " .
                     $TestDataHeader->GetValue('DataSetGroup') . " AND TEST_LOLockTest.IsIncluded = 1
-						AND FE_Config.fkFront_Ends = ($qfe) GROUP BY TEST_LOLockTest.LOFreq ASC;";
+						AND FE_Config.fkFront_Ends = ($qfe) GROUP BY TEST_LOLockTest.LOFreq ORDER BY TEST_LOLockTest.LOFreq ASC;";
             }
             $t->WriteLogFile($q);
         } else {

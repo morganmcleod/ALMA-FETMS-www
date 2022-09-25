@@ -198,7 +198,7 @@ class IFSpectrum_db {
 	    FROM IFSpectrum_SubHeader, TEMP_IFSpectrum
 	    WHERE TEMP_IFSpectrum.fkSubHeader = IFSpectrum_SubHeader.keyId
 	    AND IFSpectrum_SubHeader.keyId in ($keysList)
-	    ORDER BY LO_GHz, Freq_GHz ASC;";
+	    ORDER BY LO_GHz ASC, Freq_GHz ASC;";
 
 	    $r = $this->run_query($q);
 
