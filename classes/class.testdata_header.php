@@ -531,13 +531,14 @@ class TestData_header extends GenericTable {
                 break;
         }
         if ($showPlots) {
+            global $site_storage;
             $urlarray = explode(",", $this->PlotURL);
             for ($i = 0; $i < count($urlarray); $i++) {
                 if ($urlarray[$i]) {
                     if (count($urlarray) == 1)
-                        $html[0] .= "<div class='ploturlunique'><img src='" . $urlarray[$i] . "'></div>";
+                        $html[0] .= "<div class='ploturlunique'><img src='" . $site_storage . $urlarray[$i] . "'></div>";
                     else
-                        $html[0] .= "<div class='ploturl" . ($i + 1) . "'><img src='" . $urlarray[$i] . "'></div>";
+                        $html[0] .= "<div class='ploturl" . ($i + 1) . "'><img src='" . $site_storage . $urlarray[$i] . "'></div>";
                 }
             }
         }

@@ -226,8 +226,10 @@ class FineLOSweep extends TestData_header {
     public function DisplayPlots_html() {
         $plot_cnt = count($this->FLOSweepSubHeader); // find out how many plots
         $html = "";
+        global $site_storage;
         for ($cnt = 0; $cnt < $plot_cnt; $cnt++) {
-            $html .= "<div class='ploturl" . ($cnt + 1) . "'><img src='" . $this->FLOSweepSubHeader[$cnt]->ploturl1 . "'/></div>";
+            $url = $site_storage .  $this->FLOSweepSubHeader[$cnt]->ploturl1;
+            $html .= "<div class='ploturl" . ($cnt + 1) . "'><img src='" . $url . "'/></div>";
         }
         return $html;
     }

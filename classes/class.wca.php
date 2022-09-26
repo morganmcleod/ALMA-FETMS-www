@@ -291,10 +291,12 @@ class WCA extends FEComponent {
         $this->Display_uploadform();
     }
     public function Display_AmplitudeStability() {
-        echo "<img src='" . $this->_WCAs->amp_stability_url . "'>";
+        global $site_storage;
+        echo "<img src='" . $site_storage . $this->_WCAs->amp_stability_url . "'>";
     }
     public function Display_AmplitudeStability_html() {
-        return "<img src='" . $this->_WCAs->amp_stability_url . "'>";
+        global $site_storage;
+        return "<img src='" . $site_storage . $this->_WCAs->amp_stability_url . "'>";
     }
     public function Display_AMNoise() {
         echo "<table>";
