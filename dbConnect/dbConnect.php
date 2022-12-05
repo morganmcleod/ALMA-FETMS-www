@@ -3,6 +3,11 @@
 $mySQL57 = true;
 
 switch ($_SERVER['SERVER_NAME']) {
+    case getenv('PHP_HOSTNAME'):
+        // database credentials are kept in the /conf/ directory, not in the webserver document root:
+        include("/home/fetms/conf/fetms-dbConnect.php");
+        break;
+
     case "fetms-rhel8.osf.alma.cl":
         // database credentials are kept in the /conf/ directory, not in the webserver document root:
         include("/home/fetms.osf.alma.cl/conf/fetms-dbConnect.conf");

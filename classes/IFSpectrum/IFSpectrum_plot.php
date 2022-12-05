@@ -48,7 +48,7 @@ class IFSpectrum_plot extends GnuplotWrapper {
             CURLOPT_POSTFIELDS => array(
                 'image' => new CURLFile($imagepath, 'image/png'),
                 'path' => $path,
-                'token' => "hF^d^hyu3mHxYTa%"
+                'token' => getenv("STORAGE_TOKEN")
             )
         ));
         curl_exec($ch);

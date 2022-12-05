@@ -16,7 +16,7 @@ $site_FEConfig = $files_root . "/FEConfig";
 $site_config_main = $files_root . "/config_main.php";
 $site_dbConnect = $files_root . "/dbConnect/dbConnect.php";
 $site_dBcode = $files_root . "/dBcode";
-$site_storage = "http://fetms.osf.alma.cl/storage/";
+$site_storage = getenv("STORAGE_HOSTNAME");
 
 // function to get the path to the classes directory:
 function site_get_classes() {
