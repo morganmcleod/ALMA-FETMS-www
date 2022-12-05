@@ -4,7 +4,7 @@
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.wca.php');
 require_once($site_dbConnect);
-require (site_get_config_main());
+require(site_get_config_main());
 
 $dbconnection = site_getDbConnection();
 
@@ -25,12 +25,11 @@ while ($row = mysqli_fetch_array($r)) {
     $keyWCA = $row[0];
     $_REQUEST['keyId'] = $keyWCA;
     echo $keyWCA . "\n";
-    $wca = new WCA;
-    $wca->Initialize_WCA($keyWCA, $fc, WCA::INIT_ALL);
+    $wca = new WCA($keyWCA, $fc, WCA::INIT_ALL);
 
-    $band = $wca->GetValue('Band');
-    $SN = $wca->GetValue('SN');
-    $xmlname = hexdec($wca->GetValue('ESN1'));
+    $band = $wca->Band;
+    $SN = $wca->SN;
+    $xmlname = hexdec($wca->ESN1);
 
     $outdir = $wca_write_directory . "xml2022-08-05";
     if (!file_exists($outdir))
@@ -51,5 +50,3 @@ while ($row = mysqli_fetch_array($r)) {
     unset($wca);
 }
 echo "done";
-
-?>

@@ -693,7 +693,7 @@ class Spreadsheet_Excel_Reader
         }
 
         foreach ($this->boundsheets as $key=>$val){
-            $this->sn = $key;
+            $this->SN = $key;
             $this->_parsesheet($val['offset']);
         }
         return true;
@@ -736,8 +736,8 @@ class Spreadsheet_Excel_Reader
             $code = $lowcode | ord($this->data[$spos+1])<<8;
             $length = ord($this->data[$spos+2]) | ord($this->data[$spos+3])<<8;
             $spos += 4;
-            $this->sheets[$this->sn]['maxrow'] = $this->_rowoffset - 1;
-            $this->sheets[$this->sn]['maxcol'] = $this->_coloffset - 1;
+            $this->sheets[$this->SN]['maxrow'] = $this->_rowoffset - 1;
+            $this->sheets[$this->SN]['maxcol'] = $this->_coloffset - 1;
             //echo "Code=".base_convert($code,10,16)." $code\n";
             unset($this->rectype);
             $this->multiplier = 1; // need for format with %
@@ -746,11 +746,11 @@ class Spreadsheet_Excel_Reader
                     //echo 'Type_DIMENSION ';
                     if (!isset($this->numRows)) {
                         if (($length == 10) ||  ($version == SPREADSHEET_EXCEL_READER_BIFF7)){
-                            $this->sheets[$this->sn]['numRows'] = ord($this->data[$spos+2]) | ord($this->data[$spos+3]) << 8;
-                            $this->sheets[$this->sn]['numCols'] = ord($this->data[$spos+6]) | ord($this->data[$spos+7]) << 8;
+                            $this->sheets[$this->SN]['numRows'] = ord($this->data[$spos+2]) | ord($this->data[$spos+3]) << 8;
+                            $this->sheets[$this->SN]['numCols'] = ord($this->data[$spos+6]) | ord($this->data[$spos+7]) << 8;
                         } else {
-                            $this->sheets[$this->sn]['numRows'] = ord($this->data[$spos+4]) | ord($this->data[$spos+5]) << 8;
-                            $this->sheets[$this->sn]['numCols'] = ord($this->data[$spos+10]) | ord($this->data[$spos+11]) << 8;
+                            $this->sheets[$this->SN]['numRows'] = ord($this->data[$spos+4]) | ord($this->data[$spos+5]) << 8;
+                            $this->sheets[$this->SN]['numCols'] = ord($this->data[$spos+10]) | ord($this->data[$spos+11]) << 8;
                         }
                     }
                     //echo 'numRows '.$this->numRows.' '.$this->numCols."\n";
@@ -762,12 +762,12 @@ class Spreadsheet_Excel_Reader
                         $lr =  ord($this->data[$spos + 8*$i + 4]) | ord($this->data[$spos + 8*$i + 5])<<8;
                         $fc =  ord($this->data[$spos + 8*$i + 6]) | ord($this->data[$spos + 8*$i + 7])<<8;
                         $lc =  ord($this->data[$spos + 8*$i + 8]) | ord($this->data[$spos + 8*$i + 9])<<8;
-                        //$this->sheets[$this->sn]['mergedCells'][] = array($fr + 1, $fc + 1, $lr + 1, $lc + 1);
+                        //$this->sheets[$this->SN]['mergedCells'][] = array($fr + 1, $fc + 1, $lr + 1, $lc + 1);
                         if ($lr - $fr > 0) {
-                            $this->sheets[$this->sn]['cellsInfo'][$fr+1][$fc+1]['rowspan'] = $lr - $fr + 1;
+                            $this->sheets[$this->SN]['cellsInfo'][$fr+1][$fc+1]['rowspan'] = $lr - $fr + 1;
                         }
                         if ($lc - $fc > 0) {
-                            $this->sheets[$this->sn]['cellsInfo'][$fr+1][$fc+1]['colspan'] = $lc - $fc + 1;
+                            $this->sheets[$this->SN]['cellsInfo'][$fr+1][$fc+1]['colspan'] = $lc - $fc + 1;
                         }
                     }
                     //echo "Merged Cells $cellRanges $lr $fr $lc $fc\n";
@@ -912,10 +912,10 @@ class Spreadsheet_Excel_Reader
             $spos += $length;
         }
 
-        if (!isset($this->sheets[$this->sn]['numRows']))
-             $this->sheets[$this->sn]['numRows'] = $this->sheets[$this->sn]['maxrow'];
-        if (!isset($this->sheets[$this->sn]['numCols']))
-             $this->sheets[$this->sn]['numCols'] = $this->sheets[$this->sn]['maxcol'];
+        if (!isset($this->sheets[$this->SN]['numRows']))
+             $this->sheets[$this->SN]['numRows'] = $this->sheets[$this->SN]['maxrow'];
+        if (!isset($this->sheets[$this->SN]['numCols']))
+             $this->sheets[$this->SN]['numCols'] = $this->sheets[$this->SN]['maxcol'];
 
     }
 
@@ -1002,13 +1002,13 @@ class Spreadsheet_Excel_Reader
     function addcell($row, $col, $string, $raw = '')
     {
         //echo "ADD cel $row-$col $string\n";
-        $this->sheets[$this->sn]['maxrow'] = max($this->sheets[$this->sn]['maxrow'], $row + $this->_rowoffset);
-        $this->sheets[$this->sn]['maxcol'] = max($this->sheets[$this->sn]['maxcol'], $col + $this->_coloffset);
-        $this->sheets[$this->sn]['cells'][$row + $this->_rowoffset][$col + $this->_coloffset] = $string;
+        $this->sheets[$this->SN]['maxrow'] = max($this->sheets[$this->SN]['maxrow'], $row + $this->_rowoffset);
+        $this->sheets[$this->SN]['maxcol'] = max($this->sheets[$this->SN]['maxcol'], $col + $this->_coloffset);
+        $this->sheets[$this->SN]['cells'][$row + $this->_rowoffset][$col + $this->_coloffset] = $string;
         if ($raw)
-            $this->sheets[$this->sn]['cellsInfo'][$row + $this->_rowoffset][$col + $this->_coloffset]['raw'] = $raw;
+            $this->sheets[$this->SN]['cellsInfo'][$row + $this->_rowoffset][$col + $this->_coloffset]['raw'] = $raw;
         if (isset($this->rectype))
-            $this->sheets[$this->sn]['cellsInfo'][$row + $this->_rowoffset][$col + $this->_coloffset]['type'] = $this->rectype;
+            $this->sheets[$this->SN]['cellsInfo'][$row + $this->_rowoffset][$col + $this->_coloffset]['type'] = $this->rectype;
 
     }
 

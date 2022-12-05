@@ -1,6 +1,6 @@
 <?php
 class setArray {
-	public $users;
+    public $users;
 
     function setUsers() {
         $this->users = array(
@@ -9,28 +9,28 @@ class setArray {
         );
 
         foreach ($this->users as $key => $value) {
-			$user_block .= "<option value=$value>$value";
-		}
-		return $user_block;
-	}
+            $user_block .= "<option value=$value>$value";
+        }
+        return $user_block;
+    }
 }
 
 function getCellNum($whole) {
-//Returns the Number part of the Cell to populate the dropdown box. ex: returns 10 from A10
-//where $whole=A10 and $part2=10
+    //Returns the Number part of the Cell to populate the dropdown box. ex: returns 10 from A10
+    //where $whole=A10 and $part2=10
     $part1 = $whole[1] . "" . $whole[2];
     return ($part1);
 }
 function getCellChar($whole) {
-//Returns the character part of the Cell to populate the dropdown box. ex: returns A from A10
-//where $whole=A10 and $char=A
+    //Returns the character part of the Cell to populate the dropdown box. ex: returns A from A10
+    //where $whole=A10 and $char=A
     $char = $whole[0];
-	return $char;
+    return $char;
 }
 function modifyLink($link) {
-//2008-10-24 dn: removed explode and implode functions and put preg_replace instead.
-//Replaces the back slashes in $link with frontslashes and replaces the drives z: or y:(if any) with $replace
-//Returns the modified link.
+    //2008-10-24 dn: removed explode and implode functions and put preg_replace instead.
+    //Replaces the back slashes in $link with frontslashes and replaces the drives z: or y:(if any) with $replace
+    //Returns the modified link.
     $path = preg_replace('~[\\\\/]+~', '/', $link);
     $find = "/^Z:|Y:|S:|E:|F:/";
     $replace = "/cvfiler.nrao.edu/cv-cdl-sis";
@@ -39,8 +39,7 @@ function modifyLink($link) {
     return ($ModifiedLink);
 }
 function escapechars($notes) {
-//Escapes the special characters in $notes and returns the escaped string.
+    //Escapes the special characters in $notes and returns the escaped string.
     $notes1 = addslashes($notes);
-	return $notes1;
+    return $notes1;
 }
-?>

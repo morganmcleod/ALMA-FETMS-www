@@ -17,7 +17,6 @@ if ($ctype == '100') {
               WHERE B.keyFEConfig IS NULL
               AND Front_Ends.keyFrontEnds = A.fkFront_Ends
               ORDER BY SN;";
-
 } else if ($ctype == '11' || $ctype == '20') {
     $what = ($ctype == '11') ? "WCA" : "CCA";
 
@@ -46,4 +45,3 @@ if ($query) {
 }
 
 echo "[$output]";
-?>

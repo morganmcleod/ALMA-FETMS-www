@@ -1,6 +1,7 @@
 <?php
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.generictable.php');
+require_once($site_classes . '/class.beamefficiencies.php');
 require_once($site_classes . '/class.scansetdetails.php');
 require_once($site_classes . '/class.scandetails.php');
 require_once($site_classes . '/class.spec_functions.php');
@@ -34,7 +35,7 @@ class eff {
     private $GNUPLOT_path;      //Path to Gnuplot from config_main.php
     private $specsProvider;     //class Specifications
 
-    public function __construct() {
+    public function __construct($in_keyId, $in_fc) {
         $this->software_version_class_eff = "1.3.1";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
@@ -92,16 +93,6 @@ class eff {
         $this->ReadyToProcess = 0;
         $this->beameff_exe = $beameff_64;
         $this->GNUPLOT_path = $GNUPLOT;
-    }
-
-    public function Initialize_eff_TDH($in_TDHId) {
-        $in_fc = 40;
-        $r = $this->db_pull->qTDH($in_TDHId, $in_fc);
-        $ssid = ADAPT_mysqli_result($r, 0, 0);
-        $this->Initialize_eff_SingleScanSet($ssid, $in_fc);
-    }
-
-    public function Initialize_eff_SingleScanSet($in_keyId, $in_fc) {
         $this->scanSetId = $in_keyId;
         $this->scanSetFc = $in_fc;
 
@@ -109,14 +100,37 @@ class eff {
         $this->effBand = ADAPT_mysqli_result($rss, 0, 1);
         $this->fe_id = ADAPT_mysqli_result($rss, 0, 2);
 
-        $this->scansets[0] = new ScanSetDetails();
-        $this->scansets[0]->Initialize_ScanSetDetails($in_keyId, $this->scanSetFc);
-        $this->scansets[0]->RequestValues_ScanSetDetails();
+        $this->scansets[0] = new ScanSetDetails($in_keyId, $this->scanSetFc);
+        $this->scansets[0]->requestValuesScanSetDetails();
 
         if ($this->scansets[0]->keyId_180_scan > 0)
             $this->ReadyToProcess = 1;
 
         $this->NumberOfScanSets = 1;
+    }
+
+    private function sendImage($imagepath) {
+        global $site_storage;
+        $temp = substr($imagepath, stripos($imagepath, "eff/"));
+        $path = dirname($temp) . "/";
+        $ch = curl_init($site_storage . 'upload.php');
+        curl_setopt_array($ch, array(
+            CURLOPT_POST => 1,
+            CURLOPT_POSTFIELDS => array(
+                'image' => new CURLFile($imagepath, 'image/png'),
+                'path' => $path,
+                'token' => getenv("STORAGE_TOKEN")
+            )
+        ));
+        curl_exec($ch);
+        if (file_exists($imagepath)) unlink($imagepath);
+    }
+
+    public function Initialize_eff_TDH($in_TDHId) {
+        $in_fc = 40;
+        $r = $this->db_pull->qTDH($in_TDHId, $in_fc);
+        $ssid = ADAPT_mysqli_result($r, 0, 0);
+        $this->__construct($ssid, $in_fc);
     }
 
     public function GetEfficiencies($pointingOption) {
@@ -125,15 +139,14 @@ class eff {
         // Create the input file for beameff_64:
         $this->MakeInputFile();
         // Execute beameff_64:
-        $CommandString = "$this->beameff_exe $this->eff_inputfile";
-        system($CommandString);
+        system("$this->beameff_exe $this->eff_inputfile");
         // Upload the efficiency results to the database:
         $this->UploadEfficiencyFile($this->eff_outputfile);
-        $this->Initialize_eff_SingleScanSet($this->scanSetId, $this->scanSetFc);
+        $this->__construct($this->scanSetId, $this->scanSetFc);
     }
 
     private function SoftwareVersionString() {
-        $version = $this->scansets[0]->tdh->GetValue('Meas_SWVer');
+        $version = $this->scansets[0]->tdh->Meas_SWVer;
 
         if (!$version) {
             $version = "measurement (unknown)";
@@ -145,7 +158,7 @@ class eff {
 
         if ($this->software_version_analysis == "") {
             if (isset($this->scansets[0]->Scan_copol_pol0->BeamEfficencies)) {
-                $this->software_version_analysis = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('software_version');
+                $this->software_version_analysis = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->software_version;
             }
         }
 
@@ -158,7 +171,7 @@ class eff {
     private function PointingOptionString() {
         if ($this->pointingOption_analysis == "") {
             if (isset($this->scansets[0]->Scan_copol_pol0->BeamEfficencies)) {
-                $this->pointingOption_analysis = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('centers');
+                $this->pointingOption_analysis = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->centers;
             }
             switch ($this->pointingOption_analysis) {
                 case "nominal":
@@ -228,7 +241,7 @@ class eff {
     }
 
     private function GetScanSideband($scanSetIdx) {
-        $scanSetId = $this->scansets[$scanSetIdx]->GetValue('keyId');
+        $scanSetId = $this->scansets[$scanSetIdx]->keyId;
 
         $rss = $this->db_pull->qss(4, NULL, NULL, NULL, $this->scanSetFc, $scanSetId);
         $rowss = mysqli_fetch_array($rss);
@@ -262,13 +275,13 @@ class eff {
             fwrite($fhandle, "type=copol\r\n");
             fwrite($fhandle, "pol=0\r\n");
             fwrite($fhandle, "scanset=" . ($scanSet) . "\r\n");
-            fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->GetValue('f') . "\r\n");
+            fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->f . "\r\n");
             fwrite($fhandle, "sb=" . $sb . "\r\n");
-            fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "\r\n");
-            fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->GetValue('band') . "\r\n");
+            fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->tilt . "\r\n");
+            fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->band . "\r\n");
             fwrite($fhandle, "notes=\r\n");
-            fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ifatten') . "\r\n");
-            fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ProbeZDistance') . "\r\n");
+            fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->ifatten . "\r\n");
+            fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->ProbeZDistance . "\r\n");
 
             $nf_path = $this->listingsdir . "scanset_" . ($scanSet) . "_copol_pol0_nf.txt";
             $this->ExportNF($nf_path, $this->scansets[$scanSetIdx]->keyId_copol_pol0_scan);
@@ -284,9 +297,9 @@ class eff {
             fwrite($fhandle, "tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
             fwrite($fhandle, "scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle, "scan_id=" . $this->scansets[$scanSetIdx]->keyId_copol_pol0_scan . "\r\n");
-            fwrite($fhandle, "fecfg=" . $this->scansets[$scanSetIdx]->GetValue('fkFE_Config') . "\r\n");
+            fwrite($fhandle, "fecfg=" . $this->scansets[$scanSetIdx]->fkFE_Config . "\r\n");
 
-            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS'))) . " " .  $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS');
+            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->TS)) . " " .  $this->scansets[$scanSetIdx]->Scan_copol_pol0->TS;
             fwrite($fhandle, "ts='$ts'\r\n");
 
             fwrite($fhandle, "\r\n");
@@ -297,19 +310,19 @@ class eff {
             fwrite($fhandle, "type=xpol\r\n");
             fwrite($fhandle, "pol=0\r\n");
             fwrite($fhandle, "scanset=" . ($scanSet) . "\r\n");
-            fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->GetValue('f') . "\r\n");
+            fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->f . "\r\n");
             fwrite($fhandle, "sb=" . $sb . "\r\n");
-            fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "\r\n");
-            fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->GetValue('band') . "\r\n");
+            fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->tilt . "\r\n");
+            fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->band . "\r\n");
             fwrite($fhandle, "notes=\r\n");
-            fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('ifatten') . "\r\n");
-            fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('ProbeZDistance') . "\r\n");
+            fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->ifatten . "\r\n");
+            fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->ProbeZDistance . "\r\n");
             fwrite($fhandle, "tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
             fwrite($fhandle, "scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle, "scan_id=" . $this->scansets[$scanSetIdx]->keyId_xpol_pol0_scan . "\r\n");
-            fwrite($fhandle, "fecfg=" . $this->scansets[$scanSetIdx]->GetValue('fkFE_Config') . "\r\n");
+            fwrite($fhandle, "fecfg=" . $this->scansets[$scanSetIdx]->fkFE_Config . "\r\n");
 
-            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('TS'))) . " " .  $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('TS');
+            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_xpol_pol0->TS)) . " " .  $this->scansets[$scanSetIdx]->Scan_xpol_pol0->TS;
             fwrite($fhandle, "ts='$ts'\r\n");
 
             $nf_path = $this->listingsdir . "scanset_" . ($scanSet) . "_xpol_pol0_nf.txt";
@@ -331,20 +344,20 @@ class eff {
             fwrite($fhandle, "type=copol\r\n");
             fwrite($fhandle, "pol=1\r\n");
             fwrite($fhandle, "scanset=" . ($scanSet) . "\r\n");
-            fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->GetValue('f') . "\r\n");
+            fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->f . "\r\n");
             fwrite($fhandle, "sb=" . $sb . "\r\n");
-            fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "\r\n");
-            fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->GetValue('band') . "\r\n");
+            fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->tilt . "\r\n");
+            fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->band . "\r\n");
             fwrite($fhandle, "notes=\r\n");
-            fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ifatten') . "\r\n");
-            fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ProbeZDistance') . "\r\n");
+            fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->ifatten . "\r\n");
+            fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->ProbeZDistance . "\r\n");
             fwrite($fhandle, "tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
             fwrite($fhandle, "scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle, "scan_id=" . $this->scansets[$scanSetIdx]->keyId_copol_pol1_scan . "\r\n");
-            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS'))) . " " .  $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS');
+            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol1->TS)) . " " .  $this->scansets[$scanSetIdx]->Scan_copol_pol1->TS;
 
             fwrite($fhandle, "ts='$ts'\r\n");
-            fwrite($fhandle, "fecfg=" . $this->scansets[$scanSetIdx]->GetValue('fkFE_Config') . "\r\n");
+            fwrite($fhandle, "fecfg=" . $this->scansets[$scanSetIdx]->fkFE_Config . "\r\n");
 
             $nf_path = $this->listingsdir . "scanset_" . ($scanSet) . "_copol_pol1_nf.txt";
             $this->ExportNF($nf_path, $this->scansets[$scanSetIdx]->keyId_copol_pol1_scan);
@@ -365,19 +378,19 @@ class eff {
             fwrite($fhandle, "type=xpol\r\n");
             fwrite($fhandle, "pol=1\r\n");
             fwrite($fhandle, "scanset=" . ($scanSet) . "\r\n");
-            fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->GetValue('f') . "\r\n");
+            fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->f . "\r\n");
             fwrite($fhandle, "sb=" . $sb . "\r\n");
-            fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "\r\n");
-            fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->GetValue('band') . "\r\n");
+            fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->tilt . "\r\n");
+            fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->band . "\r\n");
             fwrite($fhandle, "notes=\r\n");
-            fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('ifatten') . "\r\n");
-            fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ProbeZDistance') . "\r\n");
+            fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->ifatten . "\r\n");
+            fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->ProbeZDistance . "\r\n");
             fwrite($fhandle, "tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
             fwrite($fhandle, "scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
             fwrite($fhandle, "scan_id=" . $this->scansets[$scanSetIdx]->keyId_xpol_pol1_scan . "\r\n");
-            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('TS'))) . " " .  $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('TS');
+            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_xpol_pol1->TS)) . " " .  $this->scansets[$scanSetIdx]->Scan_xpol_pol1->TS;
             fwrite($fhandle, "ts='$ts'\r\n");
-            fwrite($fhandle, "fecfg=" . $this->scansets[$scanSetIdx]->GetValue('fkFE_Config') . "\r\n");
+            fwrite($fhandle, "fecfg=" . $this->scansets[$scanSetIdx]->fkFE_Config . "\r\n");
 
             $nf_path = $this->listingsdir . "scanset_" . ($scanSet) . "_xpol_pol1_nf.txt";
             $this->ExportNF($nf_path, $this->scansets[$scanSetIdx]->keyId_xpol_pol1_scan);
@@ -400,19 +413,19 @@ class eff {
                 //Source position
                 //3= pol0 + 180
                 //4= pol1 + 180
-                $sp = $this->scansets[$scanSetIdx]->Scan_180->GetValue('SourcePosition');
+                $sp = $this->scansets[$scanSetIdx]->Scan_180->SourcePosition;
                 $pol = 0;
                 if ($sp == 4)
                     $pol = 1;
                 fwrite($fhandle, "pol=$pol\r\n");
                 fwrite($fhandle, "scanset=" . ($scanSet) . "\r\n");
-                fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->GetValue('f') . "\r\n");
+                fwrite($fhandle, "f=" . $this->scansets[$scanSetIdx]->f . "\r\n");
                 fwrite($fhandle, "sb=" . $sb . "\r\n");
-                fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "\r\n");
-                fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->GetValue('band') . "\r\n");
+                fwrite($fhandle, "tilt=" . $this->scansets[$scanSetIdx]->tilt . "\r\n");
+                fwrite($fhandle, "band=" . $this->scansets[$scanSetIdx]->band . "\r\n");
                 fwrite($fhandle, "notes=\r\n");
-                fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('ifatten') . "\r\n");
-                fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('ProbeZDistance') . "\r\n");
+                fwrite($fhandle, "ifatten=" . $this->scansets[$scanSetIdx]->Scan_180->ifatten . "\r\n");
+                fwrite($fhandle, "zdistance=" . $this->scansets[$scanSetIdx]->Scan_180->ProbeZDistance . "\r\n");
                 fwrite($fhandle, "tdh_id=" . $this->scansets[$scanSetIdx]->tdh->keyId . "\r\n");
                 fwrite($fhandle, "scanset_id=" . $this->scansets[$scanSetIdx]->keyId . "\r\n");
                 fwrite($fhandle, "scan_id=" . $this->scansets[$scanSetIdx]->keyId_180_scan . "\r\n");
@@ -450,8 +463,7 @@ class eff {
 
     private static function PlotPathToURL($plotPath) {
         // Convert a file-system path to a plot to a web-server URL to the same plot.
-        require(site_get_config_main());
-        return $main_url_directory . substr($plotPath, stripos($plotPath, "eff/"));
+        return substr($plotPath, stripos($plotPath, "eff/"));
     }
 
     private function UploadEfficiencyFile($ini_filename) {
@@ -483,9 +495,10 @@ class eff {
 
                 // Get the pointing angles plot:
                 $pointingangles_plot = $ini_array[$section]['pointingangles'];
-                if (isset($pointingangles_plot))
+                if (isset($pointingangles_plot)) {
+                    $this->sendImage($pointingangles_plot);
                     $pointingangles_plot = self::PlotPathToURL($pointingangles_plot);
-                else
+                } else
                     $pointingangles_plot = '';
 
                 // Get phase center differences and corrections:
@@ -514,16 +527,14 @@ class eff {
                 $rdelete = $this->db_pull->qdelete($keyScanDetails, NULL);
 
                 // Create and initialize a new efficies record:
-                $beameff = new GenericTable;
-                $beameff->Initialize("BeamEfficiencies", "", "keyBeamEfficiencies", $this->scanSetFc, 'fkFacility');
-                $beameff->NewRecord("BeamEfficiencies", "keyBeamEfficiencies", $this->scanSetFc, 'fkFacility');
+                $beameff = BeamEfficencies::NewRecord("BeamEfficiencies", "keyBeamEfficiencies", $this->scanSetFc, 'fkFacility');
 
                 // Store overall/settings values:
-                $beameff->SetValue("fkScanDetails", $keyScanDetails);
-                $beameff->SetValue("eff_output_file", $ini_filename);
-                $beameff->SetValue("pointing_angles_plot", $pointingangles_plot);
-                $beameff->SetValue("software_version", $software_version_analysis);
-                $beameff->SetValue("centers", $pointingOption_analysis);
+                $beameff->fkScanDetails = $keyScanDetails;
+                $beameff->eff_output_file = $ini_filename;
+                $beameff->pointing_angles_plot = $pointingangles_plot;
+                $beameff->software_version = $software_version_analysis;
+                $beameff->centers = $pointingOption_analysis;
 
                 // Suppress error reports for undefined index for the next chunk:
                 global $errorReportSettingsNo_E_NOTICE;
@@ -532,80 +543,86 @@ class eff {
 
                 // Save all the data loaded from the ini file to the new beameffs record:
                 $scanType = $ini_array[$section]['type'];
-                $beameff->SetValue("type", $scanType);
+                $beameff->type = $scanType;
 
-                $beameff->SetValue("pol", $ini_array[$section]['pol']);
-                $beameff->SetValue("tilt", $ini_array[$section]['tilt']);
-                $beameff->SetValue("f", $ini_array[$section]['f']);
-                $beameff->SetValue("datetime", $ini_array[$section]['ts']);
-                $beameff->SetValue("tilt", $ini_array[$section]['tilt']);
-                $beameff->SetValue("ifatten", $ini_array[$section]['ifatten']);
-                $beameff->SetValue("eta_spillover", $ini_array[$section]['eta_spillover']);
-                $beameff->SetValue("eta_taper", $ini_array[$section]['eta_taper']);
-                $beameff->SetValue("eta_illumination", $ini_array[$section]['eta_illumination']);
-                $beameff->SetValue("ff_xcenter", $ini_array[$section]['ff_xcenter']);
-                $beameff->SetValue("ff_ycenter", $ini_array[$section]['ff_ycenter']);
-                $beameff->SetValue("az_nominal", $ini_array[$section]['az_nominal']);
-                $beameff->SetValue("el_nominal", $ini_array[$section]['el_nominal']);
-                $beameff->SetValue("nf_xcenter", $ini_array[$section]['nf_xcenter']);
-                $beameff->SetValue("nf_ycenter", $ini_array[$section]['nf_ycenter']);
-                $beameff->SetValue("max_ff_amp_db", $ini_array[$section]['max_ff_amp_db']);
-                $beameff->SetValue("max_nf_amp_db", $ini_array[$section]['max_nf_amp_db']);
-                $deltaX = $ini_array[$section]['delta_x'];
-                $beameff->SetValue("delta_x", $deltaX);
-                $deltaY = $ini_array[$section]['delta_y'];
-                $beameff->SetValue("delta_y", $deltaY);
-                $beameff->SetValue("delta_z", $ini_array[$section]['delta_z']);
-                $beameff->SetValue("eta_phase", $ini_array[$section]['eta_phase']);
-                $beameff->SetValue("ampfit_amp", $ini_array[$section]['ampfit_amp']);
-                $beameff->SetValue("ampfit_width_deg", $ini_array[$section]['ampfit_width_deg']);
-                $beameff->SetValue("ampfit_u_off", $ini_array[$section]['ampfit_u_off_deg']);
-                $beameff->SetValue("ampfit_v_off", $ini_array[$section]['ampfit_v_off_deg']);
-                $beameff->SetValue("ampfit_d_0_90", $ini_array[$section]['ampfit_d_0_90']);
-                $beameff->SetValue("ampfit_edge_db", $ini_array[$section]['edge_db']);
-                $beameff->SetValue("ampfit_d_45_135", $ini_array[$section]['ampfit_d_45_135']);
-                $beameff->SetValue("datetime", $ini_array[$section]['datetime']);
-                $beameff->SetValue("nf", $ini_array[$section]['nf']);
-                $beameff->SetValue("ff", $ini_array[$section]['ff']);
-                $beameff->SetValue("eta_tot_np", $ini_array[$section]['eta_tot_np']);
-                $beameff->SetValue("eta_pol", $ini_array[$section]['eta_pol']);
-                $beameff->SetValue("eta_pol_on_secondary", $ini_array[$section]['eta_pol_on_secondary']);
-                $beameff->SetValue("eta_tot_nd", $ini_array[$section]['eta_tot_nd']);
-                $beameff->SetValue("eta_pol_spill", $ini_array[$section]['eta_pol_spill']);
-                $beameff->SetValue("defocus_efficiency", $ini_array[$section]['defocus_efficiency']);
-                $beameff->SetValue("total_aperture_eff", $ini_array[$section]['total_aperture_eff']);
-                $beameff->SetValue("squint", $ini_array[$section]['squint']);
-                $beameff->SetValue("squint_arcseconds", $ini_array[$section]['squint_arcseconds']);
-                $beameff->SetValue("max_dbdifference", $ini_array[$section]['max_dbdifference']);
-                $beameff->SetValue("software_version_class_eff", $this->software_version_class_eff);
+                $beameff->pol = $ini_array[$section]['pol'];
+                $beameff->tilt = $ini_array[$section]['tilt'];
+                $beameff->f = $ini_array[$section]['f'];
+                $beameff->datetime = $ini_array[$section]['ts'] ?? "";
+                $beameff->tilt = $ini_array[$section]['tilt'];
+                $beameff->ifatten = $ini_array[$section]['ifatten'];
+                $beameff->eta_spillover = $ini_array[$section]['eta_spillover'] ?? "";
+                $beameff->eta_taper = $ini_array[$section]['eta_taper'] ?? "";
+                $beameff->eta_illumination = $ini_array[$section]['eta_illumination'] ?? "";
+                $beameff->ff_xcenter = $ini_array[$section]['ff_xcenter'] ?? "";
+                $beameff->ff_ycenter = $ini_array[$section]['ff_ycenter'] ?? "";
+                $beameff->az_nominal = $ini_array[$section]['az_nominal'] ?? "";
+                $beameff->el_nominal = $ini_array[$section]['el_nominal'] ?? "";
+                $beameff->nf_xcenter = $ini_array[$section]['nf_xcenter'] ?? "";
+                $beameff->nf_ycenter = $ini_array[$section]['nf_ycenter'] ?? "";
+                $beameff->max_ff_amp_db = $ini_array[$section]['max_ff_amp_db'] ?? "";
+                $beameff->max_nf_amp_db = $ini_array[$section]['max_nf_amp_db'] ?? "";
+                $beameff->delta_x = $ini_array[$section]['delta_x'] ?? "";
+                $beameff->delta_y = $ini_array[$section]['delta_y'] ?? "";
+                $beameff->delta_z = $ini_array[$section]['delta_z'] ?? "";
+                $beameff->eta_phase = $ini_array[$section]['eta_phase'] ?? "";
+                $beameff->ampfit_amp = $ini_array[$section]['ampfit_amp'] ?? "";
+                $beameff->ampfit_width_deg = $ini_array[$section]['ampfit_width_deg'] ?? "";
+                $beameff->ampfit_u_off = $ini_array[$section]['ampfit_u_off_deg'] ?? "";
+                $beameff->ampfit_v_off = $ini_array[$section]['ampfit_v_off_deg'] ?? "";
+                $beameff->ampfit_d_0_90 = $ini_array[$section]['ampfit_d_0_90'] ?? "";
+                $beameff->ampfit_edge_db = $ini_array[$section]['edge_db'] ?? "";
+                $beameff->ampfit_d_45_135 = $ini_array[$section]['ampfit_d_45_135'] ?? "";
+                $beameff->nf = $ini_array[$section]['nf'];
+                $beameff->ff = $ini_array[$section]['ff'];
+                $beameff->eta_tot_np = $ini_array[$section]['eta_tot_np'] ?? "";
+                $beameff->eta_pol = $ini_array[$section]['eta_pol'] ?? "";
+                $beameff->eta_pol_on_secondary = $ini_array[$section]['eta_pol_on_secondary'] ?? "";
+                $beameff->eta_tot_nd = $ini_array[$section]['eta_tot_nd'] ?? "";
+                $beameff->eta_pol_spill = $ini_array[$section]['eta_pol_spill'] ?? "";
+                $beameff->defocus_efficiency = $ini_array[$section]['defocus_efficiency'] ?? "";
+                $beameff->total_aperture_eff = $ini_array[$section]['total_aperture_eff'] ?? "";
+                $beameff->squint = $ini_array[$section]['squint'] ?? "";
+                $beameff->squint_arcseconds = $ini_array[$section]['squint_arcseconds'] ?? "";
+                $beameff->max_dbdifference = $ini_array[$section]['max_dbdifference'] ?? "";
+                $beameff->software_version_class_eff = $this->software_version_class_eff;
 
                 if ($scanType == 'copol') {
                     // TODO: rename x90, y90.  Now they contain corrected_x corrected_y.  Not using x0, y0 anymore.
                     $correctedX = $ini_array[$section]['corrected_x'];
                     $correctedY = $ini_array[$section]['corrected_y'];
 
-                    $beameff->SetValue('x90', $correctedX);
-                    $beameff->SetValue('y90', $correctedY);
+                    $beameff->x90 = $correctedX;
+                    $beameff->y90 = $correctedY;
                     // Set x_corr, y_corr if this is the pol which was corrected:
                     if ($corrected_pol == $ini_array[$section]['pol']) {
-                        $beameff->SetValue('x_corr', $x_corr);
-                        $beameff->SetValue('y_corr', $y_corr);
+                        $beameff->x_corr = $x_corr;
+                        $beameff->y_corr = $y_corr;
                     }
-                    $beameff->SetValue('DistanceBetweenBeamCenters', $dist_between_centers_mm);
-                    $beameff->SetValue("nominal_z_offset", $nominal_z_offset);
-                    $beameff->SetValue('squint', $squint_percent);
-                    $beameff->SetValue('squint_arcseconds', $squint_arcseconds);
+                    $beameff->DistanceBetweenBeamCenters = $dist_between_centers_mm;
+                    $beameff->nominal_z_offset = $nominal_z_offset;
+                    $beameff->squint = $squint_percent;
+                    $beameff->squint_arcseconds = $squint_arcseconds;
                 }
 
-                if ($scanType == 'copol' || $scanType == 'xpol') {
-                    $beameff->SetValue("plot_copol_nfamp", self::PlotPathToURL($ini_array[$section]['plot_copol_nfamp']));
-                    $beameff->SetValue("plot_copol_nfphase", self::PlotPathToURL($ini_array[$section]['plot_copol_nfphase']));
-                    $beameff->SetValue("plot_copol_ffamp", self::PlotPathToURL($ini_array[$section]['plot_copol_ffamp']));
-                    $beameff->SetValue("plot_copol_ffphase", self::PlotPathToURL($ini_array[$section]['plot_copol_ffphase']));
-                    $beameff->SetValue("plot_xpol_nfamp", self::PlotPathToURL($ini_array[$section]['plot_xpol_nfamp']));
-                    $beameff->SetValue("plot_xpol_nfphase", self::PlotPathToURL($ini_array[$section]['plot_xpol_nfphase']));
-                    $beameff->SetValue("plot_xpol_ffamp", self::PlotPathToURL($ini_array[$section]['plot_xpol_ffamp']));
-                    $beameff->SetValue("plot_xpol_ffphase", self::PlotPathToURL($ini_array[$section]['plot_xpol_ffphase']));
+                if ($scanType == 'copol') {
+                    $beameff->plot_copol_nfamp = self::PlotPathToURL($ini_array[$section]['plot_copol_nfamp']);
+                    $this->sendImage($ini_array[$section]['plot_copol_nfamp']);
+                    $beameff->plot_copol_nfphase = self::PlotPathToURL($ini_array[$section]['plot_copol_nfphase']);
+                    $this->sendImage($ini_array[$section]['plot_copol_nfphase']);
+                    $beameff->plot_copol_ffamp = self::PlotPathToURL($ini_array[$section]['plot_copol_ffamp']);
+                    $this->sendImage($ini_array[$section]['plot_copol_ffamp']);
+                    $beameff->plot_copol_ffphase = self::PlotPathToURL($ini_array[$section]['plot_copol_ffphase']);
+                    $this->sendImage($ini_array[$section]['plot_copol_ffphase']);
+                } else if ($scanType == 'xpol') {
+                    $beameff->plot_xpol_nfamp = self::PlotPathToURL($ini_array[$section]['plot_xpol_nfamp']);
+                    $this->sendImage($ini_array[$section]['plot_xpol_nfamp']);
+                    $beameff->plot_xpol_nfphase = self::PlotPathToURL($ini_array[$section]['plot_xpol_nfphase']);
+                    $this->sendImage($ini_array[$section]['plot_xpol_nfphase']);
+                    $beameff->plot_xpol_ffamp = self::PlotPathToURL($ini_array[$section]['plot_xpol_ffamp']);
+                    $this->sendImage($ini_array[$section]['plot_xpol_ffamp']);
+                    $beameff->plot_xpol_ffphase = self::PlotPathToURL($ini_array[$section]['plot_xpol_ffphase']);
+                    $this->sendImage($ini_array[$section]['plot_xpol_ffphase']);
                 }
 
                 // Restore error reporting:
@@ -640,14 +657,12 @@ class eff {
         //         $nomAZ = ADAPT_mysqli_result($rn,0,0);
         //         $nomEL = ADAPT_mysqli_result($rn,0,1);
         //Get nominal Az, El
-        $sd = new ScanDetails();
+        $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->az_nominal, 4);
+        $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->el_nominal, 4);
 
-        $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('az_nominal'), 4);
-        $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('el_nominal'), 4);
-
-        if ($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('centers') == "actual") {
-            $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_xcenter'), 4);
-            $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_ycenter'), 4);
+        if ($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->centers == "actual") {
+            $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->ff_xcenter, 4);
+            $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->ff_ycenter, 4);
         }
 
         echo "<div style = 'width:200px'><table id = 'table1'>";
@@ -663,21 +678,21 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $x = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_xcenter'), 4);
-            $y = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_ycenter'), 4);
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $x = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ff_xcenter, 4);
+            $y = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ff_ycenter, 4);
 
             echo "<td>$x</td>";
             echo "<td>$y</td></tr>";
 
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $x = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ff_xcenter'), 4);
-            $y = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ff_ycenter'), 4);
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $x = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ff_xcenter, 4);
+            $y = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ff_ycenter, 4);
 
             echo "<td>$x</td>";
             echo "<td>$y</td></tr>";
@@ -695,14 +710,13 @@ class eff {
         //         $nomEL = ADAPT_mysqli_result($rn,0,1);
         //Get nominal Az, El
         $html = "";
-        $sd = new ScanDetails();
 
-        $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('az_nominal'), 4);
-        $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('el_nominal'), 4);
+        $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->az_nominal, 4);
+        $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->el_nominal, 4);
 
-        if ($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('centers') == "actual") {
-            $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_xcenter'), 4);
-            $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_ycenter'), 4);
+        if ($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->centers == "actual") {
+            $nomAZ = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->ff_xcenter, 4);
+            $nomEL = round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->ff_ycenter, 4);
         }
 
         $html .= "<div class='pointing-angles'>";
@@ -718,21 +732,21 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $x = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_xcenter'), 4);
-            $y = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_ycenter'), 4);
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $x = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ff_xcenter, 4);
+            $y = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ff_ycenter, 4);
 
             $html .= "<td>$x</td>";
             $html .= "<td>$y</td></tr>";
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $x = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ff_xcenter'), 4);
-            $y = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ff_ycenter'), 4);
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $x = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ff_xcenter, 4);
+            $y = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ff_ycenter, 4);
 
             $html .= "<td>$x</td>";
             $html .= "<td>$y</td></tr>";
@@ -759,20 +773,20 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $ae = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('total_aperture_eff'), 2);
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $ae = round(100.0 * (float)$this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->total_aperture_eff, 2);
             if ($ae < 80) {
                 echo "<td><font color = '#ff0000'>$ae</font></td>";
             } else {
                 echo "<td>$ae</td>";
             }
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $ae = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('total_aperture_eff'), 2);
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $ae = round(100.0 * (float)$this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->total_aperture_eff, 2);
             if ($ae < 80) {
                 echo "<td><font color = '#ff0000'>$ae</font></td>";
             } else {
@@ -801,20 +815,20 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $ae = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('total_aperture_eff'), 2);
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $ae = round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->total_aperture_eff, 2);
             if ($ae < 80) {
                 $html .= "<td><font color = '#ff0000'>$ae</font></td>";
             } else {
                 $html .= "<td>$ae</td>";
             }
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $ae = round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('total_aperture_eff'), 2);
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $ae = round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->total_aperture_eff, 2);
             if ($ae < 80) {
                 $html .= "<td><font color = '#ff0000'>$ae</font></td>";
             } else {
@@ -843,16 +857,16 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_taper'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->eta_taper, 2) . "</td>";
 
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_taper'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->eta_taper, 2) . "</td>";
         }
         //Meas SW Ver
         echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
@@ -874,16 +888,16 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_taper'), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->eta_taper, 2) . "</td>";
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_taper'), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->eta_taper, 2) . "</td>";
         }
         //Meas SW Ver
         $html .= "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
@@ -903,16 +917,16 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_phase'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->eta_phase, 2) . "</td>";
 
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_phase'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->eta_phase, 2) . "</td>";
         }
         //Meas SW Ver
         echo "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
@@ -933,16 +947,16 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_phase'), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->eta_phase, 2) . "</td>";
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_phase'), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->eta_phase, 2) . "</td>";
         }
         //Meas SW Ver
         $html .= "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
@@ -962,16 +976,16 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_spillover'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->eta_spillover, 2) . "</td>";
 
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_spillover'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->eta_spillover, 2) . "</td>";
         }
         //Meas SW Ver
         echo "<tr><td colspan='4'><font size='-1'><i>"
@@ -995,16 +1009,16 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eta_spillover'), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->eta_spillover, 2) . "</td>";
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('eta_spillover'), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->eta_spillover, 2) . "</td>";
         }
         //Meas SW Ver
         $html .= "<tr><td colspan='4'><font size='-1'><i>"
@@ -1055,7 +1069,7 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             // if the polarization efficiency is less than the value calculated for $p0spec/$p1spec, display it as red:
-            $rf = floatval($this->scansets[$scanSetIdx]->GetValue('f'));
+            $rf = floatval($this->scansets[$scanSetIdx]->f);
             $p0spec = $p1spec = 0.0;
 
             $spec = $this->specsProvider->getSpecs('beameff', $this->effBand);
@@ -1074,12 +1088,12 @@ class eff {
 
             echo "<tr>";
             echo "<td>" . $rf . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('max_dbdifference'), 2) . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('eta_pol_spill'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->max_dbdifference, 2) . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->eta_pol_spill, 2) . "</td>";
 
-            $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('eta_pol_on_secondary'), 2);
+            $pe = round(100 * (float) $this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->eta_pol_on_secondary, 2);
             if ($pe < $p0spec)
                 echo "<td><font color ='#ff0000'>$pe</font></td>";
             else
@@ -1087,12 +1101,12 @@ class eff {
 
             echo "<tr>";
             echo "<td>" . $rf . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('max_dbdifference'), 2) . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('eta_pol_spill'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->max_dbdifference, 2) . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->eta_pol_spill, 2) . "</td>";
 
-            $pe = round(100 * $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('eta_pol_on_secondary'), 2);
+            $pe = round(100 * (float) $this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->eta_pol_on_secondary, 2);
             if ($pe < $p1spec)
                 echo "<td><font color ='#ff0000'>$pe</font></td>";
             else
@@ -1122,7 +1136,7 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             // if the polarization efficiency is less than the value calculated for $p0spec/$p1spec, display it as red:
-            $rf = floatval($this->scansets[$scanSetIdx]->GetValue('f'));
+            $rf = floatval($this->scansets[$scanSetIdx]->f);
             $p0spec = $p1spec = 0.0;
 
             $spec = $this->specsProvider->getSpecs('beameff', $this->effBand);
@@ -1141,12 +1155,12 @@ class eff {
 
             $html .= "<tr>";
             $html .= "<td>" . $rf . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('max_dbdifference'), 2) . "</td>";
-            $html .= "<td>" . round(100 * floatval($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('eta_pol_spill')), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->max_dbdifference, 2) . "</td>";
+            $html .= "<td>" . round(100 * floatval($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->eta_pol_spill), 2) . "</td>";
 
-            $pe = round(100 * floatval($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->GetValue('eta_pol_on_secondary')), 2);
+            $pe = round(100 * floatval($this->scansets[$scanSetIdx]->Scan_xpol_pol0->BeamEfficencies->eta_pol_on_secondary), 2);
             if ($pe < $p0spec)
                 $html .= "<td><font color ='#ff0000'>$pe</font></td>";
             else
@@ -1154,12 +1168,12 @@ class eff {
 
             $html .= "<tr>";
             $html .= "<td>" . $rf . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('max_dbdifference'), 2) . "</td>";
-            $html .= "<td>" . round(100 * floatval($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('eta_pol_spill')), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->max_dbdifference, 2) . "</td>";
+            $html .= "<td>" . round(100 * floatval($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->eta_pol_spill), 2) . "</td>";
 
-            $pe = round(100 * floatval($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->GetValue('eta_pol_on_secondary')), 2);
+            $pe = round(100 * floatval($this->scansets[$scanSetIdx]->Scan_xpol_pol1->BeamEfficencies->eta_pol_on_secondary), 2);
             if ($pe < $p1spec)
                 $html .= "<td><font color ='#ff0000'>$pe</font></td>";
             else
@@ -1187,16 +1201,16 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('defocus_efficiency'), 3) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->defocus_efficiency, 3) . "</td>";
 
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('defocus_efficiency'), 3) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->defocus_efficiency, 3) . "</td>";
         }
         //Meas SW Ver
         echo "<tr><td colspan='7'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
@@ -1217,16 +1231,16 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('defocus_efficiency'), 3) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->defocus_efficiency, 3) . "</td>";
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round(100 * $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('defocus_efficiency'), 3) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round(100 * (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->defocus_efficiency, 3) . "</td>";
         }
         //Meas SW Ver
         $html .= "<tr><td colspan='4'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
@@ -1246,10 +1260,10 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $az_diff = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_xcenter') - $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ff_xcenter'), 2);
-            $el_diff = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_ycenter') - $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ff_ycenter'), 2);
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $az_diff = round((float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ff_xcenter - (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ff_xcenter, 2);
+            $el_diff = round((float) $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ff_ycenter - (float) $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ff_ycenter, 2);
             echo "<td>$az_diff</td>";
             echo "<td>$el_diff</td></tr>";
         }
@@ -1272,10 +1286,10 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $az_diff = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_xcenter') - $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ff_xcenter'), 2);
-            $el_diff = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ff_ycenter') - $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ff_ycenter'), 2);
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $az_diff = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ff_xcenter - $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ff_xcenter, 2);
+            $el_diff = round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ff_ycenter - $this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ff_ycenter, 2);
             $html .= "<td>$az_diff</td>";
             $html .= "<td>$el_diff</td></tr>";
         }
@@ -1305,11 +1319,11 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
 
-            $s = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('squint'), 2);
-            $sas = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('squint_arcseconds'), 2);
+            $s = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->squint, 2);
+            $sas = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->squint_arcseconds, 2);
             if ($s > 10) {
                 echo "<td><font color='#ff0000'>$s</font></td>";
                 echo "<td><font color='#ff0000'>$sas</font></td>";
@@ -1350,11 +1364,11 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
 
-            $s = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('squint'), 2);
-            $sas = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('squint_arcseconds'), 2);
+            $s = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->squint, 2);
+            $sas = round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->squint_arcseconds, 2);
             if ($s > 10) {
                 $html .= "<td><font color='#ff0000'>$s</font></td>";
                 $html .= "<td><font color='#ff0000'>$sas</font></td>";
@@ -1389,31 +1403,31 @@ class eff {
 
         // get the x and y correction factor to be applied to x90, y90 for computing difference below:
         $corrected_pol = 0;
-        $x_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x_corr');
-        $y_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y_corr');
+        $x_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->x_corr;
+        $y_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->y_corr;
 
         if ($x_corr == 0 && $y_corr == 0) {
             $corrected_pol = 1;
             // UGLY: have to get this from pol1 since we're not storing corrected_pol:
-            $x_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x_corr');
-            $y_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y_corr');
+            $x_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->x_corr;
+            $y_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->y_corr;
         }
 
         echo "<tr>";
-        echo "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
-        echo "<td>" . $this->scansets[0]->Scan_copol_pol0->GetValue('pol') . "</td>";
-        echo "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
-        echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_x'), 2) . "</td>";
-        echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_y'), 2) . "</td>";
-        echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_z'), 2) . "</td></tr>";
+        echo "<td>" . $this->scansets[0]->f . "</td>";
+        echo "<td>" . $this->scansets[0]->Scan_copol_pol0->pol . "</td>";
+        echo "<td>" . $this->scansets[0]->tilt . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->delta_x, 2) . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->delta_y, 2) . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->delta_z, 2) . "</td></tr>";
 
         echo "<tr>";
-        echo "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
-        echo "<td>" . $this->scansets[0]->Scan_copol_pol1->GetValue('pol') . "</td>";
-        echo "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
-        echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_x'), 2) . "</td>";
-        echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_y'), 2) . "</td>";
-        echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_z'), 2) . "</td></tr>";
+        echo "<td>" . $this->scansets[0]->f . "</td>";
+        echo "<td>" . $this->scansets[0]->Scan_copol_pol1->pol . "</td>";
+        echo "<td>" . $this->scansets[0]->tilt . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->delta_x, 2) . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->delta_y, 2) . "</td>";
+        echo "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->delta_z, 2) . "</td></tr>";
 
         echo "<tr><th colspan='3'>Phase center correction (pol $corrected_pol):</th>";
         echo "<td>" . round($x_corr, 2) . "</td>";
@@ -1423,11 +1437,11 @@ class eff {
         // corrected_x and corrected_y are calcuated by beameff2.x  Only one pol actually differs from delta_x, delta_y
         // Since we are only displaying the differences we don't need to know which one.
         // TODO:  Using x90, y90, not for their original purpose
-        $x_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x90') -
-            $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x90');
+        $x_difference = (float) $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->x90 -
+            (float) $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->x90;
 
-        $y_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y90') -
-            $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y90');
+        $y_difference = (float) $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->y90 -
+            (float) $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->y90;
 
         //x_diff, y_diff from https://safe.nrao.edu/wiki/bin/view/ALMA/BeamSquintFromSingleScan#correctionProcedure
         echo "<tr><th colspan='3'>Corrected difference between phase centers:</th>";
@@ -1437,7 +1451,7 @@ class eff {
 
         //echo "<tr class = 'alt'><th colspan='6'></th></tr>";
         echo "<tr><th colspan='3'>Distance between pol 0 and pol 1 phase centers:</th>";
-        echo "<td colspan='2'><center>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('DistanceBetweenBeamCenters'), 2) . "</th><th></td></tr>";
+        echo "<td colspan='2'><center>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->DistanceBetweenBeamCenters, 2) . "</th><th></td></tr>";
         echo "</tr>";
         echo "<tr><td colspan='6'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         echo "</table></div>";
@@ -1460,31 +1474,31 @@ class eff {
 
         // get the x and y correction factor to be applied to x90, y90 for computing difference below:
         $corrected_pol = 0;
-        $x_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x_corr');
-        $y_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y_corr');
+        $x_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->x_corr;
+        $y_corr = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->y_corr;
 
         if ($x_corr == 0 && $y_corr == 0) {
             $corrected_pol = 1;
             // UGLY: have to get this from pol1 since we're not storing corrected_pol:
-            $x_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x_corr');
-            $y_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y_corr');
+            $x_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->x_corr;
+            $y_corr = $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->y_corr;
         }
 
         $html .= "<tr>";
-        $html .= "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
-        $html .= "<td>" . $this->scansets[0]->Scan_copol_pol0->GetValue('pol') . "</td>";
-        $html .= "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
-        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_x'), 2) . "</td>";
-        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_y'), 2) . "</td>";
-        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('delta_z'), 2) . "</td></tr>";
+        $html .= "<td>" . $this->scansets[0]->f . "</td>";
+        $html .= "<td>" . $this->scansets[0]->Scan_copol_pol0->pol . "</td>";
+        $html .= "<td>" . $this->scansets[0]->tilt . "</td>";
+        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->delta_x, 2) . "</td>";
+        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->delta_y, 2) . "</td>";
+        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->delta_z, 2) . "</td></tr>";
 
         $html .= "<tr>";
-        $html .= "<td>" . $this->scansets[0]->GetValue('f') . "</td>";
-        $html .= "<td>" . $this->scansets[0]->Scan_copol_pol1->GetValue('pol') . "</td>";
-        $html .= "<td>" . $this->scansets[0]->GetValue('tilt') . "</td>";
-        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_x'), 2) . "</td>";
-        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_y'), 2) . "</td>";
-        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('delta_z'), 2) . "</td></tr>";
+        $html .= "<td>" . $this->scansets[0]->f . "</td>";
+        $html .= "<td>" . $this->scansets[0]->Scan_copol_pol1->pol . "</td>";
+        $html .= "<td>" . $this->scansets[0]->tilt . "</td>";
+        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->delta_x, 2) . "</td>";
+        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->delta_y, 2) . "</td>";
+        $html .= "<td>" . round($this->scansets[0]->Scan_copol_pol1->BeamEfficencies->delta_z, 2) . "</td></tr>";
 
         $html .= "<tr><th colspan='3'>Phase center correction (pol $corrected_pol):</th>";
         $html .= "<td>" . round($x_corr, 2) . "</td>";
@@ -1494,11 +1508,11 @@ class eff {
         // corrected_x and corrected_y are calcuated by beameff2.x  Only one pol actually differs from delta_x, delta_y
         // Since we are only displaying the differences we don't need to know which one.
         // TODO:  Using x90, y90, not for their original purpose
-        $x_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('x90') -
-            $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('x90');
+        $x_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->x90 -
+            $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->x90;
 
-        $y_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('y90') -
-            $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->GetValue('y90');
+        $y_difference = $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->y90 -
+            $this->scansets[0]->Scan_copol_pol1->BeamEfficencies->y90;
 
         //x_diff, y_diff from https://safe.nrao.edu/wiki/bin/view/ALMA/BeamSquintFromSingleScan#correctionProcedure
         $html .= "<tr><th colspan='3'>Corrected difference between phase centers:</th>";
@@ -1508,7 +1522,7 @@ class eff {
 
         //$html .= "<tr class = 'alt'><th colspan='6'></th></tr>";
         $html .= "<tr><th colspan='3'>Distance between pol 0 and pol 1 phase centers:</th>";
-        $html .= "<td colspan='2'><center>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('DistanceBetweenBeamCenters'), 2) . "</th><th></td></tr>";
+        $html .= "<td colspan='2'><center>" . round($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->DistanceBetweenBeamCenters, 2) . "</th><th></td></tr>";
         $html .= "</tr>";
         $html .= "<tr><td colspan='6'><font size='-1'><i>" . $this->SoftwareVersionString() . "</i></font></td></tr>";
         $html .= "</table></div>";
@@ -1534,28 +1548,28 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_amp'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_width_deg'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_u_off'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_v_off'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_d_0_90'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_d_45_135'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_edge_db'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_amp, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_width_deg, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_u_off, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_v_off, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_d_0_90, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_d_45_135, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_edge_db, 2) . "</td>";
 
             echo "<tr>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_amp'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_width_deg'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_u_off'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_v_off'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_d_0_90'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_d_45_135'), 2) . "</td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_edge_db'), 2) . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_amp, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_width_deg, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_u_off, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_v_off, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_d_0_90, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_d_45_135, 2) . "</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_edge_db, 2) . "</td>";
         }
         echo "</table><br>";
     }
@@ -1580,28 +1594,28 @@ class eff {
 
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_amp'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_width_deg'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_u_off'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_v_off'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_d_0_90'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_d_45_135'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('ampfit_edge_db'), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_amp, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_width_deg, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_u_off, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_v_off, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_d_0_90, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_d_45_135, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->ampfit_edge_db, 2) . "</td>";
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_amp'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_width_deg'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_u_off'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_v_off'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_d_0_90'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_d_45_135'), 2) . "</td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->GetValue('ampfit_edge_db'), 2) . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_amp, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_width_deg, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_u_off, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_v_off, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_d_0_90, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_d_45_135, 2) . "</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->BeamEfficencies->ampfit_edge_db, 2) . "</td>";
         }
         $html .= "</table><br>";
         return $html;
@@ -1612,7 +1626,7 @@ class eff {
         echo "<table id = 'table1' border='1'>";
 
         echo "<tr class = 'alt'>
-            <th colspan = 6>Scan Information Band $this->effBand (" . $this->scansets[0]->GetValue('TS') . ")</th>
+            <th colspan = 6>Scan Information Band $this->effBand (" . $this->scansets[0]->TS . ")</th>
             <th colspan = 4>Export CSV</th>
             </tr>";
 
@@ -1634,21 +1648,21 @@ class eff {
             if ($count % 2 == 0) {
                 $trclass = 'alt';
             }
-            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS'))) . " " . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS');
+            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->TS)) . " " . $this->scansets[$scanSetIdx]->Scan_copol_pol0->TS;
 
             echo "<tr class='$trclass'>";
-            echo "<td width = '30px'>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td width = '30px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td width = '80px'>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td width = '30px'>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td width = '30px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td width = '80px'>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
             echo "<td width ='180px'>" . $ts . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
 
             echo "<td>" . $nsi_filename . "</a></td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ampdrift'), 2) . " dB, "
-                . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('phasedrift'), 2) . " deg</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->ampdrift, 2) . " dB, "
+                . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->phasedrift, 2) . " deg</td>";
 
             $keyScanSet = $this->scansets[$scanSetIdx]->keyId;
 
@@ -1670,20 +1684,20 @@ class eff {
                 $trclass = 'alt';
             }
             echo "<tr class='$trclass'>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
             echo "<td width='160px'>"
-                . strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS'))) . " "
-                . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS') . "</td>";
+                . strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol1->TS)) . " "
+                . $this->scansets[$scanSetIdx]->Scan_copol_pol1->TS . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol1->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
 
             echo "<td>" . $nsi_filename . "</a></td>";
-            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ampdrift'), 2) . " dB, "
-                . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('phasedrift'), 2) . " deg</td>";
+            echo "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->ampdrift, 2) . " dB, "
+                . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->phasedrift, 2) . " deg</td>";
 
             echo "<td><a href='export_to_csv.php?which=nf&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_copol_pol1->keyId . "'>copol</a></td>";
@@ -1707,7 +1721,7 @@ class eff {
         $html .= "<div class='scan-information'>";
         $html .= "<table class='table-scan'>";
         $html .= "<tr>
-            <th class='table-name' colspan=10>Scan Information Band $this->effBand (" . $this->scansets[0]->GetValue('TS') . ")</th>
+            <th class='table-name' colspan=10>Scan Information Band $this->effBand (" . $this->scansets[0]->TS . ")</th>
             </tr>";
 
         $html .= "<tr>
@@ -1724,21 +1738,21 @@ class eff {
         $count = 0;
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
             $count += 1;
-            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS'))) . " " . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('TS');
+            $ts = strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol0->TS)) . " " . $this->scansets[$scanSetIdx]->Scan_copol_pol0->TS;
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
             $html .= "<td>" . $ts . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
 
             $html .= "<td>" . $nsi_filename . "</a></td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ampdrift'), 2) . " dB, "
-                . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('phasedrift'), 2) . " deg</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->ampdrift, 2) . " dB, "
+                . round($this->scansets[$scanSetIdx]->Scan_copol_pol0->phasedrift, 2) . " deg</td>";
 
             $keyScanSet = $this->scansets[$scanSetIdx]->keyId;
 
@@ -1757,20 +1771,20 @@ class eff {
             $count += 1;
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
             $html .= "<td>"
-                . strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS'))) . " "
-                . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('TS') . "</td>";
+                . strftime("%a", strtotime($this->scansets[$scanSetIdx]->Scan_copol_pol1->TS)) . " "
+                . $this->scansets[$scanSetIdx]->Scan_copol_pol1->TS . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol1->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
 
             $html .= "<td>" . $nsi_filename . "</a></td>";
-            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ampdrift'), 2) . " dB, "
-                . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('phasedrift'), 2) . " deg</td>";
+            $html .= "<td>" . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->ampdrift, 2) . " dB, "
+                . round($this->scansets[$scanSetIdx]->Scan_copol_pol1->phasedrift, 2) . " deg</td>";
 
             $html .= "<td><a href='export_to_csv.php?which=nf&setid=$keyScanSet&detid="
                 . $this->scansets[$scanSetIdx]->Scan_copol_pol1->keyId . "'>copol</a></td>";
@@ -1807,44 +1821,44 @@ class eff {
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
 
             echo "<tr>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
             echo "<td align = 'left'>" . $nsi_filename . "</td>";
 
-            echo "<td width = '80px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ifatten') . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('ifatten') . "</td>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('SourceRotationAngle') . "</td>";
+            echo "<td width = '80px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->ifatten . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->ifatten . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->SourceRotationAngle . "</td>";
             echo "<tr>";
 
             echo "<tr class='alt'>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol1->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
             echo "<td align = 'left'>" . $nsi_filename . "</td>";
 
-            echo "<td width = '80px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ifatten') . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('ifatten') . "</td>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('SourceRotationAngle') . "</td>";
+            echo "<td width = '80px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->ifatten . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->ifatten . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->SourceRotationAngle . "</td>";
             echo "<tr>";
             echo "<tr>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('pol') . "</td>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_180->pol . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_180->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_180->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
             echo "<td align = 'left'>" . $nsi_filename . "<font color = '#ff0000' size='-2'> * used to correct phase centers</font></td>";
 
-            echo "<td width = '100px'>" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('ifatten') . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('ifatten') . "</td>";
-            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('SourceRotationAngle') . "</td>";
+            echo "<td width = '100px'>" . $this->scansets[$scanSetIdx]->Scan_180->ifatten . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->ifatten . "</td>";
+            echo "<td width = '50px'>" . $this->scansets[$scanSetIdx]->Scan_180->SourceRotationAngle . "</td>";
             echo "<tr>";
         }
         //Meas SW Ver
@@ -1870,44 +1884,44 @@ class eff {
         for ($scanSetIdx = 0; $scanSetIdx < $this->NumberOfScanSets; $scanSetIdx++) {
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol0->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
             $html .= "<td>" . $nsi_filename . "</td>";
 
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('ifatten') . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->GetValue('ifatten') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->GetValue('SourceRotationAngle') . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->ifatten . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol0->ifatten . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol0->SourceRotationAngle . "</td>";
             $html .= "<tr>";
 
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_copol_pol1->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
             $html .= "<td>" . $nsi_filename . "</td>";
 
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('ifatten') . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('ifatten') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->GetValue('SourceRotationAngle') . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->ifatten . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->ifatten . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_copol_pol1->SourceRotationAngle . "</td>";
             $html .= "<tr>";
             $html .= "<tr>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('f') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('pol') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->GetValue('tilt') . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->f . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_180->pol . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->tilt . "</td>";
 
-            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_180->GetValue('nsi_filename');
+            $nsi_filename = $this->scansets[$scanSetIdx]->Scan_180->nsi_filename;
             $nameOffset = strripos($nsi_filename, "band");    // find last occurance, case-insensitive
             $nsi_filename = substr($nsi_filename, $nameOffset);
             $html .= "<td>" . $nsi_filename . "<font color = '#ff0000' size='-2'> * used to correct phase centers</font></td>";
 
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('ifatten') . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->GetValue('ifatten') . "</td>";
-            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_180->GetValue('SourceRotationAngle') . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_180->ifatten . ", " . $this->scansets[$scanSetIdx]->Scan_xpol_pol1->ifatten . "</td>";
+            $html .= "<td>" . $this->scansets[$scanSetIdx]->Scan_180->SourceRotationAngle . "</td>";
             $html .= "<tr>";
         }
         //Meas SW Ver
@@ -1917,12 +1931,14 @@ class eff {
     }
 
     function Display_PointingAnglesPlot() {
-        echo "<img src='" . $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('pointing_angles_plot') . "'>";
+        global $site_storage;
+        echo "<img src='" . $site_storage . $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->pointing_angles_plot . "'>";
     }
 
     function Display_PointingAnglesPlot_html() {
         $html = "";
-        $html .= "<div class='pointing-plot'><img src='" . $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->GetValue('pointing_angles_plot') . "'></div>";
+        global $site_storage;
+        $html .= "<div class='pointing-plot'><img src='" . $site_storage . $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->pointing_angles_plot . "'></div>";
         return $html;
     }
 
@@ -1941,9 +1957,9 @@ class eff {
     }
 
     function Display_AmpPhasePlots($scanset, $inpol = 'both', $nf_ff = 'both') {
-        $f = $scanset->GetValue('f');
-        $tilt = $scanset->GetValue('tilt');
-
+        $f = $scanset->f;
+        $tilt = $scanset->tilt;
+        global $site_storage;
         if ($inpol == 0 || $inpol == 'both') {
             if ($nf_ff == 'nf' || $nf_ff == 'both') {
                 // display Pol0 NF plots:
@@ -1956,20 +1972,20 @@ class eff {
                     </tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nfamp') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nfphase') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfphase . "'>";
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_nfamp') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_nfphase') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfphase . "'>";
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -1984,20 +2000,20 @@ class eff {
                     </tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_ffamp') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_ffphase') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffphase . "'>";
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_ffamp') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_ffphase') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffphase . "'>";
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -2014,20 +2030,20 @@ class eff {
                     </tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_nfamp') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_nfphase') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfphase . "'>";
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_nfamp') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_nfphase') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfphase . "'>";
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -2042,20 +2058,20 @@ class eff {
                     </tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_ffamp') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_ffphase') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffphase . "'>";
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_ffamp') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_ffphase') . "'>";
+                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffphase . "'>";
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -2065,8 +2081,9 @@ class eff {
 
     function Display_AmpPhasePlots_html($scanset, $inpol = 'both', $nf_ff = 'both') {
         $html = "";
-        $f = $scanset->GetValue('f');
-        $tilt = $scanset->GetValue('tilt');
+        $f = $scanset->f;
+        $tilt = $scanset->tilt;
+        global $site_storage;
         $html .= "<div class='amp-phase-pol-$inpol-$nf_ff'>";
         if ($inpol == 0 || $inpol == 'both') {
             if ($nf_ff == 'nf' || $nf_ff == 'both') {
@@ -2080,20 +2097,20 @@ class eff {
                     </tr>";
 
                 $html .= "<tr>";
-                $html .= "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nfamp') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfamp . "'>";
                 $html .= "</td>";
 
-                $html .= "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_nfphase') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfphase . "'>";
                 $html .= "</td>";
                 $html .= "</tr>";
 
                 $html .= "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 $html .= "<tr>";
-                $html .= "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_nfamp') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfamp . "'>";
                 $html .= "</td>";
 
-                $html .= "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_nfphase') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfphase . "'>";
                 $html .= "</td>";
                 $html .= "</tr>";
                 $html .= "</table>";
@@ -2108,20 +2125,20 @@ class eff {
                     </tr>";
 
                 $html .= "<tr>";
-                $html .= "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_ffamp') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffamp . "'>";
                 $html .= "</td>";
 
-                $html .= "<td><img src='" . $scanset->Scan_copol_pol0->BeamEfficencies->GetValue('plot_copol_ffphase') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffphase . "'>";
                 $html .= "</td>";
                 $html .= "</tr>";
 
                 $html .= "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 $html .= "<tr>";
-                $html .= "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_ffamp') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffamp . "'>";
                 $html .= "</td>";
 
-                $html .= "<td><img src='" . $scanset->Scan_xpol_pol0->BeamEfficencies->GetValue('plot_xpol_ffphase') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffphase . "'>";
                 $html .= "</td>";
                 $html .= "</tr>";
                 $html .= "</table>";
@@ -2138,20 +2155,20 @@ class eff {
                     </tr>";
 
                 $html .= "<tr>";
-                $html .= "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_nfamp') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfamp . "'>";
                 $html .= "</td>";
 
-                $html .= "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_nfphase') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfphase . "'>";
                 $html .= "</td>";
                 $html .= "</tr>";
 
                 $html .= "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 $html .= "<tr>";
-                $html .= "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_nfamp') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfamp . "'>";
                 $html .= "</td>";
 
-                $html .= "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_nfphase') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfphase . "'>";
                 $html .= "</td>";
                 $html .= "</tr>";
                 $html .= "</table>";
@@ -2166,20 +2183,20 @@ class eff {
                     </tr>";
 
                 $html .= "<tr>";
-                $html .= "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_ffamp') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffamp . "'>";
                 $html .= "</td>";
 
-                $html .= "<td><img src='" . $scanset->Scan_copol_pol1->BeamEfficencies->GetValue('plot_copol_ffphase') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffphase . "'>";
                 $html .= "</td>";
                 $html .= "</tr>";
 
                 $html .= "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 $html .= "<tr>";
-                $html .= "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_ffamp') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffamp . "'>";
                 $html .= "</td>";
 
-                $html .= "<td><img src='" . $scanset->Scan_xpol_pol1->BeamEfficencies->GetValue('plot_xpol_ffphase') . "'>";
+                $html .= "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffphase . "'>";
                 $html .= "</td>";
                 $html .= "</tr>";
                 $html .= "</table>";
@@ -2194,7 +2211,7 @@ class eff {
             $keyScanSet = $this->scansets[$scanSetIdx]->keyId;
             $tdh = $this->scansets[$scanSetIdx]->tdh->keyId;
             $destFile = $outputDir . "BeamEff_B" . $this->effBand . "_H" . $tdh . ".ini";
-            $sourceFile = $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eff_output_file');
+            $sourceFile = $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->eff_output_file;
             if (file_exists($sourceFile)) {
                 copy($sourceFile, $destFile);
                 echo "Exported '$destFile'.<br>";
@@ -2210,7 +2227,7 @@ class eff {
             $keyScanSet = $this->scansets[$scanSetIdx]->keyId;
             $tdh = $this->scansets[$scanSetIdx]->tdh->keyId;
             $destFile = $outputDir . "BeamEff_B" . $this->effBand . "_H" . $tdh . ".ini";
-            $sourceFile = $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->GetValue('eff_output_file');
+            $sourceFile = $this->scansets[$scanSetIdx]->Scan_copol_pol0->BeamEfficencies->eff_output_file;
             if (file_exists($sourceFile)) {
                 copy($sourceFile, $destFile);
                 $html .= "Exported '$destFile'.<br>";

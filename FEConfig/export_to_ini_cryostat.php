@@ -8,22 +8,21 @@ $fc = $_REQUEST['fc'];
 
 if ($datatype == "tempsensors") {
 
-    $cryostat = new Cryostat;
-    $cryostat->Initialize_Cryostat($Cryostat_keyId, $fc);
+    $cryostat = new Cryostat($Cryostat_keyId, $fc);
 
-    $title1  = $cryostat->tempsensors[1]->GetValue('location');
-    $title2  = $cryostat->tempsensors[2]->GetValue('location');
-    $title3  = $cryostat->tempsensors[3]->GetValue('location');
-    $title4  = $cryostat->tempsensors[4]->GetValue('location');
-    $title5  = $cryostat->tempsensors[5]->GetValue('location');
-    $title6  = $cryostat->tempsensors[6]->GetValue('location');
-    $title7  = $cryostat->tempsensors[7]->GetValue('location');
-    $title8  = $cryostat->tempsensors[8]->GetValue('location');
-    $title9  = $cryostat->tempsensors[9]->GetValue('location');
-    $title10 = $cryostat->tempsensors[10]->GetValue('location');
-    $title11 = $cryostat->tempsensors[11]->GetValue('location');
-    $title12 = $cryostat->tempsensors[12]->GetValue('location');
-    $title13 = $cryostat->tempsensors[13]->GetValue('location');
+    $title1  = $cryostat->tempsensors[1]->location;
+    $title2  = $cryostat->tempsensors[2]->location;
+    $title3  = $cryostat->tempsensors[3]->location;
+    $title4  = $cryostat->tempsensors[4]->location;
+    $title5  = $cryostat->tempsensors[5]->location;
+    $title6  = $cryostat->tempsensors[6]->location;
+    $title7  = $cryostat->tempsensors[7]->location;
+    $title8  = $cryostat->tempsensors[8]->location;
+    $title9  = $cryostat->tempsensors[9]->location;
+    $title10 = $cryostat->tempsensors[10]->location;
+    $title11 = $cryostat->tempsensors[11]->location;
+    $title12 = $cryostat->tempsensors[12]->location;
+    $title13 = $cryostat->tempsensors[13]->location;
 
     $fname = "cryo.ini";
     header("Content-type: text/plain");
@@ -50,23 +49,23 @@ if ($datatype == "tempsensors") {
     echo ";Electronic Serial Number (ESN)\r\n";
     echo "ESN='FF FF FF FF FF FF FF FF'\r\n";
     echo ";Cryostat Serial Number (SN)\r\n";
-    echo "SN=" . $cryostat->GetValue('SN')   . "\r\n";
+    echo "SN=" . $cryostat->SN   . "\r\n";
 
 
     for ($i = 1; $i < 13; $i++) {
 
-        switch ($cryostat->tempsensors[$i]->GetValue('location')) {
+        switch ($cryostat->tempsensors[$i]->location) {
             case "4K Cryocooler Stage":
                 echo "\r\n";
                 echo "[CRYOCOOLER_4K]\r\n";
                 echo ";Use:  4K Cryocooler stage\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'), -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type, -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -76,12 +75,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_4K_LINK_2]\r\n";
                 echo ";Use:  4K plate near link b\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -91,12 +90,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_4K_LINK_1]\r\n";
                 echo ";Use:  4K plate near link a\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'), -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type, -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -108,12 +107,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_4K_FAR_2]\r\n";
                 echo ";Use:  4K plate far side a \r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -123,12 +122,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_4K_FAR_1]\r\n";
                 echo ";Use:  4K plate far side B \r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -138,12 +137,12 @@ if ($datatype == "tempsensors") {
                 echo "[CRYOCOOLER_12K]\r\n";
                 echo ";Use:  15K Cryocooler stage\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -153,12 +152,12 @@ if ($datatype == "tempsensors") {
                 echo "[CRYOCOOLER_12K]\r\n";
                 echo ";Use:  15K Cryocooler stage\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -169,12 +168,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_12K_LINK]\r\n";
                 echo ";Use:  15K plate near link\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -184,12 +183,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_12K_LINK]\r\n";
                 echo ";Use:  15K plate near link\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -199,12 +198,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_12K_FAR]\r\n";
                 echo ";Use:  15K plate far side\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -214,12 +213,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_12K_FAR]\r\n";
                 echo ";Use:  15K plate far side\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -229,12 +228,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_12K_SHIELD]\r\n";
                 echo ";Use:  15K shield top\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -244,12 +243,12 @@ if ($datatype == "tempsensors") {
                 echo "[PLATE_12K_SHIELD]\r\n";
                 echo ";Use:  15K shield top\r\n";
                 echo ";TVO Sensor Serial Number\r\n";
-                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->GetValue('sensor_type'),  -7) . "\r\n";
+                echo "TVO_NO=" . substr($cryostat->tempsensors[$i]->sensor_type,  -7) . "\r\n";
                 echo ";Comma separated coeffcient for TVO starting with X^0 (Tab or space work as well)\r\n";
-                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->GetValue("k1");
+                echo "TVO_COEFFS=" . $cryostat->tempsensors[$i]->k1;
 
                 for ($k = 2; $k <= 7; $k++) {
-                    echo "," . $cryostat->tempsensors[$i]->GetValue("k$k");
+                    echo "," . $cryostat->tempsensors[$i]->{"k$k"};
                 }
                 echo "\r\n";
                 break;
@@ -258,5 +257,3 @@ if ($datatype == "tempsensors") {
 
     unset($cryostat);
 }
-
-?>

@@ -30,35 +30,34 @@ if ($get_all == 1) {
 }
 
 
-$fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($id, $fc, FrontEnd::INIT_ALL);
+$fe = new FrontEnd(NULL, $fc, FrontEnd::INIT_ALL, $id);
 
 $lprSN = 1;
-if ($fe->lpr->GetValue('SN') != '') {
-    $lprSN = ltrim($fe->lpr->GetValue('SN'), '0');
+if ($fe->lpr->SN != '') {
+    $lprSN = ltrim($fe->lpr->SN, '0');
 }
 
 if ($get_all == 1) {
     echo "[configuration]\r\n";
     echo "; options to select which configuration data is loaded\r\n";
     echo "providerCode=$fc\r\n";
-    echo "configId=" . ltrim($fe->GetValue('SN'), '0') . "\r\n\r\n";
+    echo "configId=" . ltrim($fe->SN, '0') . "\r\n\r\n";
 
-    echo "[~Configuration$fc-" . ltrim($fe->GetValue('SN'), '0')  . "]\r\n";
-    echo "Description=FE-" . ltrim($fe->GetValue('SN'), '0') . " bands ";
+    echo "[~Configuration$fc-" . ltrim($fe->SN, '0')  . "]\r\n";
+    echo "Description=FE-" . ltrim($fe->SN, '0') . " bands ";
     for ($i = 1; $i <= 10; $i++) {
         if (isset($fe->ccas[$i]->keyId) && $fe->ccas[$i]->keyId != '') {
-            echo $fe->ccas[$i]->GetValue('Band');
+            echo $fe->ccas[$i]->Band;
         }
     }
     echo ", WCAs";
     for ($i = 1; $i <= 10; $i++) {
         if (isset($fe->wcas[$i]->keyId) && $fe->wcas[$i]->keyId != '') {
-            echo $fe->wcas[$i]->GetValue('Band');
+            echo $fe->wcas[$i]->Band;
         }
     }
     echo "\r\n";
-    echo "FrontEnd=$fc," . ltrim($fe->GetValue('SN'), '0')  . "\r\n";
+    echo "FrontEnd=$fc," . ltrim($fe->SN, '0')  . "\r\n";
     echo "CartAssembly=\r\n";
     echo "TS=" . date('Y-m-d H:i:s') . "\r\n\r\n";
 
@@ -98,7 +97,7 @@ SN=9999
  */
 
 
-    echo "[~FrontEnd$fc-" . ltrim($fe->GetValue('SN'), '0')  . "]\r\n";
+    echo "[~FrontEnd$fc-" . ltrim($fe->SN, '0')  . "]\r\n";
 
     //Get number of carts
     $cartcount = 0;
@@ -124,35 +123,35 @@ SN=9999
 
         //CCAs
         if (isset($fe->ccas[$cartbands[$i]]->keyId) && $fe->ccas[$cartbands[$i]]->keyId != '') {
-            echo $fe->ccas[$cartbands[$i]]->GetValue('Band') . "," . $fe->ccas[$cartbands[$i]]->GetValue('Band')
-                . "," . $fe->ccas[$cartbands[$i]]->GetValue('Band') . "," . ltrim($fe->ccas[$cartbands[$i]]->GetValue('SN'), '0') . ",";
+            echo $fe->ccas[$cartbands[$i]]->Band . "," . $fe->ccas[$cartbands[$i]]->Band
+                . "," . $fe->ccas[$cartbands[$i]]->Band . "," . ltrim($fe->ccas[$cartbands[$i]]->SN, '0') . ",";
         } else {
-            echo $fe->wcas[$cartbands[$i]]->GetValue('Band') . ",";
-            echo $fe->wcas[$cartbands[$i]]->GetValue('Band') . ",0,0,";
+            echo $fe->wcas[$cartbands[$i]]->Band . ",";
+            echo $fe->wcas[$cartbands[$i]]->Band . ",0,0,";
         }
         //WCAs
         if (isset($fe->wcas[$cartbands[$i]]->keyId) && $fe->wcas[$cartbands[$i]]->keyId != '') {
-            echo $fe->wcas[$cartbands[$i]]->GetValue('Band') . "," . ltrim($fe->wcas[$cartbands[$i]]->GetValue('SN'), '0') . "\r\n";
+            echo $fe->wcas[$cartbands[$i]]->Band . "," . ltrim($fe->wcas[$cartbands[$i]]->SN, '0') . "\r\n";
         } else {
             echo "0,0\r\n";
         }
     }
 
     echo
-    "Cryostat=" . ltrim($fe->GetValue('SN'), '0')  . "
+    "Cryostat=" . ltrim($fe->SN, '0')  . "
 LPR=$lprSN
 IFSwitch=1
 PowerDist=1
-SN=FE-" . ltrim($fe->GetValue('SN'), '0')  . "\r\n\r\n";
+SN=FE-" . ltrim($fe->SN, '0')  . "\r\n\r\n";
 
     echo "
-[~Cryostat$fc-" . ltrim($fe->GetValue('SN'), '0')  . "]
-SN=" . ltrim($fe->GetValue('SN'), '0')  . "
-ESN=" . $fe->cryostat->GetValue('ESN1')  . "
+[~Cryostat$fc-" . ltrim($fe->SN, '0')  . "]
+SN=" . ltrim($fe->SN, '0')  . "
+ESN=" . $fe->cryostat->ESN1  . "
 
 [~LPR$fc-" . ltrim($lprSN, '0') . "]
 SN=" . ltrim($lprSN, '0') . "
-ESN=" . $fe->lpr->GetValue('ESN1')  . "\r\n\r\n";
+ESN=" . $fe->lpr->ESN1  . "\r\n\r\n";
 } //end if getall = 1
 
 /*
@@ -174,9 +173,9 @@ if ($get_wca == '1') {
 
     for ($iwca = 1; $iwca <= 10; $iwca++) {
         if (isset($fe->wcas[$iwca]->keyId) && $fe->wcas[$iwca]->keyId != '') {
-            $band = $fe->wcas[$iwca]->GetValue('Band');
-            $sn   = ltrim($fe->wcas[$iwca]->GetValue('SN'), '0');
-            $esn  = $fe->wcas[$iwca]->GetValue('ESN1');
+            $band = $fe->wcas[$iwca]->Band;
+            $sn   = ltrim($fe->wcas[$iwca]->SN, '0');
+            $esn  = $fe->wcas[$iwca]->ESN1;
             $description = "Description=Band $band SN$sn";
             if ($esn == $fe->wcas[$iwca]->keyId) {
                 $esn = '';
@@ -187,8 +186,8 @@ if ($get_wca == '1') {
             //echo "SN=WCA$band-$sn\r\n";
             echo "SN=$sn\r\n";
             echo "ESN=$esn\r\n";
-            echo "FLOYIG=" . $fe->wcas[$iwca]->_WCAs->GetValue('FloYIG') . "\r\n";
-            echo "FHIYIG=" . $fe->wcas[$iwca]->_WCAs->GetValue('FhiYIG') . "\r\n";
+            echo "FLOYIG={$fe->wcas[$iwca]->_WCAs->FloYIG}\r\n";
+            echo "FHIYIG={$fe->wcas[$iwca]->_WCAs->FhiYIG}\r\n";
 
 
             //Get lowest LO
@@ -217,10 +216,10 @@ if ($get_wca == '1') {
 
             echo "LOParams=1\r\n";
             $mstring = "LOParam01=$lowlo";
-            //$mstring .= number_format($w->LOParams[$i]->GetValue('FreqLO'),3) . ",";
+            //$mstring .= number_format($w->LOParams[$i]->FreqLO,3) . ",";
             $mstring .= ",1.00,1.00,";
-            $mstring .= number_format($fe->wcas[$iwca]->_WCAs->GetValue('VG0'), 2) . ",";
-            $mstring .= number_format($fe->wcas[$iwca]->_WCAs->GetValue('VG1'), 2) . "\r\n";
+            $mstring .= number_format($fe->wcas[$iwca]->_WCAs->VG0, 2) . ",";
+            $mstring .= number_format($fe->wcas[$iwca]->_WCAs->VG1, 2) . "\r\n";
             echo $mstring;
 
 
@@ -255,9 +254,9 @@ if ($get_cca == '1') {
 
     for ($icca = 0; $icca <= 10; $icca++) {
         if (isset($fe->ccas[$icca]->keyId) && $fe->ccas[$icca]->keyId != '') {
-            $band = $fe->ccas[$icca]->GetValue('Band');
-            $sn   = ltrim($fe->ccas[$icca]->GetValue('SN'), '0');
-            $esn  = $fe->ccas[$icca]->GetValue('ESN1');
+            $band = $fe->ccas[$icca]->Band;
+            $sn   = ltrim($fe->ccas[$icca]->SN, '0');
+            $esn  = $fe->ccas[$icca]->ESN1;
             if ($esn == $fe->ccas[$icca]->keyId) {
                 $esn = '';
             }
@@ -270,7 +269,7 @@ if ($get_cca == '1') {
             echo "SN=$sn\r\n";
             echo "ESN=$esn\r\n";
 
-            switch ($fe->ccas[$icca]->GetValue('Band')) {
+            switch ($fe->ccas[$icca]->Band) {
                 case 1:
                     $mstring = "MagnetParams=0\r\n";
                     break;
@@ -299,7 +298,7 @@ if ($get_cca == '1') {
 
             echo $mstring;
 
-            if ($fe->ccas[$icca]->GetValue('Band') <= 2) {
+            if ($fe->ccas[$icca]->Band <= 2) {
                 echo "MixerParams=0\r\n";
             } else {
                 echo "MixerParams=" . (count($fe->ccas[$icca]->MixerParams)) . "\r\n";
@@ -323,14 +322,14 @@ if ($get_cca == '1') {
                 }
             }
 
-            
+
 
             $numpa = 4;
-            if ($fe->ccas[$icca]->GetValue('Band') == 9) {
+            if ($fe->ccas[$icca]->Band == 9) {
                 $numpa = 2;
             }
             $ij_precision = 2;
-            if ($fe->ccas[$icca]->GetValue('Band') == 3) {
+            if ($fe->ccas[$icca]->Band == 3) {
                 $ij_precision = 3;
             }
 
@@ -345,18 +344,18 @@ if ($get_cca == '1') {
                 if ($i >= 9) {
                     $mstring = "PreampParam" . ($i + 1) . "=";
                 }
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('FreqLO'), 3) . ",";
-                $mstring .= $fe->ccas[$icca]->PreampParams[$i]->GetValue('Pol') . ",";
-                $mstring .= $fe->ccas[$icca]->PreampParams[$i]->GetValue('SB') . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VD1'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VD2'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VD3'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('ID1'), $ij_precision) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('ID2'), $ij_precision) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('ID3'), $ij_precision) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VG1'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VG2'), 2) . ",";
-                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->GetValue('VG3'), 2) . "\r\n";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->FreqLO, 3) . ",";
+                $mstring .= $fe->ccas[$icca]->PreampParams[$i]->Pol . ",";
+                $mstring .= $fe->ccas[$icca]->PreampParams[$i]->SB . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VD1, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VD2, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VD3, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->ID1, $ij_precision) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->ID2, $ij_precision) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->ID3, $ij_precision) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VG1, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VG2, 2) . ",";
+                $mstring .= number_format($fe->ccas[$icca]->PreampParams[$i]->VG3, 2) . "\r\n";
                 echo $mstring;
             }
             //}//end !7
@@ -367,5 +366,3 @@ if ($get_cca == '1') {
         } //end if keyId != ''
     } //end for icca
 }
-
-?>

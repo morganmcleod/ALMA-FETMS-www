@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ALMA - Atacama Large Millimeter Array
  * (c) Associated Universities Inc., 2014
@@ -32,7 +33,8 @@ class GnuplotWrapper {
     protected $plotAttribs;     // Named attributes for the plot
     protected $commandFile;     // The command filename to pass to Gnuplot
     protected $gnuplot;         // Gnuplot command on this system.
-    protected $swVersion;       // Software verision of this class
+    protected $swVersion;       // Software version of this class
+    protected $listTempFiles;   // A list of temporary files for later deletion
 
     const BAD_GROUPBY = -999;
 
@@ -49,7 +51,7 @@ class GnuplotWrapper {
          */
         require(site_get_config_main());
         $this->resetPlotter();
-        $this->band = 0;
+        $this->Band = 0;
         $this->specs = array();
         $this->labelLocations = array(array(0.01, 0.01), array(0.01, 0.04), array(0.01, 0.07), array(0.01, 0.07));
         $a = func_get_args();
@@ -59,8 +61,9 @@ class GnuplotWrapper {
         if ($i >= 2)
             $this->outputDir = $a[1];
         if ($i >= 3)
-            $this->band = $a[2];
+            $this->Band = $a[2];
         $this->gnuplot = $GNUPLOT;
+        $this->listTempFiles = array();
     }
 
     /**
@@ -84,7 +87,7 @@ class GnuplotWrapper {
      */
     public function setParams($outputDir = '', $band = 0) {
         $this->outputDir = $outputDir;
-        $this->band = $band;
+        $this->Band = $band;
     }
 
     /**
@@ -121,13 +124,13 @@ class GnuplotWrapper {
     public function print_data() {
         $keys = array_keys($this->data[0]);
         echo "<tr>";
-        for ($i=0; $i<count($keys); $i++) {
+        for ($i = 0; $i < count($keys); $i++) {
             echo "<td>" . $keys[$i] . "</td>";
         }
         echo "</tr>";
         foreach ($this->data as $d) {
             echo "<tr>";
-            for ($i=0; $i<count($keys); $i++) {
+            for ($i = 0; $i < count($keys); $i++) {
                 if (isset($d[$keys[$i]])) {
                     echo "<td>" . $d[$keys[$i]] . "</td>";
                 } else {
@@ -149,11 +152,11 @@ class GnuplotWrapper {
         $file = file($file_path);
         $keys = explode("\t", $file[0]);
         $data = array();
-        for ($i = 1; $i<count($file); $i++) {
+        for ($i = 1; $i < count($file); $i++) {
             $values = explode("\t", $file[$i]);
             $d = array();
-            for ($j=0; $j<count($keys); $j++) {
-                if($values[$j] != "\n") {
+            for ($j = 0; $j < count($keys); $j++) {
+                if ($values[$j] != "\n") {
                     $d[$keys[$j]] = $values[$j];
                 }
             }
@@ -175,13 +178,13 @@ class GnuplotWrapper {
         $keys = array_keys($data[0]);
 
         $file = fopen($file_path, 'w');
-        for($i=0; $i<count($keys); $i++) {
+        for ($i = 0; $i < count($keys); $i++) {
             fwrite($file, $keys[$i] . "\t");
         }
         fwrite($file, "\n");
-        foreach($data as $d) {
-            for ($i=0; $i<count($keys); $i++) {
-                if(isset($d[$keys[$i]])) {
+        foreach ($data as $d) {
+            for ($i = 0; $i < count($keys); $i++) {
+                if (isset($d[$keys[$i]])) {
                     fwrite($file, $d[$keys[$i]] . "\t");
                 } else {
                     fwrite($file, "NULL\t");
@@ -209,6 +212,7 @@ class GnuplotWrapper {
         // open the first file:
         $fileIndex = 0;
         $temp_data_file = "$this->outputDir/temp_data$fileIndex.txt";
+        array_push($this->listTempFiles, $temp_data_file);
         $f = fopen($temp_data_file, 'w');
 
         // loop for all rows:
@@ -230,6 +234,7 @@ class GnuplotWrapper {
                         // open the next file:
                         $fileIndex++;
                         $temp_data_file = "$this->outputDir/temp_data$fileIndex.txt";
+                        array_push($this->listTempFiles, $temp_data_file);
                         $f = fopen($temp_data_file, 'w');
                     }
                     // Make this the current group:
@@ -241,6 +246,13 @@ class GnuplotWrapper {
         }
         // close the last file:
         fclose($f);
+    }
+
+    public function deleteTempFiles() {
+        foreach ($this->listTempFiles as $tempfile) {
+            unlink($tempfile);
+        }
+        $this->listTempFiles = array();
     }
 
     /**
@@ -259,7 +271,7 @@ class GnuplotWrapper {
 
         $spec_file = "$this->outputDir/specData.txt";
         $fspec = fopen($spec_file, 'w');
-        for ($j=0; $j<count($x); $j++) {
+        for ($j = 0; $j < count($x); $j++) {
             fwrite($fspec, $x[$j] . "\t" . $spec . "\n");
         }
         fclose($fspec);
@@ -267,6 +279,10 @@ class GnuplotWrapper {
         $temp = ",'" . $this->outputDir . "/specData.txt' using 1:2 with lines lt -1 lw 5 title 'Spec'";
 
         $this->plotAttribs['specAtt'] = $temp;
+    }
+
+    public function deleteSpecsFile() {
+        unlink("$this->outputDir/specData.txt");
     }
 
     /**
@@ -286,7 +302,7 @@ class GnuplotWrapper {
         $temp = "set terminal png";
         if ($xwin && $ywin)
             $temp .= " size $xwin,$ywin";
-        if($crop)
+        if ($crop)
             $temp .= " crop";
         $temp .= "\n";
         $this->plotAttribs['size'] = $temp;
@@ -306,7 +322,7 @@ class GnuplotWrapper {
      * 'outside' for outside, FALSE if plot should not be shown
      */
     public function plotKey($request) {
-        if($request == 'outside') {
+        if ($request == 'outside') {
             $this->plotAttribs['key'] = "set key outside\n";
         }
         if ($request == FALSE) {
@@ -355,8 +371,8 @@ class GnuplotWrapper {
      * @param string $saveas- name of output file
      * @param string $format- format of output file (defaults to png)
      */
-    public function plotOutput($fileName, $format = 'png') {
-        $this->outputFileName = "$fileName.$format";
+    public function plotOutput($fileName) {
+        $this->outputFileName = $fileName;
         $this->plotAttribs['output'] = "set output '" . "$this->outputDir/$this->outputFileName'\n";
     }
 
@@ -389,10 +405,10 @@ class GnuplotWrapper {
      * Keys should be ymin,ymax,y2min,y2max. Only include desired keys.
      */
     public function plotYAxis($ylims) {
-        $this->plotAttribs['yrange'] = "set yrange [". $ylims['ymin']. ":" . $ylims['ymax'] . "]\n";
+        $this->plotAttribs['yrange'] = "set yrange [" . $ylims['ymin'] . ":" . $ylims['ymax'] . "]\n";
 
         if (isset($ylims['y2min'])) {
-            $this->plotAttribs['y2range'] = "set y2range [". $ylims['y2min'] . ":" . $ylims['y2max'] . "]\n";
+            $this->plotAttribs['y2range'] = "set y2range [" . $ylims['y2min'] . ":" . $ylims['y2max'] . "]\n";
         }
     }
 
@@ -402,10 +418,10 @@ class GnuplotWrapper {
      * Keys should be xmin,xmax,x2min,x2max. Only include desired keys.
      */
     public function plotXAxis($xlims) {
-        $this->plotAttribs['xrange'] = "set xrange [". $xlims['xmin']. ":" . $xlims['xmax'] . "]\n";
+        $this->plotAttribs['xrange'] = "set xrange [" . $xlims['xmin'] . ":" . $xlims['xmax'] . "]\n";
 
         if (isset($xlims['x2min'])) {
-            $this->plotAttribs['x2range'] = "set x2range [". $xlims['x2min'] . ":" . $xlims['x2max'] . "]\n";
+            $this->plotAttribs['x2range'] = "set x2range [" . $xlims['x2min'] . ":" . $xlims['x2max'] . "]\n";
         }
     }
 
@@ -418,26 +434,25 @@ class GnuplotWrapper {
      * or empty indicating default tics should be present
      */
     public function plotYTics($ytics) {
-        if($ytics['ytics'] == FALSE) {
+        if ($ytics['ytics'] == FALSE) {
             $this->plotAttribs['ytics'] = "unset ytics\n";
-
-        } elseif(is_array($ytics['ytics'])) {
+        } elseif (is_array($ytics['ytics'])) {
             $ytic = $ytics['ytics'];
             $temp = "set ytics (";
             $LO = array_keys($ytic);
-            foreach($LO as $L) {
+            foreach ($LO as $L) {
                 $temp .= "'0 dB' " . $ytic[$L][0] . ",'" . (string)(round($ytic[$L][1] - $ytic[$L][0], 2)) . " dB' " . $ytic[$L][1] . ",";
             }
             $temp = substr($temp, 0, -1);
             $temp .= ")\n";
             $this->plotAttribs['ytics'] = $temp;
         }
-        if(isset($ytics['y2tics'])) {
+        if (isset($ytics['y2tics'])) {
             $ytic = $ytics['y2tics'];
-            if(is_array($ytic)) {
+            if (is_array($ytic)) {
                 $temp = "set y2tics (";
                 $LO = array_keys($ytic);
-                foreach($LO as $L) {
+                foreach ($LO as $L) {
                     $temp .= "'" . $L . " GHz' " . $ytic[$L] . " ,";
                 }
                 $temp = substr($temp, 0, -1);
@@ -456,13 +471,13 @@ class GnuplotWrapper {
      */
     public function plotData($lineAtt, $count) {
         $temp = "plot ";
-        for ($k=0; $k<$count; $k++) {
+        for ($k = 0; $k < $count; $k++) {
             $temp .= "'" . "$this->outputDir/temp_data$k.txt'";
             $temp .= " using 1:2 with $lineAtt[$k],";
         }
         $temp = substr($temp, 0, -1);    // remove final comma
 
-        if(isset($this->plotAttribs['specAtt'])) {
+        if (isset($this->plotAttribs['specAtt'])) {
             $add = $this->plotAttribs['specAtt'];
             $temp .= $add;
             unset($this->plotAttribs['specAtt']);
@@ -500,9 +515,7 @@ class GnuplotWrapper {
      */
     public function doPlot() {
         $this->setPlotter($this->genPlotCode()); // Generates and saves plotting script
-        system("$this->gnuplot $this->commandFile > $this->outputDir/std_output.txt");
+        system("$this->gnuplot $this->commandFile");
+        unlink($this->commandFile);
     }
-
 }
-
-?>

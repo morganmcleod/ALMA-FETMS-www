@@ -44,4 +44,3 @@ if ($NumArgs >= 1) {
 }
 
 echo $jsonstring;
-?>

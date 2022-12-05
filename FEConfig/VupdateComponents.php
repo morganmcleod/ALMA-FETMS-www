@@ -27,8 +27,7 @@
     $title = "Components";
     include "header.php";
 
-    $c = new FEComponent();
-    $c->Initialize_FEComponent($comp_max_key, $fc);
+    $c = new FEComponent(NULL, $comp_max_key, NULL, $fc);
 
     ?>
 
@@ -64,8 +63,8 @@
                     <div id="compform" style="width:700px">
                         <input type=hidden name="submitornot" id="submitornot" value=0>
                         <input type=hidden name="maxkey" id="maxkey" value="<?php echo $c->keyId; ?>">
-                        <input type=hidden name="comptype" id="comptype" value="<?php echo $c->GetValue('fkFE_ComponentType'); ?>">
-                        <input type=hidden name="facility" id="facility" value="<?php echo $c->GetValue('keyFacility'); ?>">
+                        <input type=hidden name="comptype" id="comptype" value="<?php echo $c->fkFE_ComponentType; ?>">
+                        <input type=hidden name="facility" id="facility" value="<?php echo $c->keyFacility; ?>">
                         <table id='table2'>
                             <tr class='alt'>
                                 <th colspan='2'>
@@ -74,11 +73,11 @@
                             </tr>
                             <tr>
                                 <th>Serial Number:</th>
-                                <td><b><?php echo $c->GetValue('SN'); ?></b></tdh>
+                                <td><b><?php echo $c->SN; ?></b></tdh>
                             </tr>
                             <tr>
                                 <th>Component Type:</th>
-                                <td><b><?php echo $c->ComponentType->GetValue('Description'); ?></b></td>
+                                <td><b><?php echo $c->ComponentType; ?></b></td>
                             </tr>
                             <tr>
                                 <th>ESN1:</th>
@@ -90,15 +89,15 @@
                             </tr>
                             <tr>
                                 <th>Component Description:</th>
-                                <td><textarea rows=3 cols=40 name='descr' id='descr'><?php echo $c->GetValue('Description'); ?></textarea></td>
+                                <td><textarea rows=3 cols=40 name='descr' id='descr'><?php echo $c->Description; ?></textarea></td>
                             </tr>
                             <tr>
                                 <th>Documentation:</th>
-                                <td><textarea rows=3 cols=40 name="docs" id="docs" value="<?php echo $c->GetValue('Docs'); ?>"></textarea></td>
+                                <td><textarea rows=3 cols=40 name="docs" id="docs" value="<?php echo $c->Docs; ?>"></textarea></td>
                             </tr>
                             <tr>
                                 <th>Band:</th>
-                                <td><input type=text name='band' id='band' value=<?php echo $c->GetValue('Band'); ?>>
+                                <td><input type=text name='band' id='band' value=<?php echo $c->Band; ?>>
                                 </td>
                             </tr>
                             <tr>
@@ -130,7 +129,7 @@
                         </table>
                     </div>
 
-                    <input type="hidden" name="fc" value="<?php echo $c->GetValue('keyFacility'); ?>">
+                    <input type="hidden" name="fc" value="<?php echo $c->keyFacility; ?>">
 
                 </div>
 

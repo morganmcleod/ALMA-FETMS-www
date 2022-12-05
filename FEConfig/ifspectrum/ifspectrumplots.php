@@ -21,24 +21,23 @@
     require_once($site_classes . '/IFSpectrum/IFSpectrum_impl.php');
     require_once($site_dbConnect);
 
-    $fc = isset($_REQUEST['fc']) ? $_REQUEST['fc'] : '';
-    $FEid = isset($_REQUEST['fe']) ? $_REQUEST['fe'] : '';
-    $band = isset($_REQUEST['b']) ? $_REQUEST['b'] : '';
-    $dataSetGroup = isset($_REQUEST['g']) ? $_REQUEST['g'] : '';
-    $TDHid = isset($_REQUEST['id']) ? $_REQUEST['id'] : '0';
-    $drawPlots = isset($_REQUEST['d']) ? $_REQUEST['d'] : 0;
+    $fc = $_REQUEST['fc'] ?? '';
+    $FEid = $_REQUEST['fe'] ?? '';
+    $band = $_REQUEST['b'] ?? '';
+    $dataSetGroup = $_REQUEST['g'] ?? '';
+    $TDHid = $_REQUEST['id'] ?? '0';
+    $drawPlots = $_REQUEST['d'] ?? 0;
 
     // Make a new IF Spectrum object
-    $ifspec = new IFSpectrum_impl();
+    $ifspec = new IFSpectrum_impl($TDHid, $fc);
     $ifspec->Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $TDHid);
 
     if ($TDHid) {
-        $tdh = new TestData_header();
-        $tdh->Initialize_TestData_header($TDHid, $fc);
-        $feconfig = $tdh->GetValue('fkFE_Config');
+        $tdh = new TestData_header($TDHid, $fc);
+        $feconfig = $tdh->fkFE_Config;
     }
 
-    $fesn = $ifspec->FrontEnd->GetValue('SN');
+    $fesn = $ifspec->frontEnd->SN;
     $tdhIdArray = $ifspec->GetTDHkeyString();
 
     // Use $dataSetGroup from the IFSpectrum_impl if we don't have it yet.
@@ -83,11 +82,11 @@
     include "header_ifspectrum.php";
 
     echo "<script type='text/javascript'>
-		Ext.onReady(function() {
-		    function popupCallback() {
-		        popupMoveToOtherFE('FE-$fesn', \"$url_root\", [$tdhIdArray]);
-		    }
-		    createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band, popupCallback);
+        Ext.onReady(function() {
+            function popupCallback() {
+                popupMoveToOtherFE('FE-$fesn', \"$url_root\", [$tdhIdArray]);
+            }
+            createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band, popupCallback);
         });</script>";
 
     ?>

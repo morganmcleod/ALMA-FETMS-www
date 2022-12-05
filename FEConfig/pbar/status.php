@@ -28,13 +28,11 @@ include('header.php');
                 <tr>
                     <td>
                         <div id="message_container">
-
                             <h2>
                                 <font color="#ffffff">
                                     <div id="mainmessage"></div>
                                 </font>
                             </h2>
-
                         </div>
                     </td>
                 </tr>
@@ -59,8 +57,7 @@ include('header.php');
                 <tr>
                     <td align='left'>
                         <div id="message_container">
-                            <a style="width:90px" onclick="javascript:polling_stop()" class="button redbigrounded'
-									<span style=" width:130px">STOP</span>
+                            <a style="width:90px" onclick="javascript:polling_stop()" class="button redbigrounded" <span style=" width:130px">STOP</span>
                             </a>
                         </div>
                     </td>
@@ -79,9 +76,6 @@ include('header.php');
             <div id="pimage" style="width: 50%"></div>
         </div>
     </div>
-
-
-
 </body>
 
 </html>

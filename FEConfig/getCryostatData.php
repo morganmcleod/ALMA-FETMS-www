@@ -17,10 +17,9 @@ $q = "SELECT DISTINCT(FE_Components.keyId)
     AND FE_ConfigLink.fkFE_Config = $feConfig;";
 $r = mysqli_query($dbconnection, $q);
 
-$component = new FEComponent();
-$component->Initialize_FEComponent(ADAPT_mysqli_result($r, 0, 0), $facility);
+$component = new FEComponent(NULL, ADAPT_mysqli_result($r, 0, 0), NULL, $facility);
 
-echo "component SN= " . $component->GetValue('SN') . "<br>";
+echo "component SN= " . $component->SN . "<br>";
 
 ?>
 

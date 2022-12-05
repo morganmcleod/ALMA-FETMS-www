@@ -12,16 +12,15 @@ $dbconnection = site_getDbConnection();
 // get the Facility Code and TestDataHeader id from the request:
 $fc = $_REQUEST['fc'];
 $tdh_key = $_REQUEST['keyheader'];
+$fkDataStatus = $_REQUEST['fkDataStatus'] ?? NULL;
+$Notes = $_REQUEST['Notes'] ?? NULL;
 
 // Make a TestData_header record object for the FC and header id:
-$tdh = new TestData_header();
-$tdh->Initialize_TestData_header($tdh_key, $fc);
+$tdh = new TestData_header($tdh_key, $fc);
 
 // if the HTML request includes a Notes parameter call the TestDataHeader method to write those notes back to the database:
 // The 'SAVE' button under the notes window reloads this page with the notes text included in the URL.
-if (isset($_REQUEST['Notes'])) {
-    $tdh->RequestValues_TDH();
-}
+$tdh->requestValuesHeader($fkDataStatus, $Notes);
 
 // Find the ScanSetDetails record id corresponding to the TestDataHeader id:
 $q = "SELECT keyId FROM ScanSetDetails WHERE fkHeader = " . $tdh->keyId . ";";
@@ -29,23 +28,20 @@ $r = mysqli_query($dbconnection, $q);
 $ssid = ADAPT_mysqli_result($r, 0, 0);
 
 // Make a ScanSetDetails record object;
-$ssd = new ScanSetDetails();
-$ssd->Initialize_ScanSetDetails($ssid, $fc);
+$ssd = new ScanSetDetails($ssid, $fc);
 
 // Create the main beam efficiency analysis class and set it up to work with the current scan set:
-$eff = new eff();
-$eff->Initialize_eff_SingleScanSet($ssid, $fc);
+$eff = new eff($ssid, $fc);
 
 // Create the FrontEnd record object corresponding to the TestDataHeader configuration:
-$fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($tdh->GetValue('fkFE_Config'), $fc, FrontEnd::INIT_NONE);
+$fe = new FrontEnd(NULL, $fc, FrontEnd::INIT_NONE, $tdh->fkFE_Config);
 
 // feconfig is the configuration number for the front end:
 $feconfig = $fe->feconfig->keyId;
 
 // get the front end serial number and the current measurement cartridge band:
-$fesn = $fe->GetValue('SN');
-$band = $tdh->GetValue('Band');
+$fesn = $fe->SN;
+$band = $tdh->Band;
 
 $fetms = $tdh->GetFetmsDescription("Measured at: ");
 
@@ -100,8 +96,8 @@ if ($fetms)
     $html .= "<tr><th class='table-name'>$fetms</th></tr>";
 $html .= "<tr><th>Notes</th></tr>";
 $html .= "<tr><td>";
-$html .= "<textarea rows=8 width='100%' name='Notes'>" . stripslashes($tdh->GetValue('Notes')) . "</textarea>";
-$html .= "<input type='hidden' name='fc' value='" . $tdh->GetValue('keyFacility') . "'>";
+$html .= "<textarea rows=8 width='100%' name='Notes'>" . stripslashes($tdh->Notes) . "</textarea>";
+$html .= "<input type='hidden' name='fc' value='" . $tdh->keyFacility . "'>";
 $html .= "<input type='hidden' name='keyheader' value='$tdh->keyId'>";
 $html .= "</td></tr>";
 $html .= "</table>";

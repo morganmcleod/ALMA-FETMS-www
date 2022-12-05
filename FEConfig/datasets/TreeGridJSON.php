@@ -1,6 +1,6 @@
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
-require_once($site_classes . '/class.generictable.php');
+require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
 $dbconnection = site_getDbConnection();
 ini_set('max_execution_time', '0');
@@ -42,11 +42,9 @@ if ($action == 'read') {
         //for a TestData_header record.
         $sub_records = array();
 
-        $tdheader = new GenericTable();
-        $tdheader->Initialize('TestData_header', $row['keyId'], 'keyId');
+        $tdheader = new TestData_header($row['keyId']);
 
         switch ($DataType) {
-
             case 7: // ifspectrum
                 //Get IFSpectrum_SubHeader records where IFGain = 15
                 $qif = "SELECT keyId, FreqLO, IFChannel, IsIncluded FROM IFSpectrum_SubHeader
@@ -162,12 +160,12 @@ if ($action == 'read') {
         $tdh[$count] = array(
             'text' => 'TestData_header ' . $tdheader->keyId,
             'config' => ($FEid) ? $row['keyFEConfig'] : $row['fkFE_Components'],
-            'ts' => $tdheader->GetValue('TS'),
-            'notes' => mysqli_real_escape_string($dbconnection, $tdheader->GetValue('Notes')),
+            'ts' => $tdheader->TS,
+            'notes' => mysqli_real_escape_string($dbconnection, $tdheader->Notes),
             'cls' => 'folder',
             'expanded' => false,
             'id' => $tdheader->keyId,
-            'groupnumber' => $tdheader->GetValue('DataSetGroup'),
+            'groupnumber' => $tdheader->DataSetGroup,
             'children' => $sub_records
         );
 
@@ -194,10 +192,9 @@ if ($action == 'update_children') {
                 $subid       = $array[$i]['subid'];
 
                 //Update "IsIncluded" value in the table IFSpectrum_SubHeader
-                $ifsub = new GenericTable();
-                $ifsub->Initialize('IFSpectrum_SubHeader', $subid, 'keyId');
+                $ifsub = new GenericTable('IFSpectrum_SubHeader', $subid, 'keyId');
 
-                $ifsubLO = $ifsub->GetValue('FreqLO');
+                $ifsubLO = $ifsub->FreqLO;
                 $fkHeader = $ifsub->GetValue('fkHeader');
 
                 //Now apply the checked value to the record where IFGain=0 and IFGain=15 for the same LO frequency
@@ -253,8 +250,7 @@ if ($action == 'update') {
 
     if ($oneRec) {
         //Update TestData_header record
-        $TestData_header = new GenericTable();
-        $TestData_header->Initialize('TestData_header', $array['id'], 'keyId');
+        $TestData_header = new TestData_header($array['id']);
         $TestData_header->SetValue('DataSetGroup', $array['groupnumber']);
         $TestData_header->SetValue('Notes', $array['notes']);
         $TestData_header->Update();
@@ -263,10 +259,9 @@ if ($action == 'update') {
         //2d array: more than one TDH record
         $rows = count($array, 0);
         for ($i = 0; $i < $rows; $i++) {
-            $TestData_header = new GenericTable();
-            $TestData_header->Initialize('TestData_header', $array[$i]['id'], 'keyId');
-            $TestData_header->SetValue('DataSetGroup', $array[$i]['groupnumber']);
-            $TestData_header->SetValue('Notes', $array[$i]['notes']);
+            $TestData_header = new TestData_header($array[$i]['id']);
+            $TestData_header->DataSetGroup = $array[$i]['groupnumber'];
+            $TestData_header->Notes = $array[$i]['notes'];
             $TestData_header->Update();
             unset($TestData_header);
         }

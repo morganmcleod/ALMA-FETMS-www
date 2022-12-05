@@ -3,6 +3,11 @@
 $mySQL57 = true;
 
 switch ($_SERVER['SERVER_NAME']) {
+    case getenv('PHP_HOSTNAME'):
+        // database credentials are kept in the /conf/ directory, not in the webserver document root:
+        include("/home/fetms/conf/fetms-dbConnect.php");
+        break;
+
     case "fetms-rhel8.osf.alma.cl":
         // database credentials are kept in the /conf/ directory, not in the webserver document root:
         include("/home/fetms.osf.alma.cl/conf/fetms-dbConnect.conf");
@@ -72,14 +77,10 @@ function site_warnProductionDb($dbname) {
 }
 
 function ADAPT_mysqli_result($res, $row, $field = 0) {
-    if (!$res)
-        return FALSE;
-    if (!mysqli_num_rows($res))
-        return FALSE;
-    if (!mysqli_data_seek($res, $row))
-        return FALSE;
+    if (!$res) return FALSE;
+    if (!mysqli_num_rows($res)) return FALSE;
+    if (!mysqli_data_seek($res, $row)) return FALSE;
     $datarow = mysqli_fetch_array($res);
-    if (!$datarow)
-        return FALSE;
+    if (!$datarow) return FALSE;
     return $datarow[$field];
 }

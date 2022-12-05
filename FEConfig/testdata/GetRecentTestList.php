@@ -53,9 +53,8 @@ while ($row = mysqli_fetch_array($r)) {
     $TestType = $row['Description'];
 
     if ($fesn == '') {
-        $c = new FEComponent();
-        $c->Initialize_FEComponent($row['fkFE_Components'], $keyFacility);
-        $Band = $c->GetValue('Band');
+        $c = new FEComponent(NULL, $row['fkFE_Components'], NULL, $keyFacility);
+        $Band = $c->Band;
         $fesn = $c->FESN;
         unset($c);
     }
@@ -79,4 +78,3 @@ while ($row = mysqli_fetch_array($r)) {
 
 $outstring .= "]";
 echo $outstring;
-?>

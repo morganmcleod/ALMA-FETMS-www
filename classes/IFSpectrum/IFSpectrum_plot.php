@@ -15,14 +15,14 @@ class IFSpectrum_plot extends GnuplotWrapper {
     private $pvarData_special; // special data array for band6 5-6 GHz
 
     private $RFBandEdgeMarks;   // location of RF band edge marks on the plot.
-                                //  array(
-                                //      [0] => array(
-                                //          'LO_GHz' => float,    // An LO frequency
-                                //          'Freq_GHz' => float,  // The IF at the band edge
-                                //          'Power_dBm' => float  // The position for the marker on the trace
-                                //      ),
-                                //      [1] => array...
-                                // )
+    //  array(
+    //      [0] => array(
+    //          'LO_GHz' => float,    // An LO frequency
+    //          'Freq_GHz' => float,  // The IF at the band edge
+    //          'Power_dBm' => float  // The position for the marker on the trace
+    //      ),
+    //      [1] => array...
+    // )
 
     const BAD_LO = -999;          // GHz  Invalid value for LO
     const HUGE_POWER = 999;       // dBm  Invalid big value for power
@@ -36,6 +36,23 @@ class IFSpectrum_plot extends GnuplotWrapper {
         GnuplotWrapper::__construct();
         $pvarData_special = array();
         $this->RFBandEdgeMarks = array();
+    }
+
+    private function sendImage($imagepath) {
+        global $site_storage;
+        $temp = substr($imagepath, stripos($imagepath, "ifspectrum/"));
+        $path = dirname($temp) . "/";
+        $ch = curl_init($site_storage . 'upload.php');
+        curl_setopt_array($ch, array(
+            CURLOPT_POST => 1,
+            CURLOPT_POSTFIELDS => array(
+                'image' => new CURLFile($imagepath, 'image/png'),
+                'path' => $path,
+                'token' => getenv("STORAGE_TOKEN")
+            )
+        ));
+        curl_exec($ch);
+        unlink($imagepath);
     }
 
     public function setData_special($pvarData_special) {
@@ -144,6 +161,8 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $this->plotAddLabel($TDHdataLabels);
         $this->plotData($att, count($att));
         $this->doPlot();
+        $this->sendImage("{$this->outputDir}/{$imagename}");
+        $this->deleteTempFiles();
     }
 
     /**
@@ -162,11 +181,11 @@ class IFSpectrum_plot extends GnuplotWrapper {
         $this->plotSize();
 
         $ymax = $spec + 1;
-        if (!$win31MHz && $this->band == 6)
+        if (!$win31MHz && $this->Band == 6)
             $ymax = 9;
 
         // Higher ymax for band 2 proto cartridge:
-        if (!$win31MHz && $this->band == 2)
+        if (!$win31MHz && $this->Band == 2)
             $ymax = 12;
 
         $xArray = array_column($this->data, 'Freq_GHz');
@@ -195,22 +214,23 @@ class IFSpectrum_plot extends GnuplotWrapper {
             $ltIndex++;
         }
 
-// TODO: Get band6 special power var plots working again
-//         if (!$win31MHz && $this->band == 6) {
-//             $this->plotAttribs['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
+        // TODO: Get band6 special power var plots working again
+        //         if (!$win31MHz && $this->Band == 6) {
+        //             $this->plotAttribs['fspec1'] = "f1(x) = ((x > 5.2) && (x < 5.8)) ? 8 : 1/0\n";
 
-//             $att[] = "f1(x) notitle with lines lt -1 lw 5";
+        //             $att[] = "f1(x) notitle with lines lt -1 lw 5";
 
-//              $ltIndex = 1;
-//              foreach ($this->pvarData_special as $row) {
-//                  $att[] = "5, " . $row['pVar_dB'] . "linespoints lt $ltIndex notitle";
-//                  $ltIndex++;
-//              }
-//         }
+        //              $ltIndex = 1;
+        //              foreach ($this->pvarData_special as $row) {
+        //                  $att[] = "5, " . $row['pVar_dB'] . "linespoints lt $ltIndex notitle";
+        //                  $ltIndex++;
+        //              }
+        //         }
         $this->plotAddLabel($TDHdataLabels);
         $this->plotData($att, count($att));
         $this->doPlot();
+        $this->sendImage("{$this->outputDir}/{$imagename}");
+        $this->deleteTempFiles();
+        $this->deleteSpecsFile();
     }
 }
-
-?>

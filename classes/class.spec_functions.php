@@ -28,7 +28,7 @@
         * Constructor for class specs.
         * No parameters.
         */
-        public function Specifications() {}
+        public function __construct() {}
 
         /**
         * Returns 2D array of specifications with their test type, spec type, and band.

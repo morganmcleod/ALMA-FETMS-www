@@ -10,10 +10,9 @@ $band = $_POST['band'];
 $feConfig = $_POST['key'];
 $facility = $_REQUEST['fc'];
 
-$fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($feConfig, $facility, FrontEnd::INIT_NONE);
-$fc   = $fe->GetValue('keyFacility');
-$fesn = $fe->GetValue('SN');
+$fe = new FrontEnd(NULL, $facility, FrontEnd::INIT_NONE, $feConfig);
+$fc   = $fe->keyFacility;
+$fesn = $fe->SN;
 
 if ($band == 100) {
     //Front End tab panel
@@ -25,12 +24,12 @@ if ($band == 100) {
                     <table id="table5">
                         <tr>
                             <th>SN:</th>
-                            <td bgcolor='#ff0000'><?php echo $fe->GetValue('SN'); ?></td>
+                            <td bgcolor='#ff0000'><?php echo $fe->SN; ?></td>
                         </tr>
                         <tr>
                             <th>TS:
             </td>
-            <td><?php echo $fe->GetValue('TS'); ?></td>
+            <td><?php echo $fe->TS; ?></td>
         </tr>
         <tr>
             <th>Configuraton#:</td>
@@ -38,18 +37,18 @@ if ($band == 100) {
         </tr>
         <tr>
             <th>CAN SN:</td>
-            <td><?php echo $fe->GetValue('ESN'); ?></td>
+            <td><?php echo $fe->ESN; ?></td>
         </tr>
         <?php
-        if (strlen($fe->GetValue('Docs')) > 1) {
-            echo "<tr><th>Docs:</td><td><a href='" . FixHyperlink($fe->GetValue('Docs')) . "'>Link </a></td></tr>";
+        if (strlen($fe->Docs) > 1) {
+            echo "<tr><th>Docs:</td><td><a href='" . FixHyperlink($fe->Docs) . "'>Link </a></td></tr>";
         } else {
             echo "<tr><th>Docs:</td><td></td></tr>";
         }
         ?>
         <tr>
             <th>Description:</td>
-            <td><?php echo $fe->GetValue('Description'); ?></td>
+            <td><?php echo $fe->Description; ?></td>
         </tr>
     </table>
     </div>

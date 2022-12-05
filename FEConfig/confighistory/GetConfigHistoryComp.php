@@ -5,8 +5,6 @@ require_once($site_classes . '/class.fecomponent.php');
 
 $keyId = $_REQUEST['keyId'];
 $fc = $_REQUEST['fc'];
-$c = new FEComponent();
-$c->Initialize_FEComponent($keyId, $fc);
+$c = new FEComponent(NULL, $keyId, NULL, $fc);
 $c->ComponentHistory_JSON();
 unset($c);
-?>

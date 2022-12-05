@@ -21,11 +21,10 @@ $keyHeader = isset($_REQUEST['keyheader']) ? $_REQUEST['keyheader'] : false;
 if (!$keyHeader)
     exit();
 
-$td = new TestData_header();
-$td->Initialize_TestData_header($keyHeader, $fc);
-$fesn = $td->FrontEnd->GetValue('SN');
-$band = $td->GetValue('Band');
-$fkTestData_Type = $td->GetValue('fkTestData_Type');
+$td = new TestData_header($keyHeader, $fc);
+$fesn = $td->frontEnd->SN;
+$band = $td->Band;
+$fkTestData_Type = $td->fkTestData_Type;
 $file_type = null;
 switch ($fkTestData_Type) {
     case 56:

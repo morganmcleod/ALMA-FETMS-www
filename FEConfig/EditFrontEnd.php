@@ -22,37 +22,36 @@
         $keyId = $_REQUEST['id'];  //keyId of FE_Components table
         $fc = $_REQUEST['fc'];
 
-        $fe = new FrontEnd();
-        $fe->Initialize_FrontEnd_FromConfig($keyId, $fc, FrontEnd::INIT_NONE);
+        $fe = new FrontEnd(NULL, $fc, FrontEnd::INIT_NONE, $keyId);
         //This is used by the header to display a link back to the FE page
         $feconfig = $fe->feconfig->keyId;
-        $fesn = $fe->GetValue('SN');
+        $fesn = $fe->SN;
 
         $title = "Front End SN $fesn";
 
         include "header.php";
 
         if (isset($_REQUEST['Updated_By'])) {
-            $ESN_old =  $fe->GetValue('ESN');
-            $desc_old = $fe->GetValue('Description');
-            $Docs_old = $fe->GetValue('Docs');
+            $ESN_old =  $fe->ESN;
+            $desc_old = $fe->Description;
+            $Docs_old = $fe->Docs;
 
-            $fe->SetValue('ESN', $_REQUEST['ESN']);
-            $fe->SetValue('Docs', $_REQUEST['Docs']);
-            $fe->SetValue('Description', $_REQUEST['Description']);
+            $fe->ESN = $_REQUEST['ESN'];
+            $fe->Docs = $_REQUEST['Docs'];
+            $fe->Description = $_REQUEST['Description'];
 
 
             $Notes = $_REQUEST['Updated_By'] . ' changed ';
             $changed = 0;
-            if ($ESN_old != $fe->GetValue('ESN')) {
+            if ($ESN_old != $fe->ESN) {
                 $Notes .= ' ESN,';
                 $changed = 1;
             }
-            if ($Docs_old != $fe->GetValue('Docs')) {
+            if ($Docs_old != $fe->Docs) {
                 $Notes .= ' Docs,';
                 $changed = 1;
             }
-            if ($desc_old != $fe->GetValue('Description')) {
+            if ($desc_old != $fe->Description) {
                 $Notes .= ' Description';
                 $changed = 1;
             }
@@ -98,7 +97,7 @@
                         CAN SN
                     </th>
                     <td>
-                        <input type='text' size='20' name='ESN' value=" . $fe->GetValue('ESN') . ">
+                        <input type='text' size='20' name='ESN' value={$fe->ESN}>
                     </td>
                 </tr>
                 <tr>
@@ -109,7 +108,7 @@
                         Docs:
                     </th>
                     <td align>
-                    <textarea rows='3' cols='40' name='Docs' id='Docs'>" . $fe->GetValue('Docs') . "</textarea>
+                    <textarea rows='3' cols='40' name='Docs' id='Docs'>{$fe->Docs}</textarea>
                     </td>
                 </tr>
                 <tr class='alt3'>
@@ -117,7 +116,7 @@
                         Description:
                     </th>
                     <td align>
-                    <textarea rows='3' cols='40' name='Description' id='Description'>" . $fe->GetValue('Description') . "</textarea>
+                    <textarea rows='3' cols='40' name='Description' id='Description'>{$fe->Description}</textarea>
                     </td>
                 </tr>
                 <tr>
@@ -130,7 +129,7 @@
                     <select name='Updated_By' id='Updated_By'>
                     <option value='' selected='selected'></option>";
         $q = "SELECT Initials FROM Users
-                              ORDER BY Initials ASC;";
+              ORDER BY Initials ASC;";
         $r = mysqli_query($dbconnection, $q);
         while ($row = mysqli_fetch_array($r)) {
             echo "<option value='$row[0]'>$row[0]</option>";

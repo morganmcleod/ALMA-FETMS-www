@@ -12,26 +12,37 @@ $bugsTo = "http://jira.alma.cl/browse/FETMS/";
 ?>
 <div id="header">
     <div id="header_inside">
-        <h1><span>
+        <h1>
+            <span>
                 <?php
                 echo $title;
                 ?>
-            </span></h1>
+            </span>
+        </h1>
         <div class="menu_nav">
             <table>
                 <tr>
-                    <td><a href=<?php echo "'$home'" ?> class="button gray bigrounded"><span>Home</span>
-                        </a></td>
+                    <td>
+                        <a href=<?php echo "'{$home}'" ?> class="button gray bigrounded">
+                            <span>Home</span>
+                        </a>
+                    </td>
                     <?php
                     if (!$FETMS_CCA_MODE && isset($feconfig) && $feconfig && isset($fesn) && $fesn) {
                     ?>
-                        <td><a href=<?php echo "'$showConfig?key=$feconfig&fc=$fc'" ?> class="button gray bigrounded">
-                                <span>Front End <?php echo $fesn; ?></span></a></td>
+                        <td>
+                            <a href=<?php echo "'{$showConfig}?key={$feconfig}&fc={$fc}'" ?> class="button gray bigrounded">
+                                <span>Front End <?php echo $fesn; ?></span>
+                            </a>
+                        </td>
                     <?php
                     }
                     ?>
-                    <td><a href=<?php echo "'$bugsTo'" ?> target="_blank" class="button gray bigrounded">
-                            <span>Bugs</span></a></td>
+                    <td>
+                        <a href=<?php echo "'$bugsTo'" ?> target="_blank" class="button gray bigrounded">
+                            <span>Bugs</span>
+                        </a>
+                    </td>
                 </tr>
             </table>
         </div>

@@ -79,9 +79,9 @@ if ($ctype == 100) {
           FROM FE_Components A
           LEFT OUTER JOIN FE_Components B
           ON (A.fkFE_ComponentType = B.fkFE_ComponentType
-            AND A.Band = B.Band
-            AND A.SN = B.SN
-            AND A.keyId < B.keyId)
+          AND A.Band = B.Band
+          AND A.SN = B.SN
+          AND A.keyId < B.keyId)
           WHERE A.fkFE_ComponentType = $ctype
           AND B.keyId IS NULL
           ORDER BY A.Band ASC, (0 + A.SN) ASC;";
@@ -157,4 +157,3 @@ if ($ctype == 100) {
     $retJSON .= "]";
     echo $retJSON;
 }
-?>

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ALMA - Atacama Large Millimeter Array
  * (c) Associated Universities Inc., 2014
@@ -25,57 +26,58 @@ require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.frontend.php');
 require_once($site_classes . '/class.spec_functions.php');
+require_once($site_classes . '/class.test_ifspectrum_urls.php');
 require_once($site_classes . '/IFSpectrum/IFSpectrum_calc.php');
 require_once($site_classes . '/IFSpectrum/IFSpectrum_db.php');
 require_once($site_classes . '/IFSpectrum/IFSpectrum_plot.php');
 
 class IFSpectrum_impl extends TestData_header {
-    private $plotter;             //class IFSpectrum_plot
-    private $ifCalc;              //class IFSpectrum_calc
-    private $ifSpectrumDb;        //class IFSpectrum_db
-    private $specProvider;		  //class Specifications
-    private $specs;               //array of specs loaded from specProvider
+    public $plotter;               // class IFSpectrum_plot
+    public $ifCalc;                // class IFSpectrum_calc
+    public $ifSpectrumDb;          // class IFSpectrum_db
+    public $specProvider;          // class Specifications
+    public $specs;                 // array of specs loaded from specProvider
 
-    private $GNUPLOT_path;        //Path to Gnuplot from config_main.php
-    private $writedirectory;      //Directory for output files
-    private $url_directory;       //URL stem for output files
-    private $aborted;             //If true, plotting procedure has been aborted by user.
-    private $debugRawDataFiles;   //If true, write CSV data files to disk for debugging.
+    public $GNUPLOT_path;          // Path to Gnuplot from config_main.php
+    public $writedirectory;        // Directory for output files
+    public $url_directory;         // URL stem for output files
+    public $aborted;               // If true, plotting procedure has been aborted by user.
+    public $debugRawDataFiles;     // If true, write CSV data files to disk for debugging.
 
-    private $FEid;                //Front_Ends.keyId value
-    private $dataSetGroup;        //TestData_header.dataSetGroup value for this set of traces
-    private $band;                //band number for the data set to plot
-    private $facilityCode;        //facility code for database access  OBSOLETE
-    private $TDHid;               //TestData_header id for initialization
-    private $CCAid;               //Component ID of CCA
+    public $FEid;                  // Front_Ends.keyId value
+    public $dataSetGroup;          // TestData_header.dataSetGroup value for this set of traces
+    public $band;                  // band number for the data set to plot
+    public $facilityCode;          // facility code for database access  OBSOLETE
+    public $TDHid;                 // TestData_header id for initialization
+    public $CCAid;                 // Component ID of CCA
 
-    private $TDHkeys;             //array of TestData_header.keyId values for this dataSetGroup
-    private $TDHkeyString;        //string containing TestData_header keys for plot labels ("304, 308, 309, etc.")
-    private $TDHdataLabels;       //labels shown at the bottom of each plot
-    private $TS;                  //timestamp string for this dataSetGroup
-    private $plotURLs;            //array of plot URLs for this dataSetGroup
+    public $TDHkeys;               // array of TestData_header.keyId values for this dataSetGroup
+    public $TDHkeyString;          // string containing TestData_header keys for plot labels ("304, 308, 309, etc.")
+    public $TDHdataLabels;         // labels shown at the bottom of each plot
+    public $TS;                    // timestamp string for this dataSetGroup
+    public $plotURLs;              // array of plot URLs for this dataSetGrou p
 
-    private $keyNoiseFloor;       //keyId for the noise floor header
-    private $NoiseFloorHeader;
+    public $keyNoiseFloor;       //keyId for the noise floor header
+    public $NoiseFloorHeader;
 
-    private $fWindow_Low;         //low end of in-band IF
-    private $fWindow_High;        //high end of in-band IF
-    private $CCASN;               //SN of the CCA
+    public $fWindow_Low;           // low end of in-band IF
+    public $fWindow_High;          // high end of in-band IF
+    public $CCASN;                 // SN of the CCA
 
-    private $progressfile;          //ini file to store progress information during plot procedure.
-    private $progressfile_fullpath; //full path of progressfile.ini
+    public $progressfile;          // ini file to store progress information during plot procedure.
+    public $progressfile_fullpath; // full path of progressfile.ini
 
-    private $imagedirectory;      //directory for files and image output
-    private $imagename;           //file name for image output
-    private $image_url;           //full URL to image output
+    public $imagedirectory;        // directory for files and image output
+    public $imagename;             // file name for image output
+    public $image_url;             // full URL to image output
 
-    private $swVersion;           //software version string for this class.
+    public $swVersion;             // software version string for this class.
 
-    const DFLT_OFFSET = 10;       // dB  offset between traces
-    const EXPANDED_SPACING = 2.5; // dB  spacing between traces in expanded plot
+    const DFLT_OFFSET = 10;        // dB  offset between traces
+    const EXPANDED_SPACING = 2.5;  // dB  spacing between traces in expanded plot
 
-    public function __construct() {
-        parent::__construct();
+    public function __construct($inKeyId, $inFc) {
+        parent::__construct($inKeyId, $inFc);
         $this->swVersion = "1.4.7";
         // 1.4.7  Fixed loading noise floor profiles for total and in-band power tables
         // 1.4.6  Changed tables from 'table7' to 'table1' style for grid lines.
@@ -111,20 +113,18 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     public function Initialize_IFSpectrum($FEid, $band, $dataSetGroup, $TDHid) {
-
         $this->facilityCode = 40;
         $this->FEid = $FEid;
-        $this->band = $band;
+        $this->Band = $band;
         $this->TDHid = $TDHid;
         $this->dataSetGroup = $dataSetGroup;
         $this->CCAid = 0;
 
         // Load additional info from the TDH:
         if ($TDHid) {
-            $TDH = new GenericTable();
-            $TDH->Initialize('TestData_header', $TDHid, 'keyId', $this->facilityCode, 'keyFacility');
-            $this->CCAid = $TDH->GetValue('fkFE_Components');
-            $this->dataSetGroup = $TDH->GetValue('DataSetGroup');
+            $TDH = new TestData_header($TDHid, $this->facilityCode);
+            $this->CCAid = $TDH->fkFE_Components;
+            $this->dataSetGroup = $TDH->DataSetGroup;
             unset($TDH);
         }
 
@@ -136,18 +136,18 @@ class IFSpectrum_impl extends TestData_header {
 
         // create the IF spectrum plotter object:
         $this->plotter = new IFSpectrum_plot();
-        $this->plotter->setParams($this->writedirectory, $this->band);
+        $this->plotter->setParams($this->writedirectory, $this->Band);
 
         // load the specifications which apply to this band:
         $this->specProvider = new Specifications();
-        $this->specs = $this->specProvider->getSpecs('ifspectrum', $this->band);
+        $this->specs = $this->specProvider->getSpecs('ifspectrum', $this->Band);
         $this->plotter->setSpecs($this->specs);
 
         // load test data header keys:
         if ($this->FEid)
-            $this->TDHkeys = $this->ifSpectrumDb->getTestDataHeaderKeys($this->FEid, $this->band, $this->dataSetGroup);
+            $this->TDHkeys = $this->ifSpectrumDb->getTestDataHeaderKeys($this->FEid, $this->Band, $this->dataSetGroup);
         else
-            $this->TDHkeys = $this->ifSpectrumDb->getTestDataHeaderKeysForComp($this->CCAid, $this->band, $this->dataSetGroup);
+            $this->TDHkeys = $this->ifSpectrumDb->getTestDataHeaderKeysForComp($this->CCAid, $this->Band, $this->dataSetGroup);
 
         $this->TS = $this->ifSpectrumDb->getLastTS();
 
@@ -172,8 +172,8 @@ class IFSpectrum_impl extends TestData_header {
         }
 
         // load in-band IF limits:
-        $this->fWindow_Low = $this->specs['fWindow_Low'] * pow(10,9);
-        $this->fWindow_High = $this->specs['fWindow_high'] * pow(10,9);
+        $this->fWindow_Low = $this->specs['fWindow_Low'] * pow(10, 9);
+        $this->fWindow_High = $this->specs['fWindow_high'] * pow(10, 9);
 
         // load in-band RF limits:
         $rfMin = isset($this->specs['rfMin']) ? $this->specs['rfMin'] : IFSpectrum_calc::RFMIN_DEFAULT;
@@ -182,30 +182,28 @@ class IFSpectrum_impl extends TestData_header {
 
         // load FrontEnd info:
         if ($this->FEid) {
-            $this->FrontEnd = new FrontEnd();
-            $this->FrontEnd->Initialize_FrontEnd($this->FEid, $this->facilityCode, FrontEnd::INIT_CART);
+            $this->frontEnd = new FrontEnd($this->FEid, $this->facilityCode, FrontEnd::INIT_CART);
 
             // load the CCA serial number:
             $this->CCASN = 0;
-            if (isset($this->FrontEnd->ccas[$this->band])) {
-                if ($this->FrontEnd->ccas[$this->band]->keyId != '') {
-                    $this->CCASN = $this->FrontEnd->ccas[$this->band]->GetValue('SN');
+            if (isset($this->frontEnd->ccas[$this->Band])) {
+                if ($this->frontEnd->ccas[$this->Band]->keyId != '') {
+                    $this->CCASN = $this->frontEnd->ccas[$this->Band]->SN;
                 }
             }
         } else if ($this->CCAid) {
-            $comp = new GenericTable();
-            $comp->Initialize('FE_Components', $this->CCAid, 'keyId', $this->facilityCode, 'keyFacility');
-            $this->CCASN = $comp->GetValue('SN');
+            $comp = new FEComponent(NULL, $this->CCAid, NULL, $this->facilityCode);
+            $this->CCASN = $comp->SN;
             unset($comp);
         }
 
         // make the data labels which go at the bottom of every plot:
         $this->TDHdataLabels = array();
-        $this->TDHdataLabels[] = "TestData_header.keyId: ". $this->TDHkeyString;
+        $this->TDHdataLabels[] = "TestData_header.keyId: " . $this->TDHkeyString;
         $l = $this->TS;
 
-        if ($this->FrontEnd)
-            $l .= ", FE Configuration " . $this->FrontEnd->feconfig_id_latest;
+        if ($this->frontEnd)
+            $l .= ", FE Configuration " . $this->frontEnd->feconfig_id_latest;
 
         $l .= ", DataSetGroup: " . $this->dataSetGroup
             . ", IFSpectrum Ver. " . $this->swVersion;
@@ -220,12 +218,11 @@ class IFSpectrum_impl extends TestData_header {
         //Create progress update ini file
         require(site_get_config_main());
         $testmessage = "IF Spectrum";
-        if ($this->FrontEnd)
-            $testmessage .= " FE-" . $this->FrontEnd->GetValue('SN');
-        $testmessage .= " Band " . $this->band;
+        if ($this->frontEnd) $testmessage .= " FE-" . $this->frontEnd->SN;
+        $testmessage .= " Band " . $this->Band;
 
         $url = '"' . $url_root . 'FEConfig/ifspectrum/ifspectrumplots.php?fc='
-            . $this->facilityCode . '&fe=' . $this->FEid . '&b=' . $this->band
+            . $this->facilityCode . '&fe=' . $this->FEid . '&b=' . $this->Band
             . '&id=' . $this->TDHid . '"';
         $this->progressfile = CreateProgressFile($testmessage, '', $url);
         $this->progressfile_fullpath = $main_write_directory . $this->progressfile . ".txt";
@@ -252,7 +249,7 @@ class IFSpectrum_impl extends TestData_header {
         $ini_array = parse_ini_file($this->progressfile_fullpath);
         $this->aborted = $ini_array['abort'];
         if ($this->aborted) {
-            WriteINI($this->progressfile,'message',"Stopped.");
+            WriteINI($this->progressfile, 'message', "Stopped.");
             return true;
         }
         return false;
@@ -273,31 +270,29 @@ class IFSpectrum_impl extends TestData_header {
         echo "<tr><th>Key</th><th>Timestamp</th><th>Measured at</th><th>Notes</th></tr>";
 
         for ($i = 0; $i < count($this->TDHkeys); $i++) {
-            if ($i % 2 == 0) {
+            if ($i % 2 == 0)
                 $trclass = "alt";
-            }
-            if ($i % 2 != 0) {
+            else
                 $trclass = "";
-            }
-            $t = new TestData_header();
-            $t->Initialize_TestData_header($this->TDHkeys[$i], $this->facilityCode, 0);
+
+            $t = new TestData_header($this->TDHkeys[$i], $this->facilityCode);
             echo "<tr class = $trclass>";
-            echo "<td>" . $t->keyId . "</td>";
-            echo "<td>" . $t->GetValue('TS') . "</td>";
-            echo "<td>" . $t->GetFetmsDescription() . "</td>";
-            echo "<td style='text-align:left !important;'>" . $t->GetValue('Notes') . "</td>";
+            echo "<td>{$t->keyId}</td>";
+            echo "<td>{$t->TS}</td>";
+            echo "<td>{$t->GetFetmsDescription()}</td>";
+            echo "<td style='text-align:left !important;'>{$t->Notes}</td>";
             echo "</tr>";
         }
         echo "</table>";
     }
 
     public function Display_TotalPowerTable($ifChannel) {
-        $data = $this->ifSpectrumDb->getTotalAndInBandPower($this->FEid, $this->band, $this->dataSetGroup, $ifChannel, $this->CCAid);
+        $data = $this->ifSpectrumDb->getTotalAndInBandPower($this->FEid, $this->Band, $this->dataSetGroup, $ifChannel, $this->CCAid);
         if ($data) {
             // TODO: add back in borders/shading.
             echo "<div style = 'width:600px'>";
             echo "<table id = 'table1' border = '1'>";
-            echo "<tr><th colspan = '5'>Band $this->band Total and In-Band Power</th></tr>";
+            echo "<tr><th colspan = '5'>Band $this->Band Total and In-Band Power</th></tr>";
             echo "<tr><th colspan = '5'><b>IF Channel $ifChannel</b></th></tr>";
             echo "<tr><td colspan = '2' align = 'center'><i>0 dB Gain</i></td><td colspan = '3' align = 'center'><i>15 dB Gain</i></td></tr>";
             echo "<tr><td>LO (GHz)</td><td>In-Band (dBm)</td><td>In-Band (dBm)</td><td>Total (dBm)</td><td>Total - In-Band</td></tr>";
@@ -313,8 +308,8 @@ class IFSpectrum_impl extends TestData_header {
 
                 // if the difference in gain is not 15 +/- 1 dB, color in red:
                 $red = ($gainDiff < 14 || $gainDiff > 16);
-				if ($red)
-					$sawRed = true;
+                if ($red)
+                    $sawRed = true;
 
                 // LO column:
                 echo "<tr><td>$LO</td>";
@@ -356,10 +351,9 @@ class IFSpectrum_impl extends TestData_header {
                     echo "<font color = '#000000'>";
                 echo "<b>$pwrDiff</b></font>";
                 echo "</td></tr>";
-
             }
             if ($sawRed) {
-            	echo "<tr><td colspan = '4'><span><font color='#FF0000'>In-band diffs not between 14 and 16 dB</font></span></td><td></td></tr>";
+                echo "<tr><td colspan = '4'><span><font color='#FF0000'>In-band diffs not between 14 and 16 dB</font></span></td><td></td></tr>";
             }
             foreach ($this->TDHdataLabels as $label)
                 echo "<tr class = 'alt3'><th colspan = '5'>$label</th></tr>";
@@ -368,15 +362,15 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     public function DisplayPowerVarFullBandTable() {
-        $data = $this->ifSpectrumDb->getPowerVarFullBand($this->FEid, $this->band, $this->dataSetGroup, $this->CCAid);
+        $data = $this->ifSpectrumDb->getPowerVarFullBand($this->FEid, $this->Band, $this->dataSetGroup, $this->CCAid);
 
         if ($data) {
-            $noLSB = ($this->band == 1 || $this->band == 9 || $this->band == 10);
+            $noLSB = ($this->Band == 1 || $this->Band == 9 || $this->Band == 10);
             $colSpan = ($noLSB ? 3 : 5);
 
             $rfMin = isset($this->specs['rfMin']) ? $this->specs['rfMin'] : IFSpectrum_calc::RFMIN_DEFAULT;
             $rfMax = isset($this->specs['rfMax']) ? $this->specs['rfMax'] : IFSpectrum_calc::RFMAX_DEFAULT;
-            $plotTitle = "Band $this->band Power Variation Full Band";
+            $plotTitle = "Band $this->Band Power Variation Full Band";
             if ($rfMin > IFSpectrum_calc::RFMIN_DEFAULT || $rfMax < IFSpectrum_calc::RFMAX_DEFAULT)
                 $plotTitle .= ", Limited to RF in $rfMin-$rfMax GHz";
 
@@ -435,7 +429,7 @@ class IFSpectrum_impl extends TestData_header {
 
     public function GeneratePlots() {
         $this->ReportProgress(1, 'Creating temporary table...');
-        if (!$this->ifSpectrumDb->createTemporaryTable($this->FEid, $this->band, $this->dataSetGroup, $this->CCAid))
+        if (!$this->ifSpectrumDb->createTemporaryTable($this->FEid, $this->Band, $this->dataSetGroup, $this->CCAid))
             return;
 
         $this->makeOutputDirectory(true);
@@ -481,16 +475,8 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     private function makeOutputDirectory($deleteContents = false) {
-        $this->imagedirectory = $this->writedirectory . 'tdh/';
+        $this->imagedirectory = $this->writedirectory . 'ifspectrum/';
 
-        if (!file_exists($this->imagedirectory))
-            mkdir($this->imagedirectory);
-
-        $this->imagedirectory .= $this->TDHkeys[0] . "/";
-        if (!file_exists($this->imagedirectory))
-            mkdir($this->imagedirectory);
-
-        $this->imagedirectory .= 'IFSpectrum';
         if ($deleteContents && file_exists($this->imagedirectory))
             self::deleteDir($this->imagedirectory);
 
@@ -499,9 +485,9 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     private function makeImageFilenames($typeUrl, $ifChannel = "") {
-        $this->imagename = $typeUrl . "_Band$this->band" . date('Y_m_d_H_i_s') . "dsg" . $this->dataSetGroup . "if" . $ifChannel;
-        // partial image url.  Still need to add the full filename generated by the plotter:
-        $this->image_url = $this->url_directory . "tdh/" . $this->TDHkeys[0] . "/IFSpectrum/";
+        $this->imagename =  "{$typeUrl}_Band{$this->Band}_{$this->frontEnd->feconfig_id}";
+        $this->imagename .= "_{$this->TDHid}_dsg_{$this->dataSetGroup}_if{$ifChannel}.png";
+        $this->image_url = "ifspectrum/";
     }
 
     public function Plot_IFSpectrum_Data($expanded, $progressStart, $progressIncrement) {
@@ -510,13 +496,13 @@ class IFSpectrum_impl extends TestData_header {
         $rfMin = isset($this->specs['rfMin']) ? $this->specs['rfMin'] : IFSpectrum_calc::RFMIN_DEFAULT;
         $rfMax = isset($this->specs['rfMax']) ? $this->specs['rfMax'] : IFSpectrum_calc::RFMAX_DEFAULT;
 
-        $fesn = ($this->FrontEnd) ? $this->FrontEnd->GetValue('SN') : '';
+        $fesn = ($this->frontEnd) ? $this->frontEnd->SN : '';
         $typeURL = ($expanded) ? 'spurious_url2d2' : 'spurious_url2d';
         $ifGain = 15;
         $msgExpanded = ($expanded) ? ' Expanded' : '';
         $progress = $progressStart;
 
-        for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
+        for ($ifChannel = 0; $ifChannel <= $iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())
                 return;
 
@@ -529,7 +515,7 @@ class IFSpectrum_impl extends TestData_header {
 
             // Set the image path and band into the plotter:
             $this->makeImageFilenames($typeURL, $ifChannel);
-            $this->plotter->setParams($this->imagedirectory, $this->band);
+            $this->plotter->setParams($this->imagedirectory, $this->Band);
 
             // Get spurious noise data from database:
             $data = $this->ifSpectrumDb->getSpectrumData($ifChannel);
@@ -547,7 +533,7 @@ class IFSpectrum_impl extends TestData_header {
 
             // save raw data (for troubleshooting):
             if ($this->debugRawDataFiles)
-                $this->plotter->save_data("SpuriousBand" . $this->band . "_IF$ifChannel");
+                $this->plotter->save_data("SpuriousBand{$this->Band}_IF{$ifChannel}");
 
             // Apply trace offsets:
             $traceOffset = ($expanded) ? ($this->ifCalc->getTotalPowerSpan_overall() + self::EXPANDED_SPACING) : self::DFLT_OFFSET;
@@ -557,7 +543,7 @@ class IFSpectrum_impl extends TestData_header {
             if ($fesn)
                 $plotTitle .= " FE-$fesn,";
 
-            $plotTitle .= " CCA$this->band-$this->CCASN, IF$ifChannel";
+            $plotTitle .= " CCA$this->Band-$this->CCASN, IF$ifChannel";
             $this->plotter->generateSpuriousPlot($expanded, $this->imagename, $plotTitle, $this->TDHdataLabels, $traceOffset, $minMaxData);
 
             // Free memory:
@@ -567,15 +553,13 @@ class IFSpectrum_impl extends TestData_header {
             $this->image_url .= $this->plotter->getOutputFileName();
 
             if ($this->plotURLs[$ifChannel]->keyId == '') {
-                $this->plotURLs[$ifChannel] = new GenericTable();
-                $this->plotURLs[$ifChannel]->NewRecord('TEST_IFSpectrum_urls', 'keyId', 40, 'fkFacility');
-                $this->plotURLs[$ifChannel]->SetValue('fkHeader', $this->TDHkeys[0]);
-                $this->plotURLs[$ifChannel]->SetValue('Band', $this->band);
-                $this->plotURLs[$ifChannel]->SetValue('IFChannel', $ifChannel);
-                $this->plotURLs[$ifChannel]->SetValue('IFGain', $ifGain);
-
+                $this->plotURLs[$ifChannel] = TEST_IFSpectrum_urls::NewRecord('TEST_IFSpectrum_urls', 'keyId', 40, 'fkFacility');
+                $this->plotURLs[$ifChannel]->fkHeader = $this->TDHkeys[0];
+                $this->plotURLs[$ifChannel]->Band = $this->Band;
+                $this->plotURLs[$ifChannel]->IFChannel = $ifChannel;
+                $this->plotURLs[$ifChannel]->IFGain = $ifGain;
             }
-            $this->plotURLs[$ifChannel]->SetValue($typeURL, $this->image_url);
+            $this->plotURLs[$ifChannel]->$typeURL = $this->image_url;
             $this->plotURLs[$ifChannel]->Update();
 
             // Update the progress display image:
@@ -585,7 +569,7 @@ class IFSpectrum_impl extends TestData_header {
 
     public function Plot_PowerVariation_Data($win31MHz, $progressStart, $progressIncrement) {
         $iflim = $this->specs['maxch'];
-        $fesn = ($this->FrontEnd) ? $this->FrontEnd->GetValue('SN') : '';
+        $fesn = ($this->frontEnd) ? $this->frontEnd->SN : '';
         $ifGain = 15;
         $pvarData = $pvarData_special = false;
         if ($win31MHz) {
@@ -601,7 +585,7 @@ class IFSpectrum_impl extends TestData_header {
         }
         $progress = $progressStart;
 
-        for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
+        for ($ifChannel = 0; $ifChannel <= $iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())
                 return;
 
@@ -613,7 +597,7 @@ class IFSpectrum_impl extends TestData_header {
 
             // Set the image path and band into the plotter:
             $this->makeImageFilenames($typeURL, $ifChannel);
-            $this->plotter->setParams($this->imagedirectory, $this->band);
+            $this->plotter->setParams($this->imagedirectory, $this->Band);
 
             // Get spurious noise data from database:
             $data = $this->ifSpectrumDb->getSpectrumData($ifChannel);
@@ -625,7 +609,7 @@ class IFSpectrum_impl extends TestData_header {
             $fWindowLow = $this->specs['fWindow_Low'];
             $fWindowHigh = $this->specs['fWindow_high'];
             // Temporary:  use the 'special low' window for band 6.
-            if ($this->band == 6)
+            if ($this->Band == 6)
                 $fWindowLow = $this->specs['fWindow_special_Low'];
             // TODO:  Get special band 6 plots working again.
 
@@ -650,14 +634,14 @@ class IFSpectrum_impl extends TestData_header {
 
             // save raw data (for troubleshooting):
             if ($this->debugRawDataFiles)
-                $this->plotter->save_data("PowerVarBand" . $this->band . "_$winText" . "_IF$ifChannel");
+                $this->plotter->save_data("PowerVarBand" . $this->Band . "_$winText" . "_IF$ifChannel");
 
             // Set the plot title:
             $plotTitle = "Power Variation $winText Window";
             if ($fesn)
                 $plotTitle .= " FE-$fesn,";
 
-            $plotTitle .= " CCA$this->band-$this->CCASN, IF$ifChannel";
+            $plotTitle .= " CCA$this->Band-$this->CCASN, IF$ifChannel";
 
             $rfMin = isset($this->specs['rfMin']) ? $this->specs['rfMin'] : IFSpectrum_calc::RFMIN_DEFAULT;
             $rfMax = isset($this->specs['rfMax']) ? $this->specs['rfMax'] : IFSpectrum_calc::RFMAX_DEFAULT;
@@ -678,15 +662,13 @@ class IFSpectrum_impl extends TestData_header {
             $this->image_url .= $this->plotter->getOutputFileName();
 
             if ($this->plotURLs[$ifChannel]->keyId == '') {
-                $this->plotURLs[$ifChannel] = new GenericTable();
-                $this->plotURLs[$ifChannel]->NewRecord('TEST_IFSpectrum_urls','keyId',40,'fkFacility');
-                $this->plotURLs[$ifChannel]->SetValue('fkHeader',$this->TDHkeys[0]);
-                $this->plotURLs[$ifChannel]->SetValue('Band',$this->band);
-                $this->plotURLs[$ifChannel]->SetValue('IFChannel',$ifChannel);
-                $this->plotURLs[$ifChannel]->SetValue('IFGain',$ifGain);
-
+                $this->plotURLs[$ifChannel] = TEST_IFSpectrum_urls::NewRecord('TEST_IFSpectrum_urls', 'keyId', 40, 'fkFacility');
+                $this->plotURLs[$ifChannel]->fkHeader = $this->TDHkeys[0];
+                $this->plotURLs[$ifChannel]->Band = $this->Band;
+                $this->plotURLs[$ifChannel]->IFChannel = $ifChannel;
+                $this->plotURLs[$ifChannel]->IFGain = $ifGain;
             }
-            $this->plotURLs[$ifChannel]->SetValue($typeURL, $this->image_url);
+            $this->plotURLs[$ifChannel]->$typeURL = $this->image_url;
             $this->plotURLs[$ifChannel]->Update();
 
             // Update the progress display image:
@@ -699,7 +681,7 @@ class IFSpectrum_impl extends TestData_header {
         $ifGain = 15;
         $progress = $progressStart;
 
-        for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
+        for ($ifChannel = 0; $ifChannel <= $iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())
                 return;
 
@@ -722,11 +704,11 @@ class IFSpectrum_impl extends TestData_header {
     public function Calc_TotalInbandPower($progressStart, $progressIncrement) {
         $iflim = $this->specs['maxch'];
         $progress = $progressStart;
-        
-        $nfData = $this->ifSpectrumDb->getNoiseFloorData($this->$keyNoiseFloor);
+
+        $nfData = $this->ifSpectrumDb->getNoiseFloorData($this->keyNoiseFloor);
         $this->ifCalc->setNoiseFloorData($nfData);
-        
-        for ($ifChannel=0; $ifChannel<=$iflim; $ifChannel++) {
+
+        for ($ifChannel = 0; $ifChannel <= $iflim; $ifChannel++) {
             if ($this->ProgressCheckForAbort())
                 return;
 
@@ -758,45 +740,43 @@ class IFSpectrum_impl extends TestData_header {
     }
 
     public function Export($outputDir) {
-        $destFile = $outputDir . "IFSpectrum_B" . $this->band . "_G" . $this->dataSetGroup . ".ini";
+        $destFile = $outputDir . "IFSpectrum_B{$this->Band}_G{$this->dataSetGroup}.ini";
         $handle = fopen($destFile, "w");
         fwrite($handle, "[export]\n");
-        fwrite($handle, "band=" . $this->band . "\n");
-        fwrite($handle, "group=" . $this->dataSetGroup . "\n");
-        fwrite($handle, "FEid=" . $this->FEid . "\n");
-        fwrite($handle, "CCAid=" . $this->CCAid . "\n");
-        fwrite($handle, "TDHid=" . $this->TDHid . "\n");
+        fwrite($handle, "band={$this->Band}\n");
+        fwrite($handle, "group={$this->dataSetGroup}\n");
+        fwrite($handle, "FEid={$this->FEid}\n");
+        fwrite($handle, "CCAid={$this->CCAid}\n");
+        fwrite($handle, "TDHid={$this->TDHid}\n");
 
         $URLs = $this->getPlotURLs();
 
         if (isset($URLs[0])) {
-            fwrite($handle, "spurious_IF0=" . $URLs[0] -> GetValue('spurious_url2d'). "\n");
-            fwrite($handle, "spurious2_IF0=" . $URLs[0] -> GetValue('spurious_url2d2'). "\n");
-            fwrite($handle, "powervar_2GHz_IF0=" . $URLs[0] -> GetValue('powervar_2GHz_url'). "\n");
-            fwrite($handle, "powervar_31MHz_IF0=" . $URLs[0] -> GetValue('powervar_31MHz_url'). "\n");
+            fwrite($handle, "spurious_IF0={$URLs[0]->spurious_url2d}\n");
+            fwrite($handle, "spurious2_IF0={$URLs[0]->spurious_url2d2}\n");
+            fwrite($handle, "powervar_2GHz_IF0={$URLs[0]->powervar_2GHz_url}\n");
+            fwrite($handle, "powervar_31MHz_IF0={$URLs[0]->powervar_31MHz_url}\n");
         }
         if (isset($URLs[1])) {
-            fwrite($handle, "spurious_IF1=" . $URLs[1] -> GetValue('spurious_url2d'). "\n");
-            fwrite($handle, "spurious2_IF1=" . $URLs[1] -> GetValue('spurious_url2d2'). "\n");
-            fwrite($handle, "powervar_2GHz_IF1=" . $URLs[1] -> GetValue('powervar_2GHz_url'). "\n");
-            fwrite($handle, "powervar_31MHz_IF1=" . $URLs[1] -> GetValue('powervar_31MHz_url'). "\n");
+            fwrite($handle, "spurious_IF1={$URLs[1]->spurious_url2d}\n");
+            fwrite($handle, "spurious2_IF1={$URLs[1]->spurious_url2d2}\n");
+            fwrite($handle, "powervar_2GHz_IF1={$URLs[1]->powervar_2GHz_url}\n");
+            fwrite($handle, "powervar_31MHz_IF1={$URLs[1]->powervar_31MHz_url}\n");
         }
         if (isset($URLs[2])) {
-            fwrite($handle, "spurious_IF2=" . $URLs[2] -> GetValue('spurious_url2d'). "\n");
-            fwrite($handle, "spurious2_IF2=" . $URLs[2] -> GetValue('spurious_url2d2'). "\n");
-            fwrite($handle, "powervar_2GHz_IF2=" . $URLs[2] -> GetValue('powervar_2GHz_url'). "\n");
-            fwrite($handle, "powervar_31MHz_IF2=" . $URLs[2] -> GetValue('powervar_31MHz_url'). "\n");
+            fwrite($handle, "spurious_IF2={$URLs[2]->spurious_url2d}\n");
+            fwrite($handle, "spurious2_IF2={$URLs[2]->spurious_url2d2}\n");
+            fwrite($handle, "powervar_2GHz_IF2={$URLs[2]->powervar_2GHz_url}\n");
+            fwrite($handle, "powervar_31MHz_IF2={$URLs[2]->powervar_31MHz_url}\n");
         }
         if (isset($URLs[3])) {
-            fwrite($handle, "spurious_IF3=" . $URLs[3] -> GetValue('spurious_url2d'). "\n");
-            fwrite($handle, "spurious2_IF3=" . $URLs[3] -> GetValue('spurious_url2d2'). "\n");
-            fwrite($handle, "powervar_2GHz_IF3=" . $URLs[3] -> GetValue('powervar_2GHz_url'). "\n");
-            fwrite($handle, "powervar_31MHz_IF3=" . $URLs[3] -> GetValue('powervar_31MHz_url'). "\n");
+            fwrite($handle, "spurious_IF3={$URLs[3]->spurious_url2d}\n");
+            fwrite($handle, "spurious2_IF3={$URLs[3]->spurious_url2d2}\n");
+            fwrite($handle, "powervar_2GHz_IF3={$URLs[3]->powervar_2GHz_url}\n");
+            fwrite($handle, "powervar_31MHz_IF3={$URLs[3]->powervar_31MHz_url}\n");
         }
         fclose($handle);
         echo "Exported '$destFile'.<br>";
         return $destFile;
     }
-
 } // end class
-?>

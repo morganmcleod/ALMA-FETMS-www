@@ -25,8 +25,7 @@
 
 
     $TestData_header_keyId = $_REQUEST['keyheader'];
-    $td = new TestData_header();
-    $td->Initialize_TestData_header($TestData_header_keyId, $fc);
+    $td = new TestData_header($TestData_header_keyId, $fc);
 
     $cryostat = new Cryostat;
     $cryostat->Initialize_Cryostat($td->Component->keyId, $fc);
@@ -42,11 +41,11 @@
         }
         $cryostat->Update_Cryostat();
         echo "Record Updated<br><br>";
-        //echo '<meta http-equiv="Refresh" content="1;url=cryostat.php?keyId='.$cryostat->keyId.'&fc='.$cryostat->GetValue('keyFacility').'">';
+        //echo '<meta http-equiv="Refresh" content="1;url=cryostat.php?keyId='.$cryostat->keyId.'&fc='.$cryostat->keyFacility.'">';
     }
 
     $title = "<a href='../ShowComponents.php?conf=$cryostat->keyId&fc=$fc'>
-          <font color='#ffffff'>Cryostat " . $cryostat->GetValue('SN') .
+          <font color='#ffffff'>Cryostat " . $cryostat->SN .
         "</font></a>";
 
     $feconfig = $cryostat->FEConfig;
@@ -62,9 +61,9 @@
 
 
                     <?php
-                    $exportcsvurl = "export_to_csv.php?keyheader=$td->keyId&fc=" . $td->GetValue('keyFacility');
+                    $exportcsvurl = "export_to_csv.php?keyheader=$td->keyId&fc=" . $td->keyFacility;
 
-                    switch ($td->GetValue('fkTestData_Type')) {
+                    switch ($td->fkTestData_Type) {
                         case '28':
                             //cryo pas
                             echo "
@@ -112,7 +111,7 @@
                     echo "<table<tr><td>";
                     $td->Display_DataForm();
                     echo "</td></tr><tr><td>";
-                    $cryostat->DisplayData_Cryostat($td->GetValue('fkTestData_Type'));
+                    $cryostat->DisplayData_Cryostat($td->fkTestData_Type);
                     echo "</td></tr>";
 
                     unset($td);

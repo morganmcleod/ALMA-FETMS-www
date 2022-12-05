@@ -22,8 +22,7 @@ if ($_POST['submitornot'] == 1) {
         //$link=modifyLink($link);
     }
 
-    $component = new FEComponent();
-    $component->Initialize_FEComponent($keyComp, $fc);
+    $component = new FEComponent(NULL, $keyComp, NULL, $fc);
     $component->SetValue('Notes', addslashes($_REQUEST['notes']));
     $component->SetValue('keyFacility', $fc);
     $component->SetValue('Description', addslashes($_REQUEST['descr']));
@@ -39,4 +38,3 @@ if ($_POST['submitornot'] == 1) {
 
     echo "<script type='text/javascript' language='JavaScript'>location.href='ShowComponents.php?conf=$keyComp&fc=$fc'</script>";
 }
-?>

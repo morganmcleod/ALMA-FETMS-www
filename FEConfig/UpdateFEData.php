@@ -15,11 +15,9 @@ if (strpos($url, "http") === false) {
 
 //get front end config value
 $updateFE = mysqli_query($dbconnection, "UPDATE Front_Ends SET ESN='$cansn',Docs='$url',Description='$notes'
-					  WHERE keyFrontEnds=(SELECT fkFront_Ends FROM FE_Config WHERE
-					  keyFEConfig='$keyFE' AND FE_Config.keyFacility='$facility')
-					  AND Front_Ends.keyFacility='$facility'")
+                      WHERE keyFrontEnds=(SELECT fkFront_Ends FROM FE_Config WHERE
+                      keyFEConfig='$keyFE' AND FE_Config.keyFacility='$facility')
+                      AND Front_Ends.keyFacility='$facility'")
     or die("could not update FE" . mysqli_error($dbconnection));
 
 echo "{success:true}";
-
-?>

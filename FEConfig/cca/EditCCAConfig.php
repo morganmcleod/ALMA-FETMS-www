@@ -29,14 +29,13 @@ if (isset($_REQUEST['fc'])) {
 }
 
 $comp_key = $_REQUEST['conf'];
-$cca = new CCA();
-$cca->Initialize_CCA($comp_key, $fc, CCA::INIT_SLN);
+$cca = new CCA($comp_key, $fc, CCA::INIT_SLN);
 
-$title = "Edit CCA " . $cca->GetValue('Band') . "-" . $cca->GetValue('SN') . " Configuration";
+$title = "Edit CCA " . $cca->Band . "-" . $cca->SN . " Configuration";
 
 $feconfig = $cca->FEConfig;
 $fesn = $cca->FESN;
-$band = $cca->GetValue('Band');
+$band = $cca->Band;
 
 echo "<body id = 'body2' onload='createCompTabs(" . $band . ", 20, " . $comp_key . ")' BGCOLOR='#19475E'>";
 
@@ -50,18 +49,15 @@ if (isset($_REQUEST['submit'])) {
 
     //Preserve these values in the new SLN record
 
-    $oldStatus   = $cca->sln->GetValue('fkStatusType');
-    $oldLocation = $cca->sln->GetValue('fkLocationNames');
-    $updatestring = "Updated mixer and preamp params for CCA " . $cca->GetValue('Band') . "-" . $cca->GetValue('SN');
+    $oldStatus   = $cca->sln->fkStatusType;
+    $oldLocation = $cca->sln->fkLocationNames;
+    $updatestring = "Updated mixer and preamp params for CCA " . $cca->Band . "-" . $cca->SN;
     $feconfig = $cca->FEConfig;
 
 
     $cca->Update_Configuration();
     echo "<meta http-equiv='Refresh' content='0.1;url=../ShowComponents.php?conf=$cca->keyId&fc=$fc'>";
 
-
-    //Update sln info for component and front end
-    $dbops->UpdateStatusLocationAndNotes_FE($cca->FEfc, '', '', $updatestring, $feconfig, $feconfig, ' ', '');
 }
 echo "<form action='" . $_SERVER["PHP_SELF"] . "' method='post' name='Submit' id='Submit'>";
 echo "
@@ -89,7 +85,7 @@ echo "
 
 <?php
 echo "<input type = 'hidden' name ='conf' value='$cca->keyId'>";
-echo "<input type = 'hidden' name ='fc' value='" . $cca->GetValue('keyFacility') . "'>";
+echo "<input type = 'hidden' name ='fc' value='" . $cca->keyFacility . "'>";
 ?>
 
 </form>

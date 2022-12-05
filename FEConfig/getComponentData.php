@@ -12,8 +12,7 @@ $comp_type = (isset($_POST['type'])) ? $_POST['type'] : '';
 $selected_key = (isset($_POST['config'])) ? $_POST['config'] : '';
 $tabtype = (isset($_POST['tabtype'])) ? $_POST['tabtype'] : '';
 
-$fecomponent = new FEComponent();
-$fecomponent->Initialize_FEComponent($selected_key, $fc, -1);
+$fecomponent = new FEComponent(NULL, $selected_key, NULL, $fc, -1);
 
 if ($tabtype == "testdata") {
     $fecomponent->DisplayTable_TestData();
@@ -29,8 +28,7 @@ if ($tabtype == "testdata") {
     }
 } else if ($comp_type == 20) {
     // CCA tab:
-    $cca = new CCA();
-    $cca->Initialize_CCA($selected_key, $fc);
+    $cca = new CCA($selected_key, $fc);
     switch ($tabtype) {
         case 2:
             $cca->Display_MixerParams();
@@ -47,8 +45,7 @@ if ($tabtype == "testdata") {
     unset($cca);
 } else if ($comp_type == 6) {
     // Cryostat tab:
-    $cryo = new Cryostat();
-    $cryo->Initialize_Cryostat($selected_key, $fc);
+    $cryo = new Cryostat($selected_key, $fc);
     switch ($tabtype) {
         case 2:
             $cryo->DisplayTempSenors();
@@ -61,8 +58,7 @@ if ($tabtype == "testdata") {
     unset($cryo);
 } else if ($comp_type == 11) {
     // WCA tab:
-    $wca = new WCA();
-    $wca->Initialize_WCA($selected_key, $fc, WCA::INIT_ALL);
+    $wca = new WCA($selected_key, $fc, WCA::INIT_ALL);
     switch ($tabtype) {
         case 2:
             $wca->DisplayMainDataNonEdit();
@@ -79,5 +75,3 @@ if ($tabtype == "testdata") {
     }
     unset($wca);
 }
-
-?>

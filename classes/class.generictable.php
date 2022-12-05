@@ -26,132 +26,114 @@
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
 
-class GenericTable{
-    var $propertyNames; //Array of column headers for a table
-    var $propertyVals;  //Array of field values for a tabel record.
-    var $tableName;     //Name of the table
-    var $keyId;         //Primary key field values
-    var $keyId_name;    //Column name of primary key field
-    var $dbconnection;  //Database connection
-    var $fc;            //Facility Code.
-    var $fckeyname;     //faciliity key name
-    var $subheader;     //Generic table object, for a record in a subheader table with a
-                        //foreign key pointing to this object record.
-    
-    public function __construct() {
-        $this->dbconnection = site_getDbConnection();        
+class GenericTable {
+    var $columnNames;   // Array of column headers for a table
+    var $tableName;     // Name of the table
+    var $keyId;         // Primary key field values
+    var $keyIdName;     // Column name of primary key field
+    var $dbConnection;  // Database connection
+    var $fc;            // Facility Code.
+    var $fcKeyName;     // faciliity key name
+    var $subHeader;     // Generic table object, for a record in a subHeader table with a
+    // foreign key pointing to this object record.
+
+    public function __construct($tableName, $inKeyId = "", $inKeyIdName, $inFc = '40', $inFcKeyName = 'none') {
+        $this->dbConnection = site_getDbConnection();
+        if (empty($tableName)) return;
+        $this->tableName = $tableName;
+        $this->keyId = $inKeyId;
+        $this->keyIdName = $inKeyIdName;
+        $this->fcKeyName = $inFcKeyName;
+
+        // Get parameter names (column names in table)
+        $q = "SHOW COLUMNS FROM {$tableName};";
+        $r = mysqli_query($this->dbConnection, $q);
+        $this->columnNames = [];
+        while ($res = mysqli_fetch_array($r)) {
+            array_push($this->columnNames, $res[0]);
+            $this->{$res[0]} = "";
+        }
+
+        // Get parameter values. Facility code is optional, so one of two possible
+        // queries will be used.
+        if ($inKeyId) {
+            if ($this->fcKeyName != 'none') {
+                $qVals = "SELECT * FROM $tableName
+                          WHERE $inKeyIdName = $inKeyId
+                          AND $this->fcKeyName = $inFc LIMIT 1;";
+            }
+            if ($this->fcKeyName == 'none') {
+                $qVals = "SELECT * FROM $tableName
+                          WHERE $inKeyIdName = $inKeyId LIMIT 1;";
+            }
+            $rVals = mysqli_query($this->dbConnection, $qVals);
+            $arrayValues = mysqli_fetch_row($rVals);
+            if (is_array($arrayValues) || is_object($arrayValues)) {
+                foreach ($arrayValues as $key => $value) {
+                    $colName = $this->columnNames[$key];
+                    $this->{$colName} = $value ?? "";
+                }
+            }
+        }
     }
-    
-    public function GetValue($ValueName) {
+
+    public function GetValue($valueName) {
         /*
          * Arguments:
-         * ValueName- Column name
+         * valueName- Column name
          *
          * Searches the array propertyVals where index value equals the index in propertyNames
-         * where propertyNames element = ValueName.
+         * where propertyNames element = valueName.
          *
-         * Returns the value of the specified field (ValueName).
+         * Returns the value of the specified field (valueName).
          */
-        $index = array_search($ValueName, $this->propertyNames, true);
-        if ($index === false || !isset($this->propertyVals[$index]))
-            return '';
-        else
-            return stripslashes($this->propertyVals[$index]);
+        if (!isset($this->{$valueName})) return '';
+        else return stripslashes($this->{$valueName});
     }
 
-    public function SetValue($ValueName,$SetValue){
+    public function SetValue($valueName, $setValue) {
         /*
          *Arguments:
-         *ValueName- Name of parameter
-         *SetValue- New value to apply to that parameter
+         *valueName- Name of parameter
+         *setValue- New value to apply to that parameter
          *
-         *Sets the appropriate value in propertyVals to the specified value (SetValue).
+         *Sets the appropriate value in propertyVals to the specified value (setValue).
          */
-        $index = array_search($ValueName,$this->propertyNames,true);
-        if ($index !== false)
-            $this->propertyVals[$index] = $SetValue;
+        $this->{$valueName} = $setValue;
     }
 
-    public function Initialize($tableName, $in_keyId = "", $in_keyId_name, $in_fc = '0', $in_fckeyname = 'none'){
-        /*
-         * This function retrieves all field values and field names for a spefcific table record.
-         * The retrieved values and names comprise the parameter names and values of this object.
-         *
-         * Arguments:
-         * tableName    - Name of database table
-         * in_keyId     - Value of primary key field
-         * in_keyId_name- Name of primary key field
-         * in_fc        - Facility code value (optional)
-         * in_fckeyname - Name of facility code key field (optional)
-         */
-        
-        $this->tableName = $tableName;
-        $this->keyId = $in_keyId;
-        $this->keyId_name = $in_keyId_name;
-        $this->fckeyname = $in_fckeyname;
-
-        //Get parameter names (column names in table)
-        $q = "show columns from $tableName;";
-//         var_dump($q);
-        $r = mysqli_query($this->dbconnection, $q);
-//         var_dump($r);
-        $counter=0;
-        while ($res = mysqli_fetch_array($r)){
-            $this->propertyNames[$counter] = $res[0];
-            $counter++;
-        }
-
-        if ($in_keyId) {
-            //Get parameter values. Facility code is optional, so one of two possible
-            //queries will be used.
-            if ($this->fckeyname != 'none'){
-                $qVals = "SELECT * FROM $tableName WHERE $in_keyId_name = $in_keyId AND $this->fckeyname = $in_fc;";
-            }
-            if ($this->fckeyname == 'none'){
-                $qVals = "SELECT * FROM $tableName WHERE $in_keyId_name = $in_keyId;";
-            }
-//             var_dump($qVals);
-            $rVals = mysqli_query($this->dbconnection, $qVals);
-            $this->propertyVals = mysqli_fetch_array($rVals);
-        }
-    }
-
-    public function NewRecord($tableName, $in_keyIdname = 'keyId', $in_fc = '0', $in_fckeyname = 'none'){
+    public static function NewRecord($tableName, $inKeyIdName = 'keyId', $inFc = '40', $inFcKeyName = 'none') {
         /*
          * This function creates a new record in the database.
          *
          * Arguments:
          * tableName    - Name of table
-         * in_keyIdname - Name of primary key field
-         * in_fc        - Facility code (optional)
-         * in_fckeynamee- Name of facility code field (optional)
+         * inKeyIdName  - Name of primary key field
+         * inFc         - Facility code (optional)
+         * inFcKeyName  - Name of facility code field (optional)
          */
-        $this->tableName = $tableName;
-        $this->keyId_name = $in_keyIdname;
-        $this->fckeyname = $in_fckeyname;
+        $dbConnection = site_getDbConnection();
 
-        //If no facility code is provided, a default value is obtained in config_main.php.
-
-        //Facility code is optional, so one of two INSERT statements will be used for the new record.
-        if ($this->fckeyname != "none"){
-            $qNew = "INSERT INTO $this->tableName($in_fckeyname) VALUES($in_fc);";
-        }
-        if ($this->fckeyname == "none"){
-            $qNew = "INSERT INTO $this->tableName() VALUES();";
+        // If no facility code is provided, a default value is obtained in config_main.php.
+        // Facility code is optional, so one of two INSERT statements will be used for the new record.
+        if ($inFcKeyName != "none") {
+            $qNew = "INSERT INTO $tableName($inFcKeyName) VALUES($inFc);";
+        } else {
+            $qNew = "INSERT INTO $tableName() VALUES();";
         }
 
-        $rNew = mysqli_query($this->dbconnection, $qNew);
+        $rNew = mysqli_query($dbConnection, $qNew);
 
-        //After the record has been created, get the new primary key value
-        $qNew = "SELECT MAX($this->keyId_name) FROM $this->tableName;";
-        $rNew = mysqli_query($this->dbconnection, $qNew);
-        $this->keyId = ADAPT_mysqli_result($rNew,0);
+        // After the record has been created, get the new primary key value
+        $qNew = "SELECT MAX($inKeyIdName) FROM $tableName;";
+        $rNew = mysqli_query($dbConnection, $qNew);
+        $keyId = ADAPT_mysqli_result($rNew, 0);
 
-        //Call the Initialize function again, so that this object represents what is in the new record.
-        $this->Initialize($tableName,$this->keyId,$this->keyId_name,$in_fc,$in_fckeyname);
+        // Call the Initialize function again, so that this object represents what is in the new record.
+        return new self($tableName, $keyId, $inKeyIdName, $inFc, $inFcKeyName);
     }
 
-    public function RequestValues(){
+    public function RequestValues() {
         /*
          * This function requests GET and POST variables sent to a PHP page.
          * It checks all of its paramter names and looks for any GET or POST variables with the same name.
@@ -159,54 +141,55 @@ class GenericTable{
          * is updated with the variable value.
          */
 
-        //Iterate through all of this objects parameter names
-        foreach ($this->propertyNames as &$propertyName){
-            //If a GET or POST variable has the same name, set the
-            //corresponding parameter value of thsi object.
-            if (isset($_REQUEST[$propertyName])){
-            $this->SetValue($propertyName,$_REQUEST[$propertyName]);
+        // Iterate through all of this objects parameter names
+        foreach ($this->columnNames as &$column) {
+            // If a GET or POST variable has the same name, set the
+            // corresponding parameter value of this object.
+            if (isset($_REQUEST[$column])) {
+                $this->SetValue($column, $_REQUEST[$column]);
             }
         }
 
-        //If 'deleterecord' is set, display a basic delete form.
-        if (isset($_REQUEST['deleterecord'])){
-            $this->Display_delete_form();
-        }
-        //if the 'deleterecord_forsure' value is set, delete the record.
-        if (isset($_REQUEST['deleterecord_forsure'])){
-            $this->Delete_record();
-        }
+        // If 'deleterecord' is set, display a basic delete form.
+        if (isset($_REQUEST['deleterecord'])) $this->Display_delete_form();
+
+        // if the 'deleterecord_forsure' value is set, delete the record.
+        if (isset($_REQUEST['deleterecord_forsure'])) $this->Delete_record();
     }
 
-    public function Update(){
+    public function Update() {
         /*
          * This function updates the datbase so that all of the record fields contain
          * the current object parameter values.
          */
 
-        //Create the update query.
-        $qu = "UPDATE $this->tableName SET ";
-        foreach($this->propertyNames as $tempName){
-            if ($tempName != $this->keyId_name){
-                $qu .= " $tempName='" . mysqli_real_escape_string($this->dbconnection, $this->propertyVals[array_search($tempName,$this->propertyNames,true)]) . "',";
+        // Create the update query.
+        $qu = "UPDATE $this->tableName SET";
+        foreach ($this->columnNames as $column) {
+            if ($column != $this->keyIdName) {
+                $qu .= " $column='"
+                    . mysqli_real_escape_string(
+                        $this->dbConnection,
+                        $this->{$column}
+                    )
+                    . "',";
             }
         }
 
-        //Remove the last comma from the query.
-        $qu=substr($qu,0,strlen($qu)-1);
+        // Remove the last comma from the query.
+        $qu = substr($qu, 0, strlen($qu) - 1);
 
-        //There may be a facilty code, so one of two possible "WHERE" clauses will be used accordingly.
-        if ($this->fckeyname == 'none'){
-            $qu .= " WHERE $this->keyId_name = $this->keyId LIMIT 1;";
+        // There may be a facilty code, so one of two possible "WHERE" clauses will be used accordingly.
+        if ($this->fcKeyName == 'none') {
+            $qu .= " WHERE {$this->keyIdName} = {$this->keyId} LIMIT 1;";
+        } else {
+            $qu .= " WHERE {$this->keyIdName} = {$this->keyId}
+                AND {$this->fcKeyName} = {$this->GetValue($this->fcKeyName)} LIMIT 1;";
         }
-        if ($this->fckeyname != 'none'){
-            $qu .= " WHERE $this->keyId_name = $this->keyId
-                    AND $this->fckeyname = " . $this->GetValue($this->fckeyname) . " LIMIT 1;";
-        }
-        $ru = mysqli_query($this->dbconnection, $qu);
+        mysqli_query($this->dbConnection, $qu);
     }
 
-    public function Display_data(){
+    public function Display_data() {
         /*
          * This function displays a basic table showing all parameter names and values.
          * Values are shown in editable fields, and a "SAVE CHANGES" button allows for updating
@@ -214,59 +197,58 @@ class GenericTable{
          * This function is only used for debugging purposes and will not appear in any production code.
          */
         echo "<br><font size='+2'><b>$this->tableName</b></font><br>";
-        echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
-            echo "<div style ='width:100%;height:30%'>";
-            echo "<div align='right' style ='width:70%;height:30%'>";
+        echo "<form action='{$_SERVER["PHP_SELF"]}' method='post'>";
+        echo "<div style='width:100%;height:30%'>";
+        echo "<div align='right' style='width:70%;height:30%'>";
 
-            $NameIndex=0;
-            foreach($this->propertyNames as $tempName){
-                if ($tempName != $this->keyId_name){
-                    echo "<br>$tempName<input type='text' name='$tempName' size='50'
-                    maxlength='200' value = '".$this->propertyVals[$NameIndex]."'>";
-                }
-                $NameIndex++;
+        $NameIndex = 0;
+        foreach ($this->columnNames as $column) {
+            if ($column != $this->keyIdName) {
+                echo "<br>$column<input type='text' name='$column' size='50'
+                    maxlength='200' value='{$this->{$column}}'>";
             }
+            $NameIndex++;
+        }
 
-            echo "<input type='hidden' name='$this->keyId_name' value='$this->keyId'>";
-            echo "<input type='hidden' name='fc' value='$this->fc'>";
-            echo "<input type='hidden' name='tablename' value='$this->tableName'>";
-            echo "<br><br><input type='submit' name = 'submitted' value='SAVE CHANGES'>";
-            echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'>";
-            echo "</div></div>";
+        echo "<input type='hidden' name='{$this->keyIdName}' value='{$this->keyId}'>";
+        echo "<input type='hidden' name='fc' value='{$this->fc}'>";
+        echo "<input type='hidden' name='tablename' value='{$this->tableName}'>";
+        echo "<br><br><input type='submit' name='submitted' value='SAVE CHANGES'>";
+        echo "<input type='submit' name='deleterecord' value='DELETE RECORD'>";
+        echo "</div></div>";
         echo "</form>";
     }
 
-    public function Display_delete_form(){
+    public function Display_delete_form() {
         /*
          * This function displays a form asking if the user is sure they want to
          * delete a record.
          */
 
-        echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">
-        <b><font size="+1">Are you sure you want to delete this record?</b></font>';
+        echo "<form action='{$_SERVER["PHP_SELF"]}' method='post'>
+            <b><font size='+1'>Are you sure you want to delete this record?</b></font>";
 
-        echo "<input type='hidden' name= 'fc' value='" . $this->GetValue($this->fckeyname) . "' />";
-        echo "<br><input type='submit' name = 'deleterecord_forsure' value='YES, DELETE RECORD'><br><br>";
-        echo "<input type='hidden' name='" . $this->keyId_name . "' value='" . $this->keyId . "'></form>";
-
+        echo "<input type='hidden' name='fc' value='{$this->GetValue($this->fcKeyName)}' />";
+        echo "<br><input type='submit' name='deleterecord_forsure' value='YES, DELETE RECORD'><br><br>";
+        echo "<input type='hidden' name='{$this->keyIdName}' value='{$this->keyId}'></form>";
     }
-    public function Delete_record(){
+
+    public function Delete_record() {
         /*
          * This function deletes the record from the database.
          */
 
         //A facility code may be present, so one of two possible delete queries is used.
-        if ($this->fckeyname == 'none'){
-            $qdelete = "DELETE FROM $this->tableName WHERE $this->keyId_name =$this->keyId LIMIT 1";
+        if ($this->fcKeyName == 'none') {
+            $qdelete = "DELETE FROM $this->tableName WHERE $this->keyIdName =$this->keyId LIMIT 1";
+        } else {
+            $qdelete = "DELETE FROM $this->tableName WHERE $this->keyIdName =$this->keyId
+                        AND $this->fcKeyName = $this->fc LIMIT 1";
         }
-        if ($this->fckeyname != 'none'){
-            $qdelete = "DELETE FROM $this->tableName WHERE $this->keyId_name =$this->keyId
-                        AND $this->fckeyname = $this->fc LIMIT 1";
-        }
-        $rdelete = mysqli_query($this->dbconnection, $qdelete);
+        mysqli_query($this->dbConnection, $qdelete);
     }
 
-    public function DuplicateRecord(){
+    public function DuplicateRecord() {
         /*
          * This function creates a new record in the database, and copies the current parameter values into the
          * new record.
@@ -275,28 +257,25 @@ class GenericTable{
         //Create the INSERT query using all the parameter names and values of this object.
         $qCopy = "INSERT INTO $this->tableName (";
 
-        for ($i = 0; $i< count($this->propertyNames); $i++){
-            if (($this->propertyNames[$i] != $this->keyId_name) && ($this->propertyNames[$i] != "TS")){
-                $qCopy .= $this->propertyNames[$i];
-                $qCopy .= ",";
+        foreach ($this->columnNames as $column) {
+            if (($column != $this->keyIdName) && ($column != "TS")) {
+                $qCopy .= $column . ",";
             }
         }
-        $qCopy = rtrim($qCopy,",") . ") VALUES (";
-        for ($i = 0; $i< count($this->propertyNames); $i++){
-            if (($this->propertyNames[$i] != $this->keyId_name) && ($this->propertyNames[$i] != "TS")){
-                $qCopy .= "'" . $this->propertyVals[$i] . "'";
-                $qCopy .= ",";
+        $qCopy = rtrim($qCopy, ",") . ") VALUES (";
+        foreach ($this->columnNames as $column) {
+            if (($column != $this->keyIdName) && ($column != "TS")) {
+                $qCopy .= "'{$this->{$column}}',";
             }
         }
-        $qCopy = rtrim($qCopy,",") . ");";
-        $rCopy = mysqli_query($this->dbconnection, $qCopy);
+        $qCopy = rtrim($qCopy, ",") . ");";
+        mysqli_query($this->dbConnection, $qCopy);
 
         //After the new duplicate record is created, get the primary key value and reinitialize
         //this object to the newly created record.
-        $qMax = "SELECT MAX($this->keyId_name) FROM $this->tableName;";
-        $rMax = mysqli_query($this->dbconnection, $qMax);
-        $newId = ADAPT_mysqli_result($rMax,0,0);
-        $this->Initialize($this->tableName,$newId,$this->keyId_name,$this->GetValue($this->fckeyname), $this->fckeyname);
+        $qMax = "SELECT MAX($this->keyIdName) FROM $this->tableName;";
+        $rMax = mysqli_query($this->dbConnection, $qMax);
+        $newId = ADAPT_mysqli_result($rMax, 0, 0);
+        $this->__construct($this->tableName, $newId, $this->keyIdName, $this->GetValue($this->fcKeyName), $this->fcKeyName);
     }
 }
-?>

@@ -25,11 +25,10 @@
     $keyId = $_REQUEST['id'];  //keyId of FE
     $fc = $_REQUEST['fc'];
 
-    $fe = new FrontEnd();
-    $fe->Initialize_FrontEnd($keyId, $fc, FrontEnd::INIT_SLN);
+    $fe = new FrontEnd($keyId, $fc, FrontEnd::INIT_SLN);
     //This is used by the header to display a link back to the FE page
     $feconfig = $fe->feconfig->keyId;
-    $fesn = $fe->GetValue('SN');
+    $fesn = $fe->SN;
 
     $title = "Front End SN $fesn";
     include "header.php";
@@ -56,16 +55,16 @@
             if (strlen($_REQUEST['Notes']) > 1) {
                 $HasChanged = 1;
             }
-            if ($_REQUEST['fkLocationNames'] != $fe->fesln->GetValue('fkLocationNames')) {
+            if ($_REQUEST['fkLocationNames'] != $fe->fesln->fkLocationNames) {
                 $HasChanged = 2;
                 $ChangedNotes .= " Location,";
             }
-            if ($_REQUEST['fkStatusType'] != $fe->fesln->GetValue('fkStatusType')) {
+            if ($_REQUEST['fkStatusType'] != $fe->fesln->fkStatusType) {
                 $HasChanged = 2;
                 $ChangedNotes .= " Status,";
             }
-            if ($_REQUEST['lnk_Data'] != $fe->fesln->GetValue('lnk_Data')) {
-                $len1 = strlen($fe->fesln->GetValue('lnk_Data'));
+            if ($_REQUEST['lnk_Data'] != $fe->fesln->lnk_Data) {
+                $len1 = strlen($fe->fesln->lnk_Data);
                 $len2 = strlen($_REQUEST['lnk_Data']);
 
                 if (($len1 + $len2) >= 4) {
@@ -177,7 +176,7 @@
         //                             $l->WriteLogFile("Status Option: $row[0]");
         //                             $l->WriteLogFile("Current status= " . $fe->fesln->keyId);
 
-        if ($row[0] == $fe->fesln->GetValue('fkStatusType')) {
+        if ($row[0] == $fe->fesln->fkStatusType) {
             echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";
         } else {
             echo "<option value='$row[0]'>$row[1]</option>";
@@ -204,7 +203,7 @@
                               ORDER BY Description ASC;";
     $r = mysqli_query($dbconnection, $q);
     while ($row = mysqli_fetch_array($r)) {
-        if ($row[0] == $fe->fesln->GetValue('fkLocationNames')) {
+        if ($row[0] == $fe->fesln->fkLocationNames) {
             echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";
         } else {
             echo "<option value='$row[0]'>$row[1]</option>";

@@ -1,11 +1,11 @@
 <?php
 
-date_default_timezone_set ('America/New_York');
+date_default_timezone_set('America/Santiago');
 ini_set('display_errors', '1');
 ini_set('memory_limit', '384M');  // needed for IF spectrum plotting.
 $errorReportSettingsNo_E_NOTICE = E_ERROR | E_WARNING | E_PARSE;
 $errorReportSettingsNormal = $errorReportSettingsNo_E_NOTICE | E_NOTICE;
-error_reporting($errorReportSettingsNormal);
+error_reporting($errorReportSettingsNo_E_NOTICE);
 set_time_limit(1800);     // ridiculously long = 30 minutes!
 
 // site_root defaults to the server's document root, but that won't work on any NRAO servers:
@@ -16,6 +16,7 @@ $site_FEConfig = $files_root . "/FEConfig";
 $site_config_main = $files_root . "/config_main.php";
 $site_dbConnect = $files_root . "/dbConnect/dbConnect.php";
 $site_dBcode = $files_root . "/dBcode";
+$site_storage = getenv("STORAGE_HOSTNAME");
 
 // function to get the path to the classes directory:
 function site_get_classes() {
@@ -28,5 +29,3 @@ function site_get_config_main() {
     global $site_config_main;
     return $site_config_main;
 }
-
-?>

@@ -3,12 +3,11 @@ require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.cca.php');
 
 $fc = $_REQUEST['fc'];
-$cca = new CCA();
 $id = $_REQUEST['keyId'];
-$cca->Initialize_CCA($id, $fc, CCA::INIT_TEMPSENSORS);
-$band = $cca->GetValue('Band');
-$sn   = ltrim($cca->GetValue('SN'), '0');
-$esn  = $cca->GetValue('ESN1');
+$cca = new CCA($id, $fc, CCA::INIT_TEMPSENSORS);
+$band = $cca->Band;
+$sn   = ltrim($cca->SN, '0');
+$esn  = $cca->ESN1;
 
 $fname = "cart$band.ini";
 header("Content-type: text/plain");
@@ -75,7 +74,7 @@ echo "\r\n\r\n";
 //4k stage
 if ($cca->TempSensors[3]->keyId != '') {
     $av = "Y";
-    $os = $cca->TempSensors[3]->GetValue('OffsetK');
+    $os = $cca->TempSensors[3]->OffsetK;
 } else {
     $av = "N";
     $os = "0.00";
@@ -110,7 +109,7 @@ OFFSET=0.0\r\n";
 //Pol0 stage
 if ($cca->TempSensors[4]->keyId != '') {
     $av = "Y";
-    $os = $cca->TempSensors[4]->GetValue('OffsetK');
+    $os = $cca->TempSensors[4]->OffsetK;
 } else {
     $av = "N";
     $os = "0.00";
@@ -124,7 +123,7 @@ echo "\r\n\r\n";
 //Pol1 stage
 if ($cca->TempSensors[5]->keyId != '') {
     $av = "Y";
-    $os = $cca->TempSensors[5]->GetValue('OffsetK');
+    $os = $cca->TempSensors[5]->OffsetK;
 } else {
     $av = "N";
     $os = "0.00";
@@ -301,4 +300,3 @@ AVAILABLE=Y
 ";
 
 unset($cca);
-?>

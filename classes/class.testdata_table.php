@@ -4,18 +4,18 @@ require_once($site_dbConnect);
 require_once(site_get_config_main());
 
 class TestDataTable {
-    private $dbconnection;
+    private $dbConnection;
     private $fc;
-    private $band;
+    private $Band;
     private $keyFrontEnd;
     private $compType;
     private $compSN;
     private $FETMS_CCA_MODE;
 
     public function __construct($band = 0) {
-        $this->dbconnection = site_getDbConnection();
+        $this->dbConnection = site_getDbConnection();
         $this->fc = 40;
-        $this->band = $band;
+        $this->Band = $band;
         $this->keyFrontEnd = 0;
         $this->compType = 0;
         $this->compSN = 0;
@@ -50,8 +50,8 @@ class TestDataTable {
          */
 
         // Fetch TDH records matching the FE_Config or FE_Component for this band:
-        $r = $this -> fetchTestDataHeaders();
-        $headers = $this -> groupHeaders($r);
+        $r = $this->fetchTestDataHeaders();
+        $headers = $this->groupHeaders($r);
 
         // config column label:
         $configLabel = $this->getConfigKeyLabel();
@@ -80,7 +80,7 @@ class TestDataTable {
             $notes = $row['notes'];
             $testTS = $row['TS'];
 
-            $trclass = ($trclass=="" ? 'class="alt"' : "");
+            $trclass = ($trclass == "" ? 'class="alt"' : "");
             echo "<tr $trclass><td width='10px' align='center'>$configId</td>";
             echo "<td width='10px' align='center'>$dataStatusDesc</td>";
             echo "<td width='70px'><a href='$link' target = 'blank'>$description</a></td>";
@@ -145,8 +145,8 @@ class TestDataTable {
                     case 7:
                         //IFSpectrum
                         $link = "ifspectrum/ifspectrumplots.php?fc=$fc"
-                                  . "&fe=" . $this->keyFrontEnd . "&b=" . $row['Band']
-                                  . "&id=$keyId";
+                            . "&fe=" . $this->keyFrontEnd . "&b=" . $row['Band']
+                            . "&id=$keyId";
                         $description = "$dataDesc Group $dataSetGroup";
                         break;
 
@@ -177,7 +177,7 @@ class TestDataTable {
                     "selected" => $row['UseForPAI']
                 );
 
-                $outputArray []= $outputRow;
+                $outputArray[] = $outputRow;
             }
         }
         return $outputArray;
@@ -192,14 +192,11 @@ class TestDataTable {
         //"7"	"Cartridge PAI"   = data which is delivered with a CCA or WCA
 
         $dataStatus = '()';
-        if ($this->keyFrontEnd)
-            $dataStatus = '(3)';
-        else if ($this->band == 0)
-            $dataStatus = '(1, 7)';
-        else
-            $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
+        if ($this->keyFrontEnd) $dataStatus = '(3)';
+        else if ($this->Band == 0) $dataStatus = '(1, 7)';
+        else $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
 
-        return $this -> fetchData($dataStatus, $selectedOnly);
+        return $this->fetchData($dataStatus, $selectedOnly);
     }
 
     private function fetchData($dataStatus, $selectedOnly) {
@@ -213,7 +210,7 @@ class TestDataTable {
         $rhKeyId = ($this->keyFrontEnd) ? "fkFE_Config" : "fkFE_Components";
 
         // Filter for band, including band "0" for Components tab:
-        $likeBand = $this->band;
+        $likeBand = $this->Band;
 
         // Filter for component SN
         $likeCompSN = ($this->compSN) ? $this->compSN : '%';
@@ -256,9 +253,7 @@ class TestDataTable {
         // Sorted by test description, and TS in reverse order...
         $q .= "TestData_Types.Description ASC, TDH.TS DESC;";
 
-        $r = mysqli_query($this->dbconnection, $q);
+        $r = mysqli_query($this->dbConnection, $q);
         return $r;
     }
 }
-
-?>

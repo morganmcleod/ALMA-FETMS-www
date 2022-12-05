@@ -25,10 +25,9 @@ $fc = $_REQUEST['fc'];
 $pb = $_REQUEST['pb'];
 $adn = $_REQUEST['adn'];
 
-$fe = new FrontEnd();
-$fe->Initialize_FrontEnd_FromConfig($fecfg, $fc, FrontEnd::INIT_NONE);
+$fe = new FrontEnd(NULL, $fc, FrontEnd::INIT_NONE, $fecfg);
 
-$title = "CIDL Front End " . $fe->GetValue('SN');
+$title = "CIDL Front End " . $fe->SN;
 include('header.php');
 
 $progressfile = $main_write_directory . $fecfg . "_" . "$fc.txt";

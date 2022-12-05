@@ -59,10 +59,9 @@ while ($row = mysqli_fetch_array($r)) {
 
     if (is_numeric($sn)) {
 
-        $wca = new WCA();
-        $wca->Initialize_WCA($id, 40, WCA::INIT_ALL);
+        $wca = new WCA($id, 40, WCA::INIT_ALL);
 
-        $fname = $outDir . "WCA$band-$sn.ini";
+        $fname = "{$outDir}WCA{$band}-{$sn}.ini";
 
         $f = fopen($fname, 'w');
         fwrite($f, $wca->GetIniFileContent('wca'));
@@ -72,5 +71,3 @@ while ($row = mysqli_fetch_array($r)) {
     }
 }
 echo "done.<br>";
-
-?>

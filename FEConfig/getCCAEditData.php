@@ -12,11 +12,9 @@ if (isset($_REQUEST['fc'])) {
 $selected_key = $_POST['config'];
 $tabtype = $_POST['tabtype'];
 
-$fecomponent = new FEComponent();
-$fecomponent->Initialize_FEComponent($selected_key, $fc, -1);
+$fecomponent = new FEComponent(NULL, $selected_key, NULL, $fc);
 
-$cca = new CCA();
-$cca->Initialize_CCA($selected_key, $fc, CCA::INIT_ALL);
+$cca = new CCA($selected_key, $fc, CCA::INIT_ALL);
 switch ($tabtype) {
     case 2:
         $cca->Display_MixerParams_Edit();
@@ -31,4 +29,3 @@ switch ($tabtype) {
         break;
 }
 unset($cca);
-?>
