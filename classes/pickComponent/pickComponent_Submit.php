@@ -3,7 +3,7 @@
 
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 $json = json_decode(file_get_contents('php://input'), true);
 
@@ -28,7 +28,7 @@ if ($tdhIdArray && $newCfg) {
                   WHERE ($where);";
     }
     if ($query) {
-        $r = mysqli_query($dbconnection, $query);
+        $r = mysqli_query($dbConnection, $query);
         if ($r)
             $output = '{"success" : true}';
     }

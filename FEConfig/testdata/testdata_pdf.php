@@ -7,7 +7,7 @@ require_once($site_classes . '/class.finelosweep.php');
 require_once($site_dbConnect);
 require_once('pdf_tables.php');
 
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 $defaultConfig = (new Mpdf\Config\ConfigVariables())->getDefaults();
 $fontDirs = $defaultConfig['fontDir'];

@@ -4,7 +4,7 @@ require_once($site_dbConnect);
 require_once('HelperFunctions.php');
 
 class dbGetQueries {
-    private $dbconnection;
+    private $dbConnection;
 
     public function __construct() {
         $this->dbConnection = site_getDbConnection();

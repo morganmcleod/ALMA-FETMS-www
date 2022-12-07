@@ -30,7 +30,7 @@ require_once($site_libraries . '/array_column/src/array_column.php');
 require_once($site_dbConnect);
 
 class IFSpectrum_db {
-    private $dbconnection;
+    private $dbConnection;
     private $FEid;
     private $CCAid;
     private $band;

@@ -4,7 +4,7 @@ require_once($files_root . '/vendor/autoload.php');
 require_once($site_dbConnect);
 require_once('pdf_tables.php');
 
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 $defaultConfig = (new Mpdf\Config\ConfigVariables())->getDefaults();
 $fontDirs = $defaultConfig['fontDir'];
@@ -22,7 +22,7 @@ $q = "SELECT `Front_Ends`.`SN`
     ON `FE_Config`.fkFront_Ends = `Front_Ends`.keyFrontEnds
     WHERE `FE_Config`.keyFEConfig=$feconfig";
 
-$r = mysqli_query($dbconnection, $q);
+$r = mysqli_query($dbConnection, $q);
 $fesn = ADAPT_mysqli_result($r, 0, 0);
 
 $stylesheet = file_get_contents('pdf.css');

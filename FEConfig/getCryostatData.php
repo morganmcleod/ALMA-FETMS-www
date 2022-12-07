@@ -3,7 +3,7 @@
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.fecomponent.php');
 require_once($site_dbConnect);
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 $band = $_POST['band'];
 $feConfig = $_POST['key'];
@@ -15,7 +15,7 @@ $q = "SELECT DISTINCT(FE_Components.keyId)
     FE_Components.fkFE_ComponentType = 6
     AND FE_ConfigLink.fkFE_Components = FE_Components.keyId
     AND FE_ConfigLink.fkFE_Config = $feConfig;";
-$r = mysqli_query($dbconnection, $q);
+$r = mysqli_query($dbConnection, $q);
 
 $component = new FEComponent(NULL, ADAPT_mysqli_result($r, 0, 0), NULL, $facility);
 

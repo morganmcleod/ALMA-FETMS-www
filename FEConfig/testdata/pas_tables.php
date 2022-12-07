@@ -85,13 +85,13 @@ function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBo
 
 function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $filterChecked) {
 
-    $dbconnection = site_getDbConnection();
+    $dbConnection = site_getDbConnection();
     $q = "SELECT `keyId` FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
         AND BAND = $band AND fkDataStatus = $Data_Status
         ORDER BY `keyId` DESC";
-    $r = mysqli_query($dbconnection, $q) or die("QUERY FAILED: $q");
+    $r = mysqli_query($dbConnection, $q) or die("QUERY FAILED: $q");
 
     $cnt = 0;
     while ($row = mysqli_fetch_array($r)) {
@@ -132,13 +132,13 @@ function band_results_table($FE_Config, $band, $Data_Status, $TestData_Type, $fi
 }
 
 function results_table($FE_Config, $Data_Status, $TestData_Type, $filterChecked) {
-    $dbconnection = site_getDbConnection();
+    $dbConnection = site_getDbConnection();
     $q = "SELECT keyId FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
         AND fkDataStatus = $Data_Status
         ORDER BY `keyId` DESC";
-    $r = mysqli_query($dbconnection, $q) or die("QUERY FAILED: $q");
+    $r = mysqli_query($dbConnection, $q) or die("QUERY FAILED: $q");
     while ($row = mysqli_fetch_array($r)) {
         switch ($TestData_Type) {
             case 4:

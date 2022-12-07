@@ -2,7 +2,7 @@
 // called from dbGrid.js
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 $band=$_GET['band'];
 
@@ -13,7 +13,7 @@ $q = "select keyFacility, keyId, LPAD(SN, 2, '0') AS SN, Band, TS
      AND fkFE_ComponentType = 11
      ORDER BY SN ASC;";
 
-$r = mysqli_query($dbconnection, $q);
+$r = mysqli_query($dbConnection, $q);
 
 
 $outstring = "[";

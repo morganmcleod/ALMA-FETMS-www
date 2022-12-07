@@ -2,7 +2,7 @@
 
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_dbConnect);
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 include('header_js.php');
 echo '<div style="margin-left:30px">';
@@ -19,7 +19,7 @@ if (isset($_REQUEST['band_sn'])){
     $q="SELECT keyFacility, MAX(keyId) FROM FE_Components
     WHERE band=$Band AND SN = $SN
     AND fkFE_ComponentType = 11;";
-    $r = mysqli_query($dbconnection, $q);
+    $r = mysqli_query($dbConnection, $q);
     $row = mysqli_fetch_array($r);
     $fc = $row[0];
     $keyId = $row[1];

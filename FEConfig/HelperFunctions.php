@@ -36,13 +36,13 @@ function FixHyperlink($doclink) {
 }
 
 function FixHyperlinkForMySQL($doclink) {
-    $dbconnection = site_getDbConnection();
+    $dbConnection = site_getDbConnection();
     /*
      * This will preserve a UNC path when inserted in a MySQL query.
      */
     $newdoclink = trim($doclink);
     if (substr($doclink, 0, 1) == "\\") {
-        $newdoclink = mysqli_real_escape_string($dbconnection, $doclink);
+        $newdoclink = mysqli_real_escape_string($dbConnection, $doclink);
     }
     return trim($newdoclink);
 }

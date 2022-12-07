@@ -7,7 +7,7 @@ require_once($site_classes . '/class.scansetdetails.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
 
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 // get the Facility Code and TestDataHeader id from the request:
 $fc = $_REQUEST['fc'];
@@ -24,7 +24,7 @@ $tdh->requestValuesHeader($fkDataStatus, $Notes);
 
 // Find the ScanSetDetails record id corresponding to the TestDataHeader id:
 $q = "SELECT keyId FROM ScanSetDetails WHERE fkHeader = " . $tdh->keyId . ";";
-$r = mysqli_query($dbconnection, $q);
+$r = mysqli_query($dbConnection, $q);
 $ssid = ADAPT_mysqli_result($r, 0, 0);
 
 // Make a ScanSetDetails record object;

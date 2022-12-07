@@ -17,7 +17,7 @@
     require_once($site_classes . '/class.fecomponent.php');
     require_once($site_classes . '/class.logger.php');
     require_once($site_dbConnect);
-    $dbconnection = site_getDbConnection();
+    $dbConnection = site_getDbConnection();
 
     // $l = new Logger('SLNBROKEN.txt');
     // $l->WritELogFile('test');
@@ -79,7 +79,7 @@
             }
 
             if ($_REQUEST['Notes'] != '') {
-                $ChangedNotes = mysqli_real_escape_string($dbconnection, $_REQUEST['Notes']) . "\r\n" . $ChangedNotes;
+                $ChangedNotes = mysqli_real_escape_string($dbConnection, $_REQUEST['Notes']) . "\r\n" . $ChangedNotes;
             }
 
 
@@ -149,7 +149,7 @@
     echo "<option value='' selected = 'selected'></option>";
     $q = "SELECT Initials FROM Users
                               ORDER BY Initials ASC;";
-    $r = mysqli_query($dbconnection, $q);
+    $r = mysqli_query($dbConnection, $q);
     while ($row = mysqli_fetch_array($r)) {
 
         echo "<option value='$row[0]'>$row[0]</option>";
@@ -170,7 +170,7 @@
                     <select name='fkStatusType' id='fkStatusType'>";
     $q = "SELECT keyStatusType,Status FROM StatusTypes
                               ORDER BY keyStatusType ASC;";
-    $r = mysqli_query($dbconnection, $q);
+    $r = mysqli_query($dbConnection, $q);
     while ($row = mysqli_fetch_array($r)) {
 
         //                             $l->WriteLogFile("Status Option: $row[0]");
@@ -201,7 +201,7 @@
                     <select name='fkLocationNames' id='fkLocationNames'>";
     $q = "SELECT keyId,Description FROM Locations
                               ORDER BY Description ASC;";
-    $r = mysqli_query($dbconnection, $q);
+    $r = mysqli_query($dbConnection, $q);
     while ($row = mysqli_fetch_array($r)) {
         if ($row[0] == $fe->fesln->fkLocationNames) {
             echo "<option value='$row[0]' selected = 'selected'>$row[1]</option>";

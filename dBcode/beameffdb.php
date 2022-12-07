@@ -7,7 +7,7 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
 class BeamEffDB { //extends DBRetrieval {
-    var $dbconnection;
+    var $dbConnection;
 
     /**
      * Initializes class and creates database connection

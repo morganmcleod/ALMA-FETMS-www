@@ -1,10 +1,10 @@
 <?php
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 $q = "SELECT Initials, Name FROM Users ORDER BY Initials ASC;";
-$r = mysqli_query($dbconnection, $q);
+$r = mysqli_query($dbConnection, $q);
 
 $jsonstring = '{"sucess":true,"records":[{"UserName":" ", "UserCode":" "}';
 while ($row = mysqli_fetch_array($r)) {

@@ -2,7 +2,7 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 require_once($site_dbConnect);
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 ini_set('max_execution_time', '0');
 
 $action   = $_REQUEST['action'];
@@ -33,7 +33,7 @@ if ($action == 'read') {
             AND TestData_header.fkFE_Components = $compId";
     }
 
-    $r = mysqli_query($dbconnection, $q);
+    $r = mysqli_query($dbConnection, $q);
     $count = 0;
     // for each Testdata_header get all data specific subHeader records
     while ($row = mysqli_fetch_array($r)) {
@@ -52,7 +52,7 @@ if ($action == 'read') {
                     AND IFGain = 15
                     ORDER BY FreqLO ASC, IFChannel ASC";
 
-                $rif = mysqli_query($dbconnection, $qif);
+                $rif = mysqli_query($dbConnection, $qif);
                 $num_children = 0;
 
                 while ($rowif = mysqli_fetch_array($rif)) {
@@ -75,7 +75,7 @@ if ($action == 'read') {
             case 57: //lolocktest
                 $qlosub = "SELECT keyId FROM TEST_LOLockTest_SubHeader
                         WHERE fkHeader = $tdheader->keyId;";
-                $rlosub = mysqli_query($dbconnection, $qlosub);
+                $rlosub = mysqli_query($dbConnection, $qlosub);
                 $losubId = ADAPT_mysqli_result($rlosub, 0, 0);
 
 
@@ -83,7 +83,7 @@ if ($action == 'read') {
                     WHERE fkHeader = $losubId
                     ORDER BY LOFreq ASC";
 
-                $rlo = mysqli_query($dbconnection, $qlo);
+                $rlo = mysqli_query($dbConnection, $qlo);
                 if ($rlo) {
                     $num_children = 0;
                     while ($rowlo = mysqli_fetch_array($rlo)) {
@@ -110,14 +110,14 @@ if ($action == 'read') {
 
                 $qntsub = "SELECT keyId FROM Noise_Temp_SubHeader
                         WHERE fkHeader = $tdheader->keyId;";
-                $rntsub = mysqli_query($dbconnection, $qntsub);
+                $rntsub = mysqli_query($dbConnection, $qntsub);
                 $ntsubId = ADAPT_mysqli_result($rntsub, 0, 0);
 
                 $qnt = "SELECT FreqLO, IsIncluded FROM Noise_Temp
                     WHERE fkSub_Header= $ntsubId
                     ORDER BY FreqLO ASC";
 
-                $rnt = mysqli_query($dbconnection, $qnt);
+                $rnt = mysqli_query($dbConnection, $qnt);
                 $num_children = 0;
                 $prev_FreqLO = 0;
                 if ($rnt) {
@@ -161,7 +161,7 @@ if ($action == 'read') {
             'text' => 'TestData_header ' . $tdheader->keyId,
             'config' => ($FEid) ? $row['keyFEConfig'] : $row['fkFE_Components'],
             'ts' => $tdheader->TS,
-            'notes' => mysqli_real_escape_string($dbconnection, $tdheader->Notes),
+            'notes' => mysqli_real_escape_string($dbConnection, $tdheader->Notes),
             'cls' => 'folder',
             'expanded' => false,
             'id' => $tdheader->keyId,
@@ -199,7 +199,7 @@ if ($action == 'update_children') {
 
                 //Now apply the checked value to the record where IFGain=0 and IFGain=15 for the same LO frequency
                 $q0 = "UPDATE IFSpectrum_SubHeader SET IsIncluded = $checked WHERE FreqLO=$ifsubLO AND fkHeader = $fkHeader;";
-                $r0 = mysqli_query($dbconnection, $q0);
+                $r0 = mysqli_query($dbConnection, $q0);
                 unset($ifsub);
             }
             break;
@@ -212,7 +212,7 @@ if ($action == 'update_children') {
                 $subid = $subid_array[0];
                 $lofreq = $subid_array[1];
                 $q  = "UPDATE TEST_LOLockTest SET IsIncluded = $checked WHERE fkHeader = $subid AND LOFreq = $lofreq;";
-                $r = mysqli_query($dbconnection, $q);
+                $r = mysqli_query($dbConnection, $q);
             }
             break;
 
@@ -224,7 +224,7 @@ if ($action == 'update_children') {
                 $subid = $subid_array[0];
                 $lofreq = $subid_array[1];
                 $q  = "UPDATE Noise_Temp SET IsIncluded = $checked WHERE fkSub_Header = $subid AND FreqLO = $lofreq;";
-                $r = mysqli_query($dbconnection, $q);
+                $r = mysqli_query($dbConnection, $q);
             }
             break;
     }

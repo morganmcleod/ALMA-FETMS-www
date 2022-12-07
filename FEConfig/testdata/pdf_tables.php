@@ -80,13 +80,13 @@ function table_header_html($width, &$tdh, $cols = 2, $filterChecked = false, $ch
 
 function band_results_table_html($FE_Config, $band, $Data_Status, $TestData_Type, $filterChecked) {
 
-    $dbconnection = site_getDbConnection();
+    $dbConnection = site_getDbConnection();
     $q = "SELECT `keyId` FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
         AND BAND = $band AND fkDataStatus = $Data_Status
         ORDER BY `keyId` DESC";
-    $r = mysqli_query($dbconnection, $q) or die("QUERY FAILED: $q");
+    $r = mysqli_query($dbConnection, $q) or die("QUERY FAILED: $q");
 
     $html = null;
     if ($TestData_Type == 39) {
@@ -157,13 +157,13 @@ function band_results_table_html($FE_Config, $band, $Data_Status, $TestData_Type
 }
 
 function results_table_html($FE_Config, $Data_Status, $TestData_Type, $filterChecked) {
-    $dbconnection = site_getDbConnection();
+    $dbConnection = site_getDbConnection();
     $q = "SELECT keyId FROM `TestData_header`
         WHERE `fkFE_Config` = $FE_Config
         AND `fkTestData_Type` = $TestData_Type
         AND fkDataStatus = $Data_Status
         ORDER BY `keyId` DESC";
-    $r = mysqli_query($dbconnection, $q) or die("QUERY FAILED: $q");
+    $r = mysqli_query($dbConnection, $q) or die("QUERY FAILED: $q");
     $html = "";
     while ($row = mysqli_fetch_array($r)) {
         switch ($TestData_Type) {

@@ -19,7 +19,7 @@
     require_once($site_classes . '/class.scansetdetails.php');
     require_once($site_classes . '/class.testdata_header.php');
     require_once($site_dbConnect);
-    $dbconnection = site_getDbConnection();
+    $dbConnection = site_getDbConnection();
 
     // get the Facility Code and TestDataHeader id from the request:
     $fc = $_REQUEST['fc'];

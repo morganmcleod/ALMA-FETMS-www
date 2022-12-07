@@ -10,7 +10,7 @@ require_once($site_classes . '/class.logger.php');
 require_once($site_dbConnect);
 
 class DPdb { //extends DBRetrieval{
-    var $dbconnection;
+    var $dbConnection;
 
     /**
      * Initializes class and creates database connection

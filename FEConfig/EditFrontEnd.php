@@ -17,7 +17,7 @@
         require_once($site_classes . '/class.dboperations.php');
         require_once($site_classes . '/class.frontend.php');
         require_once($site_dbConnect);
-        $dbconnection = site_getDbConnection();
+        $dbConnection = site_getDbConnection();
 
         $keyId = $_REQUEST['id'];  //keyId of FE_Components table
         $fc = $_REQUEST['fc'];
@@ -130,7 +130,7 @@
                     <option value='' selected='selected'></option>";
         $q = "SELECT Initials FROM Users
               ORDER BY Initials ASC;";
-        $r = mysqli_query($dbconnection, $q);
+        $r = mysqli_query($dbConnection, $q);
         while ($row = mysqli_fetch_array($r)) {
             echo "<option value='$row[0]'>$row[0]</option>";
         }

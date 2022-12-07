@@ -13,7 +13,7 @@ require_once($site_classes . '/class.dboperations.php');
 require_once($site_classes . '/class.frontend.php');
 require_once($site_config_main);
 require_once($site_dbConnect);
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 $key = isset($_POST['key']) ? $_POST['key'] : '';
 $command = isset($_POST['cmd']) ? $_POST['cmd'] : '';
@@ -28,7 +28,7 @@ if (isset($_REQUEST['UserCode'])) {
 
 //Check first to see if Front End record already exists
 $q = "SELECT DefaultFacility FROM DatabaseDefaults";
-$r = mysqli_query($dbconnection, $q);
+$r = mysqli_query($dbConnection, $q);
 $facility = ADAPT_mysqli_result($r, 0, 0);
 $fc = $facility;
 
@@ -37,9 +37,9 @@ $fc = $facility;
 //if (isDEBUG) elog("process-request enter with command = ' $command '");
 if ($command == "getComboDesc") {
     //get all component types
-    $combo_data = mysqli_query($dbconnection, "SELECT keyId,Description FROM ComponentTypes
+    $combo_data = mysqli_query($dbConnection, "SELECT keyId,Description FROM ComponentTypes
                 ORDER BY Description ASC")
-        or die("Could not get description combo box data" . mysqli_error($dbconnection));
+        or die("Could not get description combo box data" . mysqli_error($dbConnection));
 
     while ($combolist = mysqli_fetch_object($combo_data)) {
         $combo[] = $combolist;
@@ -47,19 +47,19 @@ if ($command == "getComboDesc") {
     echo json_encode($combo);
 } else if ($command == "getComboSN") {
     // get all serial numbers for a given component type
-    $getCompkey = mysqli_query($dbconnection, "SELECT keyId FROM ComponentTypes WHERE Description='$compTypeName'")
-        or die("Could not get Component key" . mysqli_error($dbconnection));
+    $getCompkey = mysqli_query($dbConnection, "SELECT keyId FROM ComponentTypes WHERE Description='$compTypeName'")
+        or die("Could not get Component key" . mysqli_error($dbConnection));
 
     $compType = ADAPT_mysqli_result($getCompkey, 0, "keyId");
     if ($band != "No band" && $band != "") {
-        $combo_data = mysqli_query($dbconnection, "SELECT DISTINCT SN FROM FE_Components
+        $combo_data = mysqli_query($dbConnection, "SELECT DISTINCT SN FROM FE_Components
         WHERE SN IS NOT NULL AND fkFE_ComponentType='$compType' AND Band='$band' ORDER BY (SN + 0) ASC")
-            or die("Could not get SN combo box data" . mysqli_error($dbconnection));
+            or die("Could not get SN combo box data" . mysqli_error($dbConnection));
     } else {
-        $combo_data = mysqli_query($dbconnection, "SELECT DISTINCT SN FROM FE_Components
+        $combo_data = mysqli_query($dbConnection, "SELECT DISTINCT SN FROM FE_Components
         WHERE SN IS NOT NULL AND fkFE_ComponentType='$compType' AND (Band IS NULL OR Band='0')
         ORDER BY BINARY SN ASC")
-            or die("Could not get SN combo box data" . mysqli_error($dbconnection));
+            or die("Could not get SN combo box data" . mysqli_error($dbConnection));
     }
     while ($combolist = mysqli_fetch_object($combo_data)) {
         $combo[] = $combolist;
@@ -67,7 +67,7 @@ if ($command == "getComboDesc") {
     echo json_encode($combo);
 } else if ($command == "getData") {
     //get all components integrated in a front end
-    $comp_data = mysqli_query($dbconnection, "Select FE_Components.keyId,FE_Components.SN,FE_Components.Band,
+    $comp_data = mysqli_query($dbConnection, "Select FE_Components.keyId,FE_Components.SN,FE_Components.Band,
     ComponentTypes.Description
     FROM FE_Components
     LEFT JOIN ComponentTypes ON FE_Components.fkFE_ComponentType=ComponentTypes.keyId
@@ -75,7 +75,7 @@ if ($command == "getComboDesc") {
     FE_ConfigLink WHERE fkFE_Config='$key' AND fkFE_ComponentFacility='$facility'
     ORDER BY FE_Components.fkFE_ComponentType DESC) AND keyFacility='$facility'
     ORDER BY ComponentTypes.Description ASC")
-        or die("Could not get data" . mysqli_error($dbconnection));
+        or die("Could not get data" . mysqli_error($dbConnection));
 
     while ($comp = mysqli_fetch_object($comp_data)) {
         $data[] = $comp;
@@ -147,7 +147,7 @@ if ($command == "getComboDesc") {
             //get Component id for given component description.
             $desc = $comps['Description'];
 
-            $compType = mysqli_query($dbconnection, "SELECT keyId FROM ComponentTypes WHERE Description='$desc'");
+            $compType = mysqli_query($dbConnection, "SELECT keyId FROM ComponentTypes WHERE Description='$desc'");
             if (mysqli_num_rows($compType) > 0) {
                 $type_id = ADAPT_mysqli_result($compType, 0, 'keyId');
                 $dbop = new DBOperations();
@@ -157,11 +157,11 @@ if ($command == "getComboDesc") {
                 //get the latest configuration number of a given frontend
                 if ($band != "No band") //band is not 0 or null
                 {
-                    $checkduplicates = mysqli_query($dbconnection, "SELECT MAX(keyId) AS MaxKey FROM
+                    $checkduplicates = mysqli_query($dbConnection, "SELECT MAX(keyId) AS MaxKey FROM
                     FE_Components WHERE fkFE_ComponentType='$type_id'
                     AND SN='$sn' AND Band='$band' AND keyFacility='$facility'");
                 } else {
-                    $checkduplicates = mysqli_query($dbconnection, "SELECT MAX(keyId) AS MaxKey
+                    $checkduplicates = mysqli_query($dbConnection, "SELECT MAX(keyId) AS MaxKey
                     FROM FE_Components WHERE fkFE_ComponentType='$type_id'
                     AND SN='$sn' AND (Band is NULL OR Band='0')
                     AND keyFacility='$facility'");

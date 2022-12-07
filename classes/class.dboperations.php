@@ -9,7 +9,7 @@ require_once($site_FEConfig . '/HelperFunctions.php');
 require_once($site_dbConnect);
 
 class DBOperations {
-    var $dbconnection;
+    var $dbConnection;
     var $FEid;              //key value of front end
     var $COMPid;          //key value of component
     var $fc_fe;          //facility code of front end

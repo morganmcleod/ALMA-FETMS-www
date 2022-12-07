@@ -8,7 +8,7 @@ require_once($site_classes . '/class.frontend.php');
 require_once($site_dbConnect);
 
 class WCAdb { //extends DBRetrieval {
-    var $dbconnection;
+    var $dbConnection;
 
     /**
      * Initializes class and creates database connection

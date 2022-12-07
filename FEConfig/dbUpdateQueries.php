@@ -6,7 +6,7 @@ $er = error_reporting();
 error_reporting($er ^ E_NOTICE);
 
 class dbUpdateQueries {
-    private $dbconnection;
+    private $dbConnection;
 
     public function __construct() {
         $this->dbConnection = site_getDbConnection();

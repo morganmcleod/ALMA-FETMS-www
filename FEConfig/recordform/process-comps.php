@@ -5,7 +5,7 @@
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_config_main);
 require_once($site_dbConnect);
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 //Since new components are being created, the facility code
 //is not being passed in. It is defined in config_main.php
@@ -16,8 +16,8 @@ $icount=0;
 if($command=="getCombo")
 {
     //get Component_Type combo box values.
-    $combo_data=mysqli_query($dbconnection, "SELECT Description FROM ComponentTypes ORDER BY Description ASC")
-    or die("Could not get combo box data" .mysqli_error($dbconnection));
+    $combo_data=mysqli_query($dbConnection, "SELECT Description FROM ComponentTypes ORDER BY Description ASC")
+    or die("Could not get combo box data" .mysqli_error($dbConnection));
 
     while($combolist=mysqli_fetch_object($combo_data))
     {
@@ -54,8 +54,8 @@ else if($command =="saveData")
             $desc = $comps['Description'];
 
             //get Component id for given component description.
-            $compType=mysqli_query($dbconnection, "SELECT keyId FROM ComponentTypes WHERE Description='$desc'")
-            or die("Could not get component type id" .mysqli_error($dbconnection));
+            $compType=mysqli_query($dbConnection, "SELECT keyId FROM ComponentTypes WHERE Description='$desc'")
+            or die("Could not get component type id" .mysqli_error($dbConnection));
 
             if(mysqli_num_rows($compType) > 0)
             {
@@ -67,13 +67,13 @@ else if($command =="saveData")
                 //check if record already exists in the database
                 if($band != "" || $band != 0)
                 {
-                    $checkduplicates=mysqli_query($dbconnection, "SELECT keyId FROM FE_Components
+                    $checkduplicates=mysqli_query($dbConnection, "SELECT keyId FROM FE_Components
                     WHERE fkFE_ComponentType='$type_id' AND keyFacility='$fc'
                     AND SN='$sn' AND Band='$band'");
                 }
                 else
                 {
-                    $checkduplicates=mysqli_query($dbconnection, "SELECT keyId FROM FE_Components WHERE
+                    $checkduplicates=mysqli_query($dbConnection, "SELECT keyId FROM FE_Components WHERE
                             fkFE_ComponentType='$type_id' AND keyFacility='$fc'
                             AND SN='$sn' AND (Band is NULL OR Band='0')");
                 }
@@ -90,12 +90,12 @@ else if($command =="saveData")
                     $esn2 = isset($comps['ESN2']) ? $comps['ESN2'] : '';
                     $pstat = isset($comps['Production_Status']) ? $comps['Production_Status'] : '';
 
-                    $insertQuery=mysqli_query($dbconnection, "INSERT INTO FE_Components(fkFE_ComponentType,
+                    $insertQuery=mysqli_query($dbConnection, "INSERT INTO FE_Components(fkFE_ComponentType,
                     SN,ESN1,ESN2,Band,Production_Status,keyFacility)
                     VALUES('$type_id','$sn','$esn1','$esn2','$band','$pstat','$fc')")
-                    or die("Could not insert data" .mysqli_error($dbconnection));
+                    or die("Could not insert data" .mysqli_error($dbConnection));
 
-                    $getKey_query=mysqli_query($dbconnection, "SELECT Max(keyId) AS maxkey FROM
+                    $getKey_query=mysqli_query($dbConnection, "SELECT Max(keyId) AS maxkey FROM
                     FE_Components");
                     $inserted_key=ADAPT_mysqli_result($getKey_query,0,'maxkey');
                     setcookie("compcookie['$icount']",$inserted_key,time()+3600,'/');

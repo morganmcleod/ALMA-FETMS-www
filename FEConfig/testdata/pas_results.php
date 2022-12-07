@@ -17,7 +17,7 @@
     require_once(dirname(__FILE__) . '/../../SiteConfig.php');
     require_once($site_dbConnect);
 
-    $dbconnection = site_getDbConnection();
+    $dbConnection = site_getDbConnection();
 
     include('pas_tables.php');
 
@@ -32,13 +32,13 @@
 	ON `FE_Config`.fkFront_Ends = `Front_Ends`.keyFrontEnds
 	WHERE `FE_Config`.keyFEConfig=$feconfig";
 
-    $r = mysqli_query($dbconnection, $q);
+    $r = mysqli_query($dbConnection, $q);
     $fesn = ADAPT_mysqli_result($r, 0, 0);
 
     // get Data Status Description
     $q = "SELECT `Description` FROM `DataStatus` WHERE `keyId` = $Data_Status ";
 
-    $r = mysqli_query($dbconnection, $q);
+    $r = mysqli_query($dbConnection, $q);
     $Data_Status_Desc = ADAPT_mysqli_result($r, 0, 0);
 
     $title = "";

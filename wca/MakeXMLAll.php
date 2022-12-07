@@ -6,7 +6,7 @@ require_once($site_classes . '/class.wca.php');
 require_once($site_dbConnect);
 require(site_get_config_main());
 
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 $fc = '40';
 $_REQUEST['fc'] = $fc;
@@ -19,7 +19,7 @@ $q = "SELECT keyId, LPAD(SN, 2, '0') AS SN, Band, TS
      ORDER BY SN ASC;
 ";
 
-$r = mysqli_query($dbconnection, $q);
+$r = mysqli_query($dbConnection, $q);
 
 while ($row = mysqli_fetch_array($r)) {
     $keyWCA = $row[0];

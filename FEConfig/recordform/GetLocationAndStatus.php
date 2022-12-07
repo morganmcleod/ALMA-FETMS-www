@@ -2,13 +2,13 @@
 
 require_once(dirname(__FILE__) . '/../../SiteConfig.php');
 require_once($site_dbConnect);
-$dbconnection = site_getDbConnection();
+$dbConnection = site_getDbConnection();
 
 $statorloc=$_GET['which'];
 
 if($statorloc=="1")
 {
-	$locations_query=mysqli_query($dbconnection, "SELECT keyId,Description FROM Locations");
+	$locations_query=mysqli_query($dbConnection, "SELECT keyId,Description FROM Locations");
 	While($location= mysqli_fetch_object($locations_query))
 	{
 		$data[]=$location;
@@ -16,7 +16,7 @@ if($statorloc=="1")
 }
 else if($statorloc=="2")
 {
-	$status_query=mysqli_query($dbconnection, "SELECT keyStatusType, Status FROM StatusTypes");
+	$status_query=mysqli_query($dbConnection, "SELECT keyStatusType, Status FROM StatusTypes");
 	While($status=mysqli_fetch_object($status_query))
 	{
 		$data[]=$status;
@@ -24,7 +24,7 @@ else if($statorloc=="2")
 }
 else if($statorloc=="3")
 {
-	$fe_query=mysqli_query($dbconnection, "SELECT MAX(keyFrontEnds) AS maxkey,SN FROM Front_Ends
+	$fe_query=mysqli_query($dbConnection, "SELECT MAX(keyFrontEnds) AS maxkey,SN FROM Front_Ends
 						GROUP BY SN ORDER BY SN ASC");
 	while($fe=mysqli_fetch_object($fe_query))
 	{
@@ -33,7 +33,7 @@ else if($statorloc=="3")
 }
 else if($statorloc=="4")
 {
-	$user_query=mysqli_query($dbconnection, "SELECT Initials FROM Users ORDER BY Initials ASC;");
+	$user_query=mysqli_query($dbConnection, "SELECT Initials FROM Users ORDER BY Initials ASC;");
 	While($users=mysqli_fetch_object($user_query))
 	{
 		$data[]=$users;
