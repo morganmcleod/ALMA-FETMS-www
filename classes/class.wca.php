@@ -10,6 +10,11 @@ require_once($site_dBcode . '/../dBcode/wcadb.php');
 require_once($site_classes . '/class.spec_functions.php');
 require_once($site_dbConnect);
 
+if (!isset($GNUPLOT_VER)) {
+    global $GNUPLOT_VER;
+    $GNUPLOT_VER = 4.9;
+}
+
 class WCA extends FEComponent {
     var $_WCAs;
     var $LOParams; // array of LO Params (Generic Table objects)
@@ -982,8 +987,10 @@ class WCA extends FEComponent {
             echo '<br><label class="switch">Teledyne PA: X is ctrl scalar&nbsp;<input type="checkbox" name="has_teledyne_pa"';
             if (isset($_REQUEST['has_teledyne_pa']))
                 echo ' checked';
-            echo '></label></td>';
+            echo '></label>';
         }
+        echo '<br><label>Override spec freqs like "69-93"<input type="text" name="speclines_override"></label>';
+        echo '</td>';
         echo '</tr>
                 <tr><td align = "right">Phase Noise:         </b><input name="file_phasenoise" type="file" /></td>
                     <td align = "left"><input type="submit" name="draw_phasenoise" value="Redraw Phase Noise"></td></tr>';
@@ -1498,7 +1505,8 @@ class WCA extends FEComponent {
 
                 $fh = fopen($plot_command_file, 'w');
                 fwrite($fh, "set terminal png size 900,500\r\n");
-                fwrite($fh, "set colorsequence classic\r\n");
+                if ($GNUPLOT_VER >= 5.0)
+                    fwrite($fh, "set colorsequence classic\r\n");
                 fwrite($fh, "set output '$imagepath'\r\n");
                 fwrite($fh, "set title '$plot_title'\r\n");
                 fwrite($fh, "set grid\r\n");
@@ -1639,7 +1647,8 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 700,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1729,7 +1738,8 @@ class WCA extends FEComponent {
             fwrite($fhc, "set pm3d map\r\n");
             fwrite($fhc, "set palette model RGB defined (0 'black', 2 'blue', 4 'green', 6 'yellow', 8 'orange', 10 'red')\r\n");
             fwrite($fhc, "set terminal png crop\r\n");
-            fwrite($fhc, "set colorsequence classic\r\n");
+            if ($GNUPLOT_VER >= 5.0)
+                fwrite($fh, "set colorsequence classic\r\n");
             fwrite($fhc, "set title '$plot_title'\r\n");
             fwrite($fhc, "set xlabel 'IF (GHz)'\r\n");
             fwrite($fhc, "set ylabel 'LO Frequency (GHz)'\r\n");
@@ -1851,7 +1861,8 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1944,7 +1955,8 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -2101,7 +2113,8 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 800,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -2118,6 +2131,18 @@ class WCA extends FEComponent {
 
         fwrite($fh, "set key outside\r\n");
 
+        $specLine1 = $specLine2 = false;
+        if (isset($_REQUEST['speclines_override'])) {
+            $str = $_REQUEST['speclines_override'];
+            if (trim($str)) {
+                $items = explode('-', $str, 3);
+                $min = $items[0];
+                $max = $items[1];
+                $specLine1 = "f1(x)=((x>$min) && (x<$max)) ? 20 : 1/0";
+                $specLine2 = "f2(x)=((x>$min) && (x<$max)) ? 53 : 1/0";
+            }
+        }
+        
         $specs = $this->new_spec->getSpecs('wca', $Band);
         $i = 1;
         $done = false;
@@ -2134,6 +2159,10 @@ class WCA extends FEComponent {
                     $plot_string .= ", ";
                 }
                 $lineCmd = $specs[$specLineName];
+                if ($i == 1 && $specLine1)
+                    $lineCmd = $specLine1;
+                else if ($i == 2 && $specLine2)
+                    $lineCmd = $specLine2;
                 fwrite($fh, $lineCmd . "\r\n");
                 $plot_string .= $specs[$plotStringName];
             }
@@ -2232,7 +2261,8 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -2350,7 +2380,8 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 1000,600\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -2487,7 +2518,8 @@ class WCA extends FEComponent {
         }
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 1000,600\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");

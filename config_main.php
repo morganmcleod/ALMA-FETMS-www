@@ -34,6 +34,7 @@ switch ($site_hostname) {
         // $FETMS_CCA_MODE = true;
         $url_root .= "php/ntc/ws-mtm/ALMA-FETMS-www/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
+        $GNUPLOT_VER = 4.9;
         break;
 
     case "band1-fetms":

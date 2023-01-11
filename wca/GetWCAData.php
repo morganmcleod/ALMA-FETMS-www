@@ -6,7 +6,7 @@ $dbConnection = site_getDbConnection();
 
 $band=$_GET['band'];
 
-$q = "select keyFacility, keyId, LPAD(SN, 2, '0') AS SN, Band, TS
+$q = "select keyFacility, keyId, LPAD(SN, GREATEST(LENGTH(SN), 2), '0') AS SN, Band, TS
      FROM FE_Components
      WHERE Band LIKE '$band'
      AND Band <> 0

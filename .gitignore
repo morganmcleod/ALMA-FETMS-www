@@ -16,3 +16,4 @@ ext
 ext4
 vendor/
 mpdf/
+.vscode/
