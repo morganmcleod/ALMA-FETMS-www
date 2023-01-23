@@ -156,15 +156,17 @@ class WCA extends FEComponent {
 
     public function NewRecord_WCA() {
         require(site_get_config_main());
-        parent::NewRecord('FE_Components', 'keyId', $fc, 'keyFacility');
-        parent::SetValue('fkFE_ComponentType', 11);
-        $this->fc = $fc;
-        $this->_WCAs->NewRecord('WCAs');
-        $this->_WCAs->fc = $fc;
-        $this->_WCAs->fkFE_Component = $this->keyId;
-        $this->_WCAs->keyFacility = $fc;
-
-        $r_status = $this->db_pull->q_other('status', $this->keyId, $this->fc);
+        $rec = parent::NewRecord('FE_Components', 'keyId', $fc, 'keyFacility');
+        $rec->SetValue('fkFE_ComponentType', 11);
+        $rec->fc = $fc;
+        $rec->Update();
+        $rec->_WCAs = $this->_WCAs->NewRecord('WCAs');
+        $rec->_WCAs->fc = $fc;
+        $rec->_WCAs->fkFE_Component = $rec->keyId;
+        $rec->_WCAs->keyFacility = $fc;
+        $rec->_WCAs->Update();
+        
+        $r_status = $this->db_pull->q_other('status', $rec->keyId, $rec->fc);
     }
     public function AddNewLOParams() {
         $band = $this->Band;
@@ -1154,6 +1156,9 @@ class WCA extends FEComponent {
         $ret = false;
         $filecontents = file($datafile_name);
 
+        if (!$filecontents)
+            return false;
+        
         for ($i = 0; $i < sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray = explode(",", $line_data);
@@ -1171,6 +1176,7 @@ class WCA extends FEComponent {
                     $this->SetValue('SN', $newSN);
                     $this->SetValue('TS', date("Y-m-d H:i:s"));
                     $this->SetValue('ESN1', trim($tempArray[3], $quotes));
+                    $this->Update();
                     $this->_WCAs->FhiYIG = trim($tempArray[4], $quotes);
                     $this->_WCAs->FloYIG = trim($tempArray[5], $quotes);
                     if ($this->WCA_PA_Mapping_Swap($band)) {
@@ -1180,6 +1186,7 @@ class WCA extends FEComponent {
                         $this->_WCAs->VG0 = trim($tempArray[6], $quotes);
                         $this->_WCAs->VG1 = trim($tempArray[7], $quotes);
                     }
+                    $this->_WCAs->Update();
                     // Get rid of any existing LO Params.  Will get re-created on refresh.
                     $r = $this->db_pull->q(7, $this->keyId);
                     $ret = true;
