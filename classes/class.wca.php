@@ -1005,7 +1005,7 @@ class WCA extends FEComponent {
         }
         echo '<tr><td align = "right">';
         echo "<input type='hidden' name= 'fc' value='$this->fc' />";
-        echo "<input type='hidden' name= 'keyId' value='$this->keyId' />";
+        if ($this->keyId != '') echo "<input type='hidden' name= 'keyId' value='$this->keyId' />";
         echo '<input type="submit" name= "submit_datafile" value="Upload All" /></td>
                     <td align = "left"><input type="submit" name="draw_all" value="REDRAW ALL PLOTS"></td></tr>
             </table>
