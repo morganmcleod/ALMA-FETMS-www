@@ -154,20 +154,23 @@ class WCA extends FEComponent {
     const INIT_NONE = 0x0000;
     const INIT_ALL = 0x001F;
 
-    public function NewRecord_WCA() {
+    public static function NewRecord_WCA($fc = 40) {
         require(site_get_config_main());
-        $rec = parent::NewRecord('FE_Components', 'keyId', $fc, 'keyFacility');
-        $rec->SetValue('fkFE_ComponentType', 11);
-        $rec->fc = $fc;
-        $rec->Update();
-        $rec->_WCAs = $this->_WCAs->NewRecord('WCAs');
-        $rec->_WCAs->fc = $fc;
-        $rec->_WCAs->fkFE_Component = $rec->keyId;
-        $rec->_WCAs->keyFacility = $fc;
-        $rec->_WCAs->Update();
-        
-        $r_status = $this->db_pull->q_other('status', $rec->keyId, $rec->fc);
+        $tempFE = FEComponent::NewRecord('FE_Components', 'keyId', $fc, 'keyFacility');
+        $wca = new WCA($tempFE->keyId, $fc);
+        $wca->fkFE_ComponentType = 11;
+
+        $tempWCAs = WCAs::NewRecord("WCAs");
+        $wcas = new WCAs($tempWCAs->keyId, $fc);
+        $wcas->fc = $fc;
+        $wcas->fkFE_Component = $wca->keyId;
+        $wcas->fkFacility = $fc;
+
+        $wca->_WCAs = $wcas;
+        $wca->db_pull->q_other('status', $wca->keyId, $wca->fc);
+        return $wca;
     }
+
     public function AddNewLOParams() {
         $band = $this->Band;
         if (empty($band))
@@ -1002,6 +1005,7 @@ class WCA extends FEComponent {
         }
         echo '<tr><td align = "right">';
         echo "<input type='hidden' name= 'fc' value='$this->fc' />";
+        echo "<input type='hidden' name= 'keyId' value='$this->keyId' />";
         echo '<input type="submit" name= "submit_datafile" value="Upload All" /></td>
                     <td align = "left"><input type="submit" name="draw_all" value="REDRAW ALL PLOTS"></td></tr>
             </table>
@@ -1033,9 +1037,7 @@ class WCA extends FEComponent {
         }
         if (isset($_REQUEST['submit_datafile'])) {
             if (isset($_FILES['file_wcas']['name'])) {
-                if ($this->keyId == "") {
-                    $this->NewRecord_WCA();
-                }
+                if ($this->keyId == "") return false;
                 if ($_FILES['file_wcas']['name'] != "") {
                     if ($this->Upload_WCAs_file($_FILES['file_wcas']['tmp_name']))
                         $this->Update_WCA();
@@ -1158,7 +1160,7 @@ class WCA extends FEComponent {
 
         if (!$filecontents)
             return false;
-        
+
         for ($i = 0; $i < sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
             $tempArray = explode(",", $line_data);

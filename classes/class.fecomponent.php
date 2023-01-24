@@ -34,7 +34,7 @@ class FEComponent extends GenericTable {
     public $DocumentTitle;
     public $TS;
 
-    public function __construct($tableName, $inKeyId = "", $inKeyIdName, $inFc = '0', $inFcKeyName = 'none') {
+    public function __construct($tableName, $inKeyId = "", $inKeyIdName, $inFc = '40', $inFcKeyName = 'none') {
         $this->keyId = $inKeyId;
         if ($tableName) {
             parent::__construct($tableName, $this->keyId, $inKeyIdName, $inFc, 'keyFacility');
