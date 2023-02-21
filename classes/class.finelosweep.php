@@ -176,7 +176,8 @@ class FineLOSweep extends TestData_header {
                 " CCA SN$CCA_SN WCA SN$WCA_SN, Pol" . $this->FLOSweepSubHeader[$cnt]->Pol
                 . ", Elevation " . $this->FLOSweepSubHeader[$cnt]->TiltAngle_Deg . "";
             fwrite($fh, "set terminal png size 900,600 crop\r\n");
-            fwrite($fh, "set colorsequence classic\r\n");
+            if ($GNUPLOT_VER >= 5.0)
+                fwrite($fh, "set colorsequence classic\r\n");
             fwrite($fh, "set output '$imagepath'\r\n");
             fwrite($fh, "set title '$plot_title'\r\n");
             fwrite($fh, "set xrange [$min_freq:$max_freq]\r\n");

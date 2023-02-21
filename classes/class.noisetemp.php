@@ -7,6 +7,11 @@ require_once($site_classes . '/class.spec_functions.php');
 require_once($site_FEConfig . '/testdata/pas_tables.php');
 require_once($site_FEConfig . '/testdata/pdf_tables.php');
 
+if (!isset($GNUPLOT_VER)) {
+    global $GNUPLOT_VER;
+    $GNUPLOT_VER = 4.9;
+}
+
 class NoiseTemperature extends TestData_header {
     private $NT_SubHeader;          // array for subheader objects from Noise_Temp_SubHeader (class.generictable.php)
     private $NT_Logger;             // debug logger object
@@ -1261,7 +1266,8 @@ class NoiseTemperature extends TestData_header {
         $f = fopen($commandfile, 'w');
         $this->NT_Logger->WriteLogFile("command file: $commandfile");
         fwrite($f, "set terminal png size 900,600 crop\r\n");
-        fwrite($f, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($f, "set colorsequence classic\r\n");
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'IF(GHz)'\r\n");
@@ -1330,7 +1336,8 @@ class NoiseTemperature extends TestData_header {
         $f = fopen($commandfile, 'w');
         $this->NT_Logger->WriteLogFile("command file: $commandfile");
         fwrite($f, "set terminal png size 900,600 crop\r\n");
-        fwrite($f, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($f, "set colorsequence classic\r\n");
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
         fwrite($f, "set xlabel 'LO(GHz)'\r\n");
@@ -1458,7 +1465,8 @@ class NoiseTemperature extends TestData_header {
             $this->NT_Logger->WriteLogFile("command file: $commandfile");
             fwrite($f, "set terminal png size 900,600 crop\r\n");
             fwrite($f, "set size 1,1\r\n");
-            fwrite($f, "set colorsequence classic\r\n");
+            if ($GNUPLOT_VER >= 5.0)
+                fwrite($f, "set colorsequence classic\r\n");
             fwrite($f, "set output '$imagepath'\r\n");
             fwrite($f, "set xlabel 'RF (GHz)'\r\n");
             if ($this->Band == 1) {

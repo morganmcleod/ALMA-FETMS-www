@@ -10,6 +10,10 @@ require_once($site_classes . '/class.logger.php');
 require_once($site_dBcode . '/dataplotterdb.php');
 require_once($site_dbConnect);
 
+if (!isset($GNUPLOT_VER)) {
+    global $GNUPLOT_VER;
+    $GNUPLOT_VER = 4.9;
+}
 
 class DataPlotter extends GenericTable {
     var $writedirectory;
@@ -214,7 +218,8 @@ class DataPlotter extends GenericTable {
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -320,7 +325,8 @@ class DataPlotter extends GenericTable {
         //unlink($plot_command_file) or die("cca pn command file not found");
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -485,7 +491,8 @@ class DataPlotter extends GenericTable {
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -567,7 +574,8 @@ class DataPlotter extends GenericTable {
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -649,7 +657,8 @@ class DataPlotter extends GenericTable {
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -725,7 +734,8 @@ class DataPlotter extends GenericTable {
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -837,7 +847,8 @@ class DataPlotter extends GenericTable {
                         $imagepath = $imagedirectory . $imagename;
                         $fh = fopen($plot_command_file, 'w');
                         fwrite($fh, "set terminal png size 900,500\r\n");
-                        fwrite($fh, "set colorsequence classic\r\n");
+                        if ($GNUPLOT_VER >= 5.0)
+                            fwrite($fh, "set colorsequence classic\r\n");
                         fwrite($fh, "set output '$imagepath'\r\n");
                         fwrite($fh, "set title '$plot_title'\r\n");
                         fwrite($fh, "set grid\r\n");
@@ -1013,7 +1024,8 @@ class DataPlotter extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1179,7 +1191,8 @@ class DataPlotter extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1329,7 +1342,8 @@ class DataPlotter extends GenericTable {
         $imagepath = $imagedirectory . $imagename;
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1430,7 +1444,8 @@ class DataPlotter extends GenericTable {
         $commandfile = $this->writedirectory . "polangle_commands_tdh$td_header.txt";
         $fh = fopen($commandfile, 'w');
         fwrite($fh, "set terminal png crop\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set xlabel 'Source Rotation Angle (deg)'\r\n");
@@ -1637,7 +1652,8 @@ class DataPlotter extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");

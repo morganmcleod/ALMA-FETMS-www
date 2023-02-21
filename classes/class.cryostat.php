@@ -5,6 +5,11 @@ require_once($site_classes . '/class.fecomponent.php');
 require_once($site_classes . '/class.tempsensor.php');
 require_once($site_dbConnect);
 
+if (!isset($GNUPLOT_VER)) {
+    global $GNUPLOT_VER;
+    $GNUPLOT_VER = 4.9;
+}
+
 class Cryostat extends GenericTable {
     var $tempsensors;
     var $datadir;
@@ -969,7 +974,8 @@ class Cryostat extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1092,7 +1098,8 @@ class Cryostat extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");
@@ -1225,7 +1232,8 @@ class Cryostat extends GenericTable {
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
-        fwrite($fh, "set colorsequence classic\r\n");
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
         fwrite($fh, "set title '$plot_title'\r\n");
         fwrite($fh, "set grid\r\n");

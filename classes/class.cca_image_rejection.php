@@ -2,6 +2,11 @@
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.testdata_header.php');
 
+if (!isset($GNUPLOT_VER)) {
+    global $GNUPLOT_VER;
+    $GNUPLOT_VER = 4.9;
+}
+
 class cca_image_rejection extends TestData_header {
 
     public function __construct($keyHeader, $fc) {
@@ -226,7 +231,8 @@ class cca_image_rejection extends TestData_header {
             $f = fopen($commandfile, 'w');
             $l->WriteLogFile("command file: $commandfile");
             fwrite($f, "set terminal png size 900,600 crop\r\n");
-            fwrite($f, "set colorsequence classic\r\n");
+            if ($GNUPLOT_VER >= 5.0)
+                fwrite($f, "set colorsequence classic\r\n");
             fwrite($f, "set output '$imagepath'\r\n");
             fwrite($f, "set title '$plot_title'\r\n");
             fwrite($f, "set xlabel 'Signal Frequency (GHz)'\r\n");
