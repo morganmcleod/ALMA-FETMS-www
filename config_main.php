@@ -28,6 +28,7 @@ switch ($site_hostname) {
         $url_root .= "fetms/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff2_64";
+        $GNUPLOT_VER = 5.2;
         break;
 
     case "webtest.cv.nrao.edu":
