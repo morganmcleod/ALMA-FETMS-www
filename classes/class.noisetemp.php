@@ -1454,7 +1454,7 @@ class NoiseTemperature extends TestData_header {
                 $plot_title .= ", FE SN" . $this->frontEnd->SN;
 
             $plot_title .= ", CCA" . $this->Band . "-$this->CCA_SN WCA" . $this->Band . "-$this->WCA_SN,";
-            $imagename = "Tssb_vs_RF_Freq_NoiseTemp_Plot${cnt}_" . $this->frontEnd->feconfig_id . "_" . $this->keyId . ".png";
+            $imagename = "Tssb_vs_RF_Freq_NoiseTemp_Plot${ifNum}_" . $this->frontEnd->feconfig_id . "_" . $this->keyId . ".png";
             $imagepath = $this->plotDir . $imagename;
             $this->NT_Logger->WriteLogFile("image path: $imagepath");
             $image_url = "noisetemp/$imagename";
