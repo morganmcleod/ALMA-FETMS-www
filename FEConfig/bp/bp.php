@@ -53,11 +53,15 @@
         //All three scans are complete, and have already been processed.
         echo '<link rel="stylesheet" type="text/css" href="buttonblue.css">';
         $bpstatus = 2;
-    } elseif ($eff->ReadyToProcess == 1) {
+    } elseif ($eff->ReadyToProcess == 3) {
         //All three scans are complete, ready to process.
         echo '<link rel="stylesheet" type="text/css" href="buttongreen.css">';
         $bpstatus = 1;
-    } elseif ($eff->ReadyToProcess != 1) {
+    } elseif ($eff->ReadyToProcess == 2) {
+        //Two scans are complete, can process without 180 scan.
+        echo '<link rel="stylesheet" type="text/css" href="buttonyellow.css">';
+        $bpstatus = 4;
+    } else {
         //One or more scans still need to finish.
         echo '<link rel="stylesheet" type="text/css" href="buttonred.css">';
         $bpstatus = 3;

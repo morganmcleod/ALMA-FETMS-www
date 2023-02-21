@@ -104,7 +104,9 @@ class eff {
         $this->scansets[0]->requestValuesScanSetDetails();
 
         if ($this->scansets[0]->keyId_180_scan > 0)
-            $this->ReadyToProcess = 1;
+            $this->ReadyToProcess = 3;
+        else if ($this->scansets[0]->keyId_xpol_pol1_scan > 0)
+            $this->ReadyToProcess = 2;
 
         $this->NumberOfScanSets = 1;
     }
