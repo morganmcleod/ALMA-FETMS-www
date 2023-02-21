@@ -26,7 +26,7 @@ function createBPTabs(fc, id, band, bpstatus, popupCallback) {
         buttontext = 'Generate Plots And Data (Not Ready to Process)';
     } else if (bpstatus == 4) {
         //Two scans are complete, ready to process.
-        buttontext = 'Generate Plots And Data (Two Scans Ready to Process)';       
+        buttontext = 'Generate Plots And Data (Two Scans Ready)';       
     }
 
     //This toolbar contains the button for generating plots and efficiency data.

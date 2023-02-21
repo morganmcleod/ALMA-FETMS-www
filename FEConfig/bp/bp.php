@@ -59,7 +59,7 @@
         $bpstatus = 1;
     } elseif ($eff->ReadyToProcess == 2) {
         //Two scans are complete, can process without 180 scan.
-        echo '<link rel="stylesheet" type="text/css" href="buttongreen.css">';
+        echo '<link rel="stylesheet" type="text/css" href="buttonyellow.css">';
         $bpstatus = 4;
     } else {
         //One or more scans still need to finish.
