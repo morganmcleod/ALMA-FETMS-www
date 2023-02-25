@@ -11,6 +11,11 @@ require_once($site_dBcode . '/beameffdb.php');
 // Class eff:  Main interface to beam efficiency calculations
 //
 
+if (!isset($GNUPLOT_VER)) {
+    global $GNUPLOT_VER;
+    $GNUPLOT_VER = 4.9;
+}
+
 class eff {
     var $scansets;              //Array of scan set detail objects
     var $ReadyToProcess;        //True if the scan sets here are ready to be post-processed
@@ -36,11 +41,12 @@ class eff {
     private $specsProvider;     //class Specifications
 
     public function __construct($in_keyId, $in_fc) {
-        $this->software_version_class_eff = "1.3.1";
+        $this->software_version_class_eff = "1.3.2";
         $this->software_version_analysis = "";
         $this->pointingOption_analysis = "";
 
         /* Version history:
+         * 1.3.2  Pass gnuplotver to beam eff calculator
          * 1.3.1  Display defocus efficiency with 3 decimal places
          * 1.3.0  Add Export(), made most vars private and deleted unused vars.
          * 1.2.4  Remove dubious secondary defocus calculation.
@@ -259,6 +265,7 @@ class eff {
         //Fill in values for settings section
         fwrite($fhandle, "[settings]\r\n");
         fwrite($fhandle, 'gnuplot="' . $this->GNUPLOT_path . '"' . "\r\n");
+        fwrite($fhandle, 'gnuplotver=' . $GNUPLOT_VER . "\r\n");
         fwrite($fhandle, 'outputdirectory="' . $this->outputdirectory . '"' . "\r\n");
         fwrite($fhandle, "delimiter=tab\r\n");
         fwrite($fhandle, "centers=" . $this->pointingOption . "\r\n");
