@@ -257,6 +257,7 @@ class eff {
     }
 
     private function MakeInputFile() {
+        global $GNUPLOT_VER;
         $this->MakeOutputEnvironment();
 
         // start writing the command input file:
