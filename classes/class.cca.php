@@ -1731,7 +1731,8 @@ class CCA extends FEComponent {
 
         //Upload file contents
         $TS = '';
-
+        $qAS = "INSERT INTO CCA_TEST_SidebandRatio(FreqLO,CenterIF,BWIF,Pol,SB,SBR,fkHeader,keyDataSet) VALUES ";
+        $qVals = '';
         $filecontents = file($this->file_SIDEBANDRATIO);
         for ($i = 0; $i < sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1739,27 +1740,28 @@ class CCA extends FEComponent {
             if (count($tempArray) < 2) {
                 $tempArray   = explode("\t", $line_data);
             }
-            if (is_numeric(substr($tempArray[0], 0, 1)) == true) {
-                $ds = $tempArray[1];
-                $FreqLO      = $tempArray[4];
-                $CenterIF    = $tempArray[5];
-                $BWIF        = $tempArray[6];
-                $Pol         = $tempArray[7];
-                $SB          = $tempArray[8];
-                $TS             = $tempArray[3];
-                if (trim(strtoupper($SB)) == "U") {
-                    $SB = 1;
-                }
-                if (trim(strtoupper($SB)) == "L") {
-                    $SB = 2;
-                }
-                $SBR         = $tempArray[9];
-
-                $qAS = "INSERT INTO CCA_TEST_SidebandRatio(FreqLO,CenterIF,BWIF,Pol,SB,SBR,fkHeader,keyDataSet)
-                  VALUES('$FreqLO','$CenterIF','$BWIF','$Pol','$SB','$SBR','$TestData_header->keyId','$ds')";
-                $rAS = mysqli_query($this->dbConnection, $qAS);
+            $ds          = $tempArray[1];
+            $FreqLO      = $tempArray[4];
+            $CenterIF    = $tempArray[5];
+            $BWIF        = $tempArray[6];
+            $Pol         = $tempArray[7];
+            $SB          = $tempArray[8];
+            $TS          = $tempArray[3];
+            if (trim(strtoupper($SB)) == "U") {
+                $SB = 1;
+            }
+            if (trim(strtoupper($SB)) == "L") {
+                $SB = 2;
+            }
+            $SBR         = $tempArray[9];
+            if (is_numeric(substr($ds, 0, 1)) && $SBR != 'Nan' && $SBR != 0) {
+                if ($qVals != "")
+                    $qVals .= ",";
+                $qVals .= "('$FreqLO','$CenterIF','$BWIF','$Pol','$SB','$SBR','$TestData_header->keyId','$ds')";
             }
         }
+        $qAS .= $qVals . ";";
+        $rAS = mysqli_query($this->dbConnection, $qAS);
         $TestData_header->TS = $TS;
         unset($TestData_header);
     }
@@ -1902,7 +1904,8 @@ class CCA extends FEComponent {
 
         //Upload file contents
         $TS = '';
-
+        $qAS = "INSERT INTO CCA_TEST_NoiseTemperature(FreqLO,CenterIF,BWIF,Pol,SB,Treceiver,fkHeader,keyDataSet) VALUES ";
+        $qVals = "";
         $filecontents = file($this->file_NOISETEMPERATURE);
         for ($i = 0; $i < sizeof($filecontents); $i++) {
             $line_data = trim($filecontents[$i]);
@@ -1910,29 +1913,29 @@ class CCA extends FEComponent {
             if (count($tempArray) < 2) {
                 $tempArray   = explode("\t", $line_data);
             }
-            if (is_numeric(substr($tempArray[0], 0, 1)) == true) {
-                $ds = $tempArray[1];
-                $FreqLO      = $tempArray[4];
-                $CenterIF    = $tempArray[5];
-                $BWIF        = $tempArray[6];
-                $Pol         = $tempArray[7];
-                $SB          = $tempArray[8];
-                $TS             = $tempArray[3];
+            $ds = $tempArray[1];
+            $FreqLO      = $tempArray[4];
+            $CenterIF    = $tempArray[5];
+            $BWIF        = $tempArray[6];
+            $Pol         = $tempArray[7];
+            $SB          = $tempArray[8];
+            $TS          = $tempArray[3];
+            if (trim(strtoupper($SB)) == "U") {
+                $SB = 1;
+            }
+            if (trim(strtoupper($SB)) == "L") {
+                $SB = 2;
+            }
+            $Treceiver   = $tempArray[9];
 
-                if (trim(strtoupper($SB)) == "U") {
-                    $SB = 1;
-                }
-                if (trim(strtoupper($SB)) == "L") {
-                    $SB = 2;
-                }
-
-                $Treceiver   = $tempArray[9];
-
-                $qAS = "INSERT INTO CCA_TEST_NoiseTemperature(FreqLO,CenterIF,BWIF,Pol,SB,Treceiver,fkHeader,keyDataSet)
-                  VALUES('$FreqLO','$CenterIF','$BWIF','$Pol','$SB','$Treceiver','$TestData_header->keyId','$ds')";
-                $rAS = mysqli_query($this->dbConnection, $qAS);
+            if (is_numeric(substr($ds, 0, 1)) && $CenterIF != 0 && $Treceiver != 'NaN' && $Treceiver != 0) {
+                if ($qVals != "")
+                    $qVals .= ",";
+                $qVals .= "('$FreqLO','$CenterIF','$BWIF','$Pol','$SB','$Treceiver','$TestData_header->keyId','$ds')";
             }
         }
+        $qAS .= $qVals . ";";
+        $rAS = mysqli_query($this->dbConnection, $qAS);
         $TestData_header->TS = $TS;
         unset($TestData_header);
     }

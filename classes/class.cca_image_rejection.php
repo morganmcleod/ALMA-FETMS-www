@@ -80,7 +80,7 @@ class cca_image_rejection extends TestData_header {
                 $IR_spec = 7;
                 break;
             case 2:
-                $upper_freq_limit = 90;
+                $upper_freq_limit = 116;
                 $lower_freq_limit = 67;
                 $IR_90_spec = 10;
                 $IR_spec = 7;
