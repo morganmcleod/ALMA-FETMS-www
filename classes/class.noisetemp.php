@@ -404,12 +404,6 @@ class NoiseTemperature extends TestData_header {
         if ($this->Band == 3) {
             $this->NT_B3Special_spec = $specs['B3exSpec'];
         }
-        // lower RF limit for applying 80% spec:
-        $this->lower_80_RFLimit = (isset($specs['NT80RF_loLim'])) ? $specs['NT80RF_loLim'] : 0;
-
-        // upper RF limit for applying 80% spec:
-        $this->upper_80_RFLimit = (isset($specs['NT80RF_hiLim'])) ? $specs['NT80RF_hiLim'] : 0;
-
         $this->lowerRFLimit = 0;
         $this->upperRFLimit = 1000;
     }
@@ -427,6 +421,22 @@ class NoiseTemperature extends TestData_header {
     }
 
     private function LoadNoiseTempData() {
+        /* $this->NT_data is loaded as:
+           
+        array(
+            [0] => array(
+                'FreqLO'         => $row[0],
+                'CenterIF'       => $row[1],
+                'TAmbient'       => $row[2],
+                'Pol0Sb1YFactor' => $row[3],
+                'Pol0Sb2YFactor' => $row[4],
+                'Pol1Sb1YFactor' => $row[5],
+                'Pol1Sb2YFactor' => $row[6]
+            ), 
+            [1] ...
+        )  
+        */
+
         unset($this->NT_data);
         $this->NT_data = array();
 
@@ -492,6 +502,27 @@ class NoiseTemperature extends TestData_header {
     }
 
     private function CalculateNoiseTemps() {
+
+        /* $this->NT_data is extended to:
+           
+        array(
+            [0] => array(
+                'FreqLO'         => $row[0],
+                'CenterIF'       => $row[1],
+                'TAmbient'       => $row[2],
+                'Pol0Sb1YFactor' => $row[3],
+                'Pol0Sb2YFactor' => $row[4],
+                'Pol1Sb1YFactor' => $row[5],
+                'Pol1Sb2YFactor' => $row[6],
+                'Pol0Sb1Tr'      => $Pol0Sb1_Tr,
+                'Pol0Sb2Tr'      => $Pol0Sb2_Tr,
+                'Pol1Sb1Tr'      => $Pol1Sb1_Tr,
+                'Pol1Sb2Tr'      => $Pol1Sb2_Tr
+            ), 
+            [1] ...
+        )
+        */
+
         function Trx_Uncorr($TAmb, $TColdEff, $Y) {
             // compute Tr, uncorrected (K)
             if (($Y - 1) != 0)
@@ -645,133 +676,143 @@ class NoiseTemperature extends TestData_header {
     }
 
     private function CalculateAvgNoiseTemps() {
+        /* $this->NT_data is:
+           
+        array(
+            [0] => array(
+                'FreqLO'         => $row[0],
+                'CenterIF'       => $row[1],
+                'TAmbient'       => $row[2],
+                'Pol0Sb1YFactor' => $row[3],
+                'Pol0Sb2YFactor' => $row[4],
+                'Pol1Sb1YFactor' => $row[5],
+                'Pol1Sb2YFactor' => $row[6],
+                'Pol0Sb1Tr'      => $Pol0Sb1_Tr,
+                'Pol0Sb2Tr'      => $Pol0Sb2_Tr,
+                'Pol1Sb1Tr'      => $Pol1Sb1_Tr,
+                'Pol1Sb2Tr'      => $Pol1Sb2_Tr
+            ), 
+            [1] ...
+        )
+        
+        $this->NT_avgData is created:
+        array(
+            [0] => array(
+                'FreqLO'        => $currentLO,
+                'FreqRFUSB'     => FreqLO + (max - min CenterIF)
+                'FreqRFLSB'     => FreqLO - (max - min CenterIF)
+                'Pol0Sb1TrAvg'  => $avg01,
+                'Pol0Sb2TrAvg'  => $avg02,
+                'Pol1Sb1TrAvg'  => $avg11,
+                'Pol1Sb2TrAvg'  => $avg12
+            ), 
+            [1] ...
+        )
+
+        $this->avg_datafile is then written to disk
+        */
+
         unset($this->NT_avgData);
         $this->NT_avgData = array();
 
-        // total number of rows in data set:
-        $cnt = count($this->NT_data);
-        if (!$cnt) {
-            return;
+        $lastLO = -1;
+        $sums = array(0, 0, 0, 0);
+        $ifCount = 0;
+        $minCenterIf = 99;
+        $maxCenterIf = 0;
+
+        // append a guard row so that the final LO chunk will be averaged:
+        $this->NT_data[]= array('FreqLO' => 0);
+            
+        foreach($this->NT_data as $row) {
+            // look for FreqLO change
+            if ($row['FreqLO'] != $lastLO) {
+                // if we have data for averaging, add a record to avgData:
+                if ($sums[0] > 0) {
+                    $this->NT_avgData[]= array(
+                        'FreqLO'        => $lastLO,
+                        'FreqRFUSB'     => $lastLO + ($maxCenterIf - $minCenterIf),
+                        'FreqRFLSB'     => $lastLO - ($maxCenterIf - $minCenterIf),
+                        'Pol0Sb1TrAvg'  => $sums[0] / $ifCount,
+                        'Pol0Sb2TrAvg'  => $sums[1] / $ifCount,
+                        'Pol1Sb1TrAvg'  => $sums[2] / $ifCount,
+                        'Pol1Sb2TrAvg'  => $sums[3] / $ifCount                    );
+                    $sums = array(0, 0, 0, 0);
+                    $ifCount = 0;
+                }
+                $lastLO = $row['FreqLO'];
+            }
+            // If it's not the guard row, accumulate for averaging:
+            if ($lastLO > 0) {
+                if ($row['CenterIF'] < $minCenterIf)
+                    $minCenterIf = $row['CenterIF'];
+                if ($row['CenterIF'] > $maxCenterIf)
+                    $maxCenterIf = $row['CenterIF'];
+                if ($this->lowerIFLimit <= $row['CenterIF'] && $row['CenterIF'] <= $this->upperIFLimit) {
+                    $sums[0] += $row['Pol0Sb1Tr'];
+                    $sums[1] += $row['Pol0Sb2Tr'];
+                    $sums[2] += $row['Pol1Sb1Tr'];
+                    $sums[3] += $row['Pol1Sb2Tr'];
+                    $ifCount++;
+                }
+            }
         }
 
+        // delete the guard row:
+        array_pop($this->NT_data);
+
+        // write out data for the averaging plot:
         $this->avg_datafile = $this->plotDir . "NoiseTemp_avg.txt";
-        $this->NT_Logger->WriteLogFile("average_datafile: {$this->avg_datafile}");
         $favg = fopen($this->avg_datafile, 'w');
-
-        // arrays for accumulating data points for the averaging plot:
-        $Pol0_Sb1_avg = array();
-        $Pol0_Sb2_avg = array();
-        $Pol1_Sb1_avg = array();
-        $Pol1_Sb2_avg = array();
-
-        // track the current LO frequency being processed across multiple IF steps:
-        $currentLO = $this->NT_data[0]['FreqLO'];
-        $done = false;
-        $index = 0;
-        // WTF!!!!!
-        do {
-            if ($index >= $cnt)
-                $done = true;
-            else {
-                $LO = $this->NT_data[$index]['FreqLO'];
-                $IF = $this->NT_data[$index]['CenterIF'];
-                $Pol0Sb1_Tr = $this->NT_data[$index]['Pol0Sb1Tr'];
-                $Pol0Sb2_Tr = $this->NT_data[$index]['Pol0Sb2Tr'];
-                $Pol1Sb1_Tr = $this->NT_data[$index]['Pol1Sb1Tr'];
-                $Pol1Sb2_Tr = $this->NT_data[$index]['Pol1Sb2Tr'];
-            }
-
-            // do things which happen when we encounter a new LO or the end of the data:
-            if (($LO != $currentLO) || $done) {
-
-                // calculate the averaged noise temps across the whole IF:
-                $avg01 = array_sum($Pol0_Sb1_avg) / count($Pol0_Sb1_avg);
-                $avg02 = array_sum($Pol0_Sb2_avg) / count($Pol0_Sb2_avg);
-                $avg11 = array_sum($Pol1_Sb1_avg) / count($Pol1_Sb1_avg);
-                $avg12 = array_sum($Pol1_Sb2_avg) / count($Pol1_Sb2_avg);
-
-                // points to draw 80% and full-band spec lines for averaging plot:
-                if ($this->lower_80_RFLimit <= $currentLO && $currentLO <= $this->upper_80_RFLimit)
-                    $spec_line1 = $this->NT_80_spec;
-                else
-                    $spec_line1 = NAN;
-
-                $spec_line2 = $this->NT_allRF_spec;
-
-                // append to array of averaged data:
-                $rowData = array(
-                    'FreqLO'        => $currentLO,
-                    'Pol0Sb1TrAvg'  => $avg01,
-                    'Pol0Sb2TrAvg'  => $avg02,
-                    'Pol1Sb1TrAvg'  => $avg11,
-                    'Pol1Sb2TrAvg'  => $avg12,
-                    'spec_line1'    => $spec_line1,
-                    'spec_line2'    => $spec_line2
-                );
-                $this->NT_avgData[] = $rowData;
-
-                // reset arrays for averaging noise temp:
-                unset($Pol0_Sb1_avg);
-                unset($Pol0_Sb2_avg);
-                unset($Pol1_Sb1_avg);
-                unset($Pol1_Sb2_avg);
-
-                // write out data for the averaging plot:
-                $writestring = "$currentLO\t$avg01\t$avg02\t$avg11\t$avg12\t$spec_line1\t$spec_line2\r\n";
-                fwrite($favg, $writestring);
-
-                // move to next currentLO:
-                if (!$done)
-                    $currentLO = $LO;
-            }
-
-            if (!$done) {
-                // for IFs within the IF spec range...
-                if ($this->lowerIFLimit <= $IF && $IF <= $this->upperIFLimit) {
-                    // append to arrays for IF averaging plot:
-                    $Pol0_Sb1_avg[] = $Pol0Sb1_Tr;
-                    $Pol0_Sb2_avg[] = $Pol0Sb2_Tr;
-                    $Pol1_Sb1_avg[] = $Pol1Sb1_Tr;
-                    $Pol1_Sb2_avg[] = $Pol1Sb2_Tr;
-                }
-                $index++;
-            }
-        } while (!$done);
-
+        foreach($this->NT_avgData as $row) {
+            $lo = $row['FreqLO'];
+            $usb = $row['FreqRFUSB'];
+            $lsb = $row['FreqRFLSB'];
+            $t0 = $row['Pol0Sb1TrAvg'];
+            $t1 = $row['Pol0Sb2TrAvg'];
+            $t2 = $row['Pol1Sb1TrAvg'];
+            $t3 = $row['Pol1Sb2TrAvg'];
+            fwrite($favg, "$lo\t$usb\t$lsb\t$t0\t$t1\t$t2\t$t3\r\n");
+        }
         fclose($favg);
     }
 
     private function CalculateBand3AvgNT() {
-        // For band 3 read the average NT file and store the information in the db
-        if ($this->Band == 3) {
-            $favg = fopen($this->avg_datafile, 'r');
+        /*
+        $this->NT_avgData has:
+        array(
+            [0] => array(
+                'FreqLO'        => $currentLO,
+                'FreqRFUSB'     => FreqLO + (max - min CenterIF)
+                'FreqRFLSB'     => FreqLO - (max - min CenterIF)
+                'Pol0Sb1TrAvg'  => $avg01,
+                'Pol0Sb2TrAvg'  => $avg02,
+                'Pol1Sb1TrAvg'  => $avg11,
+                'Pol1Sb2TrAvg'  => $avg12,
+                'spec_line1'    => 80% spec
+                'spec_line2'    => full IF spec
+            ), 
+            [1] ...
+        )
+        */
 
-            $values = "";
-
-            // read file and format data into a string to write out in a DB query
-            while ($scan = fscanf($favg, "%f\t%f\t%f\t%f\t%f\t%f\r\n")) {
-                list($freq, $avg01, $avg02, $avg11, $avg12, $this->NT_80_spec) = $scan;
-                $avg = ($avg01 + $avg02 + $avg11 + $avg12) / 4;
-                $values = "(" . $this->keyId . ",$freq,$avg01,$avg02,$avg11,$avg12,$avg)," . $values;
-            }
-            //delete last "," and replace it with ";"
-            $values = substr_replace($values, ";", (strlen($values)) - 1);
-
-            //query to delete any existing data in the DB with the same TD Header keyID
-            $q = "DELETE FROM `Noise_Temp_Band3_Results`
-            WHERE  `fkHeader` = " . $this->keyId . "";
-            $r = mysqli_query($this->dbConnection, $q);
-
-            // query to insert new data into table
-            $q = "INSERT INTO `Noise_Temp_Band3_Results`
-            (`fkHeader`,`FreqLO`,`Pol0USB`,`Pol0LSB`,`Pol1USB`,`Pol1LSB`,`AvgNT`)
-            VALUES $values";
-            $r = mysqli_query($this->dbConnection, $q);
-
-            $this->NT_Logger->WriteLogFile("Band3 Replace Query: $q\r\n");
-
-            fclose($favg);
+        //query to delete any existing data in the DB with the same TD Header keyID
+        $q = "DELETE FROM `Noise_Temp_Band3_Results` WHERE `fkHeader` = " . $this->keyId . ";";
+        $r = mysqli_query($this->dbConnection, $q);
+        
+        $values = "";
+        foreach($this->NT_avgData as $row) {
+            if ($values != "")
+                $values .= ",";
+            $avgAvg = ($row['Pol0Sb1TrAvg'] + $row['Pol0Sb2TrAvg'] + $row['Pol1Sb1TrAvg'] + $row['Pol1Sb2TrAvg']) / 4;
+            $values .= "($this->keyId, " . $row['FreqLO'] . "," . 
+                        $row['Pol0Sb1TrAvg'] . "," . $row['Pol0Sb2TrAvg'] . "," . 
+                        $row['Pol1Sb1TrAvg'] . "," . $row['Pol1Sb2TrAvg'] . ", $avgAvg)";
         }
+        // query to insert new data into table
+        $q = "INSERT INTO `Noise_Temp_Band3_Results` (`fkHeader`,`FreqLO`,`Pol0USB`,`Pol0LSB`,`Pol1USB`,`Pol1LSB`,`AvgNT`) VALUES ";
+        $q .= $values;
+        $r = mysqli_query($this->dbConnection, $q);
     }
 
     private function CalculateBand10AvgNT() {
@@ -837,7 +878,15 @@ class NoiseTemperature extends TestData_header {
             // impossible case:
             return false;
         }
+        $new_specs = new Specifications();
+        $specs = $new_specs->getSpecs('FEIC_NoiseTemperature', $this->Band);
 
+        // lower RF limit for applying 80% spec:
+        $this->lower_80_RFLimit = (isset($specs['NT80RF_loLim'])) ? $specs['NT80RF_loLim'] : 0;
+
+        // upper RF limit for applying 80% spec:
+        $this->upper_80_RFLimit = (isset($specs['NT80RF_hiLim'])) ? $specs['NT80RF_hiLim'] : 0;
+        
         $this->Pol0_80_metric = 0;
         $this->Pol1_80_metric = 0;
 
@@ -1259,7 +1308,7 @@ class NoiseTemperature extends TestData_header {
             $plot_title .= ", FE SN" . $this->frontEnd->SN;
 
         $plot_title .= ", CCA" . $this->Band . "-$this->CCA_SN WCA" . $this->Band . "-$this->WCA_SN";
-        $this->y_lim = 1.3 * $this->NT_allRF_spec;  // upper limit to y axis
+        $this->y_lim = 1.4 * $this->NT_allRF_spec;  // upper limit to y axis
 
         // Create GNU plot command file for Tssb vs IF plot command
         $commandfile = $this->plotDir . "Tssb_vs_IF_plotcommands.txt";
@@ -1314,7 +1363,7 @@ class NoiseTemperature extends TestData_header {
 
     private function DrawPlotTrAverage() {
         // Average Tssb vs LO frequency plot
-        $imagename = "Avg_Tssb_vs_LO_NoiseTemp_" . $this->frontEnd->feconfig_id . "_" . $this->keyId . ".png";
+        $imagename = "Avg_Tssb_NoiseTemp_" . $this->frontEnd->feconfig_id . "_" . $this->keyId . ".png";
         $imagepath = $this->plotDir . $imagename;
         $this->NT_Logger->WriteLogFile("image path: $imagepath");
 
@@ -1332,7 +1381,7 @@ class NoiseTemperature extends TestData_header {
         $plot_title .= ", CCA" . $this->Band . "-$this->CCA_SN WCA" . $this->Band . "-$this->WCA_SN";
 
         // Create GNU plot command file averaging plot command
-        $commandfile = $this->plotDir . "Avg_Tssb_vs_LO_plotcommands.txt";
+        $commandfile = $this->plotDir . "Avg_Tssb_plotcommands.txt";
         $f = fopen($commandfile, 'w');
         $this->NT_Logger->WriteLogFile("command file: $commandfile");
         fwrite($f, "set terminal png size 900,600 crop\r\n");
@@ -1340,7 +1389,10 @@ class NoiseTemperature extends TestData_header {
             fwrite($f, "set colorsequence classic\r\n");
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
-        fwrite($f, "set xlabel 'LO(GHz)'\r\n");
+        if (in_array($this->Band, array(2, 3, 4, 5, 6, 7, 8)))
+            fwrite($f, "set xlabel 'RF(GHz)'\r\n");
+        else
+            fwrite($f, "set xlabel 'LO(GHz)'\r\n");
         if ($this->Band == 1 || $this->foundIRData) {
             fwrite($f, "set ylabel 'Average T_{ssb} (K)'\r\n");
             fwrite($f, "set y2label 'Average T_{ssb} (K)'\r\n");
@@ -1360,25 +1412,43 @@ class NoiseTemperature extends TestData_header {
 
         switch ($this->Band) {
             case 1:
-            case 9:
-                fwrite($f, "plot  '$this->avg_datafile' using 1:2 with linespoints lt 1 lw 1 title 'Pol0',");
-                fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1',");
-                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
-                fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
-
+                // USB, plot avg NT vs RFUSB
+                fwrite($f, "plot  '$this->avg_datafile' using 2:4 with linespoints lt 1 lw 1 title 'Pol0',");
+                fwrite($f, "'$this->avg_datafile' using 2:6 with linespoints lt 3 lw 1 title 'Pol1',");
+                fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
+                fwrite($f, "$this->NT_80_spec with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
                 break;
+
+            case 2:
+                // Band2 2SB,  plot avg NT vs RF:
+                // 30K 67-90,  41K 90-116,  43 100%
+                fwrite($f, "f(x) = ((x < 89.9) ? 30 : ((x > 90.1) ? 41 : 1/0))\r\n");
+                fwrite($f, "plot  '$this->avg_datafile' using 2:4 with linespoints lt 1 lw 1 title 'Pol0 USB',");
+                fwrite($f, "'$this->avg_datafile' using 3:5 with linespoints lt 2 lw 1 title 'Pol0 LSB',");
+                fwrite($f, "'$this->avg_datafile' using 2:6 with linespoints lt 3 lw 1 title 'Pol1 USB',");
+                fwrite($f, "'$this->avg_datafile' using 3:7 with linespoints lt 4 lw 1 title 'Pol1 LSB',");
+                fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
+                fwrite($f, "f(x) with lines lt 0 lw 2 title '30|41 K (80%)'\r\n");
+            
             case 3:
-                fwrite($f, "f(x) = (x < 103.5 || x > 104.5 ? 1/0 : $this->NT_B3Special_spec)\r\n");
-                fwrite($f, "plot '$this->avg_datafile' using 1:2 with linespoints lt 1 lw 1 title 'Pol0sb1',");
-                fwrite($f, "'$this->avg_datafile' using 1:3 with linespoints lt 2 lw 1 title 'Pol0sb2',");
-                fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1sb1',");
-                fwrite($f, "'$this->avg_datafile' using 1:5 with linespoints lt 4 lw 1 title 'Pol1sb2',");
-                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt -1 lw 3 title '$this->NT_allRF_spec K (100%)',");
-                fwrite($f, "f(x) with lines lt 1 lw 3 title '$this->NT_B3Special_spec K (104 GHz)'\r\n");
+                // Band3 2SB, plot avg NT vs RF:
+                fwrite($f, "plot '$this->avg_datafile' using 2:4 with linespoints lt 1 lw 1 title 'Pol0 USB',");
+                fwrite($f, "'$this->avg_datafile' using 3:5 with linespoints lt 2 lw 1 title 'Pol0 LSB',");
+                fwrite($f, "'$this->avg_datafile' using 2:6 with linespoints lt 3 lw 1 title 'Pol1 USB',");
+                fwrite($f, "'$this->avg_datafile' using 3:7 with linespoints lt 4 lw 1 title 'Pol1 LSB',");
+                fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)'\r\n");
                 break;
-
+            
+            case 9:
+                // DSB, plot avg NT vs LO:
+                fwrite($f, "plot  '$this->avg_datafile' using 1:4 with linespoints lt 1 lw 1 title 'Pol0',");
+                fwrite($f, "'$this->avg_datafile' using 1:6 with linespoints lt 3 lw 1 title 'Pol1',");
+                fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
+                fwrite($f, "$this->NT_80_spec with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
+                break;
+               
             case 10:
-
+                // Band 10 DSB, plot avg NT vs LO:
                 $this->avSpec_datafile = $this->plotDir . "NoiseTemp_avSpec.txt";
                 $fspec = fopen($this->avSpec_datafile, 'w');
 
@@ -1413,19 +1483,20 @@ class NoiseTemperature extends TestData_header {
                     fwrite($f, ' tc lt 1');
                 fwrite($f, "\r\n");
 
-                fwrite($f, "plot  '$this->avg_datafile' using 1:2 with linespoints lt 1 lw 1 title 'Pol0',");
-                fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1',");
+                fwrite($f, "plot  '$this->avg_datafile' using 1:4 with linespoints lt 1 lw 1 title 'Pol0',");
+                fwrite($f, "'$this->avg_datafile' using 1:6 with linespoints lt 3 lw 1 title 'Pol1',");
                 fwrite($f, "'$this->avSpec_datafile' using 1:3 with lines lt -1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
-                fwrite($f, "'$this->avSpec_datafile' using 1:2 with lines lt 0 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
+                fwrite($f, "'$this->avSpec_datafile' using 1:2 with lines lt 0 lw 2 title ' $this->NT_80_spec K (80%)'\r\n");
                 break;
 
             default:
-                fwrite($f, "plot  '$this->avg_datafile' using 1:2 with linespoints lt 1 lw 1 title 'Pol0sb1',");
-                fwrite($f, "'$this->avg_datafile' using 1:3 with linespoints lt 2 lw 1 title 'Pol0sb2',");
-                fwrite($f, "'$this->avg_datafile' using 1:4 with linespoints lt 3 lw 1 title 'Pol1sb1',");
-                fwrite($f, "'$this->avg_datafile' using 1:5 with linespoints lt 4 lw 1 title 'Pol1sb2',");
-                fwrite($f, "'$this->avg_datafile' using 1:7 with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
-                fwrite($f, "'$this->avg_datafile' using 1:6 with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
+                // Others 2SB,  plot avg NT vs RF:
+                fwrite($f, "plot  '$this->avg_datafile' using 2:4 with linespoints lt 1 lw 1 title 'Pol0 USB',");
+                fwrite($f, "'$this->avg_datafile' using 3:5 with linespoints lt 2 lw 1 title 'Pol0 LSB',");
+                fwrite($f, "'$this->avg_datafile' using 2:6 with linespoints lt 3 lw 1 title 'Pol1 USB',");
+                fwrite($f, "'$this->avg_datafile' using 3:7 with linespoints lt 4 lw 1 title 'Pol1 LSB',");
+                fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
+                fwrite($f, "$this->NT_80_spec with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
                 break;
         }
         fclose($f);
