@@ -2125,7 +2125,7 @@ class WCA extends FEComponent {
             unlink($plot_command_file);
         }
         $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png size 1000,600\r\n");
+        fwrite($fh, "set terminal png size 1000,600 medium\r\n");
         if ($GNUPLOT_VER >= 5.0)
             fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
