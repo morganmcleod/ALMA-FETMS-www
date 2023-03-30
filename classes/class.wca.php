@@ -46,8 +46,9 @@ class WCA extends FEComponent {
         $this->fc = $in_fc;
         parent::__construct(NULL, $in_keyId, NULL, $in_fc);
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.10";
-        /* 1.3.10 Re-enable saving basic parameters from wca.php:  ESN, YIG low, YIG high, VG0, VG1
+        $this->swversion = "1.3.11";
+        /* 1.3.11 Add LO PA VG settings to WCA max output power vs. frequency plot.
+         * 1.3.10 Re-enable saving basic parameters from wca.php:  ESN, YIG low, YIG high, VG0, VG1
          *        Make Band and SN entry fields read-only.   Remove Notes entry field (wasn't working anyway.)
          * 1.3.9 Use "LO" terminology instead of "WCA" for band 1
          * 1.3.8 Delete WCA_LOParams in Upload_WCAs_file().  Will get recreated on refresh.
@@ -2077,12 +2078,15 @@ class WCA extends FEComponent {
         if (!$this->tdh_outputpower->keyId)
             return;
 
+        // Get VD0, VD1 settings from first row:
+        $r = $this->db_pull->q_other('VD01', $this->tdh_outputpower->keyId, $this->fc);
+        $row = mysqli_fetch_array($r);
+        $VD0 = $row[0];
+        $VD1 = $row[1];
+        $VG0 = $this->_WCAs->VG0;
+        $VG1 = $this->_WCAs->VG1;
+        
         $Band = $this->Band;
-        $rTS = $this->db_pull->q_other('TS', $this->tdh_outputpower->keyId, $this->fc);
-        $rowTS = mysqli_fetch_array($rTS);
-        $VD0 = $rowTS[0];
-        $VD1 = $rowTS[1];
-
         $TS = $this->tdh_outputpower->TS;
 
         $imagedirectory = $this->writedirectory;
@@ -2094,7 +2098,7 @@ class WCA extends FEComponent {
 
         $image_url = $this->url_directory . $imagename;
 
-        $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN . " Output Power Vs. Frequency (VD0=$VD0, VD1=$VD1) ($TS)";
+        $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN . " Output Power Vs. Frequency (VD0=$VD0, VD1=$VD1, VG0=$VG0, VG1=$VG1) ($TS)";
 
         $this->_WCAs->op_vs_freq_url = $image_url;
         $this->_WCAs->Update();
@@ -2121,7 +2125,7 @@ class WCA extends FEComponent {
             unlink($plot_command_file);
         }
         $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png size 800,500\r\n");
+        fwrite($fh, "set terminal png size 900,500\r\n");
         if ($GNUPLOT_VER >= 5.0)
             fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");

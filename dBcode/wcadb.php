@@ -93,7 +93,7 @@ class WCAdb { //extends DBRetrieval {
             $q = "SELECT FreqLO, AMNoise FROM WCA_AMNoise WHERE fkHeader = $keyId AND FreqIf >= $FreqLO AND FreqIF <= $FreqHI AND Pol = $pol AND fkFacility = $fc ORDER BY FreqLO ASC;";
         } elseif ($request == 'NumIF') {
             $q = "SELECT DISTINCT(FreqIF) FROM WCA_AMNoise WHERE fkHeader = $keyId AND Pol = $pol AND fkFacility = $fc;";
-        } elseif ($request == 'TS') {
+        } elseif ($request == 'VD01') {
             $q = "SELECT VD0, VD1 FROM WCA_OutputPower WHERE fkHeader = $keyId AND keyDataSet = 1 AND fkFacility = $fc LIMIT 1;";
         } elseif ($request == 'OP') {
             $q = "SELECT FreqLO,Power FROM WCA_OutputPower WHERE Pol = $pol AND fkHeader = $keyId AND keyDataSet = 1 AND fkFacility = $fc ORDER BY FreqLO ASC;";
