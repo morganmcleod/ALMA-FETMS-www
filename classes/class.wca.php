@@ -2097,7 +2097,7 @@ class WCA extends FEComponent {
 
         $image_url = $this->url_directory . $imagename;
 
-        $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN . " Output Power Vs. Frequency (VD0=$VD0, VD1=$VD1, VG0=$VG0, VG1=$VG1) ($TS)";
+        $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN . " Output Power Vs. Frequency (VD0=$VD0 VD1=$VD1 VG0=$VG0 VG1=$VG1) ($TS)";
 
         $this->_WCAs->op_vs_freq_url = $image_url;
         $this->_WCAs->Update();
