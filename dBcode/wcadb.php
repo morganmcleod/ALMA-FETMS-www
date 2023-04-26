@@ -251,13 +251,13 @@ class WCAdb { //extends DBRetrieval {
                 $colNames = array('fkHeader', 'keyDataSet', 'TS', 'FreqLO', 'Power', 'Pol', 'VD0', 'VD1', 'VG0', 'VG1', 'fkFacility');
                 break;
             case 'WCA_AmplitudeStability':
-                $colNames = array('fkHeader', 'FreqLO', 'Pol', 'Time', 'AllanVar');
+                $colNames = array('fkHeader', 'TS', 'FreqLO', 'Pol', 'Time', 'AllanVar');
                 break;
             case 'WCA_AMNoise':
-                $colNames = array('fkHeader', 'AMNoise', 'FreqLO', 'FreqIF', 'Pol', 'DrainVoltage', 'GateVoltage');
+                $colNames = array('fkHeader', 'TS', 'AMNoise', 'FreqLO', 'FreqIF', 'Pol', 'DrainVoltage', 'GateVoltage');
                 break;
             case 'WCA_PhaseNoise':
-                $colNames = array('fkHeader', 'FreqLO', 'Pol', 'CarrierOffset', 'Lf');
+                $colNames = array('fkHeader', 'TS', 'FreqLO', 'Pol', 'CarrierOffset', 'Lf');
                 break;
             case 'WCA_Isolation':
                 $colNames = array('fkHeader', 'FreqLO', 'S11AmpdB', 'S11PhaseDeg', 'S21AmpdB', 'S21PhaseDeg', 'S12AmpdB', 'S12PhaseDeg', 'S22AmpdB', 'S22PhaseDeg', 'TS');
@@ -274,7 +274,7 @@ class WCAdb { //extends DBRetrieval {
             $qdel .= " AND fkFacility = $fc";
         }
         $qdel .= ";";
-        $rdel = $this->run_query($qdel);
+        $this->run_query($qdel);
 
         $qins = "INSERT INTO $request (";
         $first = true;
@@ -367,6 +367,7 @@ class WCAdb { //extends DBRetrieval {
                     case 'WCA_AmplitudeStability':
                         $values = array(
                             $object->keyId, //fkHeader
+                            "'" . $tempArray[3] . "'",   //TS
                             $tempArray[4], //FreqLO
                             $tempArray[5], //Pol
                             $tempArray[6], //Time
@@ -376,19 +377,19 @@ class WCAdb { //extends DBRetrieval {
                     case 'WCA_AMNoise':
                         $values = array(
                             $object->keyId, //fkHeader
+                            "'" . $tempArray[3] . "'",   //TS
                             $tempArray[4], //AMNoise
                             $tempArray[5], //FreqLO
                             $tempArray[6], //FreqIF
                             $tempArray[7], //Pol
                             $tempArray[8], //DrainVoltage
                             $tempArray[9]  //GateVoltage
-
-
                         );
                         break;
                     case 'WCA_PhaseNoise':
                         $values = array(
                             $object->keyId, //fkHeader
+                            "'" . $tempArray[3] . "'",   //TS
                             $tempArray[4], //FreqLO
                             $tempArray[5], //Pol
                             $tempArray[6], //CarrierOffset

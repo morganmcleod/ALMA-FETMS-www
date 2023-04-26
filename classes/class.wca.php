@@ -46,8 +46,9 @@ class WCA extends FEComponent {
         $this->fc = $in_fc;
         parent::__construct(NULL, $in_keyId, NULL, $in_fc);
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.11";
-        /* 1.3.11 Add LO PA VG settings to WCA max output power vs. frequency plot.
+        $this->swversion = "1.3.12";
+        /* 1.3.12 Fix date stamps on WCA plots
+         * 1.3.11 Add LO PA VG settings to WCA max output power vs. frequency plot.
          * 1.3.10 Re-enable saving basic parameters from wca.php:  ESN, YIG low, YIG high, VG0, VG1
          *        Make Band and SN entry fields read-only.   Remove Notes entry field (wasn't working anyway.)
          * 1.3.9 Use "LO" terminology instead of "WCA" for band 1
@@ -1433,7 +1434,7 @@ class WCA extends FEComponent {
     private function Upload_AmplitudeStability_file($datafile_name) {
         // Test Data Header object
         // Delete any existing header records
-        $rtdh = $this->db_pull->qtdh('delete', $this->keyId, 'WCA_AmplitudeStability');
+        $this->db_pull->qtdh('delete', $this->keyId, 'WCA_AmplitudeStability');
         $this->tdh_ampstab = GenericTable::NewRecord("TestData_header", 'keyId', $this->keyFacility, 'keyFacility');
         $this->tdh_ampstab->SetValue('fkTestData_Type', 45);
         $this->tdh_ampstab->SetValue('fkDataStatus', $this->fkDataStatus);
@@ -1468,7 +1469,6 @@ class WCA extends FEComponent {
                 foreach ($LOArray as $LORow) {
                     $LO = $LORow[0];
                     for ($pol = 0; $pol <= 1; $pol++) {
-                        $DataSeriesName = "LO $LO GHz, Pol $pol";
 
                         $r = $this->db_pull->q(9, $this->tdh_ampstab->keyId, $pol, NULL, NULL, $LO);
 
@@ -1825,7 +1825,6 @@ class WCA extends FEComponent {
         for ($j = 0; $j <= 1; $j++) {
             for ($i = 0; $i <= sizeof($rowLO); $i++) {
                 $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
-                $DataSeriesName = "LO $CurrentLO GHz, Pol $j";
 
                 $r = $this->db_pull->q(11, $this->tdh_phasenoise->keyId, $j, $this->fc, NULL, $CurrentLO);
 
