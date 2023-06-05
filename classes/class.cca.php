@@ -307,26 +307,29 @@ class CCA extends FEComponent {
 
         $output .= $mstring;
 
-
-        $output .= "MixerParams=" . (count($this->MixerParams)) . "\r\n";
-
-        for ($i = 0; $i  < (count($this->MixerParams)); $i++) {
-            if ($i < 9) {
-                $mstring = "MixerParam0" . ($i + 1) . "=";
+        if (!$this->MixerParams) {
+            $output .= "MixerParams=0";
+        } else {
+            $output .= "MixerParams=" . (count($this->MixerParams)) . "\r\n";
+    
+            for ($i = 0; $i  < (count($this->MixerParams)); $i++) {
+                if ($i < 9) {
+                    $mstring = "MixerParam0" . ($i + 1) . "=";
+                }
+                if ($i >= 9) {
+                    $mstring = "MixerParam" . ($i + 1) . "=";
+                }
+                $mstring .= number_format($this->MixerParams[$i]->lo, 3) . ",";
+                $mstring .= number_format($this->MixerParams[$i]->vj01, 3) . ",";
+                $mstring .= number_format($this->MixerParams[$i]->vj02, 3) . ",";
+                $mstring .= number_format($this->MixerParams[$i]->vj11, 3) . ",";
+                $mstring .= number_format($this->MixerParams[$i]->vj12, 3) . ",";
+                $mstring .= number_format($this->MixerParams[$i]->ij01, 2) . ",";
+                $mstring .= number_format($this->MixerParams[$i]->ij02, 2) . ",";
+                $mstring .= number_format($this->MixerParams[$i]->ij11, 2) . ",";
+                $mstring .= number_format($this->MixerParams[$i]->ij12, 2) . "\r\n";
+                $output .= $mstring;
             }
-            if ($i >= 9) {
-                $mstring = "MixerParam" . ($i + 1) . "=";
-            }
-            $mstring .= number_format($this->MixerParams[$i]->lo, 3) . ",";
-            $mstring .= number_format($this->MixerParams[$i]->vj01, 3) . ",";
-            $mstring .= number_format($this->MixerParams[$i]->vj02, 3) . ",";
-            $mstring .= number_format($this->MixerParams[$i]->vj11, 3) . ",";
-            $mstring .= number_format($this->MixerParams[$i]->vj12, 3) . ",";
-            $mstring .= number_format($this->MixerParams[$i]->ij01, 2) . ",";
-            $mstring .= number_format($this->MixerParams[$i]->ij02, 2) . ",";
-            $mstring .= number_format($this->MixerParams[$i]->ij11, 2) . ",";
-            $mstring .= number_format($this->MixerParams[$i]->ij12, 2) . "\r\n";
-            $output .= $mstring;
         }
 
         $numpa = 4;
