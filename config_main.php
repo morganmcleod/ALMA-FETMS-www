@@ -31,6 +31,13 @@ switch ($site_hostname) {
         $GNUPLOT_VER = 5.2;
         break;
 
+    case "200.2.0.121":
+        $url_root .= "fetms/";
+        $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
+        $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff2_64";
+        $GNUPLOT_VER = 5.2;
+        break;
+    
     case "webtest.cv.nrao.edu":
         // $FETMS_CCA_MODE = true;
         $url_root .= "php/ntc/ws-mtm/ALMA-FETMS-www/";

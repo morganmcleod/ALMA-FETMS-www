@@ -13,6 +13,11 @@ switch ($_SERVER['SERVER_NAME']) {
         include("/home/fetms.osf.alma.cl/conf/fetms-dbConnect.conf");
         break;
 
+    case "200.2.0.121":
+        // database credentials are kept in the /conf/ directory, not in the webserver document root:
+        include("/home/fetms.osf.alma.cl/conf/fetms-dbConnect.conf");
+        break;
+    
     case "webtest.cv.nrao.edu":
         // database credentials are kept in the /conf/ directory, not in the webserver document root:
         include("/home/webtest.cv.nrao.edu/conf/mtm-dbConnect.conf");
