@@ -308,7 +308,7 @@ class CCA extends FEComponent {
         $output .= $mstring;
 
         if (!$this->MixerParams) {
-            $output .= "MixerParams=0";
+            $output .= "MixerParams=0\r\n";
         } else {
             $output .= "MixerParams=" . (count($this->MixerParams)) . "\r\n";
     
