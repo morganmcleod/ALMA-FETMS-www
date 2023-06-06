@@ -947,7 +947,7 @@ class CCA extends FEComponent {
 
     public function Delete_ALL_TestData() {
         $q = "SELECT keyId FROM TestData_header
-              WHERE keyFacility = '$this->fc' AND fkFE_Components = '$this->keyId';";
+              WHERE keyFacility = '$this->fc' AND fkFE_Components = '$this->keyId' AND fkDataStatus = 7;";
         $r = mysqli_query($this->dbConnection, $q);
 
         $keyList = "(";
