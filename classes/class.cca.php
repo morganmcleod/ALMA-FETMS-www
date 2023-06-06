@@ -1360,12 +1360,12 @@ class CCA extends FEComponent {
             if (is_numeric(substr($tempArray[0], 0, 1))) {
 
                 // Check for import only cryogenic temps:
-                if ($tempArray[3] <= 15) {
+                if ($tempArray[3] <= 20) {
 
                     // Upload row implementation varies by band:
                     if ($band == 1)
                         $this->UploadPreampParamsB1($tempArray);
-                    else if ($band >= 3 && $band <= 10)
+                    else if ($band >= 2 && $band <= 10)
                         $this->UploadPreampParamsB3to10($tempArray);
                 }
             }
