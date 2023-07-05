@@ -1821,79 +1821,81 @@ class WCA extends FEComponent {
         $rFindLO = $this->db_pull->qFindLO('WCA_PhaseNoise', $this->tdh_phasenoise->keyId, $this->fc);
         $rowLO = mysqli_fetch_array($rFindLO);
 
-        $datafile_count = 0;
-        for ($j = 0; $j <= 1; $j++) {
-            for ($i = 0; $i <= sizeof($rowLO); $i++) {
-                $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
+        if ($rowLO) {
+            $datafile_count = 0;
+            for ($j = 0; $j <= 1; $j++) {
+                for ($i = 0; $i <= sizeof($rowLO); $i++) {
+                    $CurrentLO = ADAPT_mysqli_result($rFindLO, $i);
 
-                $r = $this->db_pull->q(11, $this->tdh_phasenoise->keyId, $j, $this->fc, NULL, $CurrentLO);
+                    $r = $this->db_pull->q(11, $this->tdh_phasenoise->keyId, $j, $this->fc, NULL, $CurrentLO);
 
-                if (mysqli_num_rows($r) > 1) {
-                    $plottitle[$datafile_count] = "Pol $j, $CurrentLO GHz";
-                    $data_file[$datafile_count] = $this->writedirectory . "wca_phasenz_" . $i . "_" . $j . ".txt";
-                    if (file_exists($data_file[$datafile_count])) {
-                        unlink($data_file[$datafile_count]);
+                    if (mysqli_num_rows($r) > 1) {
+                        $plottitle[$datafile_count] = "Pol $j, $CurrentLO GHz";
+                        $data_file[$datafile_count] = $this->writedirectory . "wca_phasenz_" . $i . "_" . $j . ".txt";
+                        if (file_exists($data_file[$datafile_count])) {
+                            unlink($data_file[$datafile_count]);
+                        }
+                        $fh = fopen($data_file[$datafile_count], 'w');
+                        $row = mysqli_fetch_array($r);
+
+                        while ($row = mysqli_fetch_array($r)) {
+                            $stringData = "$row[0]\t$row[1]\r\n";
+                            fwrite($fh, $stringData);
+                        }
+                        fclose($fh);
+                        $datafile_count++;
                     }
-                    $fh = fopen($data_file[$datafile_count], 'w');
-                    $row = mysqli_fetch_array($r);
+                } // end for i
+            } // end for j
 
-                    while ($row = mysqli_fetch_array($r)) {
-                        $stringData = "$row[0]\t$row[1]\r\n";
-                        fwrite($fh, $stringData);
-                    }
-                    fclose($fh);
-                    $datafile_count++;
-                }
-            } // end for i
-        } // end for j
+            $imagedirectory = $this->writedirectory;
 
-        $imagedirectory = $this->writedirectory;
+            if (!file_exists($imagedirectory)) {
+                mkdir($imagedirectory);
+            }
+            $imagename = "WCA_PhaseNoise_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
+            $image_url = $this->url_directory . $imagename;
+            if ($this->Band == 1)
+                $plot_title = "LO ";
+            else
+                $plot_title = "WCA ";
+            $plot_title .= "Band" . $this->Band . " SN" . $this->SN . " Phase Noise ($TS)";
+            $this->_WCAs->phasenoise_url = $image_url;
+            $this->_WCAs->Update();
+            $imagepath = $imagedirectory . $imagename;
 
-        if (!file_exists($imagedirectory)) {
-            mkdir($imagedirectory);
+            // Write command file for gnuplot
+            $plot_command_file = $this->writedirectory . "wca_pn_command.txt";
+            if (file_exists($plot_command_file)) {
+                unlink($plot_command_file);
+            }
+            $fh = fopen($plot_command_file, 'w');
+            fwrite($fh, "set terminal png size 900,500\r\n");
+            if ($GNUPLOT_VER >= 5.0)
+                fwrite($fh, "set colorsequence classic\r\n");
+            fwrite($fh, "set output '$imagepath'\r\n");
+            fwrite($fh, "set title '$plot_title'\r\n");
+            fwrite($fh, "set grid\r\n");
+            fwrite($fh, "set log x\r\n");
+            fwrite($fh, "set yrange [-140:-40]\r\n");
+            fwrite($fh, "set xrange [10:10000000]\r\n");
+
+            fwrite($fh, "set xlabel 'f (Hz)'\r\n");
+            fwrite($fh, "set ylabel 'L(f) [dBc/Hz]'\r\n");
+            fwrite($fh, "set key outside\r\n");
+            $plot_string = "plot '$data_file[0]' using 1:2 title '$plottitle[0]' with lines";
+            for ($i = 1; $i < sizeof($data_file); $i++) {
+                $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
+            }
+            $plot_string .= "\r\n";
+            fwrite($fh, $plot_string);
+            fclose($fh);
+
+            // Make the plot
+            $GNUPLOT = $this->GNUplot;
+            $CommandString = "$GNUPLOT $plot_command_file";
+            system($CommandString);
         }
-        $imagename = "WCA_PhaseNoise_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . $imagename;
-        if ($this->Band == 1)
-            $plot_title = "LO ";
-        else
-            $plot_title = "WCA ";
-        $plot_title .= "Band" . $this->Band . " SN" . $this->SN . " Phase Noise ($TS)";
-        $this->_WCAs->phasenoise_url = $image_url;
-        $this->_WCAs->Update();
-        $imagepath = $imagedirectory . $imagename;
-
-        // Write command file for gnuplot
-        $plot_command_file = $this->writedirectory . "wca_pn_command.txt";
-        if (file_exists($plot_command_file)) {
-            unlink($plot_command_file);
-        }
-        $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png size 900,500\r\n");
-        if ($GNUPLOT_VER >= 5.0)
-            fwrite($fh, "set colorsequence classic\r\n");
-        fwrite($fh, "set output '$imagepath'\r\n");
-        fwrite($fh, "set title '$plot_title'\r\n");
-        fwrite($fh, "set grid\r\n");
-        fwrite($fh, "set log x\r\n");
-        fwrite($fh, "set yrange [-140:-40]\r\n");
-        fwrite($fh, "set xrange [10:10000000]\r\n");
-
-        fwrite($fh, "set xlabel 'f (Hz)'\r\n");
-        fwrite($fh, "set ylabel 'L(f) [dBc/Hz]'\r\n");
-        fwrite($fh, "set key outside\r\n");
-        $plot_string = "plot '$data_file[0]' using 1:2 title '$plottitle[0]' with lines";
-        for ($i = 1; $i < sizeof($data_file); $i++) {
-            $plot_string .= ", '$data_file[$i]' using 1:2 title '$plottitle[$i]' with lines";
-        }
-        $plot_string .= "\r\n";
-        fwrite($fh, $plot_string);
-        fclose($fh);
-
-        // Make the plot
-        $GNUPLOT = $this->GNUplot;
-        $CommandString = "$GNUPLOT $plot_command_file";
-        system($CommandString);
     }
     private function Upload_Isolation_file($datafile_name) {
         // Delete any existing header records

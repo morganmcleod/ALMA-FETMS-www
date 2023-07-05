@@ -4,6 +4,7 @@ $mySQL57 = true;
 
 switch ($_SERVER['SERVER_NAME']) {
     case getenv('PHP_HOSTNAME'):
+    case "localhost":
         // database credentials are kept in the /conf/ directory, not in the webserver document root:
         include("/home/fetms/conf/fetms-dbConnect.php");
         break;
@@ -32,14 +33,6 @@ switch ($_SERVER['SERVER_NAME']) {
     case "band1-fetms":
         $mySQL57 = true;
         include("C:/wamp64/dbConnect_private.php");
-        break;
-
-    case "localhost":
-    case "junco":
-        //         include("C:/wamp64/dbConnect_band1.php");
-        include("C:/wamp64/dbConnect_private.php");
-        //         include("C:/wamp64/dbConnect_OSF.php");
-        $mySQL57 = false;
         break;
 
     default:
@@ -89,3 +82,5 @@ function ADAPT_mysqli_result($res, $row, $field = 0) {
     if (!$datarow) return FALSE;
     return $datarow[$field];
 }
+
+?>
