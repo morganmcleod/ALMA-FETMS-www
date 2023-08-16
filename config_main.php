@@ -19,9 +19,11 @@ $site_hostname = $_SERVER['SERVER_NAME'];
 
 switch ($site_hostname) {
     case getenv('PHP_HOSTNAME'):
+    case "localhost":
         $url_root .= "fetms/";
         $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
         $beameff_64 = $rootdir_data . "FEConfig/bp/beameff/beameff2_64";
+        $GNUPLOT_VER = 5.4;
         break;
 
     case "fetms-rhel8.osf.alma.cl":
@@ -52,10 +54,6 @@ switch ($site_hostname) {
         $beameff_64 = "C:/wamp64/www/ALMA-FETMS-beameff/WinExe/beam_eff2.exe";
         break;
 
-    case "localhost":
-        $url_root .= "";
-        $GNUplot = $GNUPLOT = '/usr/bin/gnuplot';
-        break;
     case "junco":
         $FETMS_CCA_MODE = false;
         $url_root .= "ALMA-FETMS-www/";
