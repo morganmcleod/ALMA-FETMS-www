@@ -176,6 +176,7 @@ tr {
 .ploturl1 {
     width: 49.6%;
     float: left;
+    clear: both;
     border: 1px solid black;
 }
 
@@ -188,6 +189,7 @@ tr {
 .ploturl3 {
     width: 49.6%;
     float: left;
+    clear: both;
     border: 1px solid black;
 }
 
@@ -200,6 +202,7 @@ tr {
 .ploturl5 {
     width: 49.6%;
     float: left;
+    clear: both;
     border: 1px solid black;
 }
 
