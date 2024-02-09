@@ -1942,7 +1942,8 @@ class eff {
 
     function Display_PointingAnglesPlot() {
         global $site_storage;
-        echo "<img src='" . $site_storage . $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->pointing_angles_plot . "'>";
+        if ($this->scansets[0]->Scan_copol_pol0->BeamEfficencies->pointing_angles_plot)
+            echo "<img src='" . $site_storage . $this->scansets[0]->Scan_copol_pol0->BeamEfficencies->pointing_angles_plot . "'>";
     }
 
     function Display_PointingAnglesPlot_html() {
@@ -1982,20 +1983,28 @@ class eff {
                     </tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfamp . "'>";
+                echo "<td>";
+                if ($scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfamp)
+                    echo "<img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfphase . "'>";
+                echo "<td>";
+                if ($scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfphase)
+                    echo "<img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_nfphase . "'>";
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfamp . "'>";
+                echo "<td>";
+                if ($scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfamp)
+                    echo "<img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfphase . "'>";
+                echo "<td>";
+                if ($scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfphase)
+                    echo "<img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_nfphase . "'>";
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -2010,20 +2019,28 @@ class eff {
                     </tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffamp . "'>";
+                echo "<td>";
+                if ($scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffamp)
+                    echo "<img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffphase . "'>";
+                echo "<td>";
+                if ($scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffphase)
+                    echo "<img src='" . $site_storage . $scanset->Scan_copol_pol0->BeamEfficencies->plot_copol_ffphase . "'>";
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffamp . "'>";
+                echo "<td>";
+                if ($scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffamp)
+                    echo "<img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffphase . "'>";
+                echo "<td>";
+                if ($scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffphase)
+                    echo "<img src='" . $site_storage . $scanset->Scan_xpol_pol0->BeamEfficencies->plot_xpol_ffphase . "'>";
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -2040,20 +2057,28 @@ class eff {
                     </tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfamp . "'>";
+                echo "<td>";
+                if ($scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfamp)
+                    echo "<img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfphase . "'>";
+                echo "<td>";
+                if ($scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfphase)
+                    echo "<img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_nfphase . "'>";
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfamp . "'>";
+                echo "<td>";
+                if ($scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfamp)
+                    echo "<img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfphase . "'>";
+                echo "<td>";
+                if ($scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfphase)
+                    echo "<img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_nfphase . "'>";
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
@@ -2068,20 +2093,28 @@ class eff {
                     </tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffamp . "'>";
+                echo "<td>";
+                if ($scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffamp)
+                    echo "<img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffphase . "'>";
+                echo "<td>";
+                if ($scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffphase)
+                    echo "<img src='" . $site_storage . $scanset->Scan_copol_pol1->BeamEfficencies->plot_copol_ffphase . "'>";
                 echo "</td>";
                 echo "</tr>";
 
                 echo "<tr><th colspan=2 style='background:#FFFFFF'></th></tr>";
 
                 echo "<tr>";
-                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffamp . "'>";
+                echo "<td>";
+                if ($scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffamp)
+                    echo "<img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffamp . "'>";
                 echo "</td>";
 
-                echo "<td><img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffphase . "'>";
+                echo "<td>";
+                if ($scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffphase)
+                    echo "<img src='" . $site_storage . $scanset->Scan_xpol_pol1->BeamEfficencies->plot_xpol_ffphase . "'>";
                 echo "</td>";
                 echo "</tr>";
                 echo "</table>";
