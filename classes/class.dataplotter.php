@@ -143,7 +143,7 @@ class DataPlotter extends GenericTable {
                 'token' => getenv("STORAGE_TOKEN")
             )
         ));
-        curl_exec($ch);
+        $bool_val = curl_exec($ch);
         unlink($imagepath);
     }
 
@@ -1044,14 +1044,31 @@ class DataPlotter extends GenericTable {
         $fetms = $this->TestDataHeader->GetFetmsDescription(" at: ");
         fwrite($fh, "set label 'Measured$fetms $this->measdate, FE Configuration $this->FEcfg ' at screen 0.01, 0.04\r\n");
 
-        $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
-        $plot_string .= ", '$data_file'  using 1:3 title 'Pol 0, USB Power' with lines axis x1y1";
-        if ($is2SB) {
-            $plot_string .= ", '$data_file'  using 1:4 title 'Pol 0, LSB Power' with lines axis x1y1";
+        $IF0_Atten = $wsub->GetValue('IF0_Atten');
+        $IF1_Atten = $wsub->GetValue('IF1_Atten');
+        $IF2_Atten = $wsub->GetValue('IF2_Atten');
+        $IF3_Atten = $wsub->GetValue('IF3_Atten');
+        if (!empty($IF0_Atten)) {
+            fwrite($fh, "set label 'Pol0, USB Atten: " . $IF0_Atten . " dB' at screen 0.75, 0.65\r\n");
         }
-        $plot_string .= ", '$data_file'  using 1:5 title 'Pol 1, USB Power' with lines axis x1y1";
+        if ($is2SB && !empty($IF2_Atten)) {
+            fwrite($fh, "set label 'Pol0, LSB Atten: " . $IF2_Atten . " dB' at screen 0.75, 0.61\r\n");
+        }
+        if (!empty($IF1_Atten)) {
+            fwrite($fh, "set label 'Pol1, USB Atten: " . $IF1_Atten . " dB' at screen 0.75, 0.57\r\n");
+        }
+        if ($is2SB && !empty($IF3_Atten)) {
+            fwrite($fh, "set label 'Pol1, LSB Atten: " . $IF3_Atten . " dB' at screen 0.75, 0.53\r\n");
+        }
+
+        $plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
+        $plot_string .= ", '$data_file'  using 1:3 title 'Pol0, USB Power' with lines axis x1y1";
         if ($is2SB) {
-            $plot_string .= ", '$data_file'  using 1:6 title 'Pol 1, LSB Power' with lines axis x1y1";
+            $plot_string .= ", '$data_file'  using 1:4 title 'Pol0, LSB Power' with lines axis x1y1";
+        }
+        $plot_string .= ", '$data_file'  using 1:5 title 'Pol1, USB Power' with lines axis x1y1";
+        if ($is2SB) {
+            $plot_string .= ", '$data_file'  using 1:6 title 'Pol1, LSB Power' with lines axis x1y1";
         }
 
         $plot_string .= "\r\n";
