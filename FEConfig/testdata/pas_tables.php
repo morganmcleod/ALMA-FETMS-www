@@ -11,8 +11,9 @@ function results_section_header($desc) {
 }
 
 function table_header($width, &$tdh, $cols = 2, $filterChecked = false, $checkBox = "Select") {
-    $table_ver = "1.2.3";
+    $table_ver = "1.2.4";
     /*
+     * 1.2.4 Band6 SB2 magnet current is always expected to be zero
      * 1.2.3 Sort each section with newest at top, large font section headers
      * 1.2.2 Fix coloring of Y-factor results.
      * 1.2.1 Include FETMS_Description in table headers.
@@ -440,6 +441,11 @@ function SIS_results($td_keyID, $filterChecked) {
             // Match up control data with monitor data:
             while ($row = mysqli_fetch_array($r)) {
                 $key = 'Pol' . $row[0] . " SIS" . $row[1];
+
+                // Band6 SB2 magnet current is always expected to be zero:
+                if ($tdh->Band == "6" && $row[1] == "2")
+                    $row[4] = 0;
+
                 if (isset($output[$key])) {
                     $output[$key]['VJ'] = mon_data($row[2]);
                     $output[$key]['IJ'] = mon_data($row[3]);
