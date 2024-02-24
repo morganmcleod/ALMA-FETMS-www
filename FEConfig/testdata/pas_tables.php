@@ -300,20 +300,23 @@ function LNA_results($td_keyID, $filterChecked) {
             $numRows = mysqli_num_rows($r);
             if (!$numRows)
                 $r = mysqli_query($tdh->dbConnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
+            $numRows = mysqli_num_rows($r);
 
-            // Match up control data with monitor data:
-            while ($row = mysqli_fetch_array($r)) {
-                // cache the LO frequency:
-                if (!$Cntrl_FreqLO)
-                    $Cntrl_FreqLO = $row[2];
-                // insert the results keyed by Pol, LNA, and Stage:
-                $key = 'Pol' . $row[0] . " LNA" . $row[1];
-                if (isset($output[$key])) {
-                    for ($stage = 0; $stage < 3; $stage++) {
-                        $stageKey = 'Stage ' . ($stage + 1);
-                        if (isset($output[$key][$stageKey])) {
-                            $output[$key][$stageKey]['VdSet'] = $row[3 + $stage];
-                            $output[$key][$stageKey]['IdSet'] = $row[6 + $stage];
+            if ($numRows) {
+                // Match up control data with monitor data:
+                while ($row = mysqli_fetch_array($r)) {
+                    // cache the LO frequency:
+                    if (!$Cntrl_FreqLO)
+                        $Cntrl_FreqLO = $row[2];
+                    // insert the results keyed by Pol, LNA, and Stage:
+                    $key = 'Pol' . $row[0] . " LNA" . $row[1];
+                    if (isset($output[$key])) {
+                        for ($stage = 0; $stage < 3; $stage++) {
+                            $stageKey = 'Stage ' . ($stage + 1);
+                            if (isset($output[$key][$stageKey])) {
+                                $output[$key][$stageKey]['VdSet'] = $row[3 + $stage];
+                                $output[$key][$stageKey]['IdSet'] = $row[6 + $stage];
+                            }
                         }
                     }
                 }
@@ -347,14 +350,21 @@ function LNA_results($td_keyID, $filterChecked) {
                     // check to see if Vd is in spec
                     $mon_Vd = "";
                     if (isset($row['VdRead'])) {
-                        $mon_Vd = $new_spec->numWithinPercent($row['VdRead'], $row['VdSet'], $spec['Vd_diff']);                        
+                        $mon_Vd = $row['VdRead'];
+                        if ($row['VdSet'] != "") {
+                            $mon_Vd = $new_spec->numWithinPercent($row['VdRead'], $row['VdSet'], $spec['Vd_diff']);                        
+                        }                      
                     }
+                    
                     echo "<td width = '75px'>$mon_Vd</td>";
 
                     // check to see if Id is in spec
                     $mon_Id = "";
                     if (isset($row['IdRead'])) {
-                        $mon_Id = $new_spec->numWithinPercent($row['IdRead'], $row['IdSet'], $spec['Id_diff']);
+                        $mon_Id = $row['IdRead'];
+                        if ($row['IdSet'] != "") {
+                            $mon_Id = $new_spec->numWithinPercent($row['IdRead'], $row['IdSet'], $spec['Id_diff']);
+                        }
                     }
                     echo "<td width = '75px'>$mon_Id</td>";
 
