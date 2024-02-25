@@ -243,7 +243,7 @@ function LNA_results($td_keyID, $filterChecked) {
         $new_spec = new Specifications();
         $spec = $new_spec->getSpecs('CCA_LNA_bias', 0);
 
-        //get and save Monitor Data
+        // get the health check monitor data
         $q = "SELECT Pol, SB, Stage, FreqLO, VdSet, IdSet, VdRead, IdRead, VgRead
             FROM CCA_LNA_bias
             WHERE fkHeader = $td_keyID ORDER BY Pol ASC, SB ASC, Stage ASC";
@@ -273,7 +273,7 @@ function LNA_results($td_keyID, $filterChecked) {
 
         // If any rows found, so FreqLO got assigned:
         if ($FreqLO) {
-            //get and save Control Data
+            // get the control/settings values from configuration database:
             $q_CompID = "SELECT MAX(FE_Components.keyId)
                 FROM FE_Components JOIN FE_ConfigLink
                 ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
@@ -314,8 +314,11 @@ function LNA_results($td_keyID, $filterChecked) {
                         for ($stage = 0; $stage < 3; $stage++) {
                             $stageKey = 'Stage ' . ($stage + 1);
                             if (isset($output[$key][$stageKey])) {
-                                $output[$key][$stageKey]['VdSet'] = $row[3 + $stage];
-                                $output[$key][$stageKey]['IdSet'] = $row[6 + $stage];
+                                // if we already have 'live' control values from the health check retain those, else replace:
+                                if ($output[$key][$stageKey]['VdSet'] == "")
+                                    $output[$key][$stageKey]['VdSet'] = $row[3 + $stage];
+                                if ($output[$key][$stageKey]['IdSet'] == "")
+                                    $output[$key][$stageKey]['IdSet'] = $row[6 + $stage];
                             }
                         }
                     }
@@ -344,34 +347,23 @@ function LNA_results($td_keyID, $filterChecked) {
                     }
                     echo "</td>";
                     echo "<td width = '75px'>" . $stageKey . "</td>";
-                    echo "<td width = '75px'>" . (isset($row['VdSet']) ? $row['VdSet'] : "") . "</td>";
-                    echo "<td width = '75px'>" . (isset($row['IdSet']) ? $row['IdSet'] : "") . "</td>";
+                    echo "<td width = '75px'>" . $row['VdSet'] . "</td>";
+                    echo "<td width = '75px'>" . $row['IdSet'] . "</td>";
 
                     // check to see if Vd is in spec
-                    $mon_Vd = "";
-                    if (isset($row['VdRead'])) {
-                        $mon_Vd = $row['VdRead'];
-                        if ($row['VdSet'] != "") {
-                            $mon_Vd = $new_spec->numWithinPercent($row['VdRead'], $row['VdSet'], $spec['Vd_diff']);                        
-                        }                      
-                    }
-                    
+                    $mon_Vd = $row['VdRead'];
+                    if ($row['VdSet'] != "")
+                        $mon_Vd = $new_spec->numWithinPercent($row['VdRead'], $row['VdSet'], $spec['Vd_diff']);                        
                     echo "<td width = '75px'>$mon_Vd</td>";
 
                     // check to see if Id is in spec
-                    $mon_Id = "";
-                    if (isset($row['IdRead'])) {
-                        $mon_Id = $row['IdRead'];
-                        if ($row['IdSet'] != "") {
-                            $mon_Id = $new_spec->numWithinPercent($row['IdRead'], $row['IdSet'], $spec['Id_diff']);
-                        }
-                    }
+                    $mon_Id = $row['IdRead'];
+                    if ($row['IdSet'] != "")
+                        $mon_Id = $new_spec->numWithinPercent($row['IdRead'], $row['IdSet'], $spec['Id_diff']);
                     echo "<td width = '75px'>$mon_Id</td>";
 
                     // display Vg:
-                    $mon_Vg = "";
-                    if (isset($row['VgRead']))
-                        $mon_Vg = $row['VgRead'];
+                    $mon_Vg = $row['VgRead'];
                     echo "<td width = '75px'>" . $mon_Vg . "</td></tr>";
                 }
             }
@@ -381,7 +373,7 @@ function LNA_results($td_keyID, $filterChecked) {
 }
 
 
-// SIS � Actual Readings
+// SIS - Actual Readings
 /**
  * echos a HTML table that contains SIS monitor data
  *
@@ -390,7 +382,7 @@ function LNA_results($td_keyID, $filterChecked) {
  */
 function SIS_results($td_keyID, $filterChecked) {
 
-    //get and save Monitor Data
+    // get the health check monitor data
     $tdh = new TestData_header($td_keyID, "40");
 
     if (table_header(700, $tdh, 8, $filterChecked)) {
@@ -427,7 +419,7 @@ function SIS_results($td_keyID, $filterChecked) {
         // If any rows found, so FreqLO got assigned:
         if ($FreqLO) {
 
-            //get and save Control Data
+            // get the control/settings values from configuration database:
             $q_CompID = "SELECT DISTINCT MAX(FE_Components.keyId)
                 FROM FE_Components JOIN FE_ConfigLink
                 ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
@@ -448,18 +440,26 @@ function SIS_results($td_keyID, $filterChecked) {
             $numRows = mysqli_num_rows($r);
             if (!$numRows)
                 $r = mysqli_query($tdh->dbConnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
-
+            $numRows = mysqli_num_rows($r);
+            
             $Cntrl_FreqLO = 0;
-            // Match up control data with monitor data:
-            while ($row = mysqli_fetch_array($r)) {
-                if (!$Cntrl_FreqLO)
-                    $Cntrl_FreqLO = $row[2];
-                $key = 'Pol' . $row[0] . " SIS" . $row[1];
-                if (isset($output[$key])) {
-                    $output[$key]['VjSet'] = mon_data($row[3]);
-                    $output[$key]['IjSet'] = mon_data($row[4]);
-                    // Band6 SB2 magnet current is always expected to be zero:
-                    $output[$key]['ImagSet'] = ($tdh->Band == "6" && $row[1] == "2") ? "0.00" : mon_data($row[5]);
+            if ($numRows) {
+                // Match up control data with monitor data:
+                while ($row = mysqli_fetch_array($r)) {
+                    if (!$Cntrl_FreqLO)
+                        $Cntrl_FreqLO = $row[2];
+                    $key = 'Pol' . $row[0] . " SIS" . $row[1];
+                    if (isset($output[$key])) {
+                        // if we already have 'live' control values from the health check retain those, else replace:
+                        if ($output[$key]['VjSet'] == "")
+                            $output[$key]['VjSet'] = mon_data($row[3]);
+                        if ($output[$key]['IjSet'] == "")
+                            $output[$key]['IjSet'] = mon_data($row[4]);
+                        if ($output[$key]['ImagSet'] == "") {
+                            // Band6 SB2 magnet current is always expected to be zero:
+                            $output[$key]['ImagSet'] = ($tdh->Band == "6" && $row[1] == "2") ? "0.00" : mon_data($row[5]);
+                        }
+                    }
                 }
             }
         }
@@ -479,17 +479,9 @@ function SIS_results($td_keyID, $filterChecked) {
             echo "<tr><td colspan='8'>NO DATA</td></tr>";
         } else {
             foreach ($output as $key => $row) {
-                $VJ = "";
-                if ($row['VjSet'] != "")
-                    $VJ = $row['VjSet'];
-                
-                $IJ = "";
-                if ($row['IjSet'] != "")
-                    $IJ = $row['IjSet'];
-                
-                $IMAG = "";
-                if ($row['ImagSet'] != "")
-                    $IMAG = $row['ImagSet'];
+                $VJ = $row['VjSet'];
+                $IJ = $row['IjSet'];
+                $IMAG = $row['ImagSet'];
                 
                 echo "<tr>
                       <td width = '100px'>$key</td>
@@ -498,37 +490,23 @@ function SIS_results($td_keyID, $filterChecked) {
                       <td width = '75px'>$IMAG</td>";
 
                 // check to see if Bias voltage is in spec
-                $mon_Bias_V = "";
-                if (isset($row['VjRead'])) {
-                    $mon_Bias_V = $row['VjRead'];
-                    if (isset($row['VJ'])) {
-                        $mon_Bias_V = $new_spec->numWithinPercent($mon_Bias_V, $row['VJ'], $spec['bias_V_diff']);
-                    }
-                }
-
+                $mon_Bias_V = $row['VjRead'];
+                if ($row['VjSet'] != "")
+                    $mon_Bias_V = $new_spec->numWithinPercent($mon_Bias_V, $row['VjSet'], $spec['bias_V_diff']);
+               
                 // check to see if Bias currrent is in spec
-                $mon_Bias_I = "";
-                if (isset($row['IjRead'])) {
-                    $mon_Bias_I = $row['IjRead'];
-                    if (isset($row['IJ'])) {
-                        $mon_Bias_I = $new_spec->numWithinPercent($mon_Bias_I, $row['IJ'], $spec['bias_I_diff']);
-                    }
-                }
-
+                $mon_Bias_I = $row['IjRead'];
+                if ($row['IjSet'] != "")
+                    $mon_Bias_I = $new_spec->numWithinPercent($mon_Bias_I, $row['IjSet'], $spec['bias_I_diff']);
+                
                 // display magnet voltage:
-                $mon_Mag_V = "";
-                if (isset($row['VmagRead']))
-                    $mon_Mag_V = $row['VmagRead'];
+                $mon_Mag_V = $row['VmagRead'];
 
                 // check to see if Magnet currrent is in spec
-                $mon_Mag_I = "";
-                if (isset($row['ImagRead'])) {
-                    $mon_Mag_I = $row['ImagRead'];
-                    if (isset($row['IMAG'])) {
-                        $mon_Mag_I = $new_spec->numWithinPercent($mon_Mag_I, $row['IMAG'], $spec['magI_diff']);
-                    }
-                }
-
+                $mon_Mag_I = $row['ImagRead'];
+                if ($row['ImagSet'] != "")
+                    $mon_Mag_I = $new_spec->numWithinPercent($mon_Mag_I, $row['ImagSet'], $spec['magI_diff']);
+                
                 echo "<td width = '75px'>$mon_Bias_V</td>
                       <td width = '75px'>$mon_Bias_I</td>
                       <td width = '75px'>$mon_Mag_V</td>

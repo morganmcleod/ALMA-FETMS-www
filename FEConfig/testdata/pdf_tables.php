@@ -11,9 +11,10 @@ function results_section_header_html($desc) {
 }
 
 function table_header_html($width, &$tdh, $cols = 2, $filterChecked = false, $checkBox = "Select", $plot = null, $plot_name = null) {
-    $table_ver = "1.2.3";
+    $table_ver = "1.2.5";
     /*
-     * 1.2.3 Sort each section with newest at top, large font section headers
+     * 1.2.5 Read VjSet, IjSet, ImagSet, VdSet, IdSet from CCA_SIS_Bias and CCA_LNA_Bias tables, if available.
+     * 1.2.4 Band6 SB2 magnet current is always expected to be zero* 1.2.3 Sort each section with newest at top, large font section headers
      * 1.2.2 Fix coloring of Y-factor results.
      * 1.2.1 Include FETMS_Description in table headers.
      * 1.2.0 added CCA SIS Warm Resistance table.
@@ -81,11 +82,11 @@ function table_header_html($width, &$tdh, $cols = 2, $filterChecked = false, $ch
 function band_results_table_html($FE_Config, $band, $Data_Status, $TestData_Type, $filterChecked) {
 
     $dbConnection = site_getDbConnection();
-    $q = "SELECT `keyId` FROM `TestData_header`
-        WHERE `fkFE_Config` = $FE_Config
-        AND `fkTestData_Type` = $TestData_Type
+    $q = "SELECT keyId FROM TestData_header
+        WHERE fkFE_Config = $FE_Config
+        AND fkTestData_Type = $TestData_Type
         AND BAND = $band AND fkDataStatus = $Data_Status
-        ORDER BY `keyId` DESC";
+        ORDER BY keyId DESC";
     $r = mysqli_query($dbConnection, $q) or die("QUERY FAILED: $q");
 
     $html = null;
@@ -158,11 +159,11 @@ function band_results_table_html($FE_Config, $band, $Data_Status, $TestData_Type
 
 function results_table_html($FE_Config, $Data_Status, $TestData_Type, $filterChecked) {
     $dbConnection = site_getDbConnection();
-    $q = "SELECT keyId FROM `TestData_header`
-        WHERE `fkFE_Config` = $FE_Config
-        AND `fkTestData_Type` = $TestData_Type
+    $q = "SELECT keyId FROM TestData_header
+        WHERE fkFE_Config = $FE_Config
+        AND fkTestData_Type = $TestData_Type
         AND fkDataStatus = $Data_Status
-        ORDER BY `keyId` DESC";
+        ORDER BY keyId DESC";
     $r = mysqli_query($dbConnection, $q) or die("QUERY FAILED: $q");
     $html = "";
     while ($row = mysqli_fetch_array($r)) {
@@ -198,7 +199,10 @@ function results_table_html($FE_Config, $Data_Status, $TestData_Type, $filterChe
  *
  */
 function mon_data_html($number) {
-    return number_format((float)$number, 2, '.', '');
+    if (is_null($number))
+        return "";
+    else
+        return number_format((float)$number, 2, '.', '');
 }
 
 function update_dataset_html($td_keyID, $data_set_group) {
@@ -224,9 +228,9 @@ function CPDS_results_html($td_keyID, $filterChecked) {
 
     if ($html != '') {
 
-        $q = "SELECT `Band`, `P6V_V`,`N6V_V`,`P15V_V`,`N15V_V`,`P24V_V`,`P8V_V`,`P6V_I`,`N6V_I`,`P15V_I`,`N15V_I`,`P24V_I`,`P8V_I`
-                FROM `CPDS_monitor`
-                WHERE `fkHeader` = $td_keyID
+        $q = "SELECT Band, P6V_V, N6V_V, P15V_V, N15V_V, P24V_V, P8V_V, P6V_I, N6V_I, P15V_I, N15V_I, P24V_I, P8V_I
+                FROM CPDS_monitor
+                WHERE fkHeader = $td_keyID
                 ORDER BY BAND ASC";
         $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
@@ -270,10 +274,10 @@ function LNA_results_html($td_keyID, $filterChecked) {
         $new_spec = new Specifications();
         $spec = $new_spec->getSpecs('CCA_LNA_bias', 0);
 
-        //get and save Monitor Data
-        $q = "SELECT Pol, SB, Stage, FreqLO, VdRead, IdRead, VgRead
+        // get the health check monitor data
+        $q = "SELECT Pol, SB, Stage, FreqLO, VdSet, IdSet, VdRead, IdRead, VgRead
             FROM CCA_LNA_bias
-            WHERE fkHeader = $td_keyID ORDER BY `Pol`ASC, `SB` ASC, Stage ASC";
+            WHERE fkHeader = $td_keyID ORDER BY Pol ASC, SB ASC, Stage ASC";
         $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $FreqLO = 0;
@@ -287,9 +291,11 @@ function LNA_results_html($td_keyID, $filterChecked) {
             $key = 'Pol' . $row[0] . " LNA" . $row[1];
             $stageKey = 'Stage ' . $row[2];
             $stageData = array(
-                'VdRead' => mon_data_html($row[4]),
-                'IdRead' => mon_data_html($row[5]),
-                'VgRead' => mon_data_html($row[6])
+                'VdSet' => mon_data_html($row[4]),
+                'IdSet' => mon_data_html($row[5]),
+                'VdRead' => mon_data_html($row[6]),
+                'IdRead' => mon_data_html($row[7]),
+                'VgRead' => mon_data_html($row[8])
             );
             if (!isset($output[$key]))
                 $output[$key] = array();
@@ -300,20 +306,20 @@ function LNA_results_html($td_keyID, $filterChecked) {
         if ($FreqLO) {
             //get and save Control Data
             $q_CompID = "SELECT MAX(FE_Components.keyId)
-                FROM `FE_Components` JOIN `FE_ConfigLink`
+                FROM FE_Components JOIN FE_ConfigLink
                 ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
                 WHERE  FE_ConfigLink.fkFE_Config =" . $tdh->fkFE_Config . "
-                AND `fkFE_ComponentType`= 20 AND Band =" . $tdh->Band . "";
+                AND fkFE_ComponentType= 20 AND Band =" . $tdh->Band . "";
 
             // data queries
-            $q = "SELECT `Pol`,`SB`,`FreqLO`,`VD1`,`VD2`,`VD3`,`ID1`,`ID2`,`ID3`,`VG1`,`VG2`,`VG3`
-                    FROM `CCA_PreampParams`
-                    WHERE `fkComponent`=($q_CompID)";
+            $q = "SELECT Pol, SB, FreqLO, VD1, VD2, VD3, ID1, ID2, ID3
+                    FROM CCA_PreampParams
+                    WHERE fkComponent=($q_CompID)";
 
-            $ord = " ORDER BY `Pol` ASC, `SB` ASC;";
+            $ord = " ORDER BY Pol ASC, SB ASC;";
 
             // default query looks for exact LO match
-            $q_default = $q . " AND `FreqLO`= $FreqLO" . $ord;
+            $q_default = $q . " AND FreqLO= $FreqLO" . $ord;
 
             // alternate query matches any LO
             $q_any_lo = $q . $ord;
@@ -325,33 +331,37 @@ function LNA_results_html($td_keyID, $filterChecked) {
             $numRows = mysqli_num_rows($r);
             if (!$numRows)
                 $r = mysqli_query($tdh->dbConnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
+            $numRows = mysqli_num_rows($r);
 
-            // Match up control data with monitor data:
-            while ($row = mysqli_fetch_array($r)) {
-                // cache the LO frequency:
-                if (!$Cntrl_FreqLO)
-                    $Cntrl_FreqLO = $row[2];
-                // insert the results keyed by Pol, LNA, and Stage:
-                $key = 'Pol' . $row[0] . " LNA" . $row[1];
-                if (isset($output[$key])) {
-                    for ($stage = 0; $stage < 3; $stage++) {
-                        $stageKey = 'Stage ' . ($stage + 1);
-                        if (isset($output[$key][$stageKey])) {
-                            $output[$key][$stageKey]['VD'] = $row[3 + $stage];
-                            $output[$key][$stageKey]['ID'] = $row[6 + $stage];
-                            $output[$key][$stageKey]['VG'] = $row[9 + $stage];
+            if ($numRows) {
+                // Match up control data with monitor data:
+                while ($row = mysqli_fetch_array($r)) {
+                    // cache the LO frequency:
+                    if (!$Cntrl_FreqLO)
+                        $Cntrl_FreqLO = $row[2];
+                    // insert the results keyed by Pol, LNA, and Stage:
+                    $key = 'Pol' . $row[0] . " LNA" . $row[1];
+                    if (isset($output[$key])) {
+                        for ($stage = 0; $stage < 3; $stage++) {
+                            $stageKey = 'Stage ' . ($stage + 1);
+                            if (isset($output[$key][$stageKey])) {
+                                // if we already have 'live' control values from the health check retain those, else replace:
+                                if ($output[$key][$stageKey]['VdSet'] == "")
+                                    $output[$key][$stageKey]['VdSet'] = $row[3 + $stage];
+                                if ($output[$key][$stageKey]['IdSet'] == "")
+                                    $output[$key][$stageKey]['IdSet'] = $row[6 + $stage];
+                            }
                         }
                     }
                 }
             }
         }
         $html .= "<tr><th colspan='2' rowspan='2'>Device</th>
-            <th colspan='3'>Control Values: (LO $Cntrl_FreqLO Ghz)</th>
-            <th colspan='3'>Monitor Values: (LO $FreqLO Ghz)</th></tr>
+            <th colspan='2'>Control Values &nbsp; LO=$Cntrl_FreqLO Ghz</th>
+            <th colspan='3'>Monitor Values &nbsp; LO=$FreqLO Ghz</th></tr>
             <tr>
             <th>Vd(V)</th>
             <th>Id(mA)</th>
-            <th>Vg(V)</th>
             <th>Vd(V)</th>
             <th>Id(mA)</th>
             <th>Vg(V)</th></tr>";
@@ -369,35 +379,24 @@ function LNA_results_html($td_keyID, $filterChecked) {
                     }
                     $html .= "</td>";
                     $html .= "<td>" . $stageKey . "</td>";
-                    $html .= "<td>" . (isset($row['VD']) ? $row['VD'] : "") . "</td>";
-                    $html .= "<td>" . (isset($row['ID']) ? $row['ID'] : "") . "</td>";
-                    $html .= "<td>" . (isset($row['VG']) ? $row['VG'] : "") . "</td>";
+                    $html .= "<td width = '75px'>" . $row['VdSet'] . "</td>";
+                    $html .= "<td width = '75px'>" . $row['IdSet'] . "</td>";
 
                     // check to see if Vd is in spec
-                    $mon_Vd = "";
-                    if (isset($row['VdRead'])) {
-                        $mon_Vd = $row['VdRead'];
-                        if (isset($row['VD'])) {
-                            $mon_Vd = $new_spec->numWithinPercent($mon_Vd, $row['VD'], $spec['Vd_diff']);
-                        }
-                    }
-                    $html .= "<td>$mon_Vd</td>";
+                    $mon_Vd = $row['VdRead'];
+                    if ($row['VdSet'] != "")
+                        $mon_Vd = $new_spec->numWithinPercent($row['VdRead'], $row['VdSet'], $spec['Vd_diff']);                        
+                    $html .= "<td width = '75px'>$mon_Vd</td>";
 
                     // check to see if Id is in spec
-                    $mon_Id = "";
-                    if (isset($row['IdRead'])) {
-                        $mon_Id = $row['IdRead'];
-                        if (isset($row['ID'])) {
-                            $mon_Id = $new_spec->numWithinPercent($mon_Id, $row['ID'], $spec['Id_diff']);
-                        }
-                    }
-                    $html .= "<td>$mon_Id</td>";
+                    $mon_Id = $row['IdRead'];
+                    if ($row['IdSet'] != "")
+                        $mon_Id = $new_spec->numWithinPercent($row['IdRead'], $row['IdSet'], $spec['Id_diff']);
+                    $html .= "<td width = '75px'>$mon_Id</td>";
 
                     // display Vg:
-                    $mon_Vg = "";
-                    if (isset($row['VgRead']))
-                        $mon_Vg = $row['VgRead'];
-                    $html .= "<td>" . $mon_Vg . "</td></tr>";
+                    $mon_Vg = $row['VgRead'];
+                    $html .= "<td width = '75px'>" . $mon_Vg . "</td></tr>";
                 }
             }
         }
@@ -407,7 +406,7 @@ function LNA_results_html($td_keyID, $filterChecked) {
 }
 
 
-// SIS � Actual Readings
+// SIS - Actual Readings
 /**
  * echos a HTML table that contains SIS monitor data
  *
@@ -416,7 +415,7 @@ function LNA_results_html($td_keyID, $filterChecked) {
  */
 function SIS_results_html($td_keyID, $filterChecked) {
 
-    //get and save Monitor Data
+    // get the health check monitor data
     $tdh = new TestData_header($td_keyID, "40");
 
     $html = table_header_html(700, $tdh, 8, $filterChecked);
@@ -427,9 +426,9 @@ function SIS_results_html($td_keyID, $filterChecked) {
         $new_spec = new Specifications();
         $spec = $new_spec->getSpecs('CCA_SIS_bias', 0);
 
-        $q = "SELECT `Pol`,`SB`,`FreqLO`,`VjRead`,`IjRead`,`VmagRead`,`ImagRead`
-            FROM `CCA_SIS_bias`
-            WHERE `fkHeader` = $td_keyID ORDER BY `Pol`ASC, `SB` ASC";
+        $q = "SELECT Pol, SB, FreqLO, VjSet, IjSet, ImagSet, VjRead, IjRead, VmagRead, ImagRead
+            FROM CCA_SIS_bias
+            WHERE fkHeader = $td_keyID ORDER BY Pol ASC, SB ASC";
         $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $FreqLO = 0;
@@ -441,28 +440,32 @@ function SIS_results_html($td_keyID, $filterChecked) {
             // insert the results keyed by Pol and SIS description:
             $key = 'Pol' . $row[0] . " SIS" . $row[1];
             $output[$key] = array(
-                'VjRead' => mon_data_html($row[3]),
-                'IjRead' => mon_data_html($row[4]),
-                'VmagRead' => mon_data_html($row[5]),
-                'ImagRead' => mon_data_html($row[6])
+                'VjSet' => mon_data_html($row[3]),
+                'IjSet' => mon_data_html($row[4]),
+                // Band6 SB2 magnet current is always expected to be zero:
+                'ImagSet' => ($tdh->Band == "6" && $row[1] == "2") ? "0.00" : mon_data_html($row[5]),
+                'VjRead' => mon_data_html($row[6]),
+                'IjRead' => mon_data_html($row[7]),
+                'VmagRead' => mon_data_html($row[8]),
+                'ImagRead' => mon_data_html($row[9])
             );
         }
 
         // If any rows found, so FreqLO got assigned:
         if ($FreqLO) {
 
-            //get and save Control Data
+            // get the control/settings values from configuration database:
             $q_CompID = "SELECT DISTINCT MAX(FE_Components.keyId)
-                FROM `FE_Components` JOIN `FE_ConfigLink`
+                FROM FE_Components JOIN FE_ConfigLink
                 ON FE_Components.keyId = FE_ConfigLink.fkFE_Components
                 WHERE  FE_ConfigLink.fkFE_Config =" . $tdh->fkFE_Config . "
-                AND `fkFE_ComponentType`= 20 AND Band =" . $tdh->Band . "";
+                AND fkFE_ComponentType= 20 AND Band =" . $tdh->Band . "";
 
-            $q = "SELECT `Pol`,`SB`,`VJ`,`IJ`,`IMAG` FROM `CCA_MixerParams` WHERE `fkComponent` = ($q_CompID)";
+            $q = "SELECT Pol, SB, FreqLO, VJ, IJ, IMAG FROM CCA_MixerParams WHERE fkComponent = ($q_CompID)";
 
-            $ord = " ORDER BY `Pol`ASC, `SB` ASC;";
+            $ord = " ORDER BY Pol ASC, SB ASC;";
 
-            $q_default = $q . " AND `FreqLO` = $FreqLO" . $ord;
+            $q_default = $q . " AND FreqLO = $FreqLO" . $ord;
             $q_any_lo = $q . $ord;
 
             // try the exact LO match query:
@@ -472,21 +475,33 @@ function SIS_results_html($td_keyID, $filterChecked) {
             $numRows = mysqli_num_rows($r);
             if (!$numRows)
                 $r = mysqli_query($tdh->dbConnection, $q_any_lo) or die("QUERY FAILED: $q_any_lo");
+            $numRows = mysqli_num_rows($r);
 
-            // Match up control data with monitor data:
-            while ($row = mysqli_fetch_array($r)) {
-                $key = 'Pol' . $row[0] . " SIS" . $row[1];
-                if (isset($output[$key])) {
-                    $output[$key]['VJ'] = mon_data_html($row[2]);
-                    $output[$key]['IJ'] = mon_data_html($row[3]);
-                    $output[$key]['IMAG'] = mon_data_html($row[4]);
+            $Cntrl_FreqLO = 0;
+            if ($numRows) {
+                // Match up control data with monitor data:
+                while ($row = mysqli_fetch_array($r)) {
+                    if (!$Cntrl_FreqLO)
+                        $Cntrl_FreqLO = $row[2];
+                    $key = 'Pol' . $row[0] . " SIS" . $row[1];
+                    if (isset($output[$key])) {
+                        // if we already have 'live' control values from the health check retain those, else replace:
+                        if ($output[$key]['VjSet'] == "")
+                            $output[$key]['VjSet'] = mon_data_html($row[3]);
+                        if ($output[$key]['IjSet'] == "")
+                            $output[$key]['IjSet'] = mon_data_html($row[4]);
+                        if ($output[$key]['ImagSet'] == "") {
+                            // Band6 SB2 magnet current is always expected to be zero:
+                            $output[$key]['ImagSet'] = ($tdh->Band == "6" && $row[1] == "2") ? "0.00" : mon_data_html($row[5]);
+                        }
+                    }
                 }
             }
         }
 
         $html .= "<tr><th rowspan='2'>Device</th>
-            <th colspan='3'>Control Values</th>
-            <th colspan='4'>Monitor Values</th></tr>
+            <th colspan='3'>Control Values &nbsp; LO=$Cntrl_FreqLO Ghz</th>
+            <th colspan='4'>Monitor Values &nbsp; LO=$FreqLO Ghz</th></tr>
             <tr>
             <th>Bias Voltage (mV)</th>
             <th>Bias Current (uA)</th>
@@ -500,15 +515,9 @@ function SIS_results_html($td_keyID, $filterChecked) {
             $html .= "<tr><td colspan='8'>NO DATA</td></tr>";
         } else {
             foreach ($output as $key => $row) {
-                $VJ = "";
-                if (isset($row['VJ']))
-                    $VJ = $row['VJ'];
-                $IJ = "";
-                if (isset($row['IJ']))
-                    $IJ = $row['IJ'];
-                $IMAG = "";
-                if (isset($row['IMAG']))
-                    $IMAG = $row['IMAG'];
+                $VJ = $row['VjSet'];
+                $IJ = $row['IjSet'];
+                $IMAG = $row['ImagSet'];
 
                 $html .= "<tr>
                       <td>$key</td>
@@ -517,37 +526,23 @@ function SIS_results_html($td_keyID, $filterChecked) {
                       <td>$IMAG</td>";
 
                 // check to see if Bias voltage is in spec
-                $mon_Bias_V = "";
-                if (isset($row['VjRead'])) {
-                    $mon_Bias_V = $row['VjRead'];
-                    if (isset($row['VJ'])) {
-                        $mon_Bias_V = $new_spec->numWithinPercent($mon_Bias_V, $row['VJ'], $spec['bias_V_diff']);
-                    }
-                }
-
+                $mon_Bias_V = $row['VjRead'];
+                if ($row['VjSet'] != "")
+                    $mon_Bias_V = $new_spec->numWithinPercent($mon_Bias_V, $row['VjSet'], $spec['bias_V_diff']);
+               
                 // check to see if Bias currrent is in spec
-                $mon_Bias_I = "";
-                if (isset($row['IjRead'])) {
-                    $mon_Bias_I = $row['IjRead'];
-                    if (isset($row['IJ'])) {
-                        $mon_Bias_I = $new_spec->numWithinPercent($mon_Bias_I, $row['IJ'], $spec['bias_I_diff']);
-                    }
-                }
-
+                $mon_Bias_I = $row['IjRead'];
+                if ($row['IjSet'] != "")
+                    $mon_Bias_I = $new_spec->numWithinPercent($mon_Bias_I, $row['IjSet'], $spec['bias_I_diff']);
+                
                 // display magnet voltage:
-                $mon_Mag_V = "";
-                if (isset($row['VmagRead']))
-                    $mon_Mag_V = $row['VmagRead'];
+                $mon_Mag_V = $row['VmagRead'];
 
                 // check to see if Magnet currrent is in spec
-                $mon_Mag_I = "";
-                if (isset($row['ImagRead'])) {
-                    $mon_Mag_I = $row['ImagRead'];
-                    if (isset($row['IMAG'])) {
-                        $mon_Mag_I = $new_spec->numWithinPercent($mon_Mag_I, $row['IMAG'], $spec['magI_diff']);
-                    }
-                }
-
+                $mon_Mag_I = $row['ImagRead'];
+                if ($row['ImagSet'] != "")
+                    $mon_Mag_I = $new_spec->numWithinPercent($mon_Mag_I, $row['ImagSet'], $spec['magI_diff']);
+                
                 $html .= "<td>$mon_Bias_V</td>
                       <td>$mon_Bias_I</td>
                       <td>$mon_Mag_V</td>
@@ -569,17 +564,17 @@ function SIS_results_html($td_keyID, $filterChecked) {
  * Requires the following database changes:
  *
 
-INSERT INTO `TestData_Types` (`keyId`, `TestData_TableName`, `Description`) VALUES (60, 'CCA_TEST_SISResistance', 'CCA SIS Warm Resistance');
+INSERT INTO TestData_Types (keyId, TestData_TableName, Description) VALUES (60, 'CCA_TEST_SISResistance', 'CCA SIS Warm Resistance');
 
-CREATE TABLE `CCA_TEST_SISResistance` (
-	`keyId` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-	`fkHeader` INT(10) UNSIGNED NULL DEFAULT NULL,
-	`TS` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	`Pol` TINYINT(3) UNSIGNED NULL DEFAULT NULL,
-	`SB` TINYINT(3) UNSIGNED NULL DEFAULT NULL,
-	`ROhms` DOUBLE NULL DEFAULT NULL,
-	PRIMARY KEY (`keyId`),
-	INDEX `Index 1` (`fkHeader`)
+CREATE TABLE CCA_TEST_SISResistance (
+	keyId INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+	fkHeader INT(10) UNSIGNED NULL DEFAULT NULL,
+	TS TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	Pol TINYINT(3) UNSIGNED NULL DEFAULT NULL,
+	SB TINYINT(3) UNSIGNED NULL DEFAULT NULL,
+	ROhms DOUBLE NULL DEFAULT NULL,
+	PRIMARY KEY (keyId),
+	INDEX Index 1 (fkHeader)
 )
 COLLATE='latin1_swedish_ci'
 ENGINE=MyISAM;
@@ -594,9 +589,9 @@ function SIS_Resistance_results_html($td_keyID, $filterChecked) {
 
         $new_spec = new Specifications();
 
-        $q = "SELECT `Pol`,`SB`,`ROhms`
-        FROM `CCA_TEST_SISResistance`
-        WHERE `fkHeader` = $td_keyID ORDER BY `Pol`ASC, `SB` ASC";
+        $q = "SELECT Pol, SB, ROhms
+        FROM CCA_TEST_SISResistance
+        WHERE fkHeader = $td_keyID ORDER BY Pol ASC, SB ASC";
         $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $html .= "<tr><th>Device</th><th colspan='2'>Resistance (Ohms)</th></tr>";
@@ -801,8 +796,8 @@ function FLOOG_results_html($td_keyID, $filterChecked) {
 
     if ($html != '') {
 
-        $q = "SELECT `Band`, `RefTotalPower` FROM `FLOOGdist`
-                WHERE `fkHeader` = $td_keyID";
+        $q = "SELECT Band, RefTotalPower FROM FLOOGdist
+                WHERE fkHeader = $td_keyID";
         $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
         $html .= "<tr><th></th><th colspan='2'>Reference Total Power (dBm)</th><tr>";
@@ -834,9 +829,9 @@ function IF_Power_results_html($td_keyID, $filterChecked) {
 
     if ($html != '') {
 
-        $q = "SELECT `IFChannel`,`Power_0dB_gain`,`Power_15dB_gain`
-            FROM `IFTotalPower`
-            WHERE `fkHeader` = $td_keyID";
+        $q = "SELECT IFChannel, Power_0dB_gain, Power_15dB_gain
+            FROM IFTotalPower
+            WHERE fkHeader = $td_keyID";
 
         $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
@@ -944,9 +939,9 @@ function LPR_results_html($td_keyID, $filterChecked) {
     if ($html != '') {
 
         $col_name = array("Laser Pump Temperature (K)", "Laser Drive Current (mA)", "Laser Photodetector Current (mA)", "Photodetector Current (mA)", "Photodetector Power (mW)", "Modulation Input (V)", "TempSensor0 (K)", "TempSensor1 (K)");
-        $q = "SELECT `LaserPumpTemp`, `LaserDrive`, `LaserPhotodetector`, `Photodetector_mA`, `Photodetector_mW`, `ModInput`, `TempSensor0`, `TempSensor1`
-            FROM `LPR_WarmHealth`
-            WHERE `fkHeader`= $td_keyID";
+        $q = "SELECT LaserPumpTemp, LaserDrive, LaserPhotodetector, Photodetector_mA, Photodetector_mW, ModInput, TempSensor0, TempSensor1
+            FROM LPR_WarmHealth
+            WHERE fkHeader= $td_keyID";
 
         $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
@@ -980,9 +975,9 @@ function Photomixer_results_html($td_keyID, $filterChecked) {
 
     if ($html != '') {
 
-        $q = "SELECT `Band`,`Vpmx`, `Ipmx`
-            FROM `Photomixer_WarmHealth`
-            WHERE `fkHeader` = $td_keyID";
+        $q = "SELECT Band, Vpmx, Ipmx
+            FROM Photomixer_WarmHealth
+            WHERE fkHeader = $td_keyID";
 
         $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
@@ -1023,8 +1018,8 @@ function Cryo_Temp_results_html($td_keyID, $filterChecked) {
         $col_name = array("4k_CryoCooler", "4k_PlateLink1", "4k_PlateLink2", "4k_PlateFarSide1", "4k_PlateFarSide2", "15k_CryoCooler", "15k_PlateLink", "15k_PlateFarSide", "15k_Shield", "110k_CryoCooler", "110k_PlateLink", "110k_PlateFarSide", "110k_Shield");
         $col_strg = implode(",", $col_name);
         $q = "SELECT $col_strg
-            FROM `CryostatTemps`
-            WHERE `fkHeader` = $td_keyID";
+            FROM CryostatTemps
+            WHERE fkHeader = $td_keyID";
 
         $html .= "<tr><th>Monitor Point</th><th colspan='2'>Monitor Values (K)</th>";
 
@@ -1213,7 +1208,7 @@ function Band3_NT_results_html($td_keyID) {
     $col_name = array("FreqLO", "Pol0USB", "Pol0LSB", "Pol1USB", "Pol1LSB", "AvgNT");
     $col_strg = implode(",", $col_name);
     $q = "SELECT $col_strg
-        FROM `Noise_Temp_Band3_Results`
+        FROM Noise_Temp_Band3_Results
         WHERE fkHeader= $td_keyID
         ORDER BY FreqLO;";
     $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
@@ -1348,9 +1343,9 @@ function Band3_CCA_NT_results_html($td_keyID) {
         $col_name = array("Pol", "SB", "FreqLO", "CenterIF", "Treceiver");
         $col_strg = implode(",", $col_name);
         $q = "SELECT $col_strg
-            FROM `CCA_TEST_NoiseTemperature`
-            WHERE fkHeader= $CCA_TD_key AND `CenterIF` != 0
-            ORDER BY `Pol` ASC, `SB` ASC, `FreqLO` ASC, `CenterIF` ASC";
+            FROM CCA_TEST_NoiseTemperature
+            WHERE fkHeader= $CCA_TD_key AND CenterIF != 0
+            ORDER BY Pol ASC, SB ASC, FreqLO ASC, CenterIF ASC";
 
         $r = mysqli_query($tdh->dbConnection, $q) or die("QUERY FAILED: $q");
 
@@ -1417,8 +1412,8 @@ function Band3_CCA_NT_results_html($td_keyID) {
         $AVG_NT_Pol1_Sb2[] = array_sum($NT_Pol1_Sb2) / count($NT_Pol1_Sb2);
 
         // get TFETMS Average Data
-        $q = "SELECT `AvgNT`, `FreqLO`
-            FROM `Noise_Temp_Band3_Results`
+        $q = "SELECT AvgNT, FreqLO
+            FROM Noise_Temp_Band3_Results
             WHERE fkHeader= $td_keyID";
         $r = mysqli_query($tdh->dbConnection, $q);
         $TFETMS = array();
