@@ -1433,7 +1433,8 @@ class NoiseTemperature extends TestData_header {
                 fwrite($f, "'$this->avg_datafile' using 3:7 with linespoints lt 4 lw 1 title 'Pol1 LSB',");
                 fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
                 fwrite($f, "f(x) with lines lt 0 lw 2 title '30|41 K (80%)'\r\n");
-            
+                break; 
+                
             case 3:
                 // Band3 2SB, plot avg NT vs LO:
                 fwrite($f, "plot '$this->avg_datafile' using 1:4 with linespoints lt 1 lw 1 title 'Pol0 USB',");
