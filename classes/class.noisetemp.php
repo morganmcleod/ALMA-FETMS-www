@@ -79,8 +79,13 @@ class NoiseTemperature extends TestData_header {
     public function __construct($inKeyId, $inFc) {
         parent::__construct($inKeyId, $inFc);
 
-        $this->SWVersion = "1.3.3";
+        $this->SWVersion = "1.3.4";
         /*
+         * 1.3.4 FETMS-403 average noise temp plots:
+                 Band 1:  vs RF USB  (fix Xaxis label)
+                 Band 2:  vs RF (no change)
+                 Band 3-8:  vs LO
+                 Band 9, 10:  vs LO (no change)
          * 1.3.3 No LSB plots vs. RF for band 1, add _html methods.  Fix specs for Band3 Averages plot.
          * 1.3.2 Don't show secondary Y axis when no CCA data available
          * 1.3.1 Include FETMS_Description in plot footers.
@@ -1434,7 +1439,7 @@ class NoiseTemperature extends TestData_header {
                 fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
                 fwrite($f, "f(x) with lines lt 0 lw 2 title '30|41 K (80%)'\r\n");
                 break; 
-                
+
             case 3:
                 // Band3 2SB, plot avg NT vs LO:
                 fwrite($f, "plot '$this->avg_datafile' using 1:4 with linespoints lt 1 lw 1 title 'Pol0 USB',");
