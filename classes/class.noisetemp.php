@@ -1389,10 +1389,14 @@ class NoiseTemperature extends TestData_header {
             fwrite($f, "set colorsequence classic\r\n");
         fwrite($f, "set output '$imagepath'\r\n");
         fwrite($f, "set title '$plot_title'\r\n");
-        if (in_array($this->Band, array(2, 3, 4, 5, 6, 7, 8)))
-            fwrite($f, "set xlabel 'RF(GHz)'\r\n");
+
+        if ($this->Band == 1)
+            fwrite($f, "set xlabel 'RF USB (GHz)'\r\n");
+        elseif ($this->Band == 2)
+            fwrite($f, "set xlabel 'RF (GHz)'\r\n");
         else
-            fwrite($f, "set xlabel 'LO(GHz)'\r\n");
+            fwrite($f, "set xlabel 'LO (GHz)'\r\n");
+        
         if ($this->Band == 1 || $this->foundIRData) {
             fwrite($f, "set ylabel 'Average T_{ssb} (K)'\r\n");
             fwrite($f, "set y2label 'Average T_{ssb} (K)'\r\n");
@@ -1412,7 +1416,7 @@ class NoiseTemperature extends TestData_header {
 
         switch ($this->Band) {
             case 1:
-                // USB, plot avg NT vs RFUSB
+                // USB, plot avg NT vs RF USB:
                 fwrite($f, "plot  '$this->avg_datafile' using 2:4 with linespoints lt 1 lw 1 title 'Pol0',");
                 fwrite($f, "'$this->avg_datafile' using 2:6 with linespoints lt 3 lw 1 title 'Pol1',");
                 fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
@@ -1431,11 +1435,11 @@ class NoiseTemperature extends TestData_header {
                 fwrite($f, "f(x) with lines lt 0 lw 2 title '30|41 K (80%)'\r\n");
             
             case 3:
-                // Band3 2SB, plot avg NT vs RF:
-                fwrite($f, "plot '$this->avg_datafile' using 2:4 with linespoints lt 1 lw 1 title 'Pol0 USB',");
-                fwrite($f, "'$this->avg_datafile' using 3:5 with linespoints lt 2 lw 1 title 'Pol0 LSB',");
-                fwrite($f, "'$this->avg_datafile' using 2:6 with linespoints lt 3 lw 1 title 'Pol1 USB',");
-                fwrite($f, "'$this->avg_datafile' using 3:7 with linespoints lt 4 lw 1 title 'Pol1 LSB',");
+                // Band3 2SB, plot avg NT vs LO:
+                fwrite($f, "plot '$this->avg_datafile' using 1:4 with linespoints lt 1 lw 1 title 'Pol0 USB',");
+                fwrite($f, "'$this->avg_datafile' using 1:5 with linespoints lt 2 lw 1 title 'Pol0 LSB',");
+                fwrite($f, "'$this->avg_datafile' using 1:6 with linespoints lt 3 lw 1 title 'Pol1 USB',");
+                fwrite($f, "'$this->avg_datafile' using 1:7 with linespoints lt 4 lw 1 title 'Pol1 LSB',");
                 fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)'\r\n");
                 break;
             
@@ -1490,11 +1494,11 @@ class NoiseTemperature extends TestData_header {
                 break;
 
             default:
-                // Others 2SB,  plot avg NT vs RF:
-                fwrite($f, "plot  '$this->avg_datafile' using 2:4 with linespoints lt 1 lw 1 title 'Pol0 USB',");
-                fwrite($f, "'$this->avg_datafile' using 3:5 with linespoints lt 2 lw 1 title 'Pol0 LSB',");
-                fwrite($f, "'$this->avg_datafile' using 2:6 with linespoints lt 3 lw 1 title 'Pol1 USB',");
-                fwrite($f, "'$this->avg_datafile' using 3:7 with linespoints lt 4 lw 1 title 'Pol1 LSB',");
+                // Others 2SB,  plot avg NT vs LO:
+                fwrite($f, "plot  '$this->avg_datafile' using 1:4 with linespoints lt 1 lw 1 title 'Pol0 USB',");
+                fwrite($f, "'$this->avg_datafile' using 1:5 with linespoints lt 2 lw 1 title 'Pol0 LSB',");
+                fwrite($f, "'$this->avg_datafile' using 1:6 with linespoints lt 3 lw 1 title 'Pol1 USB',");
+                fwrite($f, "'$this->avg_datafile' using 1:7 with linespoints lt 4 lw 1 title 'Pol1 LSB',");
                 fwrite($f, "$this->NT_allRF_spec with lines lt 1 lw 3 title ' $this->NT_allRF_spec K (100%)',");
                 fwrite($f, "$this->NT_80_spec with lines lt -1 lw 3 title ' $this->NT_80_spec K (80%)'\r\n");
                 break;
