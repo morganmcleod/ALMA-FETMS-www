@@ -321,13 +321,13 @@
         }
         echo "</select></td></tr>";
 
-        echo "      </table>";
+        echo "</table>";
 
-        echo "      <div style='padding-left:20px;padding-top:20px'>
-                <input type='submit' name='submit' class='button blue2 bigrounded value = 'Submit' style='width:120px'>
-                <a style='width:90px' href='ShowComponents.php?conf=$c->keyId&fc=" . $c->keyFacility . "' class='button blue2 bigrounded'
-                <span style='width:130px'>Cancel</span></a>
-            </div>
+        echo "<div style='padding-left:20px;padding-top:20px'>
+                <input type='submit' name='submit' class='button blue2 bigrounded' value = 'Submit' style='width:120px'>
+                    <a style='width:90px' href='ShowComponents.php?conf=$c->keyId&fc=" . $c->keyFacility . "' class='button blue2 bigrounded'
+                    <span style='width:130px'>Cancel</span></a>
+              </div>
         </div>
     </div>
 </div>

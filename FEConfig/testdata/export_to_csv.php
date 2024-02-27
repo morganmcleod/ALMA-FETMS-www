@@ -78,20 +78,15 @@ if (!isset($_REQUEST['ifsub'])) {
                 $td->TestDataTableName = 'TEST_FineLOSweep';
                 break;
 
+            case 61:
+                //Cryostat cooldown
+                $td->TestDataTableName = 'TEST_CryostatCooldown';
+                $qdata = "SELECT * FROM $td->TestDataTableName
+                WHERE fkTestDataHeader = {$TestData_header_keyId} AND fkFacility = {$td->keyFacility};";
+                break;
+
             default:
                 $qdata = "SELECT * FROM $td->TestDataTableName WHERE fkHeader = $td->keyId;";
-                break;
-        }
-
-        switch ($td->Component->fkFE_ComponentType) {
-            case 6:
-                //Cryostat
-                $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
-                      WHERE fkHeader = $td->keyId;";
-                $r = mysqli_query($dbConnection, $q);
-                $fkHeader = ADAPT_mysqli_result($r, 0, 0);
-                $qdata = "SELECT * FROM $td->TestDataTableName
-                          WHERE fkSubHeader = {$fkHeader} AND fkFacility = {$td->keyFacility};";
                 break;
         }
 

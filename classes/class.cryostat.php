@@ -12,34 +12,20 @@ if (!isset($GNUPLOT_VER)) {
 }
 
 class Cryostat extends GenericTable {
-    var $tempsensors;
-    var $datadir;
-    var $urldir;
-    var $fc;
-    var $tdheaders;     //Array of TestData_header objects (TestData_header)
-    //[1] = First Rate of Rise
-    //[2] = Warmup
-    //[3] = Cooldown
-    //[4] = Final Rate of Rise
-    //[5] = Rate of Rise after adding CCA
-
-    var $generatedby;   //1= Cryostat Logging app
-    //2= FE Control Software
-
-    var $rk;            //Format of raw data
-    //r = resistance
-    //k = Kelvin
-
-    var $FESN;          //SN of the Front End
-    var $FEid;          //keyId of the Front End
-    var $FEConfig;      //Latest configuration of the Front End
-    var $swversioncryo;
+    private $tempsensors;
+    private $datadir;
+    private $urldir;
+    private $tdheaders;     //Array of TestData_header objects (TestData_header)
+    private $FESN;          //SN of the Front End
+    private $FEid;          //keyId of the Front End
+    private $FEConfig;      //Latest configuration of the Front End
+    private $swversion;
 
     function __construct($in_keyId, $in_fc) {
         require(site_get_config_main());
         $this->tempsensors = array();
         parent::__construct('FE_Components', $in_keyId, "keyId", $in_fc, 'keyFacility');
-        $this->swversioncryo = '1.0.4';
+        $this->swversion = '2.0.0';
 
         /*
          * version 1.0.4:  MTM fixed "set...screen" commands to gnuplot
@@ -135,54 +121,14 @@ class Cryostat extends GenericTable {
 
         if ($this->SN != "") {
             switch ($in_DisplayType) {
-                    //$data_type
-                    //[1] = First Rate of Rise
-                    //[2] = Warmup
-                    //[3] = Cooldown
-                    //[4] = Final Rate of Rise
-                    //[5] = Rate of Rise after adding CCA
                 case 'all':
                     echo "<br><font size='+2'><b><u>Cryostat Information</u></b></font><br>";
                     echo "<br>SN:<input type='text' name='SN' size='10' maxlength='20' value = '" . $this->SN . "'><br>";
                     echo "<br>" . $this->TS . "<br>";
                     $this->DisplayTempSenors();
-                    echo "<br><br><br><br><br><br><br><br>";
-                    $this->DisplayData_FirstCooldown();
-                    $this->DisplayData_FirstWarmup();
-                    $this->Display_FinalCooldownTemps();
-                    echo "<br><br><br>";
-                    $this->DisplayData_ROR_First();
-                    $this->DisplayData_ROR_AfterCCA();
-                    $this->DisplayData_ROR_Final();
-                    break;
-                case 50:
-                    //First Rate of Rise
-                    $this->DisplayData_ROR_First();
-                    echo "<input type='hidden' name='keyheader' value='" . $this->tdheaders[1]->keyId . "'>";
-                    break;
-                case 53:
-                    //Warmup
-                    $this->DisplayData_FirstWarmup();
-                    $this->Display_FinalCooldownTemps();
-                    echo "<input type='hidden' name='keyheader' value='" . $this->tdheaders[2]->keyId . "'>";
-                    break;
-                case 52:
-                    //Cooldown
-                    $this->DisplayData_FirstCooldown();
-                    echo "<input type='hidden' name='keyheader' value='" . $this->tdheaders[3]->keyId . "'>";
-                    break;
-                case 54:
-                    //Final Rate of Rise
-                    $this->DisplayData_ROR_Final();
-                    echo "<input type='hidden' name='keyheader' value='" . $this->tdheaders[4]->keyId . "'>";
-                    break;
-                case 25:
-                    //Rate of Rise after adding CCA
-                    $this->DisplayData_ROR_AfterCCA();
-                    echo "<input type='hidden' name='keyheader' value='" . $this->tdheaders[5]->keyId . "'>";
-                    break;
+                    break;                
             }
-        } //end if SN != ""
+        }
 
         echo "<div style ='width:100%;height:30%'>";
         echo "<div align='left' style ='width:50%;height:30%'>";
@@ -197,95 +143,15 @@ class Cryostat extends GenericTable {
         }
         echo "</div></div>";
         echo "</form>";
-        
     }
 
-    public function DisplayData_FirstCooldown() {
-        if ($this->tdheaders[3]->keyId != '') {
-            echo "
-            <div style='width:700px'>
-            <table id = 'table1' bg color = '#ff0000'>
-            <tr class = 'alt'><th>FIRST COOLDOWN</th></tr>
-            <tr><th><img src='" . $this->PicURL_Prefix($this->tdheaders[3]->subheader->GetValue('pic_pressure')) . "'></th></tr>
-            <tr><th><img src='" . $this->PicURL_Prefix($this->tdheaders[3]->subheader->GetValue('pic_temperature')) . "'></th></tr>
-            </table></div>";
-        }
-    }
-
-    public function DisplayData_FirstWarmup() {
-        if ($this->tdheaders[2]->keyId != '') {
-            echo "
-            <div style='width:700px'>
-            <table id = 'table1' bg color = '#ff0000'>
-            <tr class = 'alt'><th>FIRST WARMUP</th></tr>
-            <tr><th><img src='" . $this->PicURL_Prefix($this->tdheaders[2]->subheader->GetValue('pic_pressure')) . "'></th></tr>
-            <tr><th><img src='" . $this->PicURL_Prefix($this->tdheaders[2]->subheader->GetValue('pic_temperature')) . "'></th></tr>
-            </table></div>";
-        }
-    }
-
-    public function DisplayData_ROR_First() {
-        if ($this->tdheaders[1]->keyId != '') {
-            echo "
-            <div style='width:400px'>
-            <table id = 'table1' bg color = '#ff0000'>
-            <tr class = 'alt'><th colspan = '2'>FIRST RATE OF RISE</th></tr>
-            <tr><th><img src='" . $this->PicURL_Prefix($this->tdheaders[1]->subheader->GetValue('pic_rateofrise')) . "'></th>
-            <th>";
-            $this->Display_RORselector('ror_start', 'Start Time', 'ror_starttime', $o1, 1);
-            echo "<br><br>";
-            $this->Display_RORselector('ror_stop', 'Stop Time', 'ror_stoptime', $o1, 1);
-            echo "<br><br><input type='hidden' name = 'keyId' value='$this->keyId'>";
-            echo "<br><br>
-            <input type='submit' name = 'submitted_ror' class = 'button blue2 bigrounded value='REDRAW RATE OF RISE'>";
-            $exportcsvurl = "export_to_csv.php?keyheader=" . $this->tdheaders[1]->keyId . "&fc=" . $this->keyFacility;
-            echo "<br><br><a style='width:130px' href='$exportcsvurl' class='button blue2 bigrounded'
-                        <span style='width:130px'>Export CSV</span></a></table>";
-            echo "
-            </th></tr>
-            </table></div>";
-        }
-    }
-
-    public function DisplayData_ROR_AfterCCA() {
-        if ($this->tdheaders[5]->keyId != '') {
-            echo "
-            <div style='width:400px'>
-            <table id = 'table1' bg color = '#ff0000'>
-            <tr class = 'alt'><th colspan = '2'>RATE OF RISE AFTER ADDING VACUUM EQUIPMENT</th></tr>
-            <tr><th><img src='" . $this->PicURL_Prefix($this->tdheaders[5]->subheader->GetValue('pic_rateofrise')) . "'></th>
-            <th>";
-            $this->Display_RORselector('ror_start_aftercca', 'Start Time', 'ror_starttime', $o2, 5);
-            echo "<br><br>";
-            $this->Display_RORselector('ror_stop_aftercca', 'Stop Time', 'ror_stoptime', $o2, 5);
-            echo "<br><br><input type='submit' name = 'submitted_ror_aftercca' class = 'button blue2 bigrounded value='REDRAW RATE OF RISE'>";
-            $exportcsvurl = "export_to_csv.php?keyheader=" . $this->tdheaders[5]->keyId . "&fc=" . $this->keyFacility;
-            echo "<br><br><a style='width:130px' href='$exportcsvurl' class='button blue2 bigrounded'
-                        <span style='width:130px'>Export CSV</span></a>";
-            echo "
-            </th></tr>
-            </table></div>";
-        }
-    }
-
-    public function DisplayData_ROR_Final() {
-        if ($this->tdheaders[4]->keyId != '') {
-            echo "
-            <div style='width:400px'>
-            <table id = 'table1' bg color = '#ff0000'>
-            <tr class = 'alt'><th colspan = '2'>FINAL RATE OF RISE</th></tr>
-            <tr><th><img src='" . $this->PicURL_Prefix($this->tdheaders[4]->subheader->GetValue('pic_rateofrise')) . "'></th>
-            <th>";
-            $this->Display_RORselector('ror_start_final', 'Start Time', 'ror_starttime', $o3, 4);
-            echo "<br><br>";
-            $this->Display_RORselector('ror_stop_final', 'Stop Time', 'ror_stoptime', $o3, 4);
-            echo "<br><br><input type='submit' name = 'submitted_ror_final' class = 'button blue2 bigrounded value='REDRAW RATE OF RISE'>";
-            $exportcsvurl = "export_to_csv.php?keyheader=" . $this->tdheaders[4]->keyId . "&fc=" . $this->keyFacility;
-            echo "<br><br><a style='width:130px' href='$exportcsvurl' class='button blue2 bigrounded'
-                        <span style='width:130px'>Export CSV</span></a>";
-            echo "
-            </th></tr>
-            </table></div>";
+    public function DisplayCoolDownPlot($tdheader) {
+        global $site_storage;
+        if ($tdheader->keyId != '') {
+            $q = "SELECT plot_url FROM TEST_Cryostat_data_SubHeader WHERE fkHeader = " . $tdheader->keyId . ";";
+            $r = mysqli_query($this->dbConnection, $q);
+            $url = ADAPT_mysqli_result($r, 0, 0);
+            if ($url) echo "<img src='{$site_storage}{$url}'><br><br>";            
         }
     }
 
@@ -369,17 +235,6 @@ class Cryostat extends GenericTable {
             $checkbox = "on";
         }
 
-        if (isset($_REQUEST['generatedby'])) {
-            $this->generatedby = $_REQUEST['generatedby'];
-        }
-        if (isset($_REQUEST['rk'])) {
-            $this->rk = $_REQUEST['rk'];
-        }
-
-
-        //$this->SetValue('checkbox_rateofrise',$checkbox);
-
-
         parent::RequestValues();
 
         if (isset($_REQUEST['deleterecord_forsure'])) {
@@ -390,125 +245,14 @@ class Cryostat extends GenericTable {
             $this->ExportINI("tempsensors");
         }
 
-        $this->rk = 'r';
-        if (isset($_REQUEST['rk'])) {
-            $this->rk = $_REQUEST['rk'];
-        }
-
-
-        if (isset($_REQUEST['submitted_ror'])) {
-            //$data_type
-            //[1] = First Rate of Rise
-            //[2] = Warmup
-            //[3] = Cooldown
-            //[4] = Final Rate of Rise
-            //[5] = Rate of Rise after adding CCA
-
-            $this->showspinner();
-            $this->tdheaders[1]->subheader->SetValue('ror_starttime', $_REQUEST['ror_start']);
-            $this->tdheaders[1]->subheader->SetValue('ror_stoptime', $_REQUEST['ror_stop']);
-            $this->tdheaders[1]->subheader->Update();
-            //$this->SetValue('checkbox_rateofrise',$_REQUEST['checkbox_rateofrise']);
-            echo '<meta http-equiv="Refresh" content="1;url=testdata_cryostat.php?keyheader=' . $this->tdheaders[1]->keyId . '&fc=' . $this->keyFacility . '">';
-
-            parent::Update();
-            $this->Plot_RateOfRise(1);
-            $this->Update_Cryostat();
-        }
-        if (isset($_REQUEST['submitted_ror_final'])) {
-            $this->showspinner();
-            $this->tdheaders[4]->subheader->SetValue('ror_starttime', $_REQUEST['ror_start_final']);
-            $this->tdheaders[4]->subheader->SetValue('ror_stoptime', $_REQUEST['ror_stop_final']);
-            $this->tdheaders[4]->subheader->Update();
-            parent::Update();
-            $this->Plot_RateOfRise(4);
-            $this->Update_Cryostat();
-            echo '<meta http-equiv="Refresh" content="1;url=testdata_cryostat.php?keyheader=' . $this->tdheaders[4]->keyId . '&fc=' . $this->keyFacility . '">';
-        }
-        if (isset($_REQUEST['submitted_ror_aftercca'])) {
-            $this->showspinner();
-            $this->tdheaders[5]->subheader->SetValue('ror_starttime', $_REQUEST['ror_start_aftercca']);
-            $this->tdheaders[5]->subheader->SetValue('ror_stoptime', $_REQUEST['ror_stop_aftercca']);
-            $this->tdheaders[5]->subheader->Update();
-            parent::Update();
-            $this->Plot_RateOfRise(5);
-            $this->Update_Cryostat();
-            echo '<meta http-equiv="Refresh" content="1;url=testdata_cryostat.php?keyheader=' . $this->tdheaders[5]->keyId . '&fc=' . $this->keyFacility . '">';
-        }
-
-        if (isset($_REQUEST['export_to_word'])) {
-            $this->DownloadToWord();
-        }
-
-
         if (isset($_REQUEST['submit_datafile_cryostat'])) {
             if (isset($_FILES['file_tempsensors']['name'])) {
                 if ($_FILES['file_tempsensors']['name'] != "") {
-                    //echo "name: " . $_FILES['file_tempsensors']['tmp_name'] . "<br>";
-
                     $this->Upload_tempsensorfile($_FILES['file_tempsensors']['tmp_name']);
                 }
             }
-            if (isset($_FILES['file_rateofrise']['name'])) {
-                if ($_FILES['file_rateofrise']['name'] != "") {
-                    $this->Upload_datafile("1", $_FILES['file_rateofrise']['tmp_name'], $_REQUEST['time_rateofrise']);
-                    $this->tdheaders[1]->subheader->SetValue('checkbox_rateofrise', $_REQUEST['checkbox_rateofrise']);
-                    $this->tdheaders[1]->subheader->Update();
-                    $this->Plot_RateOfRise("1");
-                }
-            }
-            if (isset($_FILES['file_rateofrise_aftercca']['name'])) {
-                if ($_FILES['file_rateofrise_aftercca']['name'] != "") {
-                    $this->Upload_datafile("5", $_FILES['file_rateofrise_aftercca']['tmp_name'], $_REQUEST['time_rateofrise_aftercca']);
-                    $this->tdheaders[5]->subheader->SetValue('checkbox_rateofrise', $_REQUEST['checkbox_rateofrise']);
-                    $this->tdheaders[5]->subheader->Update();
-                    $this->Plot_RateOfRise("5");
-                }
-            }
-            if (isset($_FILES['file_rateofrise_final']['name'])) {
-                if ($_FILES['file_rateofrise_final']['name'] != "") {
-                    $this->Upload_datafile("4", $_FILES['file_rateofrise_final']['tmp_name'], $_REQUEST['time_rateofrise_final']);
-                    $this->tdheaders[4]->subheader->SetValue('checkbox_rateofrise', $_REQUEST['checkbox_rateofrise']);
-                    $this->tdheaders[4]->subheader->Update();
-                    $this->Plot_RateOfRise("4");
-                }
-            }
-            if (isset($_FILES['file_firstwarmup']['name'])) {
-                if ($_FILES['file_firstwarmup']['name'] != "") {
-                    $this->Upload_datafile("2", $_FILES['file_firstwarmup']['tmp_name'], $_REQUEST['time_firstwarmup']);
-                    $this->Plot_pressure("2");
-                    $this->Plot_TemperatureCurves("2");
-                }
-            }
-            if (isset($_FILES['file_firstcooldown']['name'])) {
-                if ($_FILES['file_firstcooldown']['name'] != "") {
-                    $this->Upload_datafile("3", $_FILES['file_firstcooldown']['tmp_name'], $_REQUEST['time_firstcooldown']);
-                    $this->Plot_pressure("3");
-                    $this->Plot_TemperatureCurves("3");
-                }
-            }
-
             $this->Update_Cryostat();
         }
-
-        if (isset($_REQUEST['exportcsv_firstwarmup'])) {
-            $this->ExportCSV("firstwarmup_pressure");
-        }
-        if (isset($_REQUEST['exportcsv_firstwarmup_temps'])) {
-            $this->ExportCSV("firstwarmup_temps");
-        }
-        if (isset($_REQUEST['exportcsv_firstcooldown'])) {
-            $this->ExportCSV("firstcooldown_pressure");
-        }
-        if (isset($_REQUEST['exportcsv_firstcooldown_temps'])) {
-            $this->ExportCSV("firstcooldown_temps");
-        }
-        if (isset($_REQUEST['exportcsv_rateofrise'])) {
-            $this->ExportCSV("rateofrise");
-        }
-    }
-
-    public function Delete_TDH($tdh_number) {
     }
 
     public function Delete_TempSensors() {
@@ -544,161 +288,6 @@ class Cryostat extends GenericTable {
 
         //parent::Delete_record();
         echo '<meta http-equiv="Refresh" content="1;url=cryostats.php">';
-    }
-
-    public function Upload_datafile($data_type, $datafile_name, $timestepsize) {
-        //$data_type
-        //[1] = First Rate of Rise
-        //[2] = Warmup
-        //[3] = Cooldown
-        //[4] = Final Rate of Rise
-        //[5] = Rate of Rise after adding CCA
-
-        //echo "datatype= $data_type<br>";
-
-        //Clear existing test of this type
-        if ($this->tdheaders[$data_type]->keyId != '') {
-            $this->tdheaders[$data_type]->subheader->Delete_record();
-            $this->tdheaders[$data_type]->Delete_record();
-
-
-            $qd = "DELETE FROM TEST_Cryostat_data
-                WHERE fkSubHeader = " . $this->tdheaders[$data_type]->subheader->keyId . ";";
-            $rd = mysqli_query($this->dbConnection, $qd);
-        }
-        $tdtypes = array(0, 50, 53, 52, 54, 25);
-
-
-        $this->tdheaders[$data_type] = GenericTable::NewRecord('TestData_header', 'keyId', $this->keyFacility, 'keyFacility');
-        $this->tdheaders[$data_type]->SetValue('fkTestData_Type', $tdtypes[$data_type]);
-        $this->tdheaders[$data_type]->SetValue('fkDataStatus', 1);
-        $this->tdheaders[$data_type]->SetValue('fkFE_Components', $this->keyId);
-        $this->tdheaders[$data_type]->Update();
-
-        $this->tdheaders[$data_type]->subheader = GenericTable::NewRecord('TEST_Cryostat_data_SubHeader', 'keyId', $this->keyFacility, 'keyFacility');
-        $this->tdheaders[$data_type]->subheader->SetValue('fkHeader', $this->tdheaders[$data_type]->keyId);
-        $this->tdheaders[$data_type]->subheader->Update();
-
-
-        $keySubheader = $this->tdheaders[$data_type]->subheader->keyId;
-        $filecontents = file($datafile_name);
-
-        $i_step = 1;
-
-
-
-
-        $qDelete = "DELETE FROM TEST_Cryostat_data WHERE fkSubHeader =
-                    " . $this->tdheaders[$data_type]->subheader->keyId . ";";
-        $rDelete = mysqli_query($this->dbConnection, $qDelete);
-
-        $timestep = 0;
-
-        $dcount = 0;
-        for ($i = 5; $i < sizeof($filecontents); $i += $i_step) {
-            $line_data = trim($filecontents[$i]);
-            $tempArray   = explode("\t", $line_data);
-
-
-            if (is_numeric(substr($tempArray[0], 0, 1)) == true) {
-                //Convert R values to Temp Kelvin
-
-                if ($this->generatedby == 2) {
-                    $R[1]  = $tempArray[19]; //90k plate near link (PRT)
-                    $R[2]  = $tempArray[20]; //90k plate far side (PRT)
-                    $R[3]  = $tempArray[15]; //12k plate near link
-                    $R[4]  = $tempArray[16]; //12k plate far side
-                    $R[5]  = $tempArray[9]; //4k cryocooler stage
-                    $R[6]  = $tempArray[14]; //12k cryocooler stage
-                    $R[7]  = $tempArray[10]; //4k plate near link a
-                    $R[8]  = $tempArray[11]; //4k plate near link b
-                    $R[9]  = $tempArray[12]; //4k plate far side a
-                    $R[10] = $tempArray[13]; //4k plate far side b
-                    $R[11] = $tempArray[18]; //90k cryocooler stage (PRT)
-                    $R[12] = $tempArray[17]; //12k shield top
-                    $R[13] = $tempArray[21]; //90k shield top (PRT)
-                    $Pressure1 = $tempArray[22];
-                    if ($dcount < 4) {
-                        //echo "checked, p1= $Pressure1<br><br>";
-                    }
-
-                    for ($j = 1; $j <= 13; $j++) {
-                        $T[$j] = $R[$j];
-                    }
-                }
-
-                if ($this->generatedby == 1) {
-                    //Divide the PRT values by 1000
-                    $tempArray[1] = $tempArray[1] / 1000;
-                    $tempArray[2] = $tempArray[2] / 1000;
-                    $tempArray[3] = $tempArray[3] / 1000;
-                    $tempArray[4] = $tempArray[4] / 1000;
-
-                    $R[1]  = $tempArray[2]; //90k plate near link (PRT)
-                    $R[2]  = $tempArray[3]; //90k plate far side (PRT)
-                    $R[3]  = $tempArray[6]; //12k plate near link
-                    $R[4]  = $tempArray[7]; //12k plate far side
-                    $R[5]  = $tempArray[9]; //4k cryocooler stage
-                    $R[6]  = $tempArray[5]; //12k cryocooler stage
-                    $R[7]  = $tempArray[10]; //4k plate near link a
-                    $R[8]  = $tempArray[11]; //4k plate near link b
-                    $R[9]  = $tempArray[12]; //4k plate far side a
-                    $R[10] = $tempArray[13]; //4k plate far side b
-                    $R[11] = $tempArray[1]; //90k cryocooler stage (PRT)
-                    $R[12] = $tempArray[8]; //12k shield top
-                    $R[13] = $tempArray[4]; //90k shield top (PRT)
-                    $Pressure1 = $tempArray[14];
-                    if ($dcount < 4) {
-                        //echo "unchecked, p1= $Pressure1<br><br>";
-                    }
-
-                    for ($j = 1; $j <= 13; $j++) {
-                        $K[1] = $this->tempsensors[$j]->k1;
-                        $K[2] = $this->tempsensors[$j]->k2;
-                        $K[3] = $this->tempsensors[$j]->k3;
-                        $K[4] = $this->tempsensors[$j]->k4;
-                        $K[5] = $this->tempsensors[$j]->k5;
-                        $K[6] = $this->tempsensors[$j]->k6;
-                        $K[7] = $this->tempsensors[$j]->k7;
-                        if ($this->rk == 'r') {
-                            $T[$j] = $this->Convert_RtoTemp($R[$j], $K, $j);
-                        }
-                        if ($this->rk == 'k') {
-                            $T[$j] = $R[$j];
-                        }
-                    }
-                }
-
-                $qInsert = "INSERT INTO TEST_Cryostat_data
-                (fkSubHeader, date_time,
-                sensor1_r,sensor2_r,sensor3_r,sensor4_r,sensor5_r,sensor6_r,sensor7_r,sensor8_r,
-                sensor9_r,sensor10_r,sensor11_r,sensor12_r,sensor13_r,
-                Pressure1,Pressure2,MixerA,MixerB,Cart4K,Cart90K,T5,T6,T7,Cart12K,
-                Time_hours,
-                sensor1_k,sensor2_k,sensor3_k,sensor4_k,sensor5_k,sensor6_k,sensor7_k,sensor8_k,
-                sensor9_k,sensor10_k,sensor11_k,sensor12_k,sensor13_k)
-
-                   VALUES ('$keySubheader','$tempArray[0]',
-                   '$R[1]','$R[2]','$R[3]', '$R[4]','$R[5]','$R[6]', '$R[7]','$R[8]',
-                   '$R[9]','$R[10]','$R[11]', '$R[12]','$R[13]',
-                   '$Pressure1','$tempArray[15]','$tempArray[16]', '$tempArray[17]', '$tempArray[18]',
-                   '$tempArray[19]','$tempArray[20]','$tempArray[21]', '$tempArray[22]', '$tempArray[23]',
-                   '$timestep',
-                   '$T[1]','$T[2]','$T[3]','$T[4]','$T[5]','$T[6]','$T[7]','$T[8]',
-                   '$T[9]','$T[10]','$T[11]','$T[12]','$T[13]'
-                   )";
-
-                if ($dcount < 4) {
-
-                    //echo $qInsert . "<br><br><br>";
-                }
-                $dcount += 1;
-                $rInsert = mysqli_query($this->dbConnection, $qInsert);
-                $timestep += ($timestepsize / 60 / 60);
-            }
-        }
-        //fclose($filecontents);
-        unlink($datafile_name);
     }
 
     public function Upload_tempsensorfile($datafile_name) {
@@ -743,10 +332,7 @@ class Cryostat extends GenericTable {
                     switch ($data->sheets[$sheetnumber]['cells'][$i][1]) {
 
                         case "K1":
-
                             $this->tempsensors[$nonPRT_arr[$nonPRT_count]]->SetValue('k1', $data->sheets[$sheetnumber]['cells'][$i][3]);
-
-
                             break;
                         case "K2":
                             $this->tempsensors[$nonPRT_arr[$nonPRT_count]]->SetValue('k2', $data->sheets[$sheetnumber]['cells'][$i][3]);
@@ -795,7 +381,7 @@ class Cryostat extends GenericTable {
 
     public function Plot_pressure($datatype) {
         //Update Plot_SWVer in TestData_header
-        $this->tdheaders[$datatype]->SetValue('Plot_SWVer', $this->swversioncryo);
+        $this->tdheaders[$datatype]->SetValue('Plot_SWVer', $this->swversion);
         $this->tdheaders[$datatype]->Update();
 
         if (!file_exists($this->datadir)) {
@@ -867,7 +453,7 @@ class Cryostat extends GenericTable {
         fwrite($fh, "set ylabel 'Presure (mbar)'\r\n");
 
         fwrite($fh, "set bmargin 7\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " . $this->tdheaders[$datatype]->keyId . ", Cryostat Ver. $this->swversioncryo' at screen 0.01, 0.07\r\n");
+        fwrite($fh, "set label 'TestData_header.keyId: " . $this->tdheaders[$datatype]->keyId . ", Cryostat Ver. $this->swversion' at screen 0.01, 0.07\r\n");
         fwrite($fh, "set label '" . $this->tdheaders[$datatype]->TS . ", FE Configuration " . $this->FEConfig . "' at screen 0.01, 0.04\r\n");
 
 
@@ -881,240 +467,75 @@ class Cryostat extends GenericTable {
         system($CommandString);
     }
 
-    public function Plot_RateOfRise($datatype) {
-        if (!file_exists($this->datadir)) {
-            mkdir($this->datadir);
-        }
-        if (!file_exists($this->urldir)) {
-            mkdir($this->urldir);
-        }
-
+    public function Plot_Cooldown($tdheader) {
         //Update Plot_SWVer in TestData_header
-        $this->tdheaders[$datatype]->SetValue('Plot_SWVer', $this->swversioncryo);
-        $this->tdheaders[$datatype]->Update();
-        $starttime = $this->tdheaders[$datatype]->subheader->GetValue('ror_starttime');
-        $endtime   = $this->tdheaders[$datatype]->subheader->GetValue('ror_stoptime');
-        $RateOfRise = sprintf("%.2e", $this->GetRateOfRise($starttime, $endtime, $datatype));
-
-        $data_file = $this->datadir . "cryo_dataROR$datatype.txt";
-
-        //unlink($data_file);
-
-        $q = "SELECT date_time, Pressure1, Time_hours FROM TEST_Cryostat_data
-                WHERE fkSubHeader = " . $this->tdheaders[$datatype]->subheader->keyId . "
-                AND Time_hours >= $starttime
-                AND Time_hours <= $endtime
-                ORDER BY Time_hours ASC;";
-        $r = mysqli_query($this->dbConnection, $q);
-
-        $fh = fopen($data_file, 'w');
-
-        while ($row = mysqli_fetch_array($r)) {
-            $stringData = "$row[2]\t$row[1]\r\n";
-            fwrite($fh, $stringData);
-        }
-        fclose($fh);
-
-        //Write command file for gnuplot
-        $plot_command_file = $this->datadir . "cryo_commandROR$datatype.txt";
-        //unlink($plot_command_file);
-        $imagedirectory = $this->datadir;
-        $urldirectory = $this->urldir;
-        $imagename = "Cryostat_rateofrise_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
-        $imageurl = $urldirectory . $imagename;
-        $imagepath = $imagedirectory . $imagename;
-
-        $this->tdheaders[$datatype]->subheader->SetValue('pic_rateofrise', $imageurl);
-        $this->tdheaders[$datatype]->subheader->Update();
-
-        if ($datatype == 1) {
-            $plot_title = "Cryostat " . $this->SN . " First Rate of Rise Test. Rate of Rise= " .
-                $RateOfRise . " mbar*l/sec.";
-        }
-        if ($datatype == 4) {
-            $plot_title = "Cryostat " . $this->SN . " Final Rate of Rise Test. Rate of Rise= " .
-                $RateOfRise . " mbar*l/sec.";
-        }
-        if ($datatype == 5) {
-            $plot_title = "Cryostat " . $this->SN . " Rate of Rise after adding Cold Cartidges. Rate of Rise= " .
-                $RateOfRise . " mbar*l/sec.";
-        }
-
-
-        //Get linear approximation
-        $q_slope = '
-        SELECT
-        @n := COUNT(Pressure1) AS N,
-        @meanX := AVG(Time_hours) AS "X mean",
-        @sumX := SUM(Time_hours) AS "X sum",
-        @sumXX := SUM(Time_hours*Time_hours) AS "X sum of squares",
-        @meanY := AVG(Pressure1) AS "Y mean",
-        @sumY := SUM(Pressure1) AS "Y sum",
-        @sumYY := SUM(Pressure1*Pressure1) AS "Y sum of square",
-        @sumXY := SUM(Time_hours*Pressure1) AS "X*Y sum"
-        FROM TEST_Cryostat_data
-        WHERE Time_hours >= "' . $starttime . '"AND
-        Time_hours <= "' . $endtime . '" AND
-        fkSubHeader = ' . $this->tdheaders[$datatype]->subheader->keyId . ';';
-
-
-        $r_slope = mysqli_query($this->dbConnection, $q_slope);
-        $res = mysqli_fetch_array($r_slope);
-
-        $N          = $res[0];
-        $Xmean      = $res[1];
-        $Xsum       = $res[2];
-        $Xsumsquares = $res[3];
-        $Ymean      = $res[4];
-        $Ysum       = $res[5];
-        $Ysumsquares = $res[6];
-        $XYsum      = $res[7];
-
-        $slope = round(($N * $XYsum - $Xsum * $Ysum) / ($N * $Xsumsquares - $Xsum * $Xsum), 4);
-        $intercept = round($Ymean - ($slope * $Xmean), 4);
-
-        if ($intercept < 0) {
-            $LinearEquation = "y = " . $slope . "x " . $intercept;
-        } else {
-            $LinearEquation = "y = " . $slope . "x + " . $intercept;
-        }
-
-        $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png\r\n");
-        if ($GNUPLOT_VER >= 5.0)
-            fwrite($fh, "set colorsequence classic\r\n");
-        fwrite($fh, "set output '$imagepath'\r\n");
-        fwrite($fh, "set title '$plot_title'\r\n");
-        fwrite($fh, "set grid\r\n");
-        //fwrite($fh, "set log y\r\n");
-        fwrite($fh, "set xlabel 'Time (hours)'\r\n");
-        fwrite($fh, "set ylabel 'Presure (mbar)'\r\n");
-
-        fwrite($fh, "set bmargin 7\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " . $this->tdheaders[$datatype]->keyId . ", Cryostat Ver. $this->swversioncryo' at screen 0.01, 0.07\r\n");
-        fwrite($fh, "set label '" . $this->tdheaders[$datatype]->TS . ", FE Configuration " . $this->FEConfig . "' at screen 0.01, 0.04\r\n");
-
-
-        $f_x = str_replace("x", "*x", $LinearEquation);
-        $f_x = str_replace("y", "f(x)", $f_x);
-        fwrite($fh, "$f_x\r\n");
-
-        fwrite($fh, "plot '$data_file' using 1:2 title '' with linespoints pointsize 0.2 pt 5 lt 3,f(x) lt 1 lw 3 title '$LinearEquation'  \r\n");
-        //fwrite($fh, "plot '$data_file' using 1:2 title '' with linespoints pointsize 0.2 pt 5 lt 3,f(x) lt 1 lw 3 title ''  \r\n");
-
-        fclose($fh);
-
-        //Make the plot
-        $GNUPLOT = '/usr/bin/gnuplot';
-        $CommandString = "$GNUPLOT $plot_command_file";
-        system($CommandString);
-    }
-
-    private function GetRateOfRise($starttime, $endtime, $datatype) {
-        $q = "SELECT Pressure1, Time_hours FROM TEST_Cryostat_data
-                WHERE fkSubHeader = " . $this->tdheaders[$datatype]->subheader->keyId . "
-                AND Time_hours >= $starttime
-                AND Time_hours <= $endtime
-                ORDER BY Time_hours ASC LIMIT 1;";
-        $r = mysqli_query($this->dbConnection, $q);
-        $row = mysqli_fetch_array($r);
-        $t_start = $row[1] * 60 * 60;
-        $p_start = $row[0];
-
-        $q = "SELECT Pressure1, Time_hours FROM TEST_Cryostat_data
-                WHERE fkSubHeader = " . $this->tdheaders[$datatype]->subheader->keyId . "
-                AND Time_hours >= $starttime
-                AND Time_hours <= $endtime
-                ORDER BY Time_hours DESC LIMIT 1;";
-        $r = mysqli_query($this->dbConnection, $q);
-        $row = mysqli_fetch_array($r);
-        $t_stop = $row[1] * 60 * 60;
-        $p_stop = $row[0];
-
-        $delta_p = $p_start - $p_stop;
-        $delta_t = $t_start - $t_stop;
-
-
-        $RateOfRise = ($delta_p * 350) / $delta_t;
-
-        $this->tdheaders[$datatype]->subheader->SetValue('RateOfRise', $RateOfRise);
-        $this->tdheaders[$datatype]->subheader->Update();
-
-        parent::Update();
-        return $RateOfRise;
-    }
-
-    public function Plot_TemperatureCurves($datatype) {
-        //Update Plot_SWVer in TestData_header
-        $this->tdheaders[$datatype]->SetValue('Plot_SWVer', $this->swversioncryo);
-        $this->tdheaders[$datatype]->Update();
+        $tdheader->SetValue('Plot_SWVer', $this->swversion);
+        $tdheader->Update();
 
         if (!file_exists($this->datadir)) {
             mkdir($this->datadir);
-        }
-        if (!file_exists($this->urldir)) {
-            mkdir($this->urldir);
         }
 
         $fkCryostat = $this->keyId;
-        $data_file = $this->datadir . "cryo_tempdata$datatype.txt";
+        $data_file = $this->datadir . "cryo_cooldown_temp.txt";
 
-        //echo "datafile= $data_file<br>";
         if (file_exists($data_file)) {
             unlink($data_file);
         }
 
-        $q = "SELECT * FROM TEST_Cryostat_data
-              WHERE fkSubHeader = " . $this->tdheaders[$datatype]->subheader->keyId . "
-              ORDER BY Time_hours ASC;";
+        $q = "SELECT * FROM TEST_CryostatCooldown
+              WHERE fkTestDataHeader = $tdheader->keyId
+              ORDER BY keyId ASC;";
 
-        //echo $q . "<br>";
         $r = mysqli_query($this->dbConnection, $q);
         $fh = fopen($data_file, 'w');
 
+        $startTime = 0;
         while ($row = mysqli_fetch_array($r)) {
-            $stringData = $row['Time_hours'] . "\t" . $row['sensor1_k'] . "\t" . $row['sensor2_k'];
-            $stringData .= "\t" . $row['sensor3_k'] . "\t" . $row['sensor4_k'] . "\t" . $row['sensor5_k'];
-            $stringData .= "\t" . $row['sensor6_k'] . "\t" . $row['sensor7_k'] . "\t" . $row['sensor8_k'];
-            $stringData .= "\t" . $row['sensor9_k'] . "\t" . $row['sensor10_k'] . "\t" . $row['sensor11_k'];
-            $stringData .= "\t" . $row['sensor12_k'] . "\t" . $row['sensor13_k'] . "\r\n";
-            fwrite($fh, $stringData);
+            if (!$startTime) {
+                $startTime = strtotime($row['TS']);
+            }
+            $elapsedHours = (strtotime($row['TS']) - $startTime) / 3600;
+
+            fwrite($fh, $elapsedHours . "\t");
+            fwrite($fh, $row['BackingPumpEnable'] . "\t");
+            fwrite($fh, $row['TurboPumpEnable'] . "\t");
+            fwrite($fh, $row['TurboPumpError'] . "\t");
+            fwrite($fh, $row['TurboPumpSpeed'] . "\t");
+            fwrite($fh, $row['GateValveState'] . "\t");
+            fwrite($fh, $row['SolenoidValveState'] . "\t");
+            fwrite($fh, $row['SupplyCurrent230V'] . "\t");
+            fwrite($fh, $row['CryoVacuumPressure'] . "\t");
+            fwrite($fh, $row['PortVacuumPressure'] . "\t");
+            fwrite($fh, $row['4k_CryoCooler'] . "\t");
+            fwrite($fh, $row['4k_PlateLink1'] . "\t");
+            fwrite($fh, $row['4k_PlateLink2'] . "\t");
+            fwrite($fh, $row['4k_PlateFarSide1'] . "\t");
+            fwrite($fh, $row['4k_PlateFarSide2'] . "\t");
+            fwrite($fh, $row['15k_CryoCooler'] . "\t");
+            fwrite($fh, $row['15k_PlateLink'] . "\t");
+            fwrite($fh, $row['15k_PlateFarSide'] . "\t");
+            fwrite($fh, $row['15k_Shield'] . "\t");
+            fwrite($fh, $row['110k_CryoCooler'] . "\t");
+            fwrite($fh, $row['110k_PlateLink'] . "\t");
+            fwrite($fh, $row['110k_PlateFarSide'] . "\t");
+            fwrite($fh, $row['110k_Shield'] . "\r\n");
         }
         fclose($fh);
 
         //Write command file for gnuplot
-        $plot_command_file = $this->datadir . "cryo_commandTEMP$datatype.txt";
+        $plot_command_file = $this->datadir . "cryo_cooldown_cmd.txt";
 
         if (file_exists($plot_command_file)) {
             unlink($plot_command_file);
         }
-
-        $imagedirectory = $this->datadir;
-        $urldirectory = $this->urldir;
-        if (!file_exists($imagedirectory)) {
-            mkdir($imagedirectory);
-        }
-
-
-        if ($datatype == 2) {
-            $imagename = "Cryostat_warmuptemps_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
-            $plot_title = "Cryostat " . $this->SN . " Temperatures First Warmup";
-        }
-        if ($datatype == 3) {
-            $imagename = "Cryostat_cooldowntemps_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
-            $plot_title = "Cryostat " . $this->SN . " Temperatures First Cooldown";
-        }
-        $imageurl = $urldirectory . $imagename;
-        $this->tdheaders[$datatype]->subheader->SetValue('pic_temperature', $imageurl);
-        $this->tdheaders[$datatype]->subheader->Update();
-
-        $imagepath = $imagedirectory . $imagename;
-
-        //echo "image url = $imageurl<br>";
-        //echo "image path= $imagepath<br>";
+        $imagename = "Cryostat_cool_warm" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
+        $plot_title = "Cryostat " . $this->SN . " cool-down / warm-up";
+        $imagepath = $this->datadir . $imagename;
 
         $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png size 900,500\r\n");
+        global $GNUPLOT_VER;
         if ($GNUPLOT_VER >= 5.0)
             fwrite($fh, "set colorsequence classic\r\n");
         fwrite($fh, "set output '$imagepath'\r\n");
@@ -1125,45 +546,66 @@ class Cryostat extends GenericTable {
         fwrite($fh, "set ylabel 'Temperature (K)'\r\n");
 
         fwrite($fh, "set bmargin 7\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " . $this->tdheaders[$datatype]->keyId . ", Cryostat Ver. $this->swversioncryo' at screen 0.01, 0.07\r\n");
-        fwrite($fh, "set label '" . $this->tdheaders[$datatype]->TS . ", FE Configuration " . $this->FEConfig . "' at screen 0.01, 0.04\r\n");
+        fwrite($fh, "set label 'TestData header.keyId: " . $tdheader->keyId . ", Cryostat Ver. $this->swversion' at screen 0.01, 0.07\r\n");
+        fwrite($fh, "set label '" . $tdheader->TS . ", FE Configuration " . $this->FEConfig . "' at screen 0.01, 0.04\r\n");
 
+        $title1 = '4K Cryocooler';
+        $title2 = '4K Plate Link 1';
+        $title3 = '4K Plate Link 2';
+        $title4 = '4K Plate Far Side 1';
+        $title5 = '4K Plate Far Side 2';
+        $title6 = '15K Cryocooler';
+        $title7 = '15K Plate Link';
+        $title8 = '15K Plate Far Side';
+        $title9 = '15K Shield';
+        $title10 = '110K Cryocooler';
+        $title11 = '110K Plate Link';
+        $title12 = '110K Plate Far Side';
+        $title13 = '110K Shield';
 
-        $title1 = $this->tempsensors[1]->location;
-        $title2 = $this->tempsensors[2]->location;
-        $title3 = $this->tempsensors[3]->location;
-        $title4 = $this->tempsensors[4]->location;
-        $title5 = $this->tempsensors[5]->location;
-        $title6 = $this->tempsensors[6]->location;
-        $title7 = $this->tempsensors[7]->location;
-        $title8 = $this->tempsensors[8]->location;
-        $title9 = $this->tempsensors[9]->location;
-        $title10 = $this->tempsensors[10]->location;
-        $title11 = $this->tempsensors[11]->location;
-        $title12 = $this->tempsensors[12]->location;
-        $title13 = $this->tempsensors[13]->location;
-
-
-        $plotstring = "plot '$data_file' using 1:2 title '$title1' with lines,";
-        $plotstring .= " '$data_file' using 1:3 title '$title2' with lines,";
-        $plotstring .= " '$data_file' using 1:4 title '$title3' with lines,";
-        $plotstring .= " '$data_file' using 1:5 title '$title4' with lines,";
-        $plotstring .= " '$data_file' using 1:6 title '$title5' with lines,";
-        $plotstring .= " '$data_file' using 1:7 title '$title6' with lines,";
-        $plotstring .= " '$data_file' using 1:8 title '$title7' with lines,";
-        $plotstring .= " '$data_file' using 1:9 title '$title8' with lines,";
-        $plotstring .= " '$data_file' using 1:10 title '$title9' with lines,";
-        $plotstring .= " '$data_file' using 1:11 title '$title10' with lines,";
-        $plotstring .= " '$data_file' using 1:12 title '$title11' with lines,";
-        $plotstring .= " '$data_file' using 1:13 title '$title12' with lines,";
-        $plotstring .= " '$data_file' using 1:14 title '$title13' with lines \r\n";
+        $plotstring = "plot '$data_file' using 1:11 title '$title1' with lines,";
+        $plotstring .= " '$data_file' using 1:12 title '$title2' with lines,";
+        $plotstring .= " '$data_file' using 1:13 title '$title3' with lines,";
+        $plotstring .= " '$data_file' using 1:14 title '$title4' with lines,";
+        $plotstring .= " '$data_file' using 1:15 title '$title5' with lines,";
+        $plotstring .= " '$data_file' using 1:16 title '$title6' with lines,";
+        $plotstring .= " '$data_file' using 1:17 title '$title7' with lines,";
+        $plotstring .= " '$data_file' using 1:18 title '$title8' with lines,";
+        $plotstring .= " '$data_file' using 1:19 title '$title9' with lines,";
+        $plotstring .= " '$data_file' using 1:20 title '$title10' with lines,";
+        $plotstring .= " '$data_file' using 1:21 title '$title11' with lines,";
+        $plotstring .= " '$data_file' using 1:22 title '$title12' with lines,";
+        $plotstring .= " '$data_file' using 1:23 title '$title13' with lines \r\n";
         fwrite($fh, $plotstring);
         fclose($fh);
 
-        //Make the plot
+        // Make the plot
         $GNUPLOT = '/usr/bin/gnuplot';
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
+
+        // send image to storage server
+        $image_url = "cryostat/$imagename";
+        $this->sendImage($imagepath);
+
+        // store image URL in subheader:
+        $q = "UPDATE TEST_Cryostat_data_SubHeader SET plot_url = '$image_url' WHERE fkHeader = " . $tdheader->keyId . " LIMIT 1;";
+        $r = mysqli_query($this->dbConnection, $q);
+    }
+
+    private function sendImage($imagepath, $path = "cryostat/") {
+        global $site_storage;
+        $ch = curl_init("{$site_storage}upload.php");
+        curl_setopt_array($ch, array(
+            CURLOPT_POST => 1,
+            CURLOPT_POSTFIELDS => array(
+                'image' => new CURLFile($imagepath, 'image/png'),
+                'path' => $path,
+                'token' => getenv("STORAGE_TOKEN")
+            )
+        ));
+        curl_exec($ch);
+        unlink($imagepath);
     }
 
     private function Convert_RtoTemp($R, $K, $index_count) {
@@ -1208,185 +650,6 @@ class Cryostat extends GenericTable {
 
     private function ExportINI($datatype) {
         echo '<meta http-equiv="Refresh" content="1;url=../cryostat/export_to_ini.php?keyId=' . $this->keyId . '&datatype=' . $datatype . '&fc=' . $this->keyFacility . '">';
-    }
-
-
-    public function DownloadToWord() {
-
-        $docname = "cryostat_" . date("Ymd_G_i_s") . ".doc";
-        header("Content-type: application/vnd.ms-word");
-        header("Content-Disposition: attachment;Filename=$docname");
-
-        echo "<html>";
-        echo "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=Windows-1252\">";
-        echo "<body>";
-
-        echo "<img src= '" . parent::GetValue('pic_rateofrise')  . "'>";
-        echo "<img src= '" . parent::GetValue('pic_firstwarmup')  . "'>";
-        echo "<img src= '" . parent::GetValue('pic_firstwarmup_temps')  . "'>";
-        echo "<img src= '" . parent::GetValue('pic_firstcooldown')  . "'>";
-        echo "<img src= '" . parent::GetValue('pic_firstcooldown_temps')  . "'>";
-
-
-        echo "</body>";
-        echo "</html>";
-    }
-
-    public function Display_FinalCooldownTemps() {
-
-        //Cooldown datatype=3
-        $q = "SELECT * FROM TEST_Cryostat_data
-        WHERE fkSubHeader = " . $this->tdheaders[3]->subheader->keyId . "
-        ORDER BY Time_hours DESC
-        LIMIT 1;";
-
-        $r = mysqli_query($this->dbConnection, $q);
-        $cryodata = mysqli_fetch_object($r);
-
-        echo '
-        <div style = "width:300px">
-        <table id = "table1" align="left" cellspacing="1" cellpadding="1" >
-          <tr class = "alt">
-            <th colspan = "2">Final Temperatures</b></th>
-          </tr>
-          <tr>
-              <th>Location</th>
-            <th>Temperature (K)</th>
-          </tr>';
-
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[5]->location . "</td>
-                <td>" . round($cryodata->sensor5_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[7]->location . "</td>
-                <td>" . round($cryodata->sensor7_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[8]->location . "</td>
-                <td>" . round($cryodata->sensor8_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[9]->location . "</td>
-                <td>" . round($cryodata->sensor9_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[10]->location . "</td>
-                <td>" . round($cryodata->sensor10_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[6]->location . "</td>
-                <td>" . round($cryodata->sensor6_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[3]->location . "</td>
-                <td>" . round($cryodata->sensor3_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[4]->location . "</td>
-                <td>" . round($cryodata->sensor4_k, 2) . "</td>
-              </tr>";
-
-
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[12]->location . "</td>
-                <td>" . round($cryodata->sensor12_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[11]->location . "</td>
-                <td>" . round($cryodata->sensor11_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[1]->location . "</td>
-                <td>" . round($cryodata->sensor1_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[2]->location . "</td>
-                <td>" . round($cryodata->sensor2_k, 2) . "</td>
-              </tr>";
-        echo "<tr bgcolor='#ffffff'>
-                <td>" . $this->tempsensors[13]->location . "</td>
-                <td>" . round($cryodata->sensor13_k, 2) . "</td>
-              </tr>";
-
-        unset($cryodata);
-
-        echo "</table></div>";
-        echo "<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>";
-    }
-
-
-    public function Display_RORselector($selname, $message, $getval, $optname, $datatype) {
-        $q_ror = "SELECT Time_hours FROM TEST_Cryostat_data
-                  WHERE fkSubHeader = " . $this->tdheaders[$datatype]->subheader->keyId . "
-                  ORDER BY Time_hours ASC;";
-        //echo $q_ror . "<br>";
-
-        //echo "$selname subheader ROR info...<br><br>";
-
-        //echo "keyId= " . $this->tdheaders[$datatype]->subheader->keyId . "<br>";
-        //echo "rorstart= " . $this->tdheaders[$datatype]->subheader->GetValue('ror_starttime') . "<br>";
-        //echo "rorstop= " . $this->tdheaders[$datatype]->subheader->GetValue('ror_stoptime') . "<br>";
-        //echo "rorgetval= " . $this->tdheaders[$datatype]->subheader->GetValue($getval) . "<br>";
-
-        $optvar = "";
-        //$optvar = ${"optvar$i"};
-
-
-        $r_ror = mysqli_query($this->dbConnection, $q_ror);
-        echo "$message <select name='$selname'>";
-        while ($row_ror = mysqli_fetch_array($r_ror)) {
-            //echo "val= $row_ror[0]<br>";
-            if (round($row_ror[0], 0) == round($this->tdheaders[$datatype]->subheader->GetValue($getval), 0)) {
-                ${"optvar$datatype"} .= "<option value='$row_ror[0]' selected = 'selected'>" . round($row_ror[0], 2) . "</option>";
-            } else {
-                ${"optvar$datatype"} .= "<option value='$row_ror[0]' >" . round($row_ror[0], 2) . "</option>";
-            }
-        }
-        echo ${"optvar$datatype"};
-        echo "</select>";
-    }
-
-    public function PicURL_Prefix($inurl) {
-        $result = $inurl;
-        if (stripos($inurl, "/php") < 6) {
-            $result = "https://safe.nrao.edu" . $inurl;
-        }
-        return $result;
-    }
-
-    public function showspinner() {
-        echo '<script type="text/javascript" src="../spin.js"></script>';
-        //Show a spinner while plots are being drawn.
-        echo "<div id='spinner' style='position:absolute;
-        left:400px;
-        top:25px;'>
-        <font color = '#00ff00'><b>
-            &nbsp &nbsp &nbsp &nbsp
-            &nbsp &nbsp &nbsp &nbsp
-            &nbsp &nbsp &nbsp &nbsp
-            &nbsp &nbsp &nbsp &nbsp
-            &nbsp &nbsp &nbsp &nbsp
-            Drawing Plots...
-            </font></b>
-
-        </div>";
-        echo "<script language = 'javascript'>
-            var opts = {
-              lines: 12, // The number of lines to draw
-              length: 10, // The length of each line
-              width: 3, // The line thickness
-              radius: 10, // The radius of the inner circle
-              color: '#00ff00', // #rgb or #rrggbb
-              speed: 1, // Rounds per second
-              trail: 60, // Afterglow percentage
-              shadow: false, // Whether to render a shadow
-
-            };
-            var target = document.getElementById('spinner');
-            var spinner = new Spinner(opts).spin(target);
-        </script>
-        ";
     }
 }
 ?>

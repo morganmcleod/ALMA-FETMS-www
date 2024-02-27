@@ -162,57 +162,6 @@ class TestData_header extends GenericTable {
                 }
                 break;
 
-            case '28':
-                //cryo pas
-                echo "
-                    <tr>
-                        <td>
-                        <a style='width:100px' href='$showrawurl' class='button blue2 bigrounded'
-                        <span style='width:90px'>Show Raw Data</span></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                        <a style='width:100px' href='$exportcsvurl' class='button blue2 bigrounded'
-                        <span style='width:90px'>Export CSV</span></a>
-                        </td>
-                    </tr>";
-                break;
-
-            case '52':
-                //cryo first cooldown
-                echo "
-                    <tr>
-                        <td>
-                        <a style='width:100px' href='$showrawurl' class='button blue2 bigrounded'
-                        <span style='width:90px'>Show Raw Data</span></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                        <a style='width:100px' href='$exportcsvurl' class='button blue2 bigrounded'
-                        <span style='width:90px'>Export CSV</span></a>
-                        </td>
-                    </tr>";
-                break;
-
-            case '53':
-                //cryo first warmup
-                echo "
-                    <tr>
-                        <td>
-                        <a style='width:100px' href='$showrawurl' class='button blue2 bigrounded'
-                        <span style='width:130px'>Show Raw Data</span></a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                        <a style='width:100px' href='$exportcsvurl' class='button blue2 bigrounded'
-                        <span style='width:90px'>Export CSV</span></a>
-                        </td>
-                    </tr>";
-                break;
-
             default:
                 echo "
                     <tr>
@@ -245,26 +194,6 @@ class TestData_header extends GenericTable {
                 }
                 break;
         }
-        echo "</table>";
-    }
-
-    public function Display_Data_Cryostat($datatype) {
-        //Array of TestData_header objects (TestData_header)
-        //[1] = First Rate of Rise
-        //[2] = Warmup
-        //[3] = Cooldown
-        //[4] = Final Rate of Rise
-        //[5] = Rate of Rise after adding CCA
-
-        $c = new Cryostat($this->fkFE_Components, $this->fc);
-        echo "<table>";
-
-        $pic_rateofrise = $c->tdheaders[$datatype]->subheader->pic_rateofrise;
-        $pic_pressure = $c->tdheaders[$datatype]->subheader->pic_pressure;
-        $pic_temperature = $c->tdheaders[$datatype]->subheader->pic_temperature;
-        if (!empty($pic_rateofrise)) echo "<tr><td><img src='{$pic_rateofrise}'></td></tr>";
-        if (!empty($pic_pressure)) echo "<tr><td><img src='{$pic_pressure}'></td></tr>";
-        if (!empty($pic_temperature)) echo "<tr><td><img src='{$pic_temperature}'></td></tr>";
         echo "</table>";
     }
 
@@ -308,40 +237,11 @@ class TestData_header extends GenericTable {
                 $finelosweep->displayPlots();
                 unset($finelosweep);
                 break;
-
-            case 50:
-                //Cryostat First Rate of Rise
+            case 61:
+                //Cryostat Cooldown
                 $this->Display_DataForm();
                 echo "<br>";
-                $this->Display_Data_Cryostat(1);
-                $showPlots = true;
-                break;
-            case 52:
-                //Cryostat First Cooldown
-                $this->Display_DataForm();
-                echo "<br>";
-                $this->Display_Data_Cryostat(3);
-                $showPlots = true;
-                break;
-            case 53:
-                //Cryostat First Warmup
-                $this->Display_DataForm();
-                echo "<br>";
-                $this->Display_Data_Cryostat(2);
-                $showPlots = true;
-                break;
-            case 54:
-                //Cryostat Final Rate of Rise
-                $this->Display_DataForm();
-                echo "<br>";
-                $this->Display_Data_Cryostat(4);
-                $showPlots = true;
-                break;
-            case 25:
-                //Cryostat Rate of Rise After adding Vacuum Equipment
-                $this->Display_DataForm();
-                echo "<br>";
-                $this->Display_Data_Cryostat(5);
+                $this->Display_Data_Cryostat(61);
                 $showPlots = true;
                 break;
             case 45:
@@ -409,6 +309,11 @@ class TestData_header extends GenericTable {
         }
     }
 
+    public function Display_Data_Cryostat($datatype) {
+        $cryo = new Cryostat($this->fkFE_Components, $this->fc);
+        $cryo->DisplayCoolDownPlot($this);
+    }
+
     public function Display_TestDataMain_html() {
         // Display the notes form and plots:
         $showPlots = false;
@@ -451,36 +356,6 @@ class TestData_header extends GenericTable {
                 unset($finelosweep);
                 break;
 
-            case 50:
-                //Cryostat First Rate of Rise
-                $html[0] = $this->Display_DataForm_html();
-                $this->Display_Data_Cryostat(1);
-                $showPlots = true;
-                break;
-            case 52:
-                //Cryostat First Cooldown
-                $html[0] = $this->Display_DataForm_html();
-                $this->Display_Data_Cryostat(3);
-                $showPlots = true;
-                break;
-            case 53:
-                //Cryostat First Warmup
-                $html[0] = $this->Display_DataForm_html();
-                $html[0] = $this->Display_Data_Cryostat(2);
-                $showPlots = true;
-                break;
-            case 54:
-                //Cryostat Final Rate of Rise
-                $html[0] = $this->Display_DataForm_html();
-                $this->Display_Data_Cryostat(4);
-                $showPlots = true;
-                break;
-            case 25:
-                //Cryostat Rate of Rise After adding Vacuum Equipment
-                $html[0] = $this->Display_DataForm_html();
-                $this->Display_Data_Cryostat(5);
-                $showPlots = true;
-                break;
             case 45:
                 //WCA Amplitude Stability
                 $html[0] = $this->Display_DataForm_html();
@@ -533,7 +408,7 @@ class TestData_header extends GenericTable {
         if ($showPlots) {
             global $site_storage;
             $urlarray = explode(",", $this->PlotURL);
-            for ($i = 0; $i < count($urlarray); $i++) {
+            for ($i = 0; $i < count($urlarray); $i) {
                 if ($urlarray[$i]) {
                     if (count($urlarray) == 1)
                         $html[0] .= "<div class='ploturlunique'><img src='" . $site_storage . $urlarray[$i] . "'></div>";
@@ -673,19 +548,6 @@ class TestData_header extends GenericTable {
 
         $preCols = "";
 
-        switch ($this->Component->fkFE_ComponentType) {
-            case 6:
-                //Cryostat
-                $q = "SELECT keyId FROM TEST_Cryostat_data_SubHeader
-                      WHERE fkHeader = $this->keyId;";
-                $r = mysqli_query($this->dbConnection, $q);
-                $fkHeader = ADAPT_mysqli_result($r, 0, 0);
-                $qgetdata = "SELECT * FROM {$this->testDataTableName}
-                             WHERE fkSubHeader = {$fkHeader}
-                             AND fkFacility = {$this->fc};";
-                break;
-        }
-
         switch ($this->fkTestData_Type) {
             case 57:
                 //LO Lock test
@@ -725,36 +587,39 @@ class TestData_header extends GenericTable {
                 $preCols = "Pol";
                 $this->testDataTableName = 'TEST_FineLOSweep';
                 break;
+
+            case 61:
+                //Cryostat cool-down
+                $qgetdata = "SELECT * FROM {$this->testDataTableName}
+                                WHERE fkTestDataHeader = {$fkHeader}
+                                AND fkFacility = {$this->fc};";
+                break;
         }
 
         $q = "SHOW COLUMNS FROM $this->testDataTableName;";
         $r = mysqli_query($this->dbConnection, $q);
 
-        echo        "<table id = 'table1'>";
+        echo "<table id = 'table1'>";
 
         if ($preCols) {
-            echo "
-                <th>$preCols</th>";
+            echo "<th>$preCols</th>";
         }
 
         while ($row = mysqli_fetch_array($r)) {
-            echo "
-                <th>$row[0]</th>";
+            echo "<th>$row[0]</th>";
         }
-
 
         $r = mysqli_query($this->dbConnection, $qgetdata);
-        while ($row = mysqli_fetch_array($r)) {
-            echo "<tr>";
-            for ($i = 0; $i < count($row) / 2; $i++) {
-                echo "<td>$row[$i]</td>";
+        if ($r) {
+            while ($row = mysqli_fetch_array($r)) {
+                echo "<tr>";
+                for ($i = 0; $i < count($row) / 2; $i++) {
+                    echo "<td>$row[$i]</td>";
+                }
+                echo "</tr>";
             }
-            echo "</tr>";
         }
-
         echo "</table>";
-
-        //echo "</div>";
     }
 
     public function AutoDrawThis() {
@@ -787,6 +652,7 @@ class TestData_header extends GenericTable {
             case 58:     // Noise temperature
             case 59:    // fine LO sweep
             case 42:    //CCA cartridge PAI plots
+            case 61:    //Cryostat cooldown
                 return false;
 
             case 39:    // I-V Curve
@@ -922,7 +788,7 @@ class TestData_header extends GenericTable {
 
             case "44":
                 //AM Noise
-                $this->Plot_WCA(45);
+                $this->Plot_WCA(44);
                 break;
             case "45":
                 //Amplitude Stability
@@ -961,7 +827,22 @@ class TestData_header extends GenericTable {
                 $ccair->drawPlot();
                 unset($ccair);
                 break;
+
+            case "61":
+                //Cryostat cool-down
+                $this->Plot_Cryostat(61);
+                break;
         }
+    }
+
+    public function Plot_Cryostat($datatype) {
+         $cryo = new Cryostat($this->fkFE_Components, $this->fc);
+         switch ($datatype) {
+             case 61:
+                 $cryo->Plot_Cooldown($this);
+                 break;
+        }
+        unset($cryo);
     }
 
     public function Plot_WCA($datatype) {
