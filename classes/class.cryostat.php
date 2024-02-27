@@ -3,6 +3,7 @@ require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.fecomponent.php');
 require_once($site_classes . '/class.tempsensor.php');
+require_once($site_classes . '/xlreader/reader.php');
 require_once($site_dbConnect);
 
 if (!isset($GNUPLOT_VER)) {
@@ -130,12 +131,7 @@ class Cryostat extends GenericTable {
     public function DisplayData_Cryostat($in_DisplayType = "all") {
         require(site_get_config_main());
 
-        //if ($in_DisplayType == "all"){
         echo '<form action="' . $_SERVER["PHP_SELF"] . '" method="post">';
-        //}
-        if ($_SERVER['SERVER_NAME'] == "webtest.cv.nrao.edu") {
-            //echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'><br>";
-        }
 
         if ($this->SN != "") {
             switch ($in_DisplayType) {
@@ -199,16 +195,9 @@ class Cryostat extends GenericTable {
             echo "<br><br><input type='submit' name = 'submitted' value='SAVE CHANGES'>";
             echo "<input type='submit' name = 'deleterecord' value='DELETE RECORD'>";
         }
-        //echo "<br><input type='submit' name = 'export_to_word' value='EXPORT TO WORD'>";
         echo "</div></div>";
-        //if ($in_DisplayType == "all"){
         echo "</form>";
-        //}
-        if ($this->SN != "") {
-            if ($in_DisplayType == 'all') {
-                $this->Display_uploadform();
-            }
-        }
+        
     }
 
     public function DisplayData_FirstCooldown() {
@@ -303,7 +292,7 @@ class Cryostat extends GenericTable {
     public function Display_uploadform_TempSensor() {
         echo '
         <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
+        <form enctype="multipart/form-data" action="ShowComponents.php?fc=' . $this->fc . '&conf=' . $this->keyId . '" method="POST">
         <!-- MAX_FILE_SIZE must precede the file input field -->
         <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
         <!-- Name of input element determines name in $_FILES array -->
@@ -312,112 +301,6 @@ class Cryostat extends GenericTable {
         <input type="hidden" name="keyId" value="' . $this->keyId . '">
         <input type="hidden" name="fc" value="' . $this->keyFacility . '">
         </form>';
-    }
-
-    public function Display_uploadform() {
-        echo '
-        <div style="width:750px">
-        <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
-            <!-- MAX_FILE_SIZE must precede the file input field -->
-            <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
-            <!-- Name of input element determines name in $_FILES array -->
-            <br>
-            <table id = "table1">
-            <tr class = "alt"><th colspan = "2">Upload Data Files</th></tr>
-            <tr><td align = "right">
-            Temp Sensor Calibration (Excel): </b><input name="file_tempsensors" type="file" />
-            </td><td></td>
-                <tr>
-                <td align = "right">First Rate of Rise File (txt): </b><input name="file_rateofrise" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_rateofrise" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-                <tr>
-                <td align = "right">First Warmup File (txt): </b><input name="file_firstwarmup" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_firstwarmup" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-                <tr>
-                <td align = "right">First Cooldown File (txt): </b><input name="file_firstcooldown" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_firstcooldown" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-                <tr>
-                <td align = "right">Rate of Rise File after adding cold cartridges(txt): </b><input name="file_rateofrise_aftercca" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_rateofrise_aftercca" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-                <tr>
-                <td align = "right">Final Rate of Rise File (txt): </b><input name="file_rateofrise_final" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_rateofrise_final" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-            <tr >
-            <th>
-                <select name ="generatedby">
-                    <option value="1" selected = "selected">Cryostat Logging Application</option>
-                    <option value="2">FE Control Software</option>
-                </select>
-                <select name ="rk">
-                    <option value="r" selected = "selected">Resistance Values</option>
-                    <option value="k">Temperature (K)</option>
-                </select>
-                </th>
-                <td align = "right"><input type="submit" name= "submit_datafile_cryostat" value="Submit" /></td>
-                </tr>
-        </table>
-        <input type="hidden" name="keyId" value="' . $this->keyId . '">
-        <input type="hidden" name="fc" value="' . $this->keyFacility . '">
-        </form>
-        </div>';
-    }
-
-    public function Display_uploadform_Notempsensors() {
-        echo '
-        <div style="width:750px">
-        <!-- The data encoding type, enctype, MUST be specified as below -->
-        <form enctype="multipart/form-data" action="' . $_SERVER['PHP_SELF'] . '" method="POST">
-            <!-- MAX_FILE_SIZE must precede the file input field -->
-            <!-- <input type="hidden" name="MAX_FILE_SIZE" value="100000" /> -->
-            <!-- Name of input element determines name in $_FILES array -->
-            <br>
-            <table id = "table1">
-            <tr class = "alt"><th colspan = "2">Upload Data Files</th></tr>
-            <tr>
-                <tr>
-                <td align = "right">First Rate of Rise File (txt): </b><input name="file_rateofrise" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_rateofrise" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-                <tr>
-                <td align = "right">First Warmup File (txt): </b><input name="file_firstwarmup" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_firstwarmup" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-                <tr>
-                <td align = "right">First Cooldown File (txt): </b><input name="file_firstcooldown" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_firstcooldown" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-                <tr>
-                <td align = "right">Rate of Rise File after adding cold cartridges(txt): </b><input name="file_rateofrise_aftercca" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_rateofrise_aftercca" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-                <tr>
-                <td align = "right">Final Rate of Rise File (txt): </b><input name="file_rateofrise_final" type="file" /></td>
-                <td align = "right">Time step size (sec): </b><input name="time_rateofrise_final" type="text" size="3" maxlength="3" value = "30" /></td>
-                </tr>
-            <tr >
-            <th>
-                <select name ="generatedby">
-                    <option value="1" selected = "selected">Cryostat Logging Application</option>
-                    <option value="2">FE Control Software</option>
-                </select>
-                <select name ="rk">
-                    <option value="r" selected = "selected">Resistance Values</option>
-                    <option value="k">Temperature (K)</option>
-                </select>
-                </th>
-                <td align = "right"><input type="submit" name= "submit_datafile_cryostat" value="Submit" /></td>
-                </tr>
-        </table>
-        <input type="hidden" name="keyId" value="' . $this->keyId . '">
-        <input type="hidden" name="fc" value="' . $this->keyFacility . '">
-        </form>
-        </div>';
     }
 
     public function DisplayTempSenors() {
@@ -441,7 +324,7 @@ class Cryostat extends GenericTable {
             </tr>';
 
         $trclass = "";
-        for ($i = 1; $i < count($this->tempsensors); $i++) {
+        for ($i = 1; $i <= count($this->tempsensors); $i++) {
             $trclass = ($trclass == "" ? "tr class = 'alt'" : "");
             echo "<tr $trclass>
                     <td>" . $this->tempsensors[$i]->sensor_number . "</td>";

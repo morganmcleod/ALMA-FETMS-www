@@ -275,18 +275,6 @@ function createCompTabs(band, comptype, compKey, fc, CompDescription) {
                             tabtype: '2'
                         }
                     }
-                }, {
-                    title: 'Upload Data Files',
-                    autoLoad: {
-                        url: 'getComponentData.php',
-                        params: {
-                            fc: fc,
-                            band: band,
-                            type: comptype,
-                            config: compKey,
-                            tabtype: '5'
-                        }
-                    }
                 }]
             });
         }

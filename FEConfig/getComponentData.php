@@ -51,9 +51,6 @@ if ($tabtype == "testdata") {
             $cryo->DisplayTempSenors();
 
             break;
-        case 5:
-            $cryo->Display_uploadform_Notempsensors();
-            break;
     }
     unset($cryo);
 } else if ($comp_type == 11) {

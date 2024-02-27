@@ -47,7 +47,7 @@ if ($datatype == "tempsensors") {
     echo "\r\n";
     echo "[INFO]\r\n";
     echo ";Electronic Serial Number (ESN)\r\n";
-    echo "ESN='FF FF FF FF FF FF FF FF'\r\n";
+    echo "ESN=" . $cryostat->ESN1 . "\r\n";
     echo ";Cryostat Serial Number (SN)\r\n";
     echo "SN=" . $cryostat->SN   . "\r\n";
 
