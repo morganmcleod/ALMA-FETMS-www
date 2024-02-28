@@ -42,6 +42,9 @@ switch ($fkTestData_Type) {
     case 29:
         $file_type = "Workmanship Amplitude";
         break;
+    case 61:
+        $file_type = "Cryostat cool-down/warm-up";
+        break;
 }
 
 $stylesheet = file_get_contents('pdf.css');

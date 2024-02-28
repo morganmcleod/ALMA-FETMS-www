@@ -1267,19 +1267,12 @@ class DataPlotter extends GenericTable {
 
     public function Plot_WorkmanshipPhase() {
         require(site_get_config_main());
-        $this->writedirectory = $main_write_directory  . "FE_" . $this->TestDataHeader->Component->SN . "/";
         $this->writedirectory = $main_write_directory;
         if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);
         }
-
-        $this->url_directory = $main_url_directory  . "FE_" . $this->TestDataHeader->Component->SN . "/";
-        $this->url_directory = $main_url_directory;
-        if (!file_exists($this->url_directory)) {
-            mkdir($this->url_directory);
-        }
+    
         $TestData_Id = $this->TestDataHeader->keyId;
-
         $datafile_count = 0;
 
         $r = $this->db_pull->q(5, $TestData_Id, $this->fc);
@@ -1289,12 +1282,8 @@ class DataPlotter extends GenericTable {
         $subheader_id = $this->db_pull->q_other('sh', NULL, $TestData_Id);
         $wsub = new GenericTable('TEST_Workmanship_Phase_SubHeader', $subheader_id, 'keyTEST_Workmanship_Phase_SubHeader');
 
-
-        $l = new Logger('CLASSDATAPLOTTER.txt');
-
-
         // Get array of phase values and unwrap, to determine offset value for plotting.
-        $r = $this->db_pull->q(6, $TestData_Id, $this->fc, NULL, $l);
+        $r = $this->db_pull->q(6, $TestData_Id, $this->fc, NULL, NULL);
 
         if (mysqli_num_rows($r) > 1) {
             $row = mysqli_fetch_array($r);
@@ -1314,7 +1303,6 @@ class DataPlotter extends GenericTable {
             $minphase = min($phases);
             $phasemid = 0.5 * ($maxphase + $minphase);
 
-            $l->WriteLogFile("Max=$maxphase min=$minphase mid=$phasemid");
         }
         $imagedirectory = $this->writedirectory . "FE_" . $this->TestDataHeader->Component->SN . "/";
         if (!file_exists($imagedirectory)) {
@@ -1341,8 +1329,10 @@ class DataPlotter extends GenericTable {
         //Write command file for gnuplot
         $plot_command_file = $imagedirectory . "wkm_phase_command_tdh$TestData_Id.txt.txt";
 
-        $imagename = "WorkmanshipPhase_band" . $this->TestDataHeader->Band . "_" . date("Ymd_G_i_s") . ".png";
-        $image_url = $this->url_directory . "FE_" . $this->TestDataHeader->Component->SN . "/$imagename";
+        $imagename = "WorkmanshipPhase_band" . $this->TestDataHeader->Band . "_" . $this->FEcfg . "_" . $this->TestDataHeader->keyId . ".png";
+        $image_url = $this->url_directory . "workmanship/$imagename";
+        $this->TestDataHeader->PlotURL = $image_url;
+        $this->TestDataHeader->Update();
 
         $sb = "USB";
         if ($wsub->GetValue('sb') == 2) {
@@ -1388,7 +1378,6 @@ class DataPlotter extends GenericTable {
         //$plot_string = "plot '$data_file' using 1:2 title 'Tilt Angle' with points pt 1 ps 0.2 axis x1y2";
         //$plot_string .= ", '$data_file'  using 1:3 title 'Phase' with points pt 1 ps 0.2 axis x1y1";
 
-
         $plot_string .= "\r\n";
         fwrite($fh, $plot_string);
         fclose($fh);
@@ -1396,6 +1385,8 @@ class DataPlotter extends GenericTable {
 
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
+        $this->sendImage($imagepath, "workmanship/");
+        unlink($plot_command_file);
     }
 
 
@@ -1404,7 +1395,6 @@ class DataPlotter extends GenericTable {
 
         $td_header = $this->TestDataHeader->keyId;
         $this->writedirectory = $main_write_directory;
-        $this->url_directory = $main_url_directory;
         $plot_title = "Pol Angles  FE-" . $this->FESN . ", Band " . $this->TestDataHeader->Band;
 
         /**********************
@@ -1413,11 +1403,8 @@ class DataPlotter extends GenericTable {
         $min0 = 999;
         $min1 = 999;
 
-
-
         $data_file = $this->writedirectory . "polangle_data" . $this->TestDataHeader->keyId . ".txt";
         $fh = fopen($data_file, 'w');
-
 
         $rdata = $this->db_pull->qdata(1, $td_header, $this->fc);
         while ($rowdata = mysqli_fetch_array($rdata)) {
@@ -1454,12 +1441,14 @@ class DataPlotter extends GenericTable {
         }
         $imagename = "polangleFE" . $this->FESN . "_Band" . $this->TestDataHeader->Band . "_tdh" . $this->TestDataHeader->keyId . ".png";
         $imagepath = $imagedirectory . $imagename;
-
-
+        $image_url = "polangles/$imagename";
+        
+        $this->TestDataHeader->PlotURL = $image_url;
+        $this->TestDataHeader->Update();
 
         //Write command file
-        $commandfile = $this->writedirectory . "polangle_commands_tdh$td_header.txt";
-        $fh = fopen($commandfile, 'w');
+        $plot_command_file = $this->writedirectory . "polangle_commands_tdh$td_header.txt";
+        $fh = fopen($plot_command_file, 'w');
         fwrite($fh, "set terminal png crop\r\n");
         if ($GNUPLOT_VER >= 5.0)
             fwrite($fh, "set colorsequence classic\r\n");
@@ -1478,15 +1467,10 @@ class DataPlotter extends GenericTable {
         fwrite($fh, "\r\n");
         fclose($fh);
 
-
-        $CommandString = "$GNUPLOT $commandfile";
+        $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
-
-        $image_url = $this->url_directory . "tdh/$td_header/PolAngle/$imagename";
-
-
-        $this->TestDataHeader->PlotURL = $image_url;
-        $this->TestDataHeader->Update();
+        $this->sendImage($imagepath, "polangles/");
+        unlink($plot_command_file);
     }
 
     public function Plot_LOLockTest() {

@@ -14,8 +14,6 @@ if (!isset($GNUPLOT_VER)) {
 class Cryostat extends GenericTable {
     private $tempsensors;
     private $datadir;
-    private $urldir;
-    private $tdheaders;     //Array of TestData_header objects (TestData_header)
     private $FESN;          //SN of the Front End
     private $FEid;          //keyId of the Front End
     private $FEConfig;      //Latest configuration of the Front End
@@ -27,15 +25,12 @@ class Cryostat extends GenericTable {
         parent::__construct('FE_Components', $in_keyId, "keyId", $in_fc, 'keyFacility');
         $this->swversion = '2.0.0';
 
-        /*
-         * version 1.0.4:  MTM fixed "set...screen" commands to gnuplot
+        /* version history
+         * 2.0.0:  MTM removed obsolete plots and data displays, added Cooldown plots, repaired tempsensor upload.
+         * 1.0.4:  MTM fixed "set...screen" commands to gnuplot
         */
 
-        $this->fc = $fc;
-        $this->datadir = $main_write_directory;
-        $this->urldir = $main_url_directory;
-        $this->datadir = $main_write_directory . "cSN" . $this->SN . "/";
-        $this->urldir = $main_url_directory . "cSN" . $this->SN . "/";
+        $this->datadir = $main_write_directory . "cryostat" . $this->SN . "/";
         //Find which Front End this component is in (if any)
         $q = "SELECT Front_Ends.SN,
                      FE_Config.keyFEConfig,
@@ -54,43 +49,6 @@ class Cryostat extends GenericTable {
         for ($i = 1; $i <= 13; $i++) {
             $this->tempsensors[$i] = new Cryostat_tempsensor($this->keyId, $i, $in_fc);
         }
-        //Get TestData_header and SubHeader objects
-        $qtdh = "SELECT * FROM TestData_header
-                 WHERE fkFE_Components = $this->keyId;";
-        $rtdh = mysqli_query($this->dbConnection, $qtdh);
-        while ($rowtdh = mysqli_fetch_array($rtdh)) {
-            switch ($rowtdh['fkTestData_Type']) {
-                case 50:
-                    //First Rate of Rise
-                    $tdhIndex = 1;
-                    break;
-                case 53:
-                    //Warmup
-                    $tdhIndex = 2;
-                    break;
-                case 52:
-                    //Cooldown
-                    $tdhIndex = 3;
-                    break;
-                case 54:
-                    //Final Rate of Rise
-                    $tdhIndex = 4;
-                    break;
-                case 25:
-                    //Rate of Rise after adding CCA
-                    $tdhIndex = 5;
-                    break;
-            }
-            if (isset($tdhIndex)) {
-                $this->tdheaders[$tdhIndex] = new TestData_header($rowtdh['keyId'], $in_fc);
-                $this->tdheaders[$tdhIndex]->subheader = new GenericTable('TEST_Cryostat_data_SubHeader', $rowtdh['keyId'], "fkHeader", $in_fc, 'keyFacility');
-                //Initialize first using fkHeader as key. This gets us the keyId value without having
-                //to do an extra query.
-                $keyid_subheader = $this->tdheaders[$tdhIndex]->subheader->keyId;
-                //Use key value to initialize the subheader object again.
-                $this->tdheaders[$tdhIndex]->subheader = new GenericTable('TEST_Cryostat_data_SubHeader', $keyid_subheader, "keyId", $in_fc, 'keyFacility');
-            }
-        }
     }
     function __destruct() {
         for ($i = 1; $i <= 13; $i++) {
@@ -98,20 +56,8 @@ class Cryostat extends GenericTable {
         }
     }
 
-    public function NewRecord_Cryostat() {
-        require(site_get_config_main());
-        //fc is defined in config_main.php
-        $tempObj = FEComponent::NewRecord('FE_Components', 'keyId', $fc, 'keyFacility');
-        $tempObj->fkFE_ComponentType = 6;
-        $this->Update();
-
-        // ??!!
-        $tdtypes = array(0, 50, 53, 52, 54, 25);
-    }
-
     public function Update_Cryostat() {
         parent::Update();
-        //echo '<meta http-equiv="Refresh" content="1;url=cryostat.php?keyId='.$this->keyId.'">';
     }
 
     public function DisplayData_Cryostat($in_DisplayType = "all") {
@@ -145,14 +91,23 @@ class Cryostat extends GenericTable {
         echo "</form>";
     }
 
-    public function DisplayCoolDownPlot($tdheader) {
+    public function DisplayCoolDownPlots($tdheader) {
+        echo $this->DisplayCoolDownPlots_html($tdheader);        
+    }
+
+    public function DisplayCoolDownPlots_html($tdheader) {
+        $html = '';
         global $site_storage;
         if ($tdheader->keyId != '') {
             $q = "SELECT plot_url FROM TEST_Cryostat_data_SubHeader WHERE fkHeader = " . $tdheader->keyId . ";";
             $r = mysqli_query($this->dbConnection, $q);
-            $url = ADAPT_mysqli_result($r, 0, 0);
-            if ($url) echo "<img src='{$site_storage}{$url}'><br><br>";            
+            $urls = explode(",", ADAPT_mysqli_result($r, 0, 0));            
+            for ($i = 0; $i < count($urls); $i++) {
+                $url = $urls[$i];
+                $html .= "<div><img src='{$site_storage}{$url}'><br><br></div>";
+            }
         }
+        return $html;
     }
 
     public function Display_uploadform_TempSensor() {
@@ -273,19 +228,6 @@ class Cryostat extends GenericTable {
                 WHERE fkCryostat = $this->keyId;";
         $rd1 = mysqli_query($this->dbConnection, $qd1);
 
-        //Delete TestData_header and Subheader records
-        for ($i = 1; $i <= 5; $i++) {
-            if ($this->tdheaders[$i]->keyId != '') {
-                $this->tdheaders[$i]->subheader->Delete_record();
-                $this->tdheaders[$i]->Delete_record();
-
-
-                $qd = "DELETE FROM TEST_Cryostat_data
-                WHERE fkSubHeader = " . $this->tdheaders[$i]->subheader->keyId . ";";
-                $rd = mysqli_query($this->dbConnection, $qd);
-            }
-        }
-
         //parent::Delete_record();
         echo '<meta http-equiv="Refresh" content="1;url=cryostats.php">';
     }
@@ -379,94 +321,6 @@ class Cryostat extends GenericTable {
         }
     }
 
-    public function Plot_pressure($datatype) {
-        //Update Plot_SWVer in TestData_header
-        $this->tdheaders[$datatype]->SetValue('Plot_SWVer', $this->swversion);
-        $this->tdheaders[$datatype]->Update();
-
-        if (!file_exists($this->datadir)) {
-            mkdir($this->datadir);
-        }
-        if (!file_exists($this->urldir)) {
-            mkdir($this->urldir);
-        }
-
-        $suffix = $datatype;
-        switch ($datatype) {
-            case 2:
-                $suffix = "firstwarmup";
-                break;
-            case 3:
-                $suffix = "firstcooldown";
-                break;
-        }
-        $fkCryostat = $this->keyId;
-        $data_file = $this->datadir . "cryo_dataPressure$datatype.txt";
-        if (file_exists($data_file)) {
-            unlink($data_file);
-        }
-
-        $q = "SELECT date_time, Pressure1, Time_hours FROM TEST_Cryostat_data
-                WHERE fkSubHeader = " . $this->tdheaders[$datatype]->subheader->keyId . "
-                AND fkFacility = " . $this->tdheaders[$datatype]->keyFacility . "
-                ORDER BY Time_hours ASC;";
-        $r = mysqli_query($this->dbConnection, $q);
-        $fh = fopen($data_file, 'w');
-
-        while ($row = mysqli_fetch_array($r)) {
-            $stringData = "$row[2]\t$row[1]\r\n";
-            fwrite($fh, $stringData);
-        }
-        fclose($fh);
-
-        //Write command file for gnuplot
-        $plot_command_file = $this->datadir . "cryo_command_pressure$datatype.txt";
-        //unlink($plot_command_file);
-        $imagedirectory = $this->datadir;
-        $urldirectory = $this->urldir;
-
-
-        if ($datatype == 2) {
-            $imagename = "Cryostat_warmup_pressure_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
-            $plot_title = "Cryostat " . $this->SN . " pressure during first warmup";
-        }
-        if ($datatype == 3) {
-            $imagename = "Cryostat_cooldown_pressure_SN" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
-            $plot_title = "Cryostat " . $this->SN . " pressure during first cooldown";
-        }
-        $imageurl = $urldirectory . $imagename;
-        $this->tdheaders[$datatype]->subheader->SetValue('pic_pressure', $imageurl);
-        $this->tdheaders[$datatype]->subheader->Update();
-        $imagepath = $imagedirectory . $imagename;
-        //echo "image url = $imageurl<br>";
-        //echo "image path= $imagepath<br>";
-
-        $fh = fopen($plot_command_file, 'w');
-        fwrite($fh, "set terminal png\r\n");
-        if ($GNUPLOT_VER >= 5.0)
-            fwrite($fh, "set colorsequence classic\r\n");
-        fwrite($fh, "set output '$imagepath'\r\n");
-        fwrite($fh, "set title '$plot_title'\r\n");
-        fwrite($fh, "set grid\r\n");
-        fwrite($fh, "set log y\r\n");
-        fwrite($fh, "set xlabel 'Time (hours)'\r\n");
-        fwrite($fh, "set ylabel 'Presure (mbar)'\r\n");
-
-        fwrite($fh, "set bmargin 7\r\n");
-        fwrite($fh, "set label 'TestData_header.keyId: " . $this->tdheaders[$datatype]->keyId . ", Cryostat Ver. $this->swversion' at screen 0.01, 0.07\r\n");
-        fwrite($fh, "set label '" . $this->tdheaders[$datatype]->TS . ", FE Configuration " . $this->FEConfig . "' at screen 0.01, 0.04\r\n");
-
-
-
-        fwrite($fh, "plot '$data_file' using 1:2 title '' with linespoints pointsize 0.2 pt 5 lt 3 \r\n");
-        fclose($fh);
-
-        //Make the plot
-        $GNUPLOT = '/usr/bin/gnuplot';
-        $CommandString = "$GNUPLOT $plot_command_file";
-        system($CommandString);
-    }
-
     public function Plot_Cooldown($tdheader) {
         //Update Plot_SWVer in TestData_header
         $tdheader->SetValue('Plot_SWVer', $this->swversion);
@@ -483,6 +337,7 @@ class Cryostat extends GenericTable {
             unlink($data_file);
         }
 
+        //Get cryostat sensors data for temp file:
         $q = "SELECT * FROM TEST_CryostatCooldown
               WHERE fkTestDataHeader = $tdheader->keyId
               ORDER BY keyId ASC;";
@@ -522,15 +377,23 @@ class Cryostat extends GenericTable {
             fwrite($fh, $row['110k_Shield'] . "\r\n");
         }
         fclose($fh);
+        $temp_url = $this->Plot_Cooldown_Temps($tdheader, $data_file);
+        $pres_url = $this->Plot_Cooldown_Pressure($tdheader, $data_file);
+        unlink($data_file);
+        
+        // store image URLs in subheader:
+        $q = "UPDATE TEST_Cryostat_data_SubHeader SET plot_url = '$temp_url,$pres_url' WHERE fkHeader = " . $tdheader->keyId . " LIMIT 1;";
+        $r = mysqli_query($this->dbConnection, $q);
+    }
 
+    public function Plot_Cooldown_Temps($tdheader, $data_file) {        
         //Write command file for gnuplot
         $plot_command_file = $this->datadir . "cryo_cooldown_cmd.txt";
-
         if (file_exists($plot_command_file)) {
             unlink($plot_command_file);
         }
-        $imagename = "Cryostat_cool_warm" . $this->SN . "_" . date("Ymd_G_i_s") . ".png";
-        $plot_title = "Cryostat " . $this->SN . " cool-down / warm-up";
+        $imagename = "Cryostat_cooldown_temps" . $this->SN . "_" . $this->FEConfig . "_" . $tdheader->keyId . ".png";
+        $plot_title = "Cryostat " . $this->SN . " cool-down / warm-up temperatures";
         $imagepath = $this->datadir . $imagename;
 
         $fh = fopen($plot_command_file, 'w');
@@ -575,7 +438,7 @@ class Cryostat extends GenericTable {
         $plotstring .= " '$data_file' using 1:20 title '$title10' with lines,";
         $plotstring .= " '$data_file' using 1:21 title '$title11' with lines,";
         $plotstring .= " '$data_file' using 1:22 title '$title12' with lines,";
-        $plotstring .= " '$data_file' using 1:23 title '$title13' with lines \r\n";
+        $plotstring .= " '$data_file' using 1:23 title '$title13' with lines\r\n";
         fwrite($fh, $plotstring);
         fclose($fh);
 
@@ -583,15 +446,62 @@ class Cryostat extends GenericTable {
         $GNUPLOT = '/usr/bin/gnuplot';
         $CommandString = "$GNUPLOT $plot_command_file";
         system($CommandString);
+        unlink($plot_command_file);
 
         // send image to storage server
         $image_url = "cryostat/$imagename";
         $this->sendImage($imagepath);
 
-        // store image URL in subheader:
-        $q = "UPDATE TEST_Cryostat_data_SubHeader SET plot_url = '$image_url' WHERE fkHeader = " . $tdheader->keyId . " LIMIT 1;";
-        $r = mysqli_query($this->dbConnection, $q);
+        // return the image URL:
+        return $image_url;
     }
+
+    public function Plot_Cooldown_Pressure($tdheader, $data_file) {
+        
+        //Write command file for gnuplot
+        $plot_command_file = $this->datadir . "cryo_pressure_cmd.txt";
+        if (file_exists($plot_command_file)) {
+            unlink($plot_command_file);
+        }
+        $imagename = "Cryostat_cooldown_press" . $this->SN . "_" . $this->FEConfig . "_" . $tdheader->keyId . ".png";
+        $plot_title = "Cryostat " . $this->SN . " cool-down / warm-up pressures";
+        $imagepath = $this->datadir . $imagename;
+
+        $fh = fopen($plot_command_file, 'w');
+        fwrite($fh, "set terminal png size 900,500\r\n");
+        global $GNUPLOT_VER;
+        if ($GNUPLOT_VER >= 5.0)
+            fwrite($fh, "set colorsequence classic\r\n");
+        fwrite($fh, "set output '$imagepath'\r\n");
+        fwrite($fh, "set title '$plot_title'\r\n");
+        fwrite($fh, "set grid\r\n");
+        fwrite($fh, "set key outside\r\n");
+        fwrite($fh, "set log y\r\n");
+        fwrite($fh, "set xlabel 'Time (hours)'\r\n");
+        fwrite($fh, "set ylabel 'Presure (mbar)'\r\n");
+
+        fwrite($fh, "set bmargin 7\r\n");
+        fwrite($fh, "set label 'TestData header.keyId: " . $tdheader->keyId . ", Cryostat Ver. $this->swversion' at screen 0.01, 0.07\r\n");
+        fwrite($fh, "set label '" . $tdheader->TS . ", FE Configuration " . $this->FEConfig . "' at screen 0.01, 0.04\r\n");
+
+        fwrite($fh, "plot '$data_file' using 1:9 title 'Cryostat Pressure' with lines,");
+        fwrite($fh, " '$data_file' using 1:10 title 'Port Pressure' with lines\r\n");
+        fclose($fh);
+
+        //Make the plot
+        $GNUPLOT = '/usr/bin/gnuplot';
+        $CommandString = "$GNUPLOT $plot_command_file";
+        system($CommandString);
+        unlink($plot_command_file);
+
+        // send image to storage server
+        $image_url = "cryostat/$imagename";
+        $this->sendImage($imagepath);
+
+        // return the image URL:
+        return $image_url;
+    }
+
 
     private function sendImage($imagepath, $path = "cryostat/") {
         global $site_storage;

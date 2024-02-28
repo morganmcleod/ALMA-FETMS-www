@@ -89,13 +89,15 @@ class DPdb { //extends DBRetrieval{
                   WHERE fkHeader = {$TestDataHeader->keyId}
                   AND TEST_LOLockTest_SubHeader.keyFacility = {$TestDataHeader->keyFacility};";
             $r = $this->run_query($q);
-            $t->WriteLogFile($q);
+            if ($t)
+                $t->WriteLogFile($q);
             return ADAPT_mysqli_result($r, 0, 0);
         } elseif ($request == 'URL') {
             $q = "UPDATE TestData_header SET PlotURL = '$image_url'
                   WHERE keyId = $td_header;";
             $r = $this->run_query($q);
-            $t->WriteLogFile($q);
+            if ($t)
+                $t->WriteLogFile($q);
             return;
         } else {
             return;
@@ -149,7 +151,8 @@ class DPdb { //extends DBRetrieval{
                       AND FE_Config.fkFront_Ends = ($qfe)
                       GROUP BY TEST_LOLockTest.LOFreq ORDER BY TEST_LOLockTest.LOFreq ASC;";
             }
-            $t->WriteLogFile($q);
+            if ($t)
+                $t->WriteLogFile($q);
         } else {
             $q = '';
         }
@@ -213,7 +216,8 @@ class DPdb { //extends DBRetrieval{
             $q = "SELECT phase, tilt FROM TEST_Workmanship_Phase
                   WHERE fkHeader = $TestData_Id
                   AND fkFacility = $fc ORDER BY TS ASC;";
-            $l->WriteLogFile($q);
+            if ($l)
+                $l->WriteLogFile($q);
         } elseif ($occur == 7) {
             $q = "SELECT TestData_header.keyID,
                          TestData_header.TS,

@@ -31,19 +31,6 @@
     $cryostat->Initialize_Cryostat($td->Component->keyId, $fc);
     $cryostat->RequestValues_Cryostat();
 
-
-    if (isset($_REQUEST['submitted'])) {
-
-
-        if ($cryostat->keyId == '') {
-            $cryostat->NewRecord_Cryostat($fc);
-            $cryostat->RequestValues_Cryostat();
-        }
-        $cryostat->Update_Cryostat();
-        echo "Record Updated<br><br>";
-        //echo '<meta http-equiv="Refresh" content="1;url=cryostat.php?keyId='.$cryostat->keyId.'&fc='.$cryostat->keyFacility.'">';
-    }
-
     $title = "<a href='../ShowComponents.php?conf=$cryostat->keyId&fc=$fc'>
           <font color='#ffffff'>Cryostat " . $cryostat->SN .
         "</font></a>";

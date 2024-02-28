@@ -241,7 +241,9 @@ class TestData_header extends GenericTable {
                 //Cryostat Cooldown
                 $this->Display_DataForm();
                 echo "<br>";
-                $this->Display_Data_Cryostat(61);
+                $cryo = new Cryostat($this->fkFE_Components, $this->fc);
+                $cryo->DisplayCoolDownPlots($this);
+                unset($cryo);
                 $showPlots = true;
                 break;
             case 45:
@@ -309,11 +311,6 @@ class TestData_header extends GenericTable {
         }
     }
 
-    public function Display_Data_Cryostat($datatype) {
-        $cryo = new Cryostat($this->fkFE_Components, $this->fc);
-        $cryo->DisplayCoolDownPlot($this);
-    }
-
     public function Display_TestDataMain_html() {
         // Display the notes form and plots:
         $showPlots = false;
@@ -355,7 +352,13 @@ class TestData_header extends GenericTable {
                 $html[0] .= $finelosweep->DisplayPlots_html();
                 unset($finelosweep);
                 break;
-
+            case 61:
+                //Cryostat Cooldown
+                $html[0] = $this->Display_DataSetNotes_html();
+                $cryo = new Cryostat($this->fkFE_Components, $this->fc);
+                $html[0] .= $cryo->DisplayCoolDownPlots_html($this);
+                unset($cryo);
+                break;
             case 45:
                 //WCA Amplitude Stability
                 $html[0] = $this->Display_DataForm_html();
@@ -657,7 +660,7 @@ class TestData_header extends GenericTable {
 
             case 39:    // I-V Curve
             case 57:     // LO lock test
-            default:
+                default:
                 return true;
         }
     }
