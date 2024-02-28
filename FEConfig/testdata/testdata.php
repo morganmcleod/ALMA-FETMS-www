@@ -29,6 +29,7 @@
     if (!$keyHeader) exit();
 
     $td = new TestData_header($keyHeader, $fc);
+    $datastatus = $td->fkDataStatus;
 
     // Some plot types should draw automatically if the PlotURL is blank:
     if (!$td->PlotURL && $td->AutoDrawThis())

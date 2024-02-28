@@ -7,6 +7,7 @@ require('dbGetQueries.php');
 
 $keyFE = $_GET['key'];
 $fc = $_REQUEST['fc'];
+$filterArchived = $_REQUEST['hidden'] ?? "true";
 $fe = new FrontEnd(NULL, $fc, FrontEnd::INIT_CONFIGS, $keyFE);
 $fesn = $fe->SN;
 
@@ -42,7 +43,7 @@ $fesn = $fe->SN;
 
     ?>
 
-<body id='body2' style="background-color: #19475E" onload="javascript:createtabs(<?php echo "$keyFE,$fesn,$fc,$fe->keyId"; ?>);javascript:creategridConfigHistory(<?php echo "$keyFE,$fc,$fe->keyId"; ?>);">
+<body id='body2' style="background-color: #19475E" onload="javascript:createtabs(<?php echo "$keyFE,$fesn,$fc,$filterArchived"; ?>);javascript:creategridConfigHistory(<?php echo "$keyFE,$fc,$fe->keyId"; ?>);">
     <div id="wrap">
         <?php
 

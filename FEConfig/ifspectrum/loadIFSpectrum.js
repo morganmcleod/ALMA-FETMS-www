@@ -12,7 +12,25 @@
  * @param popupCallback function to call for 'move to other fe' button.
  * @returns
  */
-function createIFSpectrumTabs(fc, tdhId, fe, datasetgroup, band, popupCallback = false) {
+function createIFSpectrumTabs(fc, tdhId, fe, datasetgroup, band, datastatus, popupCallback = false) {
+
+    if (datastatus > 100) {
+        archive_opt = {
+            text: '<span style="font-weight:bold;">Unarchive Test</span>',
+            icon: '../icons/folder_explore.png',
+            handler: function () {
+                window.location = '../testdata/updateArchiveStatus.php?fc=' + fc + '&keyheader=' + tdhId + '&archive=false';
+            }
+        }
+    } else {
+        archive_opt = {
+            text: '<span style="font-weight:bold;">Archive Test</span>',
+            icon: '../icons/folder_explore.png',
+            handler: function () {
+                window.location = '../testdata/updateArchiveStatus.php?fc=' + fc + '&keyheader=' + tdhId + '&archive=true';
+            }
+        }
+    }
     Ext.create('Ext.toolbar.Toolbar', {
         renderTo: 'toolbar',
         width: 1000,
@@ -40,7 +58,7 @@ function createIFSpectrumTabs(fc, tdhId, fe, datasetgroup, band, popupCallback =
                     if (popupCallback)
                         popupCallback();
                 }
-            }
+            }, archive_opt
         ]
     });
     Ext.define('IFSpectrum.tab.Panel', {
