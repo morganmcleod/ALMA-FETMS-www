@@ -77,10 +77,8 @@ switch ($site_hostname) {
 
 // set up some additional directories and URLs based on the above paths:
 $main_write_directory = $rootdir_data . "test_datafiles/";
-$main_url_directory   = $url_root  . "test_datafiles/";
 
 $log_write_directory = $main_write_directory . "logs/";
-$log_url_directory = $main_url_directory . "logs/";
 
 $cca_write_directory = $rootdir_data . "test_datafiles/";
 $cca_url_directory = $url_root    . "test_datafiles/";

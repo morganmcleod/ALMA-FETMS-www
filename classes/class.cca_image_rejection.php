@@ -267,7 +267,7 @@ class cca_image_rejection extends TestData_header {
             //Call gnuplot
             system("$GNUPLOT $commandfile");
             // save urls in an array
-            $image_url[] = $main_url_directory . "CCA_Image_Rejection/$imagename";
+            $image_url[] = $cca_url_directory . "CCA_Image_Rejection/$imagename";
         }
         //***************************************************
         //Update plot url in TestData_header

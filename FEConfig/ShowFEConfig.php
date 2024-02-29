@@ -54,12 +54,6 @@ $fesn = $fe->SN;
               Warning: This configuration (" . $fe->feconfig->keyId . ") is not the most current configuration ($fe->feconfig_id_latest).
               </font><br>";
         }
-
-        if (isset($_REQUEST['e']) && $_REQUEST['e'] != '') {
-            $errorfile = $log_url_directory . $_REQUEST['e'] . ".txt";
-            echo "<a style='width:90px' class='button redbigrounded'";
-            echo "<span onClick='window.open(" . $errorfile . ")'>ERRORS!<</span></a>";
-        }
         ?>
         <div style='padding-left:20px;padding-top:20px'>
             <div id='toolbar'></div>
