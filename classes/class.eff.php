@@ -95,7 +95,6 @@ class eff {
         $this->specsProvider = new Specifications();
         $this->db_pull = new BeamEffDB(site_getDbConnection());
         $this->basedir = $main_write_directory;
-        $this->url_dir = $main_url_directory;
         $this->ReadyToProcess = 0;
         $this->beameff_exe = $beameff_64;
         $this->GNUPLOT_path = $GNUPLOT;

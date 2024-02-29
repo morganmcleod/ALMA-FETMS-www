@@ -761,7 +761,6 @@ class DataPlotter extends GenericTable {
     public function Plot_CCA_IVCurve() {
         require(site_get_config_main());
         $this->writedirectory = $cca_write_directory;
-        $this->url_directory = $cca_url_directory;
         $TestData_Id = $this->TestDataHeader->keyId;
 
         $TS = $this->TestDataHeader->TS;
@@ -914,7 +913,6 @@ class DataPlotter extends GenericTable {
         $imagedirectory = $this->writedirectory . $filesDir;
         $data_file = $imagedirectory . "wkm_amp_data.txt";
         $plot_command_file = $imagedirectory . "wkm_amp_command_tdh$TestData_Id.txt";
-        $this->url_directory = $filesDir;
 
         // True if this receiver band uses all four IF outputs:
         $is2SB = !($band == 1 || $band == 9 || $band == 10);
@@ -1005,7 +1003,7 @@ class DataPlotter extends GenericTable {
         $fLO = $wsub->GetValue('lo');
 
         $imagename = "WorkmanshipAmplitude_band" . $this->TestDataHeader->Band . "_" . $this->FEcfg . "_" . $TestData_Id . ".png";
-        $image_url = $this->url_directory . "$imagename";
+        $image_url = $filesDir . "$imagename";
         $plot_title = "Workmanship Amplitude, FE" . $this->TestDataHeader->Component->SN
             . " Band " . $this->TestDataHeader->Band
             . ", LO " . $fLO . " GHz";
@@ -1099,7 +1097,6 @@ class DataPlotter extends GenericTable {
         $imagedirectory = $this->writedirectory . $filesDir;
         $data_file = $imagedirectory . "wkm_temp_data.txt";
         $plot_command_file = $imagedirectory . "wkm_temp_command_tdh$TestData_Id.txt";
-        $this->url_directory = $filesDir;
 
         if (!file_exists($imagedirectory)) {
             mkdir($imagedirectory);
@@ -1180,11 +1177,12 @@ class DataPlotter extends GenericTable {
         //Get the measurement LO frequency:
         $fLO = $wsub->GetValue('lo');
 
+        $filesDir = "workmanship/";
         $imagename = "WorkAmpTemperatures_band" . $this->TestDataHeader->Band . "_" . $this->FEcfg . "_" . $TestData_Id . ".png";
         if ($fifteenKStage)
-            $image_url = $this->url_directory . "15K_$imagename";
+            $image_url = $filesDir . "15K_$imagename";
         else
-            $image_url = $this->url_directory . "$imagename";
+            $image_url = $filesDir . "$imagename";
         $plot_title = "Workmanship Temperatures, FE" . $this->TestDataHeader->Component->SN;
         if ($band)
             $plot_title .= " Band $band, LO $fLO GHz";
@@ -1328,9 +1326,10 @@ class DataPlotter extends GenericTable {
 
         //Write command file for gnuplot
         $plot_command_file = $imagedirectory . "wkm_phase_command_tdh$TestData_Id.txt.txt";
-
+        
+        $filesDir = "workmanship/";
         $imagename = "WorkmanshipPhase_band" . $this->TestDataHeader->Band . "_" . $this->FEcfg . "_" . $this->TestDataHeader->keyId . ".png";
-        $image_url = $this->url_directory . "workmanship/$imagename";
+        $image_url = $filesDir . $imagename;
         $this->TestDataHeader->PlotURL = $image_url;
         $this->TestDataHeader->Update();
 
@@ -1477,7 +1476,6 @@ class DataPlotter extends GenericTable {
         require(site_get_config_main());
 
         $td_header = $this->TestDataHeader->keyId;
-        $this->url_directory = "FE_" . $this->FESN . "/";
         $this->writedirectory = $main_write_directory  . "FE_" . $this->FESN . "/";
         if (!file_exists($this->writedirectory)) {
             mkdir($this->writedirectory);

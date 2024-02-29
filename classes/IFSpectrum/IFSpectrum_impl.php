@@ -107,7 +107,6 @@ class IFSpectrum_impl extends TestData_header {
         $this->plotter = new IFSpectrum_plot();
         $this->GNUPLOT_path = $GNUPLOT;
         $this->writedirectory = $main_write_directory;
-        $this->url_directory = $main_url_directory;
         $this->aborted = FALSE;
         $this->debugRawDataFiles = FALSE;
     }
