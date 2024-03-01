@@ -2,6 +2,7 @@
 require_once(dirname(__FILE__) . '/../SiteConfig.php');
 require_once($site_classes . '/class.generictable.php');
 require_once($site_classes . '/class.fecomponent.php');
+require_once($site_classes . '/class.testdata_header.php');
 require_once($site_classes . '/class.tempsensor.php');
 require_once($site_classes . '/xlreader/reader.php');
 require_once($site_dbConnect);

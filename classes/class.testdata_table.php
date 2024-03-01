@@ -40,7 +40,7 @@ class TestDataTable {
         return ($this->keyFrontEnd) ? "FE Config" : "Config";
     }
 
-    public function DisplayAllMatching() {
+    public function DisplayAllMatching($filterArchived = true) {
         /*
          * 2018-09-07 MM Can now fetch test data for band "0" for display on the Components tab.
          * 2017-08-30 MM separated grouping, link, and text generation into helper groupHeaders()
@@ -50,7 +50,7 @@ class TestDataTable {
          */
 
         // Fetch TDH records matching the FE_Config or FE_Component for this band:
-        $r = $this->fetchTestDataHeaders();
+        $r = $this->fetchTestDataHeaders($filterArchived);
         $headers = $this->groupHeaders($r);
 
         // config column label:
@@ -183,7 +183,7 @@ class TestDataTable {
         return $outputArray;
     }
 
-    public function fetchTestDataHeaders($selectedOnly = false) {
+    public function fetchTestDataHeaders($filterArchived = false) {
         // Filter on data status depending on whether this is FE data or component data, and FETMS_CCA_MODE:
         //"1"   "Cold PAS"
         //"2"   "Warm PAS"
@@ -192,14 +192,30 @@ class TestDataTable {
         //"7"	"Cartridge PAI"   = data which is delivered with a CCA or WCA
 
         $dataStatus = '()';
-        if ($this->keyFrontEnd) $dataStatus = '(3)';
-        else if ($this->Band == 0) $dataStatus = '(1, 7)';
-        else $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
+        if ($this->keyFrontEnd) {
+            if ($filterArchived) {
+                $dataStatus = '(3)';
+            } else {
+                $dataStatus = '(3, 103)';
+            }
+        } else if ($this->Band == 0) {
+            if ($filterArchived) {
+                $dataStatus = '(1, 7)';
+            } else {
+                $dataStatus = '(1, 7, 101, 107)';
+            }
+        } else {
+            if ($filterArchived) {
+                $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
+            } else {
+                $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7, 101, 102, 103, 104, 107)' : '(7, 107)';
+            }
+        }
 
-        return $this->fetchData($dataStatus, $selectedOnly);
+        return $this->fetchData($dataStatus, $filterArchived);
     }
 
-    private function fetchData($dataStatus, $selectedOnly) {
+    private function fetchData($dataStatus) {
         // Left-hand (LH) table for join is either FE_Config or FE_Components
         $lhTable = ($this->keyFrontEnd) ? "FE_Config" : "FE_Components";
 
@@ -224,10 +240,6 @@ class TestDataTable {
              FROM $lhTable as LH, TestData_header as TDH, TestData_Types, DataStatus
              WHERE TDH.Band like '$likeBand'
              AND TDH.fkDataStatus IN $dataStatus";
-
-        // Filtered for UseForPAI, aka 'selected'.
-        if ($selectedOnly)
-            $q .= " AND TDH.UseForPAI <> 0";
 
         // Either matching keyFrontEnd or a particular Component serial number...
         if ($this->keyFrontEnd)

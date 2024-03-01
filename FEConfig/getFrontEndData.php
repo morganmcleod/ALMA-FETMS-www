@@ -9,6 +9,7 @@ require_once($site_dbConnect);
 $band = $_POST['band'];
 $feConfig = $_POST['key'];
 $facility = $_REQUEST['fc'];
+$filterArchived = filter_var($_REQUEST['hidden'], FILTER_VALIDATE_BOOLEAN);
 
 $fe = new FrontEnd(NULL, $facility, FrontEnd::INIT_NONE, $feConfig);
 $fc   = $fe->keyFacility;
@@ -72,7 +73,7 @@ if ($band == 100) {
     // For all bands, including band "0" show PAI data:
     $td = new TestDataTable($band);
     $td->setFrontEnd($fe->keyId);
-    $td->DisplayAllMatching();
+    $td->DisplayAllMatching($filterArchived);
     unset($td);
 }
 

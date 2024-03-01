@@ -10,9 +10,27 @@
  * @param bpstatus
  * @returns
  */
-function createBPTabs(fc, id, band, bpstatus, popupCallback) {
+function createBPTabs(fc, id, band, bpstatus, datastatus, popupCallback) {
     var buttontext = '';
     var pointingOption = 'nominal';
+    var archive_opt = {};
+    if (datastatus > 100) {
+        archive_opt = {
+            text: '<span style="font-weight:bold;">Unarchive Test</span>',
+            icon: '../icons/folder_explore.png',
+            handler: function () {
+                window.location = '../testdata/updateArchiveStatus.php?fc=' + fc + '&keyheader=' + id + '&archive=false';
+            }
+        };
+    } else {
+        archive_opt = {
+            text: '<span style="font-weight:bold;">Archive Test</span>',
+            icon: '../icons/folder_explore.png',
+            handler: function () {
+                window.location = '../testdata/updateArchiveStatus.php?fc=' + fc + '&keyheader=' + id + '&archive=true';
+            }
+        }
+    }
 
     //The "Generate Plots" button will have different text based on the current status.
     if (bpstatus == 1) {
@@ -26,7 +44,7 @@ function createBPTabs(fc, id, band, bpstatus, popupCallback) {
         buttontext = 'Generate Plots And Data (Not Ready to Process)';
     } else if (bpstatus == 4) {
         //Two scans are complete, ready to process.
-        buttontext = 'Generate Plots And Data (Two Scans Ready)';       
+        buttontext = 'Generate Plots And Data (Two Scans Ready)';
     }
 
     //This toolbar contains the button for generating plots and efficiency data.
@@ -83,7 +101,7 @@ function createBPTabs(fc, id, band, bpstatus, popupCallback) {
                 handler: function () {
                     window.location = 'bp_pdf.php?drawplot=1&keyheader=' + id + '&fc=' + fc;
                 }
-            }
+            }, archive_opt
         ]
     });
 

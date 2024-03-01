@@ -29,6 +29,7 @@ class TestData_header extends GenericTable {
     public $Meas_SWVer;
     public $Plot_SWVer;
     public $UseForPAI;
+    public $Updated_At;
 
     // Foreign data
     public $testDataType;
@@ -108,9 +109,24 @@ class TestData_header extends GenericTable {
         return str_replace("'", "", $textBefore . $this->fetms);
     }
 
+    public function changeArchiveStatus($archive = false) {
+        $currentStatus = (int)$this->fkDataStatus;
+        $dataType = $currentStatus % 100;
+        if ($archive) {
+            $this->fkDataStatus = $dataType + 100;
+        } else {
+            $this->fkDataStatus = $dataType;
+        }
+        if($currentStatus != (int)$this->fkDataStatus){
+            $this->Updated_At = date('Y-m-d H:i:s');
+        }
+        $this->Update();
+    }
+
     public function displayTestDataButtons() {
         $showrawurl = "testdata.php?showrawdata=1&keyheader={$this->keyId}&fc={$this->fc}";
         $drawurl = "testdata.php?drawplot=1&keyheader={$this->keyId}&fc={$this->fc}";
+        $changearchivestatus = "updateArchiveStatus.php?keyheader={$this->keyId}&fc={$this->fc}";
         $exportcsvurl = "export_to_csv.php?keyheader={$this->keyId}&fc={$this->fc}";
         if ($this->frontEnd) {
             $fesn = $this->frontEnd->SN;
@@ -193,6 +209,26 @@ class TestData_header extends GenericTable {
                         </tr>";
                 }
                 break;
+        }
+        $dataStatus = (int)$this->fkDataStatus;
+        if ($dataStatus < 100) {
+            $changearchivestatus .= '&archive=true';
+            echo "
+                <tr>
+                    <td>
+                    <a style='width:100px' href='$changearchivestatus' class='button blue2 biground'>
+                    <span style='width:90px'>Archive Test</span></a>
+                    </td>
+                </tr>";
+        } else {
+            $changearchivestatus .= '&archive=false';
+            echo "
+                <tr>
+                    <td>
+                    <a style='width:100px' href='$changearchivestatus' class='button blue2 biground'>
+                    <span style='width:90px'>Unarchive Test</span></a>
+                    </td>
+                </tr>";
         }
         echo "</table>";
     }
@@ -411,7 +447,7 @@ class TestData_header extends GenericTable {
         if ($showPlots) {
             global $site_storage;
             $urlarray = explode(",", $this->PlotURL);
-            for ($i = 0; $i < count($urlarray); $i) {
+            for ($i = 0; $i < count($urlarray); $i++) {
                 if ($urlarray[$i]) {
                     if (count($urlarray) == 1)
                         $html[0] .= "<div class='ploturlunique'><img src='" . $site_storage . $urlarray[$i] . "'></div>";
