@@ -141,7 +141,7 @@ function showsubform(keyFE, fc) {
 				})
 				,proxy:new Ext.data.HttpProxy({url:this.url})
 				,baseParams:{cmd:'getData', objName:'tableFE_Components', key:keyFE, innerJoin:0}
-				,remoteSort:true
+				,remoteSort:false
 				,listeners:{
 					load:{scope:this, fn:function(store) {
 						// keep modified records across paging
@@ -165,7 +165,7 @@ function showsubform(keyFE, fc) {
 					   	,dataIndex:'Description'
                         ,id:'description'
 						,width:270
-						,sortable:false
+						,sortable:true
 						,editor:this.comboDesc
 						,editable:true
 						
@@ -173,7 +173,7 @@ function showsubform(keyFE, fc) {
 						 header:'Band'
 						,dataIndex:'Band'
 						,width:100
-						,sortable:false
+						,sortable:true
 						,align:'center'
 						
 						,editor:this.comboBand
@@ -185,7 +185,7 @@ function showsubform(keyFE, fc) {
 							,queryMode:'local'
 								,typeAhead:true
 						,width:100
-						,sortable:false
+						,sortable:true
 						,align:'center'
 						,editor:this.comboSN
 						,editable:true
