@@ -192,7 +192,7 @@ class TestDataTable {
         //"7"	"Cartridge PAI"   = data which is delivered with a CCA or WCA
 
         $dataStatus = '()';
-        if ($this->keyFrontEnd) $dataStatus = '(3)';
+        if ($this->keyFrontEnd) $dataStatus = '(1, 3)';
         else if ($this->Band == 0) $dataStatus = '(1, 7)';
         else $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7)' : '(7)';
 

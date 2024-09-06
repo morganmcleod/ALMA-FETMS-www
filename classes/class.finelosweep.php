@@ -208,7 +208,6 @@ class FineLOSweep extends TestData_header {
             //***************************************************
             $image_url = "flosweep/$imagename";
 
-
             $this->FLOSweepSubHeader[$cnt]->ploturl1 = $image_url;
             $this->FLOSweepSubHeader[$cnt]->Update();
             $this->sendImage($imagepath);
