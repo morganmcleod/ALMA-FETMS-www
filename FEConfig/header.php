@@ -57,5 +57,5 @@ $bugsTo = "http://jira.alma.cl/browse/FETMS/";
     </div>
 </div>
 <?php
-site_warnProductionDb($dbname);
+site_warnProductionDb($dbname, $dbserver, $port);
 ?>
