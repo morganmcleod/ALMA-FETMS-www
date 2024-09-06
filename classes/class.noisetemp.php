@@ -145,7 +145,7 @@ class NoiseTemperature extends TestData_header {
                 'token' => getenv("STORAGE_TOKEN")
             )
         ));
-        curl_exec($ch);
+        $asdf = curl_exec($ch);
         unlink($imagepath);
     }
 

@@ -211,7 +211,6 @@ class TestDataTable {
                 $dataStatus = ($this->FETMS_CCA_MODE) ? '(1, 2, 3, 4, 7, 101, 102, 103, 104, 107)' : '(7, 107)';
             }
         }
-
         return $this->fetchData($dataStatus, $filterArchived);
     }
 
