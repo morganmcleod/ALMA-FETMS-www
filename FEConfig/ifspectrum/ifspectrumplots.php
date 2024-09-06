@@ -35,6 +35,7 @@
     if ($TDHid) {
         $tdh = new TestData_header($TDHid, $fc);
         $feconfig = $tdh->fkFE_Config;
+        $datastatus = (int)$tdh->fkDataStatus;
     }
 
     $fesn = $ifspec->frontEnd->SN;
@@ -62,13 +63,13 @@
 
         /* end the forced redirect and continue with this script process */
         ignore_user_abort(true);
-    
+
         // Do the work of generating plots:
         $ifspec->GeneratePlots();
-    
+
         // wait a bit before deleting the progress file:
         sleep(20);
-    
+
         $ifspec->DeleteProgressFile();
         exit();
     }
@@ -86,7 +87,7 @@
             function popupCallback() {
                 popupMoveToOtherFE('FE-$fesn', \"$url_root\", [$tdhIdArray]);
             }
-            createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band, popupCallback);
+            createIFSpectrumTabs($fc, $TDHid, $FEid, $dataSetGroup, $band, $datastatus, popupCallback);
         });</script>";
 
     ?>

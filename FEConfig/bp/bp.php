@@ -31,6 +31,7 @@
 
     // Make a TestData_header record object for the FC and header id:
     $tdh = new TestData_header($headerKeyId, $fc);
+    $datastatus = (int)$tdh->fkDataStatus;
 
     // if the HTML request includes a Notes parameter call the TestDataHeader method to write those notes back to the database:
     // The 'SAVE' button under the notes window reloads this page with the notes text included in the URL.
@@ -106,7 +107,7 @@
 		    function popupCallback() {
 		        popupMoveToOtherFE('FE-$fesn', \"$url_root\", [$tdh->keyId]);
 		    }
-		    createBPTabs($fc, $headerKeyId, $band, $bpstatus, popupCallback)
+		    createBPTabs($fc, $headerKeyId, $band, $bpstatus, $datastatus, popupCallback)
         });</script>";
 
     // HTML code below are the targets for javaScript loaded from onload=createBPTabs() above.

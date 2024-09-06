@@ -18,6 +18,14 @@ $bugsTo = "http://jira.alma.cl/browse/FETMS/";
                 echo $title;
                 ?>
             </span>
+            <?php
+            if (isset($datastatus)) {
+                if ((int)$datastatus > 200)
+                    echo "<span style='font-size: 1em;color:red;font-weight:bold'>This test will be deleted</span>";
+                else if ((int)$datastatus > 100)
+                    echo "<span style='font-size: 1em;color:red;font-weight:bold'>This test is archived</span>";
+            }
+            ?>
         </h1>
         <div class="menu_nav">
             <table>
@@ -49,5 +57,5 @@ $bugsTo = "http://jira.alma.cl/browse/FETMS/";
     </div>
 </div>
 <?php
-site_warnProductionDb($dbname);
+site_warnProductionDb($dbname, $dbserver, $port);
 ?>

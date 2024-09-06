@@ -1113,40 +1113,38 @@ class CCA extends FEComponent {
             }
         }
 
-        if ($this->UploadTF == 1) {
-            if ($this->file_AMPLITUDESTABILITY != "") {
-                $this->Upload_AmplitudeStability();
-            }
-            if ($this->file_GAIN_COMPRESSION != "") {
-                $this->Upload_GainCompression();
-            }
-            if ($this->file_POLACCURACY != "") {
-                $this->Upload_PolAccuracy();
-            }
-            if ($this->file_INBANDPOWER != "") {
-                $this->Upload_InBandPower();
-            }
-            if ($this->file_TOTALPOWER != "") {
-                $this->Upload_TotalPower();
-            }
-            if ($this->file_SIDEBANDRATIO != "") {
-                $this->Upload_SidebandRatio();
-            }
-            if ($this->file_IVCURVE != "") {
-                $this->Upload_IVCurve();
-            }
-            if ($this->file_POWERVARIATION != "") {
-                $this->Upload_PowerVariation();
-            }
-            if ($this->file_IFSPECTRUM != "") {
-                $this->Upload_IFSpectrum();
-            }
-            if ($this->file_NOISETEMPERATURE != "") {
-                $this->Upload_NoiseTemperature();
-            }
-            if ($this->file_PHASE_DRIFT != "") {
-                $this->Upload_PhaseDrift();
-            }
+        if ($this->file_AMPLITUDESTABILITY != "") {
+            $this->Upload_AmplitudeStability();
+        }
+        if ($this->file_GAIN_COMPRESSION != "") {
+            $this->Upload_GainCompression();
+        }
+        if ($this->file_POLACCURACY != "") {
+            $this->Upload_PolAccuracy();
+        }
+        if ($this->file_INBANDPOWER != "") {
+            $this->Upload_InBandPower();
+        }
+        if ($this->file_TOTALPOWER != "") {
+            $this->Upload_TotalPower();
+        }
+        if ($this->file_SIDEBANDRATIO != "") {
+            $this->Upload_SidebandRatio();
+        }
+        if ($this->file_IVCURVE != "") {
+            $this->Upload_IVCurve();
+        }
+        if ($this->file_POWERVARIATION != "") {
+            $this->Upload_PowerVariation();
+        }
+        if ($this->file_IFSPECTRUM != "") {
+            $this->Upload_IFSpectrum();
+        }
+        if ($this->file_NOISETEMPERATURE != "") {
+            $this->Upload_NoiseTemperature();
+        }
+        if ($this->file_PHASE_DRIFT != "") {
+            $this->Upload_PhaseDrift();
         }
     }
 

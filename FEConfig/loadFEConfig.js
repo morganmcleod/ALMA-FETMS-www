@@ -1,4 +1,4 @@
-function createtabs(keyfe, fesn, fc, fe_id) {
+function createtabs(keyfe, fesn, fc, filterArchived) {
 
     // called from ShowFEConfig.php
     var tabs = new Ext.TabPanel({
@@ -17,11 +17,34 @@ function createtabs(keyfe, fesn, fc, fe_id) {
                 params: {
                     band: '100',
                     key: keyfe,
-                    fc: fc
+                    fc: fc,
+                    hidden: filterArchived
                 }
             }
         }]
     });
+
+    if (filterArchived) {
+        hidden_opt = {
+            xtype: 'tbbutton',
+            text: 'Show Archived Tests',
+            icon: 'icons/folder_explore.png',
+            style: 'margin: 1px;',
+            handler: function () {
+                window.location = 'ShowFEConfig.php?key=' + keyfe + '&fc=40&hidden=false';
+            }
+        };
+    } else {
+        hidden_opt = {
+            xtype: 'tbbutton',
+            text: 'Hide Archived Tests',
+            icon: 'icons/folder_explore.png',
+            style: 'margin: 1px;',
+            handler: function () {
+                window.location = 'ShowFEConfig.php?key=' + keyfe + '&fc=40';
+            }
+        };
+    }
 
     new Ext.Toolbar({
         width: 1000,
@@ -58,7 +81,9 @@ function createtabs(keyfe, fesn, fc, fe_id) {
                     window.location = 'export_to_ini.php?all=1&keyId='
                         + keyfe + '&fc=' + fc;
                 }
-            }]
+            },
+            hidden_opt
+        ]
     });
 
     // for components with band 0 or null
@@ -69,7 +94,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: 'other',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -81,7 +107,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '1',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -92,7 +119,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '2',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -103,7 +131,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '3',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -114,7 +143,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '4',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -125,7 +155,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '5',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -136,7 +167,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '6',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -147,7 +179,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '7',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -158,7 +191,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '8',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -169,7 +203,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '9',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });
@@ -180,7 +215,8 @@ function createtabs(keyfe, fesn, fc, fe_id) {
             params: {
                 band: '10',
                 key: keyfe,
-                fc: fc
+                fc: fc,
+                hidden: filterArchived
             }
         }
     });

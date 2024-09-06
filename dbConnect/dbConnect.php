@@ -6,7 +6,12 @@ switch ($_SERVER['SERVER_NAME']) {
     case getenv('PHP_HOSTNAME'):
     case "localhost":
         // database credentials are kept in the /conf/ directory, not in the webserver document root:
-        include("/home/fetms/conf/fetms-dbConnect.php");
+        // include("/home/fetms/conf/fetms-dbConnect.php");
+        $dbname     = 'fetms';
+        $dbserver   = 'host.docker.internal';
+        $port       = 33306;
+        $dbusername = 'fetms';
+        $dbpassword = 'DhFNC6D3@8uE7X!';
         break;
 
     case "fetms-rhel8.osf.alma.cl":
@@ -39,7 +44,7 @@ switch ($_SERVER['SERVER_NAME']) {
         die("Unknown database credentials for server'" . $_SERVER['SERVER_NAME'] . "'");
 }
 
-$dbConnection = mysqli_connect($dbserver, $dbusername, $dbpassword);
+$dbConnection = mysqli_connect($dbserver, $dbusername, $dbpassword, $dbname, $port);
 if (!$dbConnection) {
     echo "<font size='+2' color='#ff0000' face='serif'><h><b>";
     die('Could not connect to MySQL: ' . ((is_object($GLOBALS["___mysqli_ston"])) ? mysqli_error($GLOBALS["___mysqli_ston"]) : (($___mysqli_res = mysqli_connect_error()) ? $___mysqli_res : false)));
@@ -62,14 +67,14 @@ function site_getDbConnection() {
     return $dbConnection;
 }
 
-function site_warnProductionDb($dbname) {
+function site_warnProductionDb($dbname, $dbserver, $port) {
     $server = $_SERVER['SERVER_NAME'];
     if (
-        $server == 'localhost' || $server == 'junco' ||
+        $server == 'localhost' || $server == 'erl13' ||
         $server == 'webtest.cv.nrao.edu' || $server == 'webtest2.cv.nrao.edu'
     ) {
         echo "<font size='+2' color='#ff0000' face='serif'><h><b>
-        On $server using database $dbname
+        On $server using database $dbname on host $dbserver:$port
         </b></h></font>";
     }
 }
