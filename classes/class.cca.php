@@ -80,9 +80,10 @@ class CCA extends FEComponent {
         $this->fc = $in_fc;
         parent::__construct(NULL, $in_keyId, NULL, $this->fc);
         $this->fkDataStatus = '7';
-        $this->swversion = "1.0.19";
+        $this->swversion = "1.0.20";
 
         /*
+         * 1.0.20 GetXmlFileContent() don't include VGs in output.  Also remove VGs from most functions.
          * 1.0.19 Fix GetXmlFileContent() to comply with /alma/ste/config/TMCDB_DATA/ for Cycle 8
          * 1.0.18 Add GetXmlFileContent() with support for band 1 and 2.
          * 1.0.17 Fix query in Upload_CCAs_file()
@@ -414,7 +415,7 @@ class CCA extends FEComponent {
         }
         $xw->endElement();
 
-        if ($band > 2) {
+        if ($band > 2 && $this->MixerParams) {
             for ($i = 0; $i  < (count($this->MixerParams)); $i++) {
                 $xw->startElement("MixerParams");
                 $xw->writeAttribute("FreqLO", number_format($this->MixerParams[$i]->lo, 3) . "E9");
@@ -468,8 +469,6 @@ class CCA extends FEComponent {
                     $xw->writeAttribute("VD$st", number_format($this->PreampParams[$i]->{"VD$st"}, 2));
                 for ($st = 1; $st <= 3; $st++)
                     $xw->writeAttribute("ID$st", number_format($this->PreampParams[$i]->{"ID$st"}, 3));
-                for ($st = 1; $st <= 3; $st++)
-                    $xw->writeAttribute("VG$st", number_format($this->PreampParams[$i]->{"VG$st"}, 2));
                 $xw->endElement();
             }
         } else {
@@ -691,9 +690,6 @@ class CCA extends FEComponent {
                         <th>ID1</th>
                         <th>ID2</th>
                         <th>ID3</th>
-                        <th>VG1</th>
-                        <th>VG2</th>
-                        <th>VG3</th>
                         </tr>";
                     }
                     $lastPol = $pol;
@@ -709,9 +705,6 @@ class CCA extends FEComponent {
                     <td>" . $paramRow->ID1 . "</td>
                     <td>" . $paramRow->ID2 . "</td>
                     <td>" . $paramRow->ID3 . "</td>
-                    <td>" . $paramRow->VG1 . "</td>
-                    <td>" . $paramRow->VG2 . "</td>
-                    <td>" . $paramRow->VG3 . "</td>
                     </tr>";
                     $found++;
                 }
@@ -2281,9 +2274,9 @@ class CCA extends FEComponent {
                 $this->PreampParams[$i]->ID1 = (string) $param['ID1'];
                 $this->PreampParams[$i]->ID2 = (string) $param['ID2'];
                 $this->PreampParams[$i]->ID3 = (string) $param['ID3'];
-                $this->PreampParams[$i]->VG1 = (string) $param['VG1'];
-                $this->PreampParams[$i]->VG2 = (string) $param['VG2'];
-                $this->PreampParams[$i]->VG3 = (string) $param['VG3'];
+                $this->PreampParams[$i]->VG1 = (string) 0;
+                $this->PreampParams[$i]->VG2 = (string) 0;
+                $this->PreampParams[$i]->VG3 = (string) 0;
                 $this->PreampParams[$i]->Update();
                 $i++;
             }
@@ -2299,9 +2292,9 @@ class CCA extends FEComponent {
                 $this->PreampParams[$i]->ID1 = (string) $param['ID1'];
                 $this->PreampParams[$i]->ID2 = (string) $param['ID2'];
                 $this->PreampParams[$i]->ID3 = (string) $param['ID3'];
-                $this->PreampParams[$i]->VG1 = (string) $param['VG1'];
-                $this->PreampParams[$i]->VG2 = (string) $param['VG2'];
-                $this->PreampParams[$i]->VG3 = (string) $param['VG3'];
+                $this->PreampParams[$i]->VG1 = (string) 0;
+                $this->PreampParams[$i]->VG2 = (string) 0;
+                $this->PreampParams[$i]->VG3 = (string) 0;
                 $this->PreampParams[$i]->Update();
                 $i++;
             }
@@ -2317,9 +2310,9 @@ class CCA extends FEComponent {
                 $this->PreampParams[$i]->ID1 = (string) $param['ID1'];
                 $this->PreampParams[$i]->ID2 = (string) $param['ID2'];
                 $this->PreampParams[$i]->ID3 = (string) $param['ID3'];
-                $this->PreampParams[$i]->VG1 = (string) $param['VG1'];
-                $this->PreampParams[$i]->VG2 = (string) $param['VG2'];
-                $this->PreampParams[$i]->VG3 = (string) $param['VG3'];
+                $this->PreampParams[$i]->VG1 = (string) 0;
+                $this->PreampParams[$i]->VG2 = (string) 0;
+                $this->PreampParams[$i]->VG3 = (string) 0;
                 $this->PreampParams[$i]->Update();
                 $i++;
             }
@@ -2335,9 +2328,9 @@ class CCA extends FEComponent {
                 $this->PreampParams[$i]->ID1 = (string) $param['ID1'];
                 $this->PreampParams[$i]->ID2 = (string) $param['ID2'];
                 $this->PreampParams[$i]->ID3 = (string) $param['ID3'];
-                $this->PreampParams[$i]->VG1 = (string) $param['VG1'];
-                $this->PreampParams[$i]->VG2 = (string) $param['VG2'];
-                $this->PreampParams[$i]->VG3 = (string) $param['VG3'];
+                $this->PreampParams[$i]->VG1 = (string) 0;
+                $this->PreampParams[$i]->VG2 = (string) 0;
+                $this->PreampParams[$i]->VG3 = (string) 0;
                 $this->PreampParams[$i]->Update();
                 $i++;
             }
@@ -2473,9 +2466,6 @@ class CCA extends FEComponent {
                             <th>ID1</th>
                             <th>ID2</th>
                             <th>ID3</th>
-                            <th>VG1</th>
-                            <th>VG2</th>
-                            <th>VG3</th>
                           </tr>";
                     $count = 0;
                     for ($i = 0; $i < count($this->PreampParams); $i++) {
@@ -2498,9 +2488,6 @@ class CCA extends FEComponent {
                             <td><input name = 'PreampID1_$i' size = '5' value = '{$this->PreampParams[$i]->ID1}'></input></td>
                             <td><input name = 'PreampID2_$i' size = '5' value = '{$this->PreampParams[$i]->ID2}'></input></td>
                             <td><input name = 'PreampID3_$i' size = '5' value = '{$this->PreampParams[$i]->ID3}'></input></td>
-                            <td><input name = 'PreampVG1_$i' size = '5' value = '{$this->PreampParams[$i]->VG1}'></input></td>
-                            <td><input name = 'PreampVG2_$i' size = '5' value = '{$this->PreampParams[$i]->VG2}'></input></td>
-                            <td><input name = 'PreampVG3_$i' size = '5' value = '{$this->PreampParams[$i]->VG3}'></input></td>
                         </tr>";
                             $count += 1;
                         }
@@ -2598,9 +2585,9 @@ class CCA extends FEComponent {
                 $this->PreampParams[$i]->ID1 = $_REQUEST["PreampID1_$i"];
                 $this->PreampParams[$i]->ID2 = $_REQUEST["PreampID2_$i"];
                 $this->PreampParams[$i]->ID3 = $_REQUEST["PreampID3_$i"];
-                $this->PreampParams[$i]->VG1 = $_REQUEST["PreampVG1_$i"];
-                $this->PreampParams[$i]->VG2 = $_REQUEST["PreampVG2_$i"];
-                $this->PreampParams[$i]->VG3 = $_REQUEST["PreampVG3_$i"];
+                $this->PreampParams[$i]->VG1 = (string) 0;
+                $this->PreampParams[$i]->VG2 = (string) 0;
+                $this->PreampParams[$i]->VG3 = (string) 0;
             }
             $this->PreampParams[$i]->fkFE_Components = $this->keyId;
             $this->PreampParams[$i]->Update();

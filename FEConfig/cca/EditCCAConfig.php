@@ -64,7 +64,7 @@ echo "
     <div id='sidebar2' >
         <table>
             <tr><td>
-            <input type='submit' name='submit' class='button blue2 bigrounded value = 'Submit' style='width:120px'>
+            <input type='submit' name='submit' class='button blue2 bigrounded' value = 'Submit' style='width:120px'>
             <br>
             </td></tr>
 
