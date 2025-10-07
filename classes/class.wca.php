@@ -1529,7 +1529,7 @@ class WCA extends FEComponent {
                 fwrite($fh, "set yrange [:$ymax]\r\n");
                 fwrite($fh, "set format y \"%.2e\"\r\n");
 
-                fwrite($fh, "f1(x)=((x>500) && (x<100000)) ? 0.00000009 : 1/0\r\n");
+                fwrite($fh, "f1(x)=((x>50) && (x<100000)) ? 0.00000009 : 1/0\r\n");
                 fwrite($fh, "f2(x)=((x>290000) && (x<350000)) ? 0.000001 : 1/0\r\n");
                 $plot_string = "plot f1(x) title 'Spec' with lines lw 3";
                 $plot_string .= ", f2(x) title 'Spec' with points pt 5 pointsize 1";
@@ -2598,3 +2598,4 @@ class WCA extends FEComponent {
         echo '<meta http-equiv="Refresh" content="1;url=export_to_csv.php?keyId=' . $this->keyId . '&datatype=' . $datatype . '">';
     }
 }
+
