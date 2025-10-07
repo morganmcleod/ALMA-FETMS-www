@@ -6,12 +6,7 @@ switch ($_SERVER['SERVER_NAME']) {
     case getenv('PHP_HOSTNAME'):
     case "localhost":
         // database credentials are kept in the /conf/ directory, not in the webserver document root:
-        // include("/home/fetms/conf/fetms-dbConnect.php");
-        $dbname     = 'fetms';
-        $dbserver   = 'host.docker.internal';
-        $port       = 33306;
-        $dbusername = 'fetms';
-        $dbpassword = 'DhFNC6D3@8uE7X!';
+        include("/home/fetms/conf/fetms-dbConnect.php");
         break;
 
     case "fetms-rhel8.osf.alma.cl":
@@ -89,3 +84,4 @@ function ADAPT_mysqli_result($res, $row, $field = 0) {
 }
 
 ?>
+
