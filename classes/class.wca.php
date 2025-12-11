@@ -46,8 +46,9 @@ class WCA extends FEComponent {
         $this->fc = $in_fc;
         parent::__construct(NULL, $in_keyId, NULL, $in_fc);
         $this->fkDataStatus = '7';
-        $this->swversion = "1.3.12";
-        /* 1.3.12 Fix date stamps on WCA plots
+        $this->swversion = "1.3.13";
+        /* 1.3.13 Add support for Teledyne PA data entry and XML, INI download 
+         * 1.3.12 Fix date stamps on WCA plots
          * 1.3.11 Add LO PA VG settings to WCA max output power vs. frequency plot.
          * 1.3.10 Re-enable saving basic parameters from wca.php:  ESN, YIG low, YIG high, VG0, VG1
          *        Make Band and SN entry fields read-only.   Remove Notes entry field (wasn't working anyway.)
@@ -1083,10 +1084,11 @@ class WCA extends FEComponent {
         if (isset($_REQUEST['VG1'])) {
             $this->_WCAs->VG1 = $_REQUEST['VG1'];
         }
-        if (isset($_REQUEST['has_teledyne_pa']) && $_REQUEST['has_teledyne_pa'] == "on") {
-            $this->_WCAs->HasTeledynePA = true;
-        } else {
-            $this->_WCAs->HasTeledynePA = false;
+        if (isset($_REQUEST['has_teledyne_pa'])) {
+            if ($_REQUEST['has_teledyne_pa'] == "on")
+                $this->_WCAs->HasTeledynePA = true;
+            else
+                $this->_WCAs->HasTeledynePA = false;
         }
 
         if (isset($_REQUEST['submit_datafile'])) {
