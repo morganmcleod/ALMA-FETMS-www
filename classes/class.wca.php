@@ -354,7 +354,7 @@ class WCA extends FEComponent {
         echo "</td></table></div>";
     }
     public function DisplayMainData() {
-        echo "<div style = 'width: 300px;margin-top:20px'>";
+        echo "<div style = 'width: 320px;margin-top:20px'>";
         echo "<table id = 'table1'>";
 
         $ts = $this->TS;
@@ -364,35 +364,61 @@ class WCA extends FEComponent {
         echo "<td><font size='-1'>$ts</font></td></tr>";
         echo "<tr>";
         echo "<th>Band</th>";
-        echo "<td><input type='text' name='Band' size='2' maxlength='200' disabled value = '" . $this->Band . "'></td>";
+        echo "<td><input type='text' name='Band' size='2' maxlength='200' disabled value = '" . $this->Band . "'/></td>";
         echo "</tr>";
         echo "<tr>";
         echo "<th>SN</th>";
-        echo "<td><input type='text' name='SN' size='2' maxlength='200' disabled value = '" . $this->SN . "'></td>";
+        echo "<td><input type='text' name='SN' size='2' maxlength='200' disabled value = '" . $this->SN . "'/></td>";
         echo "</tr>";
         echo "<tr>";
         echo "<th>ESN</th>";
-        echo "<td><input type='text' name='ESN1' size='20' maxlength='200' value = '" . $this->ESN1 . "'></td>";
+        echo "<td><input type='text' name='ESN1' size='20' maxlength='200' value = '" . $this->ESN1 . "'/></td>";
         echo "</tr>";
 
         echo "<tr>";
         echo "<th>YIG LOW (GHz)</th>";
-        echo "<td><input type='text' name='FloYIG' size='5' maxlength='200' value = '" . $this->_WCAs->FloYIG . "'></td>";
+        echo "<td><input type='text' name='FloYIG' size='5' maxlength='200' value = '" . $this->_WCAs->FloYIG . "'/></td>";
         echo "</tr>";
 
         echo "<tr>";
         echo "<th>YIG HIGH (GHz)</th>";
-        echo "<td><input type='text' name='FhiYIG' size='5' maxlength='200' value = '" . $this->_WCAs->FhiYIG . "'></td>";
+        echo "<td><input type='text' name='FhiYIG' size='5' maxlength='200' value = '" . $this->_WCAs->FhiYIG . "'/></td>";
         echo "</tr>";
 
-        echo "<tr>";
-        echo "<th>VG0</th>";
-        echo "<td><input type='text' name='VG0' size='5' maxlength='200' value = '" . $this->_WCAs->VG0 . "'></td>";
-        echo "</tr>";
-        echo "<tr>";
-        echo "<th>VG1</th>";
-        echo "<td><input type='text' name='VG1' size='5' maxlength='200' value = '" . $this->_WCAs->VG1 . "'></td>";
-        echo "</tr>";
+        if ($this->Band == 7) {
+            echo "<tr>";
+            echo "<th>Teledyne PA</th>";
+            echo "<td><input type='checkbox' id='has_teledyne_checkbox' name='has_teledyne_pa'/></tr>";
+            
+            // workaround for Firefox doesn't honor the 'checked' attribute of input checkbox:
+            echo "<script type='text/javascript'> document.getElementById('has_teledyne_checkbox').checked = ";
+            if (boolval($this->_WCAs->HasTeledynePA))
+                echo "true";
+            else
+                echo "false";
+            echo "</script>";
+        }
+        if (boolval($this->_WCAs->HasTeledynePA)) {
+            echo "<tr>";
+            echo "<th>CollectorP0</th>";
+            echo "<td><input type='text' name='VG0' size='5' maxlength='200' value = '" . $this->_WCAs->VG0 . "'/></td>";
+            echo "</tr>";
+
+            echo "<tr>";
+            echo "<th>CollectorP1</th>";
+            echo "<td><input type='text' name='VG1' size='5' maxlength='200' value = '" . $this->_WCAs->VG1 . "'/></td>";
+            echo "</tr>";
+        } else {
+            echo "<tr>";
+            echo "<th>VG0</th>";
+            echo "<td><input type='text' name='VG0' size='5' maxlength='200' value = '" . $this->_WCAs->VG0 . "'/></td>";
+            echo "</tr>";
+
+            echo "<tr>";
+            echo "<th>VG1</th>";
+            echo "<td><input type='text' name='VG1' size='5' maxlength='200' value = '" . $this->_WCAs->VG1 . "'/></td>";
+            echo "</tr>";
+        }
 
         echo "<tr>";
         echo "<th>INI, XML downloads</th>";
@@ -404,7 +430,7 @@ class WCA extends FEComponent {
         else
             $xmlname = "";
 
-        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=xml$xmlname'>XML Data (2021)</a><br>";
+        echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=xml$xmlname'>XML Data Delivery</a><br>";
         echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=fec'>FrontEndControl.ini</a><br>";
         echo "<a href='export_to_ini_wca.php?keyId=$this->keyId&fc=$this->fc&type=wca'>FEMC WCA.ini</a>";
         echo "</td>";
@@ -521,8 +547,12 @@ class WCA extends FEComponent {
                 $mstring = "LOParam$countKey=" . $row['FreqLO'];
                 $mstring .= ", " . number_format(floatval($row['VDP0']), 2);
                 $mstring .= ", " . number_format(floatval($row['VDP1']), 2);
-                $mstring .= ", " . number_format(floatval($row['VGP0']), 2);
-                $mstring .= ", " . number_format(floatval($row['VGP1']), 2) . "\r\n";
+                if (boolval($this->_WCAs->HasTeledynePA)) {
+                    $mstring .= ", 0.00, 0.00\r\n";
+                } else {
+                    $mstring .= ", " . number_format(floatval($row['VGP0']), 2);
+                    $mstring .= ", " . number_format(floatval($row['VGP1']), 2) . "\r\n";
+                }
                 $ret .= $mstring;
                 $count += 1;
             }
@@ -533,11 +563,14 @@ class WCA extends FEComponent {
                 $ret .= "LOParams=1\r\n";
                 $mstring = "LOParam01=$lowlo";
                 $mstring .= ",1.00,1.00,";
-
-                $mstring .= number_format(floatval($this->_WCAs->VG0), 2) . ",";
-                $mstring .= number_format(floatval($this->_WCAs->VG1), 2) . "\r\n";
+                if (boolval($this->_WCAs->HasTeledynePA)) {
+                    $mstring .= "0.00, 0.00\r\n";
+                } else {
+                    $mstring .= number_format(floatval($this->_WCAs->VG0), 2) . ",";
+                    $mstring .= number_format(floatval($this->_WCAs->VG1), 2) . "\r\n";
+                }
                 $ret .= $mstring;
-            }
+            }            
             $ret .= "\r\n\r\n\r\n";
         } else if ($type == 'wca') {
 
@@ -569,6 +602,12 @@ class WCA extends FEComponent {
                     $ret .= "ENTRY_$entry=" . $row['YTO'] . ", " . number_format($row['VD0'], 2, '.', '') . ", " .
                         number_format($row['VD1'], 2, '.', '') . "\r\n";
                 }
+            }
+            $ret .= "\r\n";
+            if (boolval($this->_WCAs->HasTeledynePA)) {
+                $ret .= "[PA]\r\nTELEDYNE=1\r\n";
+                $ret .= "COLLECTORP0=" . number_format(floatval($this->_WCAs->VG0), 0) . "\r\n";
+                $ret .= "COLLECTORP1=" . number_format(floatval($this->_WCAs->VG1), 0) . "\r\n";
             }
             $ret .= "\r\n";
         }
@@ -677,8 +716,13 @@ class WCA extends FEComponent {
             $xw->writeAttribute("FreqLO", number_format(floatval($lowlo), 1) . "E9");   // Hz
             $xw->writeAttribute("VD0", "0.00");
             $xw->writeAttribute("VD1", "0.00");
-            $xw->writeAttribute("VG0", number_format(floatval($this->_WCAs->VG0), 2));
-            $xw->writeAttribute("VG1", number_format(floatval($this->_WCAs->VG1), 2));
+            if (boolval($this->_WCAs->HasTeledynePA)) {
+                $xw->writeAttribute("VG0", "0.00");
+                $xw->writeAttribute("VG1", "0.00");
+            } else {
+                $xw->writeAttribute("VG0", number_format(floatval($this->_WCAs->VG0), 2));
+                $xw->writeAttribute("VG1", number_format(floatval($this->_WCAs->VG1), 2));
+            }
             $xw->endElement();
         }
 
@@ -688,6 +732,14 @@ class WCA extends FEComponent {
             $xw->writeAttribute("count", $row['YTO']);
             $xw->writeAttribute("VD0", $row['VD0']);
             $xw->writeAttribute("VD1", $row['VD1']);
+            $xw->endElement();
+        }
+
+        if (boolval($this->_WCAs->HasTeledynePA)) {
+            $xw->startElement("TeledynePA");
+            $xw->writeAttribute("value", "1");
+            $xw->writeAttribute("CollectorP0", number_format(floatval($this->_WCAs->VG0), 0));
+            $xw->writeAttribute("CollectorP1", number_format(floatval($this->_WCAs->VG1), 0));
             $xw->endElement();
         }
 
@@ -990,12 +1042,6 @@ class WCA extends FEComponent {
         }
         echo '<tr><td align = "right">Output Power:        </b><input name="file_outputpower" type="file" /></td>
                     <td align = "left"><input type="submit" name="draw_outputpower" value="Redraw Output Power">';
-        if ($band == 7) {
-            echo '<br><label class="switch">Teledyne PA: X is ctrl scalar&nbsp;<input type="checkbox" name="has_teledyne_pa"';
-            if (isset($_REQUEST['has_teledyne_pa']))
-                echo ' checked';
-            echo '></label>';
-        }
         echo '<br><label>Override spec freqs like "69-93"<input type="text" name="speclines_override"></label>';
         echo '</td>';
         echo '</tr>
@@ -1037,6 +1083,12 @@ class WCA extends FEComponent {
         if (isset($_REQUEST['VG1'])) {
             $this->_WCAs->VG1 = $_REQUEST['VG1'];
         }
+        if (isset($_REQUEST['has_teledyne_pa']) && $_REQUEST['has_teledyne_pa'] == "on") {
+            $this->_WCAs->HasTeledynePA = true;
+        } else {
+            $this->_WCAs->HasTeledynePA = false;
+        }
+
         if (isset($_REQUEST['submit_datafile'])) {
             if (isset($_FILES['file_wcas']['name'])) {
                 if ($this->keyId == "") return false;
@@ -2381,7 +2433,7 @@ class WCA extends FEComponent {
 
         // Write command file for gnuplot
         $plot_title = "WCA Band" . $this->Band . " SN" . $this->SN;
-        if ($teledynePA)
+        if (boolval($this->_WCAs->HasTeledynePA))
             $plot_title .= " Output Power Vs. Control Scalar";
         else
             $plot_title .= " Output Power Vs. Drain Voltage";

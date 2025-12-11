@@ -13,7 +13,7 @@ $_REQUEST['fc'] = $fc;
 
 $q = "SELECT keyId, LPAD(SN, 2, '0') AS SN, Band, TS
      FROM FE_Components
-     WHERE Band IN (3, 4, 8, 9, 10)
+     WHERE Band IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
      AND Band <> 0
      AND fkFE_ComponentType = 11
      ORDER BY SN ASC;
@@ -31,7 +31,7 @@ while ($row = mysqli_fetch_array($r)) {
     $SN = $wca->SN;
     $xmlname = hexdec($wca->ESN1);
 
-    $outdir = $wca_write_directory . "xml2022-08-05";
+    $outdir = $wca_write_directory . "xml2025-12-10";
     if (!file_exists($outdir))
         mkdir($outdir);
 

@@ -23,6 +23,7 @@ class WCAs extends GenericTable {
     public $phasenoise_url;
     public $VG0;
     public $VG1;
+    public $HasTeledynePA;
 
     public function __construct($inKeyId, $inFc) {
         parent::__construct("WCAs", $inKeyId, "keyId", $inFc, 'fkFacility');
