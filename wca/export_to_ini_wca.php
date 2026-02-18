@@ -33,3 +33,5 @@ if ($type == 'xml')
     echo $wca->GetXmlFileContent();
 else
     echo $wca->GetIniFileContent($type);
+
+?>

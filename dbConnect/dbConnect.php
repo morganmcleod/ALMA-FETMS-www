@@ -84,4 +84,3 @@ function ADAPT_mysqli_result($res, $row, $field = 0) {
 }
 
 ?>
-
