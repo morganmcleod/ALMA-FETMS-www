@@ -551,8 +551,8 @@ class WCA extends FEComponent {
                 if (boolval($this->_WCAs->HasTeledynePA)) {
                     $mstring .= ", 0.00, 0.00\r\n";
                 } else {
-                    $mstring .= ", " . number_format(floatval($row['VGP0']), 2);
-                    $mstring .= ", " . number_format(floatval($row['VGP1']), 2) . "\r\n";
+                    $mstring .= ", " . number_format($this->_WCAs->VG0, 2);
+                    $mstring .= ", " . number_format($this->_WCAs->VG1, 2) . "\r\n";
                 }
                 $ret .= $mstring;
                 $count += 1;
@@ -706,8 +706,8 @@ class WCA extends FEComponent {
             $xw->writeAttribute("FreqLO", number_format(floatval($row['FreqLO']), 1) . "E9");   // Hz
             $xw->writeAttribute("VD0", number_format(floatval($row['VDP0']), 2));
             $xw->writeAttribute("VD1", number_format(floatval($row['VDP1']), 2));
-            $xw->writeAttribute("VG0", number_format(floatval($row['VGP0']), 2));
-            $xw->writeAttribute("VG1", number_format(floatval($row['VGP1']), 2));
+            $xw->writeAttribute("VG0", number_format($this->_WCAs->VG0, 2));
+            $xw->writeAttribute("VG1", number_format($this->_WCAs->VG1, 2));
             $xw->endElement();
             $count += 1;
         }
