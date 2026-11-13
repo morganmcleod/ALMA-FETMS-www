@@ -120,7 +120,7 @@ class WCAdb { //extends DBRetrieval {
      */
     public function q($occur, $keyId = NULL, $pol = NULL, $fc = NULL, $tdh = NULL, $CurrentLO = NULL, $LOfreq = NULL) {
         if ($occur == 1) {
-            $q = "SELECT keyId FROM LOParams WHERE fkComponent = $keyId ORDER BY FreqLO ASC;";
+            $q = "SELECT keyId FROM WCA_LOParams WHERE fkComponent = $keyId ORDER BY FreqLO ASC;";
         } elseif ($occur == 2) {
             $q = "Select * from WCA_LOParams WHERE fkComponent = $keyId;";
         } elseif ($occur == 3) {

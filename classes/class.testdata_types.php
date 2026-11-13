@@ -4,18 +4,26 @@ require_once($site_dbConnect);
 
 class TestData_Types {
     public static function getTableNameFromKeyId($keyId) {
-        $dbConnection = site_getDbConnection();
-        $q = "SELECT TestData_TableName FROM TestData_Types
-              WHERE keyId={$keyId};";
-        $r = mysqli_query($dbConnection, $q);
-        return ADAPT_mysqli_result($r, 0);
+        if ($keyId) {
+            $dbConnection = site_getDbConnection();
+            $q = "SELECT TestData_TableName FROM TestData_Types
+                WHERE keyId={$keyId};";
+            $r = mysqli_query($dbConnection, $q);
+            return ADAPT_mysqli_result($r, 0);
+        } else {
+            return "";
+        }
     }
 
     public static function getDescriptionFromKeyId($keyId) {
-        $dbConnection = site_getDbConnection();
-        $q = "SELECT Description FROM TestData_Types
-              WHERE keyId={$keyId};";
-        $r = mysqli_query($dbConnection, $q);
-        return ADAPT_mysqli_result($r, 0);
+        if ($keyId) {
+            $dbConnection = site_getDbConnection();
+            $q = "SELECT Description FROM TestData_Types
+                WHERE keyId={$keyId};";
+            $r = mysqli_query($dbConnection, $q);
+            return ADAPT_mysqli_result($r, 0);
+        } else {
+            return "";
+        }
     }
 }
